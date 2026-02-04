@@ -1,6 +1,7 @@
 # KetQat
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/KcJcRJv6pr)
+[![X](https://img.shields.io/badge/X-Follow%20Us-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/ketqat)
 
 **The Home for Quantum Computing**
 
@@ -52,13 +53,13 @@ Built with Next.js 14, TypeScript, and Tailwind CSS for a responsive, intuitive 
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/username/ketqat.git
+git clone https://github.com/ketqat/ketqat.git
 cd ketqat
 ```
 
 2. Install dependencies:
 ```bash
-npm install
+npm install --legacy-peer-deps
 ```
 
 ### Development
@@ -87,6 +88,20 @@ npm start
 We encourage you to fork this repository and contribute to the open-source project. Your contributions, whether they're bug fixes, new features, documentation improvements, or feedback, are welcome and valued. Together, we can make KetQat better for the entire quantum computing community.
 
 Please see our [Contributing Guide](CONTRIBUTING.md) for details on how to get started.
+
+## API
+
+KetQat exposes a simple REST API for accessing provider data:
+
+```bash
+# Get all quantum providers
+GET /api/providers
+```
+
+Returns a JSON object with:
+- `providers`: Array of provider objects
+- `count`: Total number of providers
+- `timestamp`: ISO timestamp of the response
 
 ## Roadmap
 
