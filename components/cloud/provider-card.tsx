@@ -1,18 +1,21 @@
 "use client"
 
-import { ExternalLink, Cpu, Code, Cloud, Zap } from "lucide-react"
+import { ExternalLink, Cpu, Code, Cloud, Zap, Loader2 } from "lucide-react"
 import { QuantumProvider } from "@/lib/cloud-providers"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ConnectDialog } from "./connect-dialog"
 import { cn } from "@/lib/utils"
+import { useProviderStatus, getTimeSinceCheck } from "@/lib/hooks/use-provider-status"
 
 interface ProviderCardProps {
     provider: QuantumProvider
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
+    const { status, isLoading, lastChecked } = useProviderStatus(provider.id, provider.status)
+
     const getIcon = (category: string) => {
         switch (category) {
             case "Hardware":
@@ -45,9 +48,15 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                 return "bg-yellow-500"
             case "maintenance":
                 return "bg-red-500"
+            case "unknown":
+                return "bg-gray-400"
             default:
                 return "bg-gray-500"
         }
+    }
+
+    const getStatusLabel = (status: string) => {
+        return status.charAt(0).toUpperCase() + status.slice(1)
     }
 
     const getPricingVariant = (pricing: string) => {
@@ -66,9 +75,17 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     return (
         <Card className="flex flex-col h-full hover:shadow-md transition-shadow relative">
             {/* Status Indicator */}
-            <div className={cn("absolute top-4 right-4 w-2 h-2 rounded-full", getStatusColor(provider.status))} 
-                 title={provider.status.charAt(0).toUpperCase() + provider.status.slice(1)} />
-            
+            <div
+                className="absolute top-4 right-4 flex items-center gap-1.5"
+                title={`${getStatusLabel(status)} • Last checked: ${getTimeSinceCheck(lastChecked)}`}
+            >
+                {isLoading ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                ) : (
+                    <div className={cn("w-2 h-2 rounded-full", getStatusColor(status))} />
+                )}
+            </div>
+
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pr-8">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                     <div className="p-2 bg-muted rounded-full">
@@ -84,7 +101,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                 <p className="text-sm text-muted-foreground mt-2 leading-relaxed mb-3">
                     {provider.description}
                 </p>
-                
+
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1.5 mb-3">
                     {provider.tags.map((tag) => (
