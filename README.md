@@ -1,7 +1,7 @@
 # KetQat
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/KcJcRJv6pr)
-[![X](https://img.shields.io/badge/X-Follow%20Us-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/ketqat)
+[![X](https://img.shields.io/badge/X-Follow%20Us-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/ket_qat)
 
 **The Home for Quantum Computing**
 
