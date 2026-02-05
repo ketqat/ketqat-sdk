@@ -1,11 +1,11 @@
 "use client"
 
-import { ExternalLink, Cpu, Code, Cloud, Zap, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { ExternalLink, Cpu, Code, Cloud, Zap, Loader2, ArrowRight } from "lucide-react"
 import { QuantumProvider } from "@/lib/cloud-providers"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ConnectDialog } from "./connect-dialog"
 import { cn } from "@/lib/utils"
 import { useProviderStatus, getTimeSinceCheck } from "@/lib/hooks/use-provider-status"
 
@@ -32,7 +32,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const getBadgeVariant = (category: string) => {
         switch (category) {
             case "Hardware":
-                return "default" // usually primary color
+                return "default"
             case "Software":
                 return "secondary"
             default:
@@ -73,7 +73,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     }
 
     return (
-        <Card className="flex flex-col h-full hover:shadow-md transition-shadow relative">
+        <Card className="flex flex-col h-full hover:shadow-lg transition-all hover:border-primary/50 relative group">
             {/* Status Indicator */}
             <div
                 className="absolute top-4 right-4 flex items-center gap-1.5"
@@ -86,40 +86,49 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                 )}
             </div>
 
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pr-8">
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
-                    <div className="p-2 bg-muted rounded-full">
-                        {getIcon(provider.category)}
-                    </div>
-                    {provider.name}
-                </CardTitle>
-                <Badge variant={getBadgeVariant(provider.category) as any}>
-                    {provider.category}
-                </Badge>
-            </CardHeader>
-            <CardContent className="flex-1">
-                <p className="text-sm text-muted-foreground mt-2 leading-relaxed mb-3">
-                    {provider.description}
-                </p>
-
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                    {provider.tags.map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                            {tag}
-                        </Badge>
-                    ))}
-                </div>
-
-                {/* Pricing */}
-                <div className="mt-auto">
-                    <Badge variant={getPricingVariant(provider.pricing) as any} className="text-xs">
-                        {provider.pricing}
+            {/* Clickable card content */}
+            <Link href={`/cloud/${provider.id}`} className="flex flex-col flex-1">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pr-8">
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <div className="p-2 bg-muted rounded-full">
+                            {getIcon(provider.category)}
+                        </div>
+                        {provider.name}
+                    </CardTitle>
+                    <Badge variant={getBadgeVariant(provider.category) as any}>
+                        {provider.category}
                     </Badge>
-                </div>
-            </CardContent>
+                </CardHeader>
+                <CardContent className="flex-1">
+                    <p className="text-sm text-muted-foreground mt-2 leading-relaxed mb-3 line-clamp-2">
+                        {provider.description}
+                    </p>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                        {provider.tags.slice(0, 3).map((tag) => (
+                            <Badge key={tag} variant="outline" className="text-xs">
+                                {tag}
+                            </Badge>
+                        ))}
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="mt-auto">
+                        <Badge variant={getPricingVariant(provider.pricing) as any} className="text-xs">
+                            {provider.pricing}
+                        </Badge>
+                    </div>
+                </CardContent>
+            </Link>
+
             <CardFooter className="flex justify-between pt-4 border-t">
-                <ConnectDialog providerName={provider.name} />
+                <Button variant="outline" size="sm" className="gap-2" asChild>
+                    <Link href={`/cloud/${provider.id}`}>
+                        View Details
+                        <ArrowRight className="h-4 w-4" />
+                    </Link>
+                </Button>
                 <Button variant="ghost" size="sm" className="gap-2" asChild>
                     <a href={provider.url} target="_blank" rel="noopener noreferrer">
                         Launch

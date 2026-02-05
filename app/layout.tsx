@@ -1,8 +1,7 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import Link from "next/link"
-import Image from "next/image"
+import { Header } from "@/components/nav/header"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -22,31 +21,41 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <Link href="/" className="flex items-center gap-2 text-2xl font-bold bg-gradient-to-r from-quantum-blue to-quantum-orange bg-clip-text text-transparent">
-                <Image 
-                  src="/ketqat-icon.png" 
-                  alt="KetQat" 
-                  width={32} 
-                  height={32}
-                  className="object-contain"
-                />
-                <span>KetQat</span>
-              </Link>
-            </div>
-          </div>
-        </nav>
-        <main>{children}</main>
-        <footer className="border-t mt-20 py-8">
+        <Header />
+        <main className="min-h-[calc(100vh-12rem)]">{children}</main>
+        <footer className="border-t mt-20 py-8 bg-muted/30">
           <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-            <p>KetQat - The Home for Quantum Computing</p>
+            <p className="font-medium">KetQat - The Home for Quantum Computing</p>
             <p className="mt-2">Open-source platform for quantum computing research and collaboration</p>
+            <div className="mt-4 flex justify-center gap-6">
+              <a
+                href="https://github.com/ketqat/ketqat"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors"
+              >
+                GitHub
+              </a>
+              <a
+                href="https://discord.gg/KcJcRJv6pr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors"
+              >
+                Discord
+              </a>
+              <a
+                href="https://x.com/ketqat"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors"
+              >
+                X / Twitter
+              </a>
+            </div>
           </div>
         </footer>
       </body>
     </html>
   )
 }
-

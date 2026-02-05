@@ -162,3 +162,13 @@ export const QUANTUM_PROVIDERS: QuantumProvider[] = [
         pricing: "Free Tier",
     },
 ];
+
+export function getProviderById(id: string): QuantumProvider | undefined {
+    return QUANTUM_PROVIDERS.find((provider) => provider.id === id);
+}
+
+export function getRelatedProviders(provider: QuantumProvider, limit: number = 4): QuantumProvider[] {
+    return QUANTUM_PROVIDERS
+        .filter((p) => p.id !== provider.id && p.category === provider.category)
+        .slice(0, limit);
+}
