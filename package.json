@@ -1,42 +1,29 @@
 {
-  "name": "ketqat",
+  "name": "ketqat-sdk",
   "version": "0.1.0",
-  "description": "The Home for Quantum Computing - An open-source platform to connect with quantum cloud providers, share algorithms, and collaborate on quantum computing research.",
-  "author": "KetQat Contributors",
+  "description": "TypeScript types, quantum cloud provider catalog, and reference data for KetQat.",
   "license": "Apache-2.0",
-  "repository": "github.com/username/ketqat",
-  "scripts": {
-    "dev": "next dev -H 0.0.0.0 -p 3042",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "pages:build": "npx @cloudflare/next-on-pages@1"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ketqat/ketqat-sdk.git"
   },
-  "dependencies": {
-    "@radix-ui/react-dialog": "^1.1.15",
-    "@radix-ui/react-separator": "^1.1.8",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.1",
-    "drizzle-orm": "^0.45.1",
-    "lucide-react": "^0.427.0",
-    "next": "14.2.5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.5.2"
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "@cloudflare/next-on-pages": "^1.0.0",
-    "@cloudflare/workers-types": "^4.20251228.0",
-    "@types/node": "^20.14.12",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "autoprefixer": "^10.4.19",
-    "drizzle-kit": "^0.31.8",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.5",
-    "postcss": "^8.4.40",
-    "tailwindcss": "^3.4.7",
-    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.5.4"
   }
 }

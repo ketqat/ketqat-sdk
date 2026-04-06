@@ -1,4 +1,4 @@
-import { Decoder } from "./types"
+import type { Decoder } from "./types.js"
 
 export const mockDecoders: Decoder[] = [
   {
