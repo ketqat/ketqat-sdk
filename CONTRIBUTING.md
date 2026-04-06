@@ -1,6 +1,6 @@
-# Contributing to KetQat
+# Contributing to ketqat-sdk
 
-Thank you for your interest in contributing to KetQat! We're excited to have you join our community. This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to **ketqat-sdk**, the TypeScript package that powers shared types, quantum provider data, and reference decoder data for KetQat. This document outlines how to contribute to this repository.
 
 ## Welcome
 
@@ -26,11 +26,10 @@ If you've found a bug, please create an issue on GitHub with the following infor
 2. **Steps to Reproduce**: Detailed steps to reproduce the issue
 3. **Expected Behavior**: What you expected to happen
 4. **Actual Behavior**: What actually happened
-5. **Environment**: 
+5. **Environment**:
    - Operating System
    - Node.js version
-   - Browser (if applicable)
-   - KetQat version
+   - `ketqat-sdk` version (or commit SHA)
 6. **Screenshots**: If applicable, include screenshots or error messages
 7. **Additional Context**: Any other relevant information
 
@@ -42,11 +41,11 @@ We use Pull Requests (PRs) to review and merge contributions. Here's how to subm
 
 ### 1. Fork and Clone
 
-1. Fork the KetQat repository on GitHub
+1. Fork [ketqat/ketqat-sdk](https://github.com/ketqat/ketqat-sdk) on GitHub
 2. Clone your fork locally:
 ```bash
-git clone https://github.com/your-username/ketqat.git
-cd ketqat
+git clone https://github.com/your-username/ketqat-sdk.git
+cd ketqat-sdk
 ```
 
 ### 2. Create a Branch
@@ -97,8 +96,7 @@ git push origin feature/your-feature-name
 
 - Follow the existing code style in the project
 - Use TypeScript for type safety
-- Run `npm run lint` before submitting
-- Ensure your code passes all tests
+- Run `npm run build` before submitting and fix any compiler errors
 
 ## License Agreement
 
