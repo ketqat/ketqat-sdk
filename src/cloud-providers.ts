@@ -152,6 +152,16 @@ export const QUANTUM_PROVIDERS: QuantumProvider[] = [
         pricing: "Contact",
     },
     {
+        id: "psiquantum-construct",
+        name: "PsiQuantum Construct",
+        url: "https://construct.psiquantum.com/",
+        description: "Software suite for designing, developing, and optimizing fault-tolerant quantum algorithms with visual circuit design, Python Workbench, and resource analysis tools.",
+        category: "Software",
+        tags: ["Fault-Tolerant", "Photonic", "Python", "CUDA-Q"],
+        status: "operational",
+        pricing: "Contact",
+    },
+    {
         id: "qbraid",
         name: "qBraid",
         url: "https://account.qbraid.com/",
