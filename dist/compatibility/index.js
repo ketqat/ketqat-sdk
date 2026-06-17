@@ -34,8 +34,8 @@ export function findComparableMetricCoordinates(left, right) {
     if (left.domain !== right.domain) {
         return [];
     }
-    const rightMetrics = new Set(right.metric_points.map((point) => point.metric));
-    return Array.from(new Set(left.metric_points.map((point) => point.metric))).filter((metric) => rightMetrics.has(metric));
+    const rightCoordinates = new Set(right.metric_points.map(metricCoordinateKey));
+    return Array.from(new Set(left.metric_points.map(metricCoordinateKey))).filter((coordinate) => rightCoordinates.has(coordinate));
 }
 export function compareExactReproductionConfiguration(left, right) {
     const base = compareRunCompatibility(left, right);
@@ -44,5 +44,18 @@ export function compareExactReproductionConfiguration(left, right) {
         reasons.push(reason("HASH_MISMATCH", "Reproducibility hashes differ.", "reproducibility_hash"));
     }
     return { compatible: reasons.length === 0, reasons };
+}
+function metricCoordinateKey(point) {
+    if ("code_distance" in point || "physical_error_rate" in point) {
+        return [
+            point.metric,
+            `distance=${point.code_distance ?? "any"}`,
+            `p=${point.physical_error_rate ?? "any"}`,
+        ].join("|");
+    }
+    if ("qubit_count" in point) {
+        return [point.metric, `qubits=${point.qubit_count ?? "any"}`].join("|");
+    }
+    return point.metric;
 }
 //# sourceMappingURL=index.js.map

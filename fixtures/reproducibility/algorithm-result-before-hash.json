@@ -1,0 +1,65 @@
+{
+  "name": "grover-search-parity",
+  "domain": "ALGORITHM",
+  "status": "COMPLETED",
+  "benchmark_suite": "grover-search-local",
+  "benchmark_suite_version": "0.1.0",
+  "schema_version": "0.1",
+  "sdk_version": "0.2.0",
+  "configuration": {
+    "schema_version": "0.1",
+    "domain": "ALGORITHM",
+    "benchmark": {
+      "suite": "grover-search-local",
+      "version": "0.1.0"
+    },
+    "experiment": {
+      "name": "grover-search-parity"
+    },
+    "algorithm": {
+      "family": "grover-search",
+      "problem": {
+        "type": "marked-state-search",
+        "qubit_counts": [2],
+        "marked_state": "all-ones"
+      },
+      "execution": {
+        "engine": "ketqat-runner",
+        "method": "shot-based"
+      }
+    },
+    "sampling": {
+      "shots": 100,
+      "seed": 11
+    },
+    "metrics": ["success_probability"]
+  },
+  "environment": {
+    "packages": {
+      "ketqat-runner": "0.2.0"
+    },
+    "hardware": {}
+  },
+  "summary_metrics": {
+    "success_probability": 0.93,
+    "runtime_seconds": 0.001
+  },
+  "metric_points": [
+    {
+      "metric": "success_probability",
+      "qubit_count": 2,
+      "success_probability": 0.93,
+      "circuit_depth": 3,
+      "gate_count": 6,
+      "two_qubit_gate_count": 1,
+      "simulation_runtime_seconds": 0.001,
+      "runtime_seconds": 0.001,
+      "shots": 100,
+      "seed": 11,
+      "metadata": {
+        "runner": "ketqat-runner"
+      }
+    }
+  ],
+  "is_demo": false
+}

@@ -9,6 +9,8 @@
 
 # Testing / coverage
 /coverage
+__pycache__/
+*.py[cod]
 
 # Misc
 .DS_Store

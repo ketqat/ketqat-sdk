@@ -46,7 +46,9 @@ Inspect current code and tests instead of trusting stale documentation.
 - Install: `npm ci`
 - Build and regenerate schemas: `npm run build`
 - Test: `npm test`
-- Python runner smoke check: `PYTHONPATH=python/src python3 -m ketqat_runner.cli run examples/algorithms/grover-search.yaml --output /tmp/ketqat-grover-run.json`
+- Python test setup: `python3.11 -m pip install -e "python[qec]" pytest`
+- Python tests: `python3.11 -m pytest python/tests`
+- Python runner smoke check: `ketqat run examples/qec/surface-code-memory.yaml --output /tmp/ketqat-qec-run.json`
 
 ## Development rules
 
@@ -63,6 +65,7 @@ Inspect current code and tests instead of trusting stale documentation.
 - Add or update TypeScript tests for schema, hashing, compatibility, client, and demo data changes.
 - Add Python tests for runner and cross-language hash behavior when runner behavior changes.
 - Maintain cross-language reproducibility hash parity.
+- Normal QEC runner execution must use real NumPy, Stim, and PyMatching dependencies; never reintroduce an automatic synthetic fallback.
 - Do not add web UI, Prisma, PostgreSQL, authentication, deployment, or provider-catalog functionality.
 - Do not duplicate implementation behavior that belongs in `ketqat-web`.
 
@@ -78,4 +81,3 @@ Inspect current code and tests instead of trusting stale documentation.
 ## Cross-repository changes
 
 Create a parent issue in `ketqat-planning` for cross-repository initiatives, then implementation issues in owning repositories. Use bidirectional links if GitHub sub-issues are unavailable.
-
