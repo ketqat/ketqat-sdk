@@ -1,0 +1,30 @@
+name: SDK CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and test
+        run: npm test
+
+      - name: Smoke-test Python runner
+        run: |
+          PYTHONPATH=python/src python3 -m ketqat_runner.cli run examples/algorithms/grover-search.yaml --output /tmp/ketqat-grover-run.json
+          PYTHONPATH=python/src python3 -m ketqat_runner.cli run examples/qec/surface-code-memory.yaml --output /tmp/ketqat-qec-run.json
