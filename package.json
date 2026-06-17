@@ -48,7 +48,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/generate-schemas.mjs",
+    "build": "rm -rf dist && tsc -p tsconfig.json && node scripts/generate-schemas.mjs",
     "clean": "rm -rf dist",
     "generate:schemas": "npm run build",
     "test": "npm run build && node tests/sdk.test.mjs",
