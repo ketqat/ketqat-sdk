@@ -1,0 +1,22 @@
+[project]
+name = "ketqat-runner"
+version = "0.2.0"
+description = "Local benchmark runner for KetQat QEC and quantum-algorithm experiments."
+requires-python = ">=3.10"
+dependencies = [
+  "PyYAML>=6.0",
+  "pydantic>=2.7",
+  "jsonschema>=4.22",
+]
+
+[project.optional-dependencies]
+qec = ["numpy>=1.26", "stim>=1.13", "pymatching>=2.2"]
+algorithms = ["numpy>=1.26"]
+all = ["numpy>=1.26", "stim>=1.13", "pymatching>=2.2"]
+
+[project.scripts]
+ketqat = "ketqat_runner.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

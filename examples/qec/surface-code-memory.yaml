@@ -1,0 +1,29 @@
+schema_version: "0.1"
+domain: QEC
+benchmark:
+  suite: surface-code-memory-mwpm
+  version: "0.1.0"
+experiment:
+  name: surface-code-mwpm-baseline
+  description: MWPM benchmark for rotated surface-code memory
+source:
+  repository_url: https://github.com/example/repository
+qec:
+  experiment_type: memory
+  code:
+    family: rotated-surface-code
+    distances: [3]
+    rounds: distance
+  noise:
+    model: circuit-level-depolarizing
+    physical_error_rates: [0.001]
+  decoder:
+    name: pymatching
+    version: auto
+sampling:
+  shots: 100
+  seed: 42
+metrics:
+  - logical_error_rate
+  - decoder_latency_ms
+  - runtime_seconds

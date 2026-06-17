@@ -1,7 +1,7 @@
 {
   "name": "ketqat-sdk",
-  "version": "0.1.0",
-  "description": "TypeScript types, quantum cloud provider catalog, and reference data for KetQat.",
+  "version": "0.2.0",
+  "description": "Contracts, schemas, reproducibility hashing, and client utilities for QEC and quantum-algorithm research artifacts.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -14,16 +14,52 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./contracts": {
+      "types": "./dist/contracts/index.d.ts",
+      "import": "./dist/contracts/index.js"
+    },
+    "./schemas": {
+      "types": "./dist/schemas/index.d.ts",
+      "import": "./dist/schemas/index.js"
+    },
+    "./reproducibility": {
+      "types": "./dist/reproducibility/index.d.ts",
+      "import": "./dist/reproducibility/index.js"
+    },
+    "./compatibility": {
+      "types": "./dist/compatibility/index.d.ts",
+      "import": "./dist/compatibility/index.js"
+    },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "import": "./dist/client/index.js"
+    },
+    "./demo": {
+      "types": "./dist/demo/index.d.ts",
+      "import": "./dist/demo/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "schemas",
+    "examples",
+    "python"
+  ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/generate-schemas.mjs",
     "clean": "rm -rf dist",
+    "generate:schemas": "npm run build",
+    "test": "npm run build && node tests/sdk.test.mjs",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "typescript": "^5.5.4"
+    "@types/node": "^20.19.1",
+    "typescript": "^5.5.4",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
   }
 }

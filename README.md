@@ -1,89 +1,132 @@
 # ketqat-sdk
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.gg/KcJcRJv6pr)
-[![X](https://img.shields.io/badge/X-@ket__qat-000000?style=flat&logo=x)](https://x.com/ket_qat)
 
-TypeScript library for **[KetQat](https://github.com/ketqat)** — shared **types**, a **quantum cloud provider catalog**, and **reference decoder data** used by the KetQat web app and other consumers.
+KetQat SDK is the shared research contract layer for KetQat: an open-source research infrastructure for reproducible quantum error-correction and quantum-algorithm experiments.
 
-This repository contains **only** the shared TypeScript package. The KetQat **website** (Next.js app and routes) is maintained in a separate codebase.
+Version `0.2.0` intentionally removes the previous hardware-access catalog API. Marketplace, credential, availability, billing, and commercial execution exports are outside the SDK scope.
 
-## What’s included
+## Scope
 
-| Area | Description |
-|------|-------------|
-| **Types** | `Decoder`, filters, `QubitType`, `CodeType`, etc. |
-| **Cloud catalog** | `QUANTUM_PROVIDERS`, `getProviderById`, `getRelatedProviders` |
-| **Reference data** | `mockDecoders`, `getDecoderById`, `getTrendingDecoders` |
+The SDK owns:
 
-Package entry: `dist/index.js` + `dist/index.d.ts` (built from `src/`).
+- QEC and quantum-algorithm artifact contracts
+- Experiment manifests and benchmark-result contracts
+- Zod runtime validators and generated JSON Schemas
+- Deterministic reproducibility hashing
+- Scientific compatibility helpers
+- A framework-independent REST client
+- Demo fixtures that are visibly marked with `is_demo: true`
+- A local Python runner package under `python/`
 
-## Requirements
-
-- Node.js **18+**
-- npm (or pnpm / yarn)
+The web app owns persistence, UI, APIs, authorization, charts, and deployment.
 
 ## Install
-
-Published package (when released to npm):
 
 ```bash
 npm install ketqat-sdk
 ```
 
-Local path during development (e.g. from the KetQat monorepo):
+During coordinated development, the web app should consume a released package, exact Git commit dependency, or generated package tarball. Do not use the old vendored `lib/ketqat-sdk` copy.
 
-```bash
-npm install file:../ketqat-sdk
-```
-
-## Usage
+## Public Exports
 
 ```ts
-import type { QuantumProvider, Decoder } from "ketqat-sdk"
 import {
-  QUANTUM_PROVIDERS,
-  getProviderById,
-  mockDecoders,
-  getTrendingDecoders,
+  ArtifactSchema,
+  BenchmarkResultSchema,
+  BenchmarkSuiteSchema,
+  ExperimentManifestSchema,
+  calculateReproducibilityHash,
+  compareRunCompatibility,
 } from "ketqat-sdk"
 
-const p = getProviderById("ibm-quantum")
-const trending = getTrendingDecoders(5)
+import { KetQatClient } from "ketqat-sdk/client"
+import { demoArtifacts, demoBenchmarkSuites, demoRuns } from "ketqat-sdk/demo"
 ```
 
-Build output is ESM (`"type": "module"`). Use a bundler or Node with ESM resolution as appropriate.
+Subpath exports are available for:
+
+- `ketqat-sdk/contracts`
+- `ketqat-sdk/schemas`
+- `ketqat-sdk/reproducibility`
+- `ketqat-sdk/compatibility`
+- `ketqat-sdk/client`
+- `ketqat-sdk/demo`
+
+## Schema Versioning
+
+The npm package version and research schema version are separate. `SDK_VERSION` is currently `0.2.0`; `SCHEMA_VERSION` is currently `0.1`.
+
+Generated JSON Schemas are committed in `schemas/` for:
+
+- artifacts
+- benchmark suites
+- QEC experiment manifests
+- algorithm experiment manifests
+- QEC benchmark results
+- algorithm benchmark results
+
+Regenerate them with:
+
+```bash
+npm run build
+```
+
+## Runner
+
+The local runner lives in `python/` and exposes:
+
+```bash
+ketqat run examples/algorithms/grover-search.yaml --output output/run.json
+ketqat run examples/qec/surface-code-memory.yaml --output output/run.json
+```
+
+Optional dependency groups:
+
+```bash
+pip install "ketqat-runner[qec]"
+pip install "ketqat-runner[algorithms]"
+pip install "ketqat-runner[all]"
+```
+
+The MVP runner supports small local experiments only:
+
+- QEC: rotated surface-code memory style distance and physical-error-rate sweeps with MWPM-compatible output fields
+- Algorithms: Grover search on small marked-state problems using local deterministic shot simulation
+
+It does not execute arbitrary user source code and does not submit jobs to QPUs.
+
+## Reproducibility Hashing
+
+`calculateReproducibilityHash(input)` uses deterministic SHA-256 hashing over canonical JSON. It includes schema version, domain, benchmark identity, configuration, source reference, software versions, and environment information. It excludes run IDs, timestamps, database IDs, submission timestamps, UI metadata, and the stored hash itself.
+
+## Compatibility
+
+Use:
+
+- `compareRunCompatibility(left, right, suites)`
+- `findComparableMetricCoordinates(left, right)`
+- `compareExactReproductionConfiguration(left, right)`
+
+Cross-domain comparison is rejected. Runs are comparable only when benchmark suite, benchmark version, schema version, and required metric coordinates align.
 
 ## Development
 
 ```bash
-git clone https://github.com/ketqat/ketqat-sdk.git
-cd ketqat-sdk
 npm install
 npm run build
+npm test
 ```
 
-- **`npm run build`** — compile `src/` → `dist/` with TypeScript.
-- **`npm run clean`** — remove `dist/`.
+## Scientific Limitations
 
-`prepublishOnly` runs `build` before publish.
+Demo data is synthetic and marked with `is_demo: true`. It must not be read as performance evidence, popularity ranking, or scientific verification. Threshold claims require real benchmark methodology and review outside this MVP.
 
-## Project layout
+## Security Limitations
 
-```
-src/
-  index.ts          # public exports
-  types.ts
-  cloud-providers.ts
-  mock-data.ts
-tsconfig.json
-package.json
-```
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+The SDK validates research contracts and computes hashes. It does not authenticate users, store secrets, execute uploaded code, or manage provider credentials.
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE).
+Apache License 2.0, see [LICENSE](LICENSE).

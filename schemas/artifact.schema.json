@@ -1,0 +1,304 @@
+{
+  "$ref": "#/definitions/artifact",
+  "definitions": {
+    "artifact": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "slug": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "domain": {
+              "type": "string",
+              "const": "QEC"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "QEC_DECODER",
+                "QEC_CODE",
+                "NOISE_MODEL",
+                "SYNDROME_DATASET",
+                "BENCHMARK_SUITE",
+                "SIMULATION_TOOL",
+                "RESOURCE_ANALYSIS_TOOL"
+              ]
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1
+            },
+            "repository_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "repository_owner": {
+              "type": "string"
+            },
+            "repository_name": {
+              "type": "string"
+            },
+            "default_branch": {
+              "type": "string",
+              "default": "main"
+            },
+            "license": {
+              "type": "string"
+            },
+            "language": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "authors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "latest_commit_sha": {
+              "type": "string"
+            },
+            "reference_paper_url": {},
+            "citation": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "authors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "default": []
+                },
+                "year": {
+                  "type": "integer",
+                  "minimum": 1900,
+                  "maximum": 2200
+                },
+                "doi": {
+                  "type": "string"
+                },
+                "url": {},
+                "bibtex": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "is_demo": {
+              "type": "boolean"
+            },
+            "verification_status": {
+              "type": "string",
+              "enum": [
+                "UNVERIFIED",
+                "VALIDATED_SCHEMA",
+                "REPRODUCED"
+              ],
+              "default": "UNVERIFIED"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updated_at": {},
+            "qec": {
+              "type": "object",
+              "properties": {
+                "code_families": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "default": []
+                },
+                "supported_distances": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "default": []
+                },
+                "decoder_family": {
+                  "type": "string"
+                },
+                "noise_models": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "default": []
+                },
+                "syndrome_format": {
+                  "type": "string"
+                },
+                "decoder_interface_version": {
+                  "type": "string"
+                },
+                "supported_experiment_types": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "default": []
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "id",
+            "slug",
+            "name",
+            "domain",
+            "kind",
+            "description",
+            "is_demo",
+            "created_at",
+            "updated_at",
+            "qec"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {},
+            "slug": {},
+            "name": {},
+            "domain": {
+              "type": "string",
+              "const": "ALGORITHM"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "QUANTUM_ALGORITHM",
+                "PROBLEM_INSTANCE",
+                "CLASSICAL_REFERENCE",
+                "BENCHMARK_SUITE",
+                "SIMULATION_TOOL",
+                "RESOURCE_ANALYSIS_TOOL"
+              ]
+            },
+            "description": {},
+            "repository_url": {},
+            "repository_owner": {},
+            "repository_name": {},
+            "default_branch": {},
+            "license": {},
+            "language": {},
+            "tags": {},
+            "authors": {},
+            "latest_commit_sha": {},
+            "reference_paper_url": {},
+            "citation": {},
+            "is_demo": {},
+            "verification_status": {},
+            "created_at": {},
+            "updated_at": {},
+            "algorithm": {
+              "type": "object",
+              "properties": {
+                "algorithm_family": {
+                  "type": "string"
+                },
+                "problem_domains": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "default": []
+                },
+                "supported_input_types": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "default": []
+                },
+                "supported_qubit_ranges": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": [
+                      {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      }
+                    ]
+                  },
+                  "default": []
+                },
+                "classical_reference_available": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "simulator_requirements": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "default": []
+                },
+                "frameworks": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "default": []
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "id",
+            "slug",
+            "name",
+            "domain",
+            "kind",
+            "description",
+            "is_demo",
+            "created_at",
+            "updated_at",
+            "algorithm"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

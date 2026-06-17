@@ -1,0 +1,28 @@
+schema_version: "0.1"
+domain: ALGORITHM
+benchmark:
+  suite: grover-search-local
+  version: "0.1.0"
+experiment:
+  name: grover-search-baseline
+  description: Local simulation of Grover search
+source:
+  repository_url: https://github.com/example/repository
+algorithm:
+  family: grover-search
+  problem:
+    type: marked-state-search
+    qubit_counts: [2, 3]
+    marked_state: all-ones
+  execution:
+    engine: ketqat-runner
+    method: shot-based
+sampling:
+  shots: 256
+  seed: 42
+metrics:
+  - success_probability
+  - circuit_depth
+  - gate_count
+  - two_qubit_gate_count
+  - runtime_seconds
