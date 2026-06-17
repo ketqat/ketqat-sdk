@@ -1,0 +1,204 @@
+{
+  "$ref": "#/definitions/algorithm-benchmark-result",
+  "definitions": {
+    "algorithm-benchmark-result": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "domain": {
+          "type": "string",
+          "const": "ALGORITHM"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "COMPLETED",
+            "FAILED",
+            "RUNNING"
+          ]
+        },
+        "artifact_slug": {
+          "type": "string"
+        },
+        "benchmark_suite": {
+          "type": "string",
+          "minLength": 1
+        },
+        "benchmark_suite_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sdk_version": {
+          "type": "string"
+        },
+        "commit_sha": {
+          "type": "string"
+        },
+        "source_repository_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "configuration": {
+          "type": "object",
+          "additionalProperties": {},
+          "default": {}
+        },
+        "environment": {
+          "type": "object",
+          "properties": {
+            "operating_system": {
+              "type": "string"
+            },
+            "architecture": {
+              "type": "string"
+            },
+            "python_version": {
+              "type": "string"
+            },
+            "node_version": {
+              "type": "string"
+            },
+            "packages": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "default": {}
+            },
+            "hardware": {
+              "type": "object",
+              "additionalProperties": {},
+              "default": {}
+            }
+          },
+          "additionalProperties": false,
+          "default": {
+            "packages": {},
+            "hardware": {}
+          }
+        },
+        "summary_metrics": {
+          "type": "object",
+          "additionalProperties": {},
+          "default": {}
+        },
+        "reproducibility_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished_at": {},
+        "is_demo": {
+          "type": "boolean",
+          "default": false
+        },
+        "created_at": {},
+        "updated_at": {},
+        "metric_points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "metric": {
+                "type": "string",
+                "minLength": 1
+              },
+              "shots": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "runtime_seconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "memory_bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "seed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "metadata": {
+                "type": "object",
+                "additionalProperties": {},
+                "default": {}
+              },
+              "qubit_count": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "circuit_depth": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "gate_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "two_qubit_gate_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "success_probability": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "fidelity": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "objective_value": {
+                "type": "number"
+              },
+              "energy_error": {
+                "type": "number"
+              },
+              "approximation_ratio": {
+                "type": "number"
+              },
+              "simulation_runtime_seconds": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "metric"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        }
+      },
+      "required": [
+        "name",
+        "domain",
+        "status",
+        "benchmark_suite",
+        "benchmark_suite_version",
+        "schema_version",
+        "reproducibility_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

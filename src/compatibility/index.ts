@@ -60,9 +60,9 @@ export function findComparableMetricCoordinates(left: BenchmarkResult, right: Be
   if (left.domain !== right.domain) {
     return []
   }
-  const rightMetrics = new Set(right.metric_points.map((point) => point.metric))
-  return Array.from(new Set(left.metric_points.map((point) => point.metric))).filter((metric) =>
-    rightMetrics.has(metric),
+  const rightCoordinates = new Set(right.metric_points.map(metricCoordinateKey))
+  return Array.from(new Set(left.metric_points.map(metricCoordinateKey))).filter((coordinate) =>
+    rightCoordinates.has(coordinate),
   )
 }
 
@@ -78,4 +78,18 @@ export function compareExactReproductionConfiguration(
   }
 
   return { compatible: reasons.length === 0, reasons }
+}
+
+function metricCoordinateKey(point: BenchmarkResult["metric_points"][number]): string {
+  if ("code_distance" in point || "physical_error_rate" in point) {
+    return [
+      point.metric,
+      `distance=${point.code_distance ?? "any"}`,
+      `p=${point.physical_error_rate ?? "any"}`,
+    ].join("|")
+  }
+  if ("qubit_count" in point) {
+    return [point.metric, `qubits=${point.qubit_count ?? "any"}`].join("|")
+  }
+  return point.metric
 }

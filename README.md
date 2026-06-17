@@ -99,16 +99,22 @@ pip install "ketqat-runner[algorithms]"
 pip install "ketqat-runner[all]"
 ```
 
+Normal QEC execution requires NumPy, Stim, and PyMatching. If those packages are missing, the runner exits non-zero and does not write a successful result file. There is no automatic synthetic fallback.
+
 The MVP runner supports small local experiments only:
 
-- QEC: rotated surface-code memory style distance and physical-error-rate sweeps with MWPM-compatible output fields
+- QEC: rotated surface-code memory experiments using real Stim detector sampling and PyMatching decoding
 - Algorithms: Grover search on small marked-state problems using local deterministic shot simulation
+
+QEC coordinate seeds are derived deterministically from the global seed, benchmark-suite version, code distance, and physical error rate. Decoder latency is reported as total batch decode latency in milliseconds, with per-shot latency and component timings in metric metadata.
 
 It does not execute arbitrary user source code and does not submit jobs to QPUs.
 
 ## Reproducibility Hashing
 
 `calculateReproducibilityHash(input)` uses deterministic SHA-256 hashing over canonical JSON. It includes schema version, domain, benchmark identity, configuration, source reference, software versions, and environment information. It excludes run IDs, timestamps, database IDs, submission timestamps, UI metadata, and the stored hash itself.
+
+Cross-language parity fixtures live in `fixtures/reproducibility/` and are tested from both TypeScript and Python.
 
 ## Compatibility
 
@@ -126,11 +132,13 @@ Cross-domain comparison is rejected. Runs are comparable only when benchmark sui
 npm install
 npm run build
 npm test
+python3.11 -m pip install -e "python[qec]" pytest
+python3.11 -m pytest python/tests
 ```
 
 ## Scientific Limitations
 
-Demo data is synthetic and marked with `is_demo: true`. It must not be read as performance evidence, popularity ranking, or scientific verification. Threshold claims require real benchmark methodology and review outside this MVP.
+Demo data is synthetic and marked with `is_demo: true`. It must not be read as performance evidence, popularity ranking, or scientific verification. Real local QEC runs are still small software simulations, not QPU evidence. Threshold claims require real benchmark methodology and review outside this MVP.
 
 ## Security Limitations
 

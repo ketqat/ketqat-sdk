@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  node:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,7 +24,25 @@ jobs:
       - name: Build and test
         run: npm test
 
-      - name: Smoke-test Python runner
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runner with real QEC dependencies
         run: |
-          PYTHONPATH=python/src python3 -m ketqat_runner.cli run examples/algorithms/grover-search.yaml --output /tmp/ketqat-grover-run.json
-          PYTHONPATH=python/src python3 -m ketqat_runner.cli run examples/qec/surface-code-memory.yaml --output /tmp/ketqat-qec-run.json
+          python -m pip install --upgrade pip
+          python -m pip install -e "python[qec]"
+          python -m pip install pytest
+
+      - name: Run Python tests
+        run: pytest python/tests
+
+      - name: Smoke-test real QEC runner
+        run: ketqat run examples/qec/surface-code-memory.yaml --output /tmp/ketqat-qec-run.json

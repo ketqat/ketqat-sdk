@@ -52,6 +52,7 @@
     "clean": "rm -rf dist",
     "generate:schemas": "npm run build",
     "test": "npm run build && node tests/sdk.test.mjs",
+    "test:python": "python3.11 -m pytest python/tests",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
