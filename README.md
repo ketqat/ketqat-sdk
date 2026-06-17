@@ -6,6 +6,15 @@ KetQat SDK is the shared research contract layer for KetQat: an open-source rese
 
 Version `0.2.0` intentionally removes the previous hardware-access catalog API. Marketplace, credential, availability, billing, and commercial execution exports are outside the SDK scope.
 
+## Project context
+
+- Central planning and current context live in [`ketqat/ketqat-planning`](https://github.com/ketqat/ketqat-planning).
+- Organization roadmap status belongs in the KetQat Roadmap Project once project scopes are available.
+- Repository-specific operating rules are in [AGENTS.md](AGENTS.md).
+- SDK bugs and feature requests should be opened as Issues in this repository.
+- Cross-repository proposals, RFCs, ADRs, and initiatives belong in `ketqat-planning`.
+- Substantial pull requests should link an Issue and describe schema, reproducibility, scientific-validity, and security impact.
+
 ## Scope
 
 The SDK owns:
