@@ -124,7 +124,7 @@ Use:
 - `findComparableMetricCoordinates(left, right)`
 - `compareExactReproductionConfiguration(left, right)`
 
-Cross-domain comparison is rejected. Runs are comparable only when benchmark suite, benchmark version, schema version, and required metric coordinates align.
+Cross-domain comparison is rejected. Runs are comparable only when benchmark suite, benchmark version, schema version, and required metric coordinates align. Runs with disjoint coordinate sets, such as different QEC `(metric, code_distance, physical_error_rate)` points or different algorithm qubit counts, are incompatible.
 
 ## Development
 

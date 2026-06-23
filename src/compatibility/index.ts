@@ -21,6 +21,7 @@ export function compareRunCompatibility(
   suites: BenchmarkSuite[] = [],
 ): CompatibilityResult {
   const reasons: IncompatibilityReason[] = []
+  const comparableCoordinates = findComparableMetricCoordinates(left, right)
 
   if (left.domain !== right.domain) {
     reasons.push(reason("DOMAIN_MISMATCH", "Runs from QEC and algorithm domains cannot be compared.", "domain"))
@@ -49,8 +50,24 @@ export function compareRunCompatibility(
     for (const metric of requiredMetrics) {
       if (!leftMetrics.has(metric) || !rightMetrics.has(metric)) {
         reasons.push(reason("METRIC_MISSING", `Required metric '${metric}' is missing from one run.`, "metric_points"))
+        continue
+      }
+      if (!hasComparableMetricCoordinate(comparableCoordinates, metric)) {
+        reasons.push(
+          reason(
+            "METRIC_COORDINATE_MISMATCH",
+            `Required metric '${metric}' has no overlapping comparable coordinates.`,
+            "metric_points",
+          ),
+        )
       }
     }
+  }
+
+  if (!suite && left.metric_points.length > 0 && right.metric_points.length > 0 && comparableCoordinates.length === 0) {
+    reasons.push(
+      reason("NO_COMPARABLE_METRIC_COORDINATES", "Runs do not share any comparable metric coordinates.", "metric_points"),
+    )
   }
 
   return { compatible: reasons.length === 0, reasons }
@@ -92,4 +109,8 @@ function metricCoordinateKey(point: BenchmarkResult["metric_points"][number]): s
     return [point.metric, `qubits=${point.qubit_count ?? "any"}`].join("|")
   }
   return point.metric
+}
+
+function hasComparableMetricCoordinate(coordinates: string[], metric: string): boolean {
+  return coordinates.some((coordinate) => coordinate === metric || coordinate.startsWith(`${metric}|`))
 }

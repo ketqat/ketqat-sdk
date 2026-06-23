@@ -156,3 +156,47 @@ assert.equal(
   compareRunCompatibility(qecResult, { ...qecResult, benchmark_suite_version: "0.2.0" }, demoBenchmarkSuites).compatible,
   false,
 )
+
+const noOverlapWithoutSuite = compareRunCompatibility(
+  qecResult,
+  {
+    ...qecResult,
+    name: "surface-code-memory-disjoint-copy",
+    reproducibility_hash: "different",
+    metric_points: [{ ...qecResult.metric_points[0], physical_error_rate: 0.002 }],
+  },
+)
+assert.equal(noOverlapWithoutSuite.compatible, false)
+assert.deepEqual(noOverlapWithoutSuite.reasons, [
+  {
+    code: "NO_COMPARABLE_METRIC_COORDINATES",
+    message: "Runs do not share any comparable metric coordinates.",
+    path: "metric_points",
+  },
+])
+
+const noOverlapForRequiredQecMetrics = compareRunCompatibility(
+  qecRun,
+  {
+    ...qecRun,
+    name: "surface-code-mwpm-demo-run-distance-5",
+    reproducibility_hash: "different",
+    metric_points: qecRun.metric_points.map((point) =>
+      "code_distance" in point ? { ...point, code_distance: 5 } : point,
+    ),
+  },
+  demoBenchmarkSuites,
+)
+assert.equal(noOverlapForRequiredQecMetrics.compatible, false)
+assert.deepEqual(noOverlapForRequiredQecMetrics.reasons, [
+  {
+    code: "METRIC_COORDINATE_MISMATCH",
+    message: "Required metric 'logical_error_rate' has no overlapping comparable coordinates.",
+    path: "metric_points",
+  },
+  {
+    code: "METRIC_COORDINATE_MISMATCH",
+    message: "Required metric 'decoder_latency_ms' has no overlapping comparable coordinates.",
+    path: "metric_points",
+  },
+])
