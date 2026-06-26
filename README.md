@@ -46,6 +46,7 @@ import {
   BenchmarkResultSchema,
   BenchmarkSuiteSchema,
   ExperimentManifestSchema,
+  VerificationEvidenceSchema,
   calculateReproducibilityHash,
   compareRunCompatibility,
 } from "ketqat-sdk"
@@ -75,6 +76,7 @@ Generated JSON Schemas are committed in `schemas/` for:
 - algorithm experiment manifests
 - QEC benchmark results
 - algorithm benchmark results
+- verification evidence
 
 Regenerate them with:
 
@@ -115,6 +117,8 @@ It does not execute arbitrary user source code and does not submit jobs to QPUs.
 `calculateReproducibilityHash(input)` uses deterministic SHA-256 hashing over canonical JSON. It includes schema version, domain, benchmark identity, configuration, source reference, software versions, and environment information. It excludes run IDs, timestamps, database IDs, submission timestamps, UI metadata, and the stored hash itself.
 
 Cross-language parity fixtures live in `fixtures/reproducibility/` and are tested from both TypeScript and Python.
+
+Verification evidence is modeled as a separate contract. It records schema validation, hash verification, review notes, and reproduction evidence without becoming part of existing benchmark-result hash inputs. Hash verification alone is not accepted as `REPRODUCED`; independent reproduction evidence must include a durable evidence URL, the verified reproducibility hash, and a command or immutable source commit.
 
 ## Compatibility
 
