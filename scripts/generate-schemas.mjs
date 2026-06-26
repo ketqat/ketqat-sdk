@@ -9,6 +9,7 @@ import {
   BenchmarkSuiteSchema,
   QecBenchmarkResultSchema,
   QecExperimentManifestSchema,
+  VerificationEvidenceSchema,
 } from "../dist/index.js"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
@@ -22,6 +23,7 @@ const schemas = {
   "algorithm-experiment-manifest.schema.json": AlgorithmExperimentManifestSchema,
   "qec-benchmark-result.schema.json": QecBenchmarkResultSchema,
   "algorithm-benchmark-result.schema.json": AlgorithmBenchmarkResultSchema,
+  "verification-evidence.schema.json": VerificationEvidenceSchema,
 }
 
 for (const [filename, schema] of Object.entries(schemas)) {

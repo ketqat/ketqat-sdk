@@ -6,6 +6,7 @@ import {
   ArtifactSchema,
   QecExperimentManifestSchema,
   QecBenchmarkResultSchema,
+  VerificationEvidenceSchema,
   calculateReproducibilityHash,
   compareRunCompatibility,
   demoArtifacts,
@@ -137,6 +138,88 @@ assert.notEqual(calculateReproducibilityHash({ ...qecResult, benchmark_suite_ver
 assert.notEqual(calculateReproducibilityHash({ ...qecResult, sdk_version: "0.2.1" }), expectedHashes.qec_result)
 
 QecBenchmarkResultSchema.parse({ ...qecResult, reproducibility_hash: expectedHashes.qec_result })
+
+VerificationEvidenceSchema.parse({
+  schema_version: "0.1",
+  subject: {
+    type: "BENCHMARK_RUN",
+    slug: "surface-code-memory-parity",
+  },
+  status: "VALIDATED_SCHEMA",
+  evidence_kind: "HASH_VERIFICATION",
+  summary: "The imported run payload matched its recalculated reproducibility hash.",
+  reproducibility_hash: expectedHashes.qec_result,
+  checked_at: "2026-06-26T10:00:00.000Z",
+})
+
+VerificationEvidenceSchema.parse({
+  schema_version: "0.1",
+  subject: {
+    type: "BENCHMARK_RUN",
+    slug: "surface-code-memory-parity",
+  },
+  status: "REPRODUCED",
+  evidence_kind: "INDEPENDENT_REPRODUCTION",
+  summary: "A reviewer reran the recorded manifest and matched the stored result hash.",
+  evidence_url: "https://github.com/ketqat/ketqat-sdk/actions/runs/123",
+  reproducibility_hash: expectedHashes.qec_result,
+  source: {
+    repository_url: "https://github.com/ketqat/ketqat-sdk",
+    commit_sha: "df986b2afc8ee31e564d9efc6df08c119c172bf4",
+    command: "ketqat run examples/qec/surface-code-memory.yaml --output run.json",
+    runner: "ketqat-runner",
+  },
+  environment: {
+    python_version: "3.11",
+    packages: {
+      stim: "1.15.0",
+      pymatching: "2.3.0",
+      numpy: "2.0.0",
+    },
+    hardware: {},
+  },
+  checked_at: "2026-06-26T10:00:00.000Z",
+})
+
+assert.throws(() =>
+  VerificationEvidenceSchema.parse({
+    schema_version: "0.1",
+    subject: {
+      type: "BENCHMARK_RUN",
+      slug: "surface-code-memory-parity",
+    },
+    status: "REPRODUCED",
+    evidence_kind: "HASH_VERIFICATION",
+    summary: "Hash matched.",
+    evidence_url: "https://github.com/ketqat/ketqat-sdk/actions/runs/123",
+    reproducibility_hash: expectedHashes.qec_result,
+    source: {
+      command: "ketqat run examples/qec/surface-code-memory.yaml --output run.json",
+    },
+    checked_at: "2026-06-26T10:00:00.000Z",
+  }),
+)
+
+assert.throws(() =>
+  VerificationEvidenceSchema.parse({
+    schema_version: "0.1",
+    subject: {
+      type: "BENCHMARK_RUN",
+      slug: "surface-code-memory-parity",
+    },
+    status: "REPRODUCED",
+    evidence_kind: "DEMO_FIXTURE_REPRODUCTION",
+    summary: "Demo fixture was rerun.",
+    evidence_url: "https://github.com/ketqat/ketqat-sdk/actions/runs/123",
+    reproducibility_hash: expectedHashes.qec_result,
+    source: {
+      command: "npm test",
+    },
+    checked_at: "2026-06-26T10:00:00.000Z",
+  }),
+)
+
+assert.equal(calculateReproducibilityHash(qecResult), expectedHashes.qec_result)
 
 const compatibleCoordinates = findComparableMetricCoordinates(
   qecResult,

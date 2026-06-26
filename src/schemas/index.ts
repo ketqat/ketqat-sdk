@@ -18,3 +18,9 @@ export {
   QecBenchmarkResultSchema,
   AlgorithmBenchmarkResultSchema,
 } from "../contracts/benchmark-result.js"
+export {
+  VerificationEvidenceSchema,
+  VerificationEvidenceKindSchema,
+  VerificationSubjectSchema,
+  VerificationSubjectTypeSchema,
+} from "../contracts/verification-evidence.js"

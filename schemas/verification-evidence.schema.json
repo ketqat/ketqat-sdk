@@ -1,0 +1,158 @@
+{
+  "$ref": "#/definitions/verification-evidence",
+  "definitions": {
+    "verification-evidence": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ARTIFACT",
+                "BENCHMARK_SUITE",
+                "BENCHMARK_RUN"
+              ]
+            },
+            "slug": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "type",
+            "slug"
+          ],
+          "additionalProperties": false
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "UNVERIFIED",
+            "VALIDATED_SCHEMA",
+            "REPRODUCED"
+          ]
+        },
+        "evidence_kind": {
+          "type": "string",
+          "enum": [
+            "SCHEMA_VALIDATION",
+            "HASH_VERIFICATION",
+            "INDEPENDENT_REPRODUCTION",
+            "DEMO_FIXTURE_REPRODUCTION",
+            "REVIEW_NOTE"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "reproducibility_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "repository_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "commit_sha": {
+              "type": "string",
+              "minLength": 1
+            },
+            "command": {
+              "type": "string",
+              "minLength": 1
+            },
+            "manifest_path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "runner": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "environment": {
+          "type": "object",
+          "properties": {
+            "operating_system": {
+              "type": "string"
+            },
+            "architecture": {
+              "type": "string"
+            },
+            "python_version": {
+              "type": "string"
+            },
+            "node_version": {
+              "type": "string"
+            },
+            "packages": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "default": {}
+            },
+            "hardware": {
+              "type": "object",
+              "additionalProperties": {},
+              "default": {}
+            }
+          },
+          "additionalProperties": false
+        },
+        "is_demo_evidence": {
+          "type": "boolean",
+          "default": false
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reviewer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": {},
+          "default": {}
+        }
+      },
+      "required": [
+        "schema_version",
+        "subject",
+        "status",
+        "evidence_kind",
+        "summary",
+        "checked_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
