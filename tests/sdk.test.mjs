@@ -230,6 +230,16 @@ const bundleClient = new KetQatClient({
 })
 assert.equal((await bundleClient.runs.getBundle("surface-code-memory-parity")).reproducibility_hash, expectedHashes.qec_result)
 
+const wrappedBundleClient = new KetQatClient({
+  baseUrl: "https://ketqat.example/",
+  fetch: async () =>
+    new Response(JSON.stringify({ bundle: reproducibilityBundle }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    }),
+})
+assert.equal((await wrappedBundleClient.runs.getBundle("surface-code-memory-parity")).reproducibility_hash, expectedHashes.qec_result)
+
 assert.throws(() =>
   VerificationEvidenceSchema.parse({
     schema_version: "0.1",

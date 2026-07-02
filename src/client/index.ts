@@ -84,7 +84,7 @@ export class KetQatClient {
     },
     getBundle: async (slug: string): Promise<ReproducibilityBundle> => {
       const response = await this.getJson(`/api/runs/${encodeURIComponent(slug)}/bundle`)
-      return ReproducibilityBundleSchema.parse(response)
+      return ReproducibilityBundleSchema.parse(responseObject(response).bundle ?? response)
     },
     downloadBundle: async (slug: string): Promise<Blob> => {
       const response = await this.request(`/api/runs/${encodeURIComponent(slug)}/bundle`)

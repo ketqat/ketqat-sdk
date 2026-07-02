@@ -32,7 +32,10 @@ for (const [filename, schema] of Object.entries(schemas)) {
   const jsonSchema = zodToJsonSchema(schema, {
     name: filename.replace(".schema.json", ""),
     target: "jsonSchema7",
-    $refStrategy: "seen",
+    // "none" fully inlines repeated sub-schemas; "seen" collapsed repeats to {},
+    // which left fields like the bundle-level environment unvalidated by JSON
+    // Schema consumers. No contract is recursive, so full inlining is safe.
+    $refStrategy: "none",
   })
   writeFileSync(resolve(outputDir, filename), `${JSON.stringify(jsonSchema, null, 2)}\n`)
 }
