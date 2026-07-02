@@ -6,7 +6,9 @@ import {
   ArtifactSchema,
   QecExperimentManifestSchema,
   QecBenchmarkResultSchema,
+  ReproducibilityBundleSchema,
   VerificationEvidenceSchema,
+  KetQatClient,
   calculateReproducibilityHash,
   compareRunCompatibility,
   demoArtifacts,
@@ -180,6 +182,53 @@ VerificationEvidenceSchema.parse({
   },
   checked_at: "2026-06-26T10:00:00.000Z",
 })
+
+const reproducibilityBundle = {
+  bundle_version: "0.2",
+  experiment_manifest: qecResult.configuration,
+  benchmark_result: { ...qecResult, reproducibility_hash: expectedHashes.qec_result },
+  benchmark_suite_definition: { metrics: ["logical_error_rate"] },
+  verification_evidence: [{
+    schema_version: "0.1",
+    subject: { type: "BENCHMARK_RUN", slug: "surface-code-memory-parity" },
+    status: "VALIDATED_SCHEMA",
+    evidence_kind: "HASH_VERIFICATION",
+    summary: "The imported run payload matched its recalculated reproducibility hash.",
+    reproducibility_hash: expectedHashes.qec_result,
+    checked_at: "2026-06-26T10:00:00.000Z",
+  }],
+  artifact_metadata: null,
+  environment: qecResult.environment,
+  source_repository: qecResult.source_repository_url ?? "unspecified",
+  commit_sha: qecResult.commit_sha ?? "unspecified",
+  reproducibility_hash: expectedHashes.qec_result,
+  citation: "KetQat reproducibility bundle. Cite the original artifact and benchmark suite where applicable.",
+  reproduction_instructions: {
+    command: "ketqat run experiment.yaml --output run.json",
+    notes: "This bundle records the submitted result and manifest. It is not itself a reproduction record.",
+  },
+}
+
+ReproducibilityBundleSchema.parse(reproducibilityBundle)
+
+assert.throws(() =>
+  ReproducibilityBundleSchema.parse({
+    ...reproducibilityBundle,
+    reproducibility_hash: "different",
+  }),
+)
+
+const bundleClient = new KetQatClient({
+  baseUrl: "https://ketqat.example/",
+  fetch: async (url) => {
+    assert.equal(url, "https://ketqat.example/api/runs/surface-code-memory-parity/bundle")
+    return new Response(JSON.stringify(reproducibilityBundle), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    })
+  },
+})
+assert.equal((await bundleClient.runs.getBundle("surface-code-memory-parity")).reproducibility_hash, expectedHashes.qec_result)
 
 assert.throws(() =>
   VerificationEvidenceSchema.parse({

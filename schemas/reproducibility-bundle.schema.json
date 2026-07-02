@@ -1,0 +1,517 @@
+{
+  "$ref": "#/definitions/reproducibility-bundle",
+  "definitions": {
+    "reproducibility-bundle": {
+      "type": "object",
+      "properties": {
+        "bundle_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "experiment_manifest": {
+          "type": "object",
+          "additionalProperties": {},
+          "default": {}
+        },
+        "benchmark_result": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "slug": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "domain": {
+                  "type": "string",
+                  "const": "QEC"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "COMPLETED",
+                    "FAILED",
+                    "RUNNING"
+                  ]
+                },
+                "artifact_slug": {
+                  "type": "string"
+                },
+                "benchmark_suite": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "benchmark_suite_version": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "schema_version": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "sdk_version": {
+                  "type": "string"
+                },
+                "commit_sha": {
+                  "type": "string"
+                },
+                "source_repository_url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "configuration": {
+                  "type": "object",
+                  "additionalProperties": {},
+                  "default": {}
+                },
+                "environment": {
+                  "type": "object",
+                  "properties": {
+                    "operating_system": {
+                      "type": "string"
+                    },
+                    "architecture": {
+                      "type": "string"
+                    },
+                    "python_version": {
+                      "type": "string"
+                    },
+                    "node_version": {
+                      "type": "string"
+                    },
+                    "packages": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "default": {}
+                    },
+                    "hardware": {
+                      "type": "object",
+                      "additionalProperties": {},
+                      "default": {}
+                    }
+                  },
+                  "additionalProperties": false,
+                  "default": {
+                    "packages": {},
+                    "hardware": {}
+                  }
+                },
+                "summary_metrics": {
+                  "type": "object",
+                  "additionalProperties": {},
+                  "default": {}
+                },
+                "reproducibility_hash": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "started_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "finished_at": {},
+                "is_demo": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "created_at": {},
+                "updated_at": {},
+                "metric_points": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "metric": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "shots": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      "runtime_seconds": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "memory_bytes": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "seed": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "default": {}
+                      },
+                      "code_distance": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      "physical_error_rate": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "logical_failures": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "logical_error_rate": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "standard_error": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "decoder_latency_ms": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "sampling_runtime_seconds": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "metric"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "default": []
+                }
+              },
+              "required": [
+                "name",
+                "domain",
+                "status",
+                "benchmark_suite",
+                "benchmark_suite_version",
+                "schema_version",
+                "reproducibility_hash"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "id": {},
+                "slug": {},
+                "name": {},
+                "domain": {
+                  "type": "string",
+                  "const": "ALGORITHM"
+                },
+                "status": {},
+                "artifact_slug": {},
+                "benchmark_suite": {},
+                "benchmark_suite_version": {},
+                "schema_version": {},
+                "sdk_version": {},
+                "commit_sha": {},
+                "source_repository_url": {},
+                "configuration": {},
+                "environment": {},
+                "summary_metrics": {},
+                "reproducibility_hash": {},
+                "started_at": {},
+                "finished_at": {},
+                "is_demo": {},
+                "created_at": {},
+                "updated_at": {},
+                "metric_points": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "metric": {},
+                      "shots": {},
+                      "runtime_seconds": {},
+                      "memory_bytes": {},
+                      "seed": {},
+                      "metadata": {},
+                      "qubit_count": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      "circuit_depth": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "gate_count": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "two_qubit_gate_count": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "success_probability": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "fidelity": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "objective_value": {
+                        "type": "number"
+                      },
+                      "energy_error": {
+                        "type": "number"
+                      },
+                      "approximation_ratio": {
+                        "type": "number"
+                      },
+                      "simulation_runtime_seconds": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "metric"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "default": []
+                }
+              },
+              "required": [
+                "name",
+                "domain",
+                "status",
+                "benchmark_suite",
+                "benchmark_suite_version",
+                "schema_version",
+                "reproducibility_hash"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "benchmark_suite_definition": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {}
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "verification_evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "schema_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "subject": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "ARTIFACT",
+                      "BENCHMARK_SUITE",
+                      "BENCHMARK_RUN"
+                    ]
+                  },
+                  "slug": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "version": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "type",
+                  "slug"
+                ],
+                "additionalProperties": false
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "UNVERIFIED",
+                  "VALIDATED_SCHEMA",
+                  "REPRODUCED"
+                ]
+              },
+              "evidence_kind": {
+                "type": "string",
+                "enum": [
+                  "SCHEMA_VALIDATION",
+                  "HASH_VERIFICATION",
+                  "INDEPENDENT_REPRODUCTION",
+                  "DEMO_FIXTURE_REPRODUCTION",
+                  "REVIEW_NOTE"
+                ]
+              },
+              "summary": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidence_url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "reproducibility_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source": {
+                "type": "object",
+                "properties": {
+                  "repository_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "commit_sha": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "command": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "manifest_path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "runner": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": false,
+                "default": {}
+              },
+              "environment": {},
+              "is_demo_evidence": {
+                "type": "boolean",
+                "default": false
+              },
+              "checked_at": {},
+              "reviewer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "metadata": {
+                "type": "object",
+                "additionalProperties": {},
+                "default": {}
+              }
+            },
+            "required": [
+              "schema_version",
+              "subject",
+              "status",
+              "evidence_kind",
+              "summary",
+              "checked_at"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "artifact_metadata": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "slug": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "slug"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "environment": {
+          "default": {
+            "packages": {},
+            "hardware": {}
+          }
+        },
+        "source_repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commit_sha": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reproducibility_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "citation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reproduction_instructions": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "minLength": 1
+            },
+            "notes": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "command",
+            "notes"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "bundle_version",
+        "benchmark_result",
+        "benchmark_suite_definition",
+        "source_repository",
+        "commit_sha",
+        "reproducibility_hash",
+        "citation",
+        "reproduction_instructions"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

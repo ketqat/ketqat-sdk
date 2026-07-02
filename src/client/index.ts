@@ -2,10 +2,12 @@ import {
   ArtifactSchema,
   BenchmarkResultSchema,
   BenchmarkSuiteSchema,
+  ReproducibilityBundleSchema,
   type Artifact,
   type ArtifactListQuery,
   type BenchmarkResult,
   type BenchmarkSuite,
+  type ReproducibilityBundle,
 } from "../contracts/index.js"
 
 export interface KetQatClientOptions {
@@ -79,6 +81,10 @@ export class KetQatClient {
     import: async (result: BenchmarkResult): Promise<BenchmarkResult> => {
       const response = await this.postJson("/api/runs/import", result)
       return BenchmarkResultSchema.parse(responseObject(response).run ?? response)
+    },
+    getBundle: async (slug: string): Promise<ReproducibilityBundle> => {
+      const response = await this.getJson(`/api/runs/${encodeURIComponent(slug)}/bundle`)
+      return ReproducibilityBundleSchema.parse(response)
     },
     downloadBundle: async (slug: string): Promise<Blob> => {
       const response = await this.request(`/api/runs/${encodeURIComponent(slug)}/bundle`)

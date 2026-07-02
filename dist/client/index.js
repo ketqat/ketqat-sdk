@@ -1,4 +1,4 @@
-import { ArtifactSchema, BenchmarkResultSchema, BenchmarkSuiteSchema, } from "../contracts/index.js";
+import { ArtifactSchema, BenchmarkResultSchema, BenchmarkSuiteSchema, ReproducibilityBundleSchema, } from "../contracts/index.js";
 function queryString(params) {
     const search = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
@@ -51,6 +51,10 @@ export class KetQatClient {
             import: async (result) => {
                 const response = await this.postJson("/api/runs/import", result);
                 return BenchmarkResultSchema.parse(responseObject(response).run ?? response);
+            },
+            getBundle: async (slug) => {
+                const response = await this.getJson(`/api/runs/${encodeURIComponent(slug)}/bundle`);
+                return ReproducibilityBundleSchema.parse(response);
             },
             downloadBundle: async (slug) => {
                 const response = await this.request(`/api/runs/${encodeURIComponent(slug)}/bundle`);
