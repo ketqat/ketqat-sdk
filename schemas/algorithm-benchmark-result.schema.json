@@ -103,13 +103,22 @@
           "type": "string",
           "format": "date-time"
         },
-        "finished_at": {},
+        "finished_at": {
+          "type": "string",
+          "format": "date-time"
+        },
         "is_demo": {
           "type": "boolean",
           "default": false
         },
-        "created_at": {},
-        "updated_at": {},
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
         "metric_points": {
           "type": "array",
           "items": {

@@ -75,7 +75,10 @@
             "latest_commit_sha": {
               "type": "string"
             },
-            "reference_paper_url": {},
+            "reference_paper_url": {
+              "type": "string",
+              "format": "uri"
+            },
             "citation": {
               "type": "object",
               "properties": {
@@ -99,7 +102,10 @@
                 "doi": {
                   "type": "string"
                 },
-                "url": {},
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
                 "bibtex": {
                   "type": "string"
                 }
@@ -125,7 +131,10 @@
               "type": "string",
               "format": "date-time"
             },
-            "updated_at": {},
+            "updated_at": {
+              "type": "string",
+              "format": "date-time"
+            },
             "qec": {
               "type": "object",
               "properties": {
@@ -188,9 +197,18 @@
         {
           "type": "object",
           "properties": {
-            "id": {},
-            "slug": {},
-            "name": {},
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "slug": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
             "domain": {
               "type": "string",
               "const": "ALGORITHM"
@@ -206,22 +224,107 @@
                 "RESOURCE_ANALYSIS_TOOL"
               ]
             },
-            "description": {},
-            "repository_url": {},
-            "repository_owner": {},
-            "repository_name": {},
-            "default_branch": {},
-            "license": {},
-            "language": {},
-            "tags": {},
-            "authors": {},
-            "latest_commit_sha": {},
-            "reference_paper_url": {},
-            "citation": {},
-            "is_demo": {},
-            "verification_status": {},
-            "created_at": {},
-            "updated_at": {},
+            "description": {
+              "type": "string",
+              "minLength": 1
+            },
+            "repository_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "repository_owner": {
+              "type": "string"
+            },
+            "repository_name": {
+              "type": "string"
+            },
+            "default_branch": {
+              "type": "string",
+              "default": "main"
+            },
+            "license": {
+              "type": "string"
+            },
+            "language": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "authors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "latest_commit_sha": {
+              "type": "string"
+            },
+            "reference_paper_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "citation": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "authors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "default": []
+                },
+                "year": {
+                  "type": "integer",
+                  "minimum": 1900,
+                  "maximum": 2200
+                },
+                "doi": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "bibtex": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "is_demo": {
+              "type": "boolean"
+            },
+            "verification_status": {
+              "type": "string",
+              "enum": [
+                "UNVERIFIED",
+                "VALIDATED_SCHEMA",
+                "REPRODUCED"
+              ],
+              "default": "UNVERIFIED"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updated_at": {
+              "type": "string",
+              "format": "date-time"
+            },
             "algorithm": {
               "type": "object",
               "properties": {

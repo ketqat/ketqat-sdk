@@ -1,4 +1,4 @@
-import { type Artifact, type ArtifactListQuery, type BenchmarkResult, type BenchmarkSuite } from "../contracts/index.js";
+import { type Artifact, type ArtifactListQuery, type BenchmarkResult, type BenchmarkSuite, type ReproducibilityBundle } from "../contracts/index.js";
 export interface KetQatClientOptions {
     baseUrl: string;
     fetch?: typeof fetch;
@@ -26,6 +26,7 @@ export declare class KetQatClient {
         }) => Promise<BenchmarkResult[]>;
         get: (slug: string) => Promise<BenchmarkResult>;
         import: (result: BenchmarkResult) => Promise<BenchmarkResult>;
+        getBundle: (slug: string) => Promise<ReproducibilityBundle>;
         downloadBundle: (slug: string) => Promise<Blob>;
     };
     readonly github: {

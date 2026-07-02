@@ -24,3 +24,6 @@ export {
   VerificationSubjectSchema,
   VerificationSubjectTypeSchema,
 } from "../contracts/verification-evidence.js"
+export {
+  ReproducibilityBundleSchema,
+} from "../contracts/reproducibility-bundle.js"
