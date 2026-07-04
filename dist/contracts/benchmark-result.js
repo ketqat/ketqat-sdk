@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DomainSchema, EnvironmentSchema, IsoDateTimeSchema } from "./common.js";
+import { DomainSchema, EnvironmentSchema, IsoDateTimeSchema, VisibilitySchema } from "./common.js";
 const BaseMetricPointSchema = z.object({
     metric: z.string().min(1),
     shots: z.number().int().positive().optional(),
@@ -49,6 +49,8 @@ const BaseBenchmarkResultSchema = z.object({
     started_at: IsoDateTimeSchema.optional(),
     finished_at: IsoDateTimeSchema.optional(),
     is_demo: z.boolean().default(false),
+    owner_username: z.string().min(1).nullable().optional(),
+    visibility: VisibilitySchema.optional(),
     created_at: IsoDateTimeSchema.optional(),
     updated_at: IsoDateTimeSchema.optional(),
 });

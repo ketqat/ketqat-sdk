@@ -122,6 +122,8 @@ Cross-language parity fixtures live in `fixtures/reproducibility/` and are teste
 
 Verification evidence is modeled as a separate contract. It records schema validation, hash verification, review notes, and reproduction evidence without becoming part of existing benchmark-result hash inputs. Hash verification alone is not accepted as `REPRODUCED`; independent reproduction evidence must include a durable evidence URL, the verified reproducibility hash, and a command or immutable source commit.
 
+Registry records may include `owner_username` and `visibility` when returned by the multi-user Web platform. These fields are access-control and attribution metadata. They are intentionally accepted by artifact, benchmark-suite, and benchmark-result contracts, but they are excluded from reproducibility hash inputs.
+
 `ReproducibilityBundleSchema` validates the JSON returned by the Web run bundle endpoint. A bundle carries the stored benchmark result, benchmark-suite definition, environment, benchmark-run verification evidence, citation, and reproduction instructions. The bundle `experiment_manifest` field is the stored run configuration exactly as submitted; it is intentionally an open record and is not required to satisfy `ExperimentManifestSchema`, because imported runs persist arbitrary configuration snapshots. The bundle-level `reproducibility_hash` must match the enclosed benchmark result hash, but bundle verification evidence remains outside benchmark-result hash inputs.
 
 Typed clients can parse bundles directly:

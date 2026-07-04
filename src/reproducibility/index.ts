@@ -13,6 +13,8 @@ const excludedKeys = new Set([
   "submitted_at",
   "ui_metadata",
   "reproducibility_hash",
+  "owner_username",
+  "visibility",
 ])
 
 function canonicalize(value: unknown): unknown {

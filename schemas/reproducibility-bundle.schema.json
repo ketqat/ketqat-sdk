@@ -125,6 +125,24 @@
                   "type": "boolean",
                   "default": false
                 },
+                "owner_username": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "visibility": {
+                  "type": "string",
+                  "enum": [
+                    "PUBLIC",
+                    "PRIVATE"
+                  ]
+                },
                 "created_at": {
                   "type": "string",
                   "format": "date-time"
@@ -322,6 +340,24 @@
                 "is_demo": {
                   "type": "boolean",
                   "default": false
+                },
+                "owner_username": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "visibility": {
+                  "type": "string",
+                  "enum": [
+                    "PUBLIC",
+                    "PRIVATE"
+                  ]
                 },
                 "created_at": {
                   "type": "string",

@@ -5,6 +5,8 @@ export declare const ArtifactKindSchema: z.ZodEnum<["QEC_DECODER", "QEC_CODE", "
 export type ArtifactKind = z.infer<typeof ArtifactKindSchema>;
 export declare const VerificationStatusSchema: z.ZodEnum<["UNVERIFIED", "VALIDATED_SCHEMA", "REPRODUCED"]>;
 export type VerificationStatus = z.infer<typeof VerificationStatusSchema>;
+export declare const VisibilitySchema: z.ZodEnum<["PUBLIC", "PRIVATE"]>;
+export type Visibility = z.infer<typeof VisibilitySchema>;
 export declare const UrlSchema: z.ZodString;
 export declare const IsoDateTimeSchema: z.ZodString;
 export declare const CitationSchema: z.ZodObject<{

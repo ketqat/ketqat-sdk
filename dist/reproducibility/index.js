@@ -9,6 +9,8 @@ const excludedKeys = new Set([
     "submitted_at",
     "ui_metadata",
     "reproducibility_hash",
+    "owner_username",
+    "visibility",
 ]);
 function canonicalize(value) {
     if (Array.isArray(value)) {

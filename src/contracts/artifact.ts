@@ -6,6 +6,7 @@ import {
   IsoDateTimeSchema,
   UrlSchema,
   VerificationStatusSchema,
+  VisibilitySchema,
 } from "./common.js"
 
 const BaseArtifactSchema = z.object({
@@ -28,6 +29,8 @@ const BaseArtifactSchema = z.object({
   citation: CitationSchema.optional(),
   is_demo: z.boolean(),
   verification_status: VerificationStatusSchema.default("UNVERIFIED"),
+  owner_username: z.string().min(1).nullable().optional(),
+  visibility: VisibilitySchema.optional(),
   created_at: IsoDateTimeSchema,
   updated_at: IsoDateTimeSchema,
 })

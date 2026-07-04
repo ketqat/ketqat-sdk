@@ -90,6 +90,8 @@ export declare const QecArtifactSchema: z.ZodObject<{
     }>>;
     is_demo: z.ZodBoolean;
     verification_status: z.ZodDefault<z.ZodEnum<["UNVERIFIED", "VALIDATED_SCHEMA", "REPRODUCED"]>>;
+    owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
 } & {
@@ -158,6 +160,8 @@ export declare const QecArtifactSchema: z.ZodObject<{
         url?: string | undefined;
         bibtex?: string | undefined;
     } | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
 }, {
     name: string;
     description: string;
@@ -196,6 +200,8 @@ export declare const QecArtifactSchema: z.ZodObject<{
         bibtex?: string | undefined;
     } | undefined;
     verification_status?: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED" | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
 }>;
 export type QecArtifact = z.infer<typeof QecArtifactSchema>;
 export declare const AlgorithmArtifactSchema: z.ZodObject<{
@@ -237,6 +243,8 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
     }>>;
     is_demo: z.ZodBoolean;
     verification_status: z.ZodDefault<z.ZodEnum<["UNVERIFIED", "VALIDATED_SCHEMA", "REPRODUCED"]>>;
+    owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
 } & {
@@ -305,6 +313,8 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
         url?: string | undefined;
         bibtex?: string | undefined;
     } | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
 }, {
     name: string;
     description: string;
@@ -343,6 +353,8 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
         bibtex?: string | undefined;
     } | undefined;
     verification_status?: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED" | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
 }>;
 export type AlgorithmArtifact = z.infer<typeof AlgorithmArtifactSchema>;
 export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObject<{
@@ -384,6 +396,8 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
     }>>;
     is_demo: z.ZodBoolean;
     verification_status: z.ZodDefault<z.ZodEnum<["UNVERIFIED", "VALIDATED_SCHEMA", "REPRODUCED"]>>;
+    owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
 } & {
@@ -452,6 +466,8 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         url?: string | undefined;
         bibtex?: string | undefined;
     } | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
 }, {
     name: string;
     description: string;
@@ -490,6 +506,8 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         bibtex?: string | undefined;
     } | undefined;
     verification_status?: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED" | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
 }>, z.ZodObject<{
     id: z.ZodString;
     slug: z.ZodString;
@@ -529,6 +547,8 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
     }>>;
     is_demo: z.ZodBoolean;
     verification_status: z.ZodDefault<z.ZodEnum<["UNVERIFIED", "VALIDATED_SCHEMA", "REPRODUCED"]>>;
+    owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
 } & {
@@ -597,6 +617,8 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         url?: string | undefined;
         bibtex?: string | undefined;
     } | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
 }, {
     name: string;
     description: string;
@@ -635,6 +657,8 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         bibtex?: string | undefined;
     } | undefined;
     verification_status?: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED" | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
 }>]>;
 export type Artifact = z.infer<typeof ArtifactSchema>;
 export declare const ArtifactListQuerySchema: z.ZodObject<{
