@@ -3,6 +3,7 @@ import fs from "node:fs"
 import {
   AlgorithmExperimentManifestSchema,
   BenchmarkResultSchema,
+  BenchmarkSuiteSchema,
   ArtifactSchema,
   QecExperimentManifestSchema,
   QecBenchmarkResultSchema,
@@ -22,6 +23,12 @@ const fixture = (name) => JSON.parse(fs.readFileSync(new URL(`../fixtures/reprod
 for (const artifact of demoArtifacts) {
   assert.equal(ArtifactSchema.parse(artifact).is_demo, true)
 }
+
+ArtifactSchema.parse({
+  ...demoArtifacts[0],
+  owner_username: "alice",
+  visibility: "PRIVATE",
+})
 
 QecExperimentManifestSchema.parse({
   schema_version: "0.1",
@@ -87,7 +94,10 @@ assert.ok(qecRun)
 assert.ok(algorithmRun)
 BenchmarkResultSchema.parse(qecRun)
 BenchmarkResultSchema.parse(algorithmRun)
+BenchmarkResultSchema.parse({ ...qecRun, owner_username: "alice", visibility: "PUBLIC" })
+demoBenchmarkSuites[0] && BenchmarkSuiteSchema.parse({ ...demoBenchmarkSuites[0], owner_username: null, visibility: "PUBLIC" })
 assert.equal(calculateReproducibilityHash(qecRun), qecRun.reproducibility_hash)
+assert.equal(calculateReproducibilityHash({ ...qecRun, owner_username: "alice", visibility: "PRIVATE" }), qecRun.reproducibility_hash)
 assert.equal(compareRunCompatibility(qecRun, algorithmRun, demoBenchmarkSuites).compatible, false)
 assert.deepEqual(findComparableMetricCoordinates(qecRun, algorithmRun), [])
 assert.equal(compareRunCompatibility(qecRun, { ...qecRun, name: "copy" }, demoBenchmarkSuites).compatible, true)

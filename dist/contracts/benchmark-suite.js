@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DomainSchema, IsoDateTimeSchema, MetricDefinitionSchema, UrlSchema } from "./common.js";
+import { DomainSchema, IsoDateTimeSchema, MetricDefinitionSchema, UrlSchema, VisibilitySchema } from "./common.js";
 const BaseBenchmarkSuiteSchema = z.object({
     id: z.string().min(1),
     slug: z.string().min(1),
@@ -13,6 +13,8 @@ const BaseBenchmarkSuiteSchema = z.object({
     default_configuration: z.record(z.unknown()).default({}),
     repository_url: UrlSchema.optional(),
     is_demo: z.boolean(),
+    owner_username: z.string().min(1).nullable().optional(),
+    visibility: VisibilitySchema.optional(),
     created_at: IsoDateTimeSchema,
     updated_at: IsoDateTimeSchema,
 });

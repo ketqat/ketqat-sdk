@@ -17,6 +17,7 @@ export const VerificationStatusSchema = z.enum([
     "VALIDATED_SCHEMA",
     "REPRODUCED",
 ]);
+export const VisibilitySchema = z.enum(["PUBLIC", "PRIVATE"]);
 export const UrlSchema = z.string().url();
 export const IsoDateTimeSchema = z.string().datetime({ offset: true });
 export const CitationSchema = z.object({

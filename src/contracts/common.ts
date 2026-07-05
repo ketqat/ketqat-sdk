@@ -24,6 +24,9 @@ export const VerificationStatusSchema = z.enum([
 ])
 export type VerificationStatus = z.infer<typeof VerificationStatusSchema>
 
+export const VisibilitySchema = z.enum(["PUBLIC", "PRIVATE"])
+export type Visibility = z.infer<typeof VisibilitySchema>
+
 export const UrlSchema = z.string().url()
 export const IsoDateTimeSchema = z.string().datetime({ offset: true })
 

@@ -42,6 +42,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         started_at: z.ZodOptional<z.ZodString>;
         finished_at: z.ZodOptional<z.ZodString>;
         is_demo: z.ZodDefault<z.ZodBoolean>;
+        owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
         created_at: z.ZodOptional<z.ZodString>;
         updated_at: z.ZodOptional<z.ZodString>;
     } & {
@@ -126,6 +128,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         }[];
         id?: string | undefined;
         slug?: string | undefined;
+        owner_username?: string | null | undefined;
+        visibility?: "PUBLIC" | "PRIVATE" | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
         commit_sha?: string | undefined;
@@ -145,6 +149,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         id?: string | undefined;
         slug?: string | undefined;
         is_demo?: boolean | undefined;
+        owner_username?: string | null | undefined;
+        visibility?: "PUBLIC" | "PRIVATE" | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
         commit_sha?: string | undefined;
@@ -218,6 +224,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         started_at: z.ZodOptional<z.ZodString>;
         finished_at: z.ZodOptional<z.ZodString>;
         is_demo: z.ZodDefault<z.ZodBoolean>;
+        owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
         created_at: z.ZodOptional<z.ZodString>;
         updated_at: z.ZodOptional<z.ZodString>;
     } & {
@@ -314,6 +322,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         }[];
         id?: string | undefined;
         slug?: string | undefined;
+        owner_username?: string | null | undefined;
+        visibility?: "PUBLIC" | "PRIVATE" | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
         commit_sha?: string | undefined;
@@ -333,6 +343,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         id?: string | undefined;
         slug?: string | undefined;
         is_demo?: boolean | undefined;
+        owner_username?: string | null | undefined;
+        visibility?: "PUBLIC" | "PRIVATE" | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
         commit_sha?: string | undefined;
@@ -659,6 +671,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         }[];
         id?: string | undefined;
         slug?: string | undefined;
+        owner_username?: string | null | undefined;
+        visibility?: "PUBLIC" | "PRIVATE" | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
         commit_sha?: string | undefined;
@@ -706,6 +720,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         }[];
         id?: string | undefined;
         slug?: string | undefined;
+        owner_username?: string | null | undefined;
+        visibility?: "PUBLIC" | "PRIVATE" | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
         commit_sha?: string | undefined;
@@ -773,6 +789,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         id?: string | undefined;
         slug?: string | undefined;
         is_demo?: boolean | undefined;
+        owner_username?: string | null | undefined;
+        visibility?: "PUBLIC" | "PRIVATE" | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
         commit_sha?: string | undefined;
@@ -817,6 +835,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         id?: string | undefined;
         slug?: string | undefined;
         is_demo?: boolean | undefined;
+        owner_username?: string | null | undefined;
+        visibility?: "PUBLIC" | "PRIVATE" | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
         commit_sha?: string | undefined;
@@ -955,6 +975,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         }[];
         id?: string | undefined;
         slug?: string | undefined;
+        owner_username?: string | null | undefined;
+        visibility?: "PUBLIC" | "PRIVATE" | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
         commit_sha?: string | undefined;
@@ -1002,6 +1024,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         }[];
         id?: string | undefined;
         slug?: string | undefined;
+        owner_username?: string | null | undefined;
+        visibility?: "PUBLIC" | "PRIVATE" | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
         commit_sha?: string | undefined;
@@ -1069,6 +1093,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         id?: string | undefined;
         slug?: string | undefined;
         is_demo?: boolean | undefined;
+        owner_username?: string | null | undefined;
+        visibility?: "PUBLIC" | "PRIVATE" | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
         commit_sha?: string | undefined;
@@ -1113,6 +1139,8 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         id?: string | undefined;
         slug?: string | undefined;
         is_demo?: boolean | undefined;
+        owner_username?: string | null | undefined;
+        visibility?: "PUBLIC" | "PRIVATE" | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
         commit_sha?: string | undefined;

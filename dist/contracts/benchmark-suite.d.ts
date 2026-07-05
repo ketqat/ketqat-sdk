@@ -75,6 +75,8 @@ export declare const QecBenchmarkSuiteSchema: z.ZodObject<{
     default_configuration: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     repository_url: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodBoolean;
+    owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
 } & {
@@ -129,6 +131,8 @@ export declare const QecBenchmarkSuiteSchema: z.ZodObject<{
         logical_failure_definition: string;
     };
     repository_url?: string | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
 }, {
     name: string;
     description: string;
@@ -156,6 +160,8 @@ export declare const QecBenchmarkSuiteSchema: z.ZodObject<{
         logical_failure_definition: string;
     };
     repository_url?: string | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
     default_configuration?: Record<string, unknown> | undefined;
 }>;
 export type QecBenchmarkSuite = z.infer<typeof QecBenchmarkSuiteSchema>;
@@ -186,6 +192,8 @@ export declare const AlgorithmBenchmarkSuiteSchema: z.ZodObject<{
     default_configuration: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     repository_url: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodBoolean;
+    owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
 } & {
@@ -244,6 +252,8 @@ export declare const AlgorithmBenchmarkSuiteSchema: z.ZodObject<{
         success_criterion: string;
     };
     repository_url?: string | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
 }, {
     name: string;
     description: string;
@@ -272,6 +282,8 @@ export declare const AlgorithmBenchmarkSuiteSchema: z.ZodObject<{
         success_criterion: string;
     };
     repository_url?: string | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
     default_configuration?: Record<string, unknown> | undefined;
 }>;
 export type AlgorithmBenchmarkSuite = z.infer<typeof AlgorithmBenchmarkSuiteSchema>;
@@ -302,6 +314,8 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
     default_configuration: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     repository_url: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodBoolean;
+    owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
 } & {
@@ -356,6 +370,8 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
         logical_failure_definition: string;
     };
     repository_url?: string | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
 }, {
     name: string;
     description: string;
@@ -383,6 +399,8 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
         logical_failure_definition: string;
     };
     repository_url?: string | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
     default_configuration?: Record<string, unknown> | undefined;
 }>, z.ZodObject<{
     id: z.ZodString;
@@ -411,6 +429,8 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
     default_configuration: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     repository_url: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodBoolean;
+    owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
 } & {
@@ -469,6 +489,8 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
         success_criterion: string;
     };
     repository_url?: string | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
 }, {
     name: string;
     description: string;
@@ -497,6 +519,8 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
         success_criterion: string;
     };
     repository_url?: string | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PUBLIC" | "PRIVATE" | undefined;
     default_configuration?: Record<string, unknown> | undefined;
 }>]>;
 export type BenchmarkSuite = z.infer<typeof BenchmarkSuiteSchema>;
