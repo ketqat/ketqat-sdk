@@ -48,8 +48,9 @@ export class KetQatClient {
                 const response = await this.getJson(`/api/runs/${encodeURIComponent(slug)}`);
                 return BenchmarkResultSchema.parse(responseObject(response).run ?? response);
             },
-            import: async (result) => {
-                const response = await this.postJson("/api/runs/import", result);
+            import: async (result, options = {}) => {
+                const body = options.visibility ? { result, visibility: options.visibility } : result;
+                const response = await this.postJson("/api/runs/import", body);
                 return BenchmarkResultSchema.parse(responseObject(response).run ?? response);
             },
             getBundle: async (slug) => {
