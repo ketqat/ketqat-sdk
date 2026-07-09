@@ -1,8 +1,11 @@
 [project]
-name = "ketqat-runner"
+name = "ketqat"
 version = "0.2.0"
-description = "Local benchmark runner for KetQat QEC and quantum-algorithm experiments."
+description = "Local benchmark runner for KetQat QEC and quantum-algorithm experiments. Run 'ketqat run <manifest>' to reproduce or submit results to ketqat.com."
+readme = "README.md"
+license = "Apache-2.0"
 requires-python = ">=3.10"
+urls = { Homepage = "https://ketqat.com", Repository = "https://github.com/ketqat/ketqat-sdk", Issues = "https://github.com/ketqat/ketqat-sdk/issues" }
 dependencies = [
   "PyYAML>=6.0",
   "pydantic>=2.7",

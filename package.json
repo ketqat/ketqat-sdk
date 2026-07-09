@@ -1,12 +1,24 @@
 {
   "name": "ketqat-sdk",
   "version": "0.2.0",
-  "description": "Contracts, schemas, reproducibility hashing, and client utilities for QEC and quantum-algorithm research artifacts.",
+  "description": "Typed contracts, schemas, reproducibility hashing, and a REST client for KetQat -- the vendor-neutral registry for reproducible quantum error-correction and quantum-algorithm research.",
+  "keywords": [
+    "quantum-computing",
+    "quantum-error-correction",
+    "qec",
+    "reproducibility",
+    "benchmarking",
+    "stim",
+    "pymatching",
+    "ketqat"
+  ],
+  "homepage": "https://ketqat.com",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/ketqat/ketqat-sdk.git"
   },
+  "bugs": "https://github.com/ketqat/ketqat-sdk/issues",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
