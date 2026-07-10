@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose a new capability for the SDK or local runner
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Proposals that change research contracts, hashing behavior, or comparison semantics get extra scrutiny -- describing the scientific motivation up front helps a lot. Larger cross-repository proposals belong in [ketqat-planning](https://github.com/ketqat/ketqat-planning).
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Who needs this, and what can't they do today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What should the SDK/runner do? Include example manifests, API shapes, or CLI invocations if relevant.
+    validations:
+      required: true
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Does this change existing contracts, hashes, or comparison rules?
+      description: Changes to reproducibility hashing or compatibility semantics affect every published run and need versioning discussion.
+      options:
+        - "No -- purely additive"
+        - "Yes -- changes existing behavior"
+        - "Not sure"
+    validations:
+      required: true
