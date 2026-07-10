@@ -38,3 +38,19 @@ def test_volatile_fields_are_excluded_but_scientific_fields_are_not() -> None:
         "metric_points": [{**result["metric_points"][0], "code_distance": 5}],
     }
     assert calculate_reproducibility_hash(scientific_changed) != expected["qec_result"]
+
+
+def test_float_formatting_matches_javascript_across_notation_boundaries() -> None:
+    # Regression: Python's repr()/json.dumps() and JavaScript's Number.toString()
+    # disagree on scientific-notation thresholds (Python switches below 1e-4, JS
+    # below 1e-6) and on whole-number floats (Python keeps "3.0", JS renders "3").
+    # A prior version of this module used Python's native float formatting
+    # directly, which produced a different reproducibility hash than the
+    # TypeScript SDK for the exact same data -- this fixture pins values at
+    # those boundaries (a whole-number float, a small float below Python's
+    # notation threshold but above JS's, a small float below both thresholds,
+    # and negative zero) against a hash computed by the TypeScript reference
+    # implementation.
+    expected = _fixture("expected-hashes.json")
+    result = _fixture("qec-result-float-edge-cases.json")
+    assert calculate_reproducibility_hash(result) == expected["qec_result_float_edge_cases"]

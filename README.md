@@ -95,12 +95,12 @@ ketqat run examples/algorithms/grover-search.yaml --output output/run.json
 ketqat run examples/qec/surface-code-memory.yaml --output output/run.json
 ```
 
-Optional dependency groups:
+Install from PyPI (distribution name `ketqat`, importable as `ketqat_runner`):
 
 ```bash
-pip install "ketqat-runner[qec]"
-pip install "ketqat-runner[algorithms]"
-pip install "ketqat-runner[all]"
+pip install "ketqat[qec]"
+pip install "ketqat[algorithms]"
+pip install "ketqat[all]"
 ```
 
 Normal QEC execution requires NumPy, Stim, and PyMatching. If those packages are missing, the runner exits non-zero and does not write a successful result file. There is no automatic synthetic fallback.
