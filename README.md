@@ -1,23 +1,44 @@
-# ketqat-sdk
+# KetQat SDK
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![CI](https://github.com/ketqat/ketqat-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/ketqat/ketqat-sdk/actions)
 
-KetQat SDK is the shared research contract layer for KetQat: an open-source research infrastructure for reproducible quantum error-correction and quantum-algorithm experiments.
+**[KetQat](https://ketqat.com) is an open, vendor-neutral registry for reproducible quantum error-correction and quantum-algorithm research** -- run a real benchmark locally, publish the result with a server-verified reproducibility hash, and see it compared apples-to-apples on the [decoder leaderboard](https://ketqat.com/leaderboard).
 
-Version `0.2.0` intentionally removes the previous hardware-access catalog API. Marketplace, credential, availability, billing, and commercial execution exports are outside the SDK scope.
+This repository contains everything you need to participate:
 
-## Project context
+- **`ketqat` (Python)** -- the local runner: executes benchmark manifests against real dependencies (Stim + PyMatching for QEC) and produces results with canonical reproducibility hashes. A PyPI release is being prepared; install from source today (below).
+- **`ketqat-sdk` (TypeScript)** -- the contract layer: typed schemas, validators, hashing, scientific-compatibility helpers, and a REST client for [ketqat.com](https://ketqat.com). An npm release is being prepared alongside.
 
-- Central planning and current context live in [`ketqat/ketqat-planning`](https://github.com/ketqat/ketqat-planning).
-- Organization roadmap status belongs in the KetQat Roadmap Project once project scopes are available.
-- Repository-specific operating rules are in [AGENTS.md](AGENTS.md).
-- SDK bugs and feature requests should be opened as Issues in this repository.
-- Cross-repository proposals, RFCs, ADRs, and initiatives belong in `ketqat-planning`.
-- Substantial pull requests should link an Issue and describe schema, reproducibility, scientific-validity, and security impact.
+## Run your first benchmark in 10 minutes
 
-## Scope
+```bash
+# 1. Install the runner with real QEC dependencies (Python 3.10+)
+git clone https://github.com/ketqat/ketqat-sdk
+cd ketqat-sdk
+pip install -e "python[qec]"
 
-The SDK owns:
+# 2. Run a real surface-code memory experiment (Stim sampling + MWPM decoding)
+ketqat run examples/qec/surface-code-memory.yaml --output run.json
+
+# 3. Publish it (create a token at https://ketqat.com/settings after signing in)
+export KETQAT_API_TOKEN="kq_..."
+curl -X POST https://ketqat.com/api/runs/import \
+  -H "Authorization: Bearer $KETQAT_API_TOKEN" \
+  -H "content-type: application/json" \
+  -d @run.json
+```
+
+The server independently recalculates the reproducibility hash and rejects the import if it doesn't match -- a published run can't silently drift from what you actually ran. Your run appears on your [dashboard](https://ketqat.com/dashboard), gets its own page with a downloadable reproducibility bundle, and -- if it targets a standard QEC suite -- lands on the [leaderboard](https://ketqat.com/leaderboard) next to every other run on the exact same suite and version.
+
+Full walkthrough: [ketqat.com/docs/quickstart](https://ketqat.com/docs/quickstart)
+
+## Reproducing someone else's result
+
+Every run page on ketqat.com has a downloadable bundle with the exact manifest, environment, and hash used. Reproducing is the same one-line `ketqat run` command -- no special tooling.
+
+## What this SDK owns
+
 
 - QEC and quantum-algorithm artifact contracts
 - Experiment manifests and benchmark-result contracts
@@ -144,6 +165,13 @@ Use:
 - `compareExactReproductionConfiguration(left, right)`
 
 Cross-domain comparison is rejected. Runs are comparable only when benchmark suite, benchmark version, schema version, and required metric coordinates align. Runs with disjoint coordinate sets, such as different QEC `(metric, code_distance, physical_error_rate)` points or different algorithm qubit counts, are incompatible.
+
+## Contributing & project structure
+
+- SDK bugs and feature requests: open an [Issue](https://github.com/ketqat/ketqat-sdk/issues) in this repository. See [CONTRIBUTING.md](CONTRIBUTING.md) and our [Code of Conduct](CODE_OF_CONDUCT.md).
+- Cross-repository proposals, RFCs, and roadmap live in [`ketqat/ketqat-planning`](https://github.com/ketqat/ketqat-planning).
+- The web application (persistence, UI, APIs, authorization, deployment) is a separate repository; this SDK stays framework-independent.
+- Substantial pull requests should link an Issue and describe schema, reproducibility, scientific-validity, and security impact.
 
 ## Development
 
