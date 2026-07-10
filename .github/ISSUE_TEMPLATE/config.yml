@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Platform issues (ketqat.com)
+    url: https://github.com/ketqat/ketqat-planning/issues
+    about: Problems with the website, leaderboard display, accounts, or publishing that aren't SDK/runner bugs.
+  - name: Quickstart guide
+    url: https://ketqat.com/docs/quickstart
+    about: Install, run a benchmark, and publish a verified result in under 10 minutes.

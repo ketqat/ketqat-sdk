@@ -1,0 +1,48 @@
+name: Bug report
+description: Something in the SDK, runner, or hashing behaves incorrectly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Reproducibility issues (hash mismatches, cross-language differences) are especially valuable to us -- please include as much of the exact input as you can.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Python runner (ketqat run)
+        - Reproducibility hashing
+        - TypeScript contracts / validators
+        - REST client
+        - JSON Schemas
+        - Other / not sure
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+      placeholder: |
+        1. Ran `ketqat run examples/qec/surface-code-memory.yaml --output run.json`
+        2. Expected ...
+        3. Got ...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: The smallest manifest, payload, or code snippet that triggers the problem. For hash mismatches, include the exact JSON (redact anything private) and both computed hashes.
+      render: shell
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python/Node version, package versions (stim/pymatching/numpy for QEC issues).
+      placeholder: |
+        macOS 15.1 / Python 3.12.1 / ketqat installed from source @ <commit>
+        stim 1.13.0, pymatching 2.2.0, numpy 1.26.0
+    validations:
+      required: true

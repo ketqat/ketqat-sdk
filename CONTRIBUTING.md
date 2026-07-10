@@ -2,6 +2,8 @@
 
 Thank you for contributing to KetQat SDK, the shared contract layer for reproducible quantum error-correction and quantum-algorithm research.
 
+By participating you agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Project Boundaries
 
 This repository owns public research contracts, validators, generated JSON Schemas, reproducibility hashing, compatibility helpers, demo fixtures, a typed REST client, and the local runner package.
