@@ -17,7 +17,7 @@ from .validation import KetQatValidationError, validate_manifest, validate_resul
 QEC_DEPENDENCY_MESSAGE = """The QEC benchmark requires the `qec` dependency group.
 Install it with:
 
-pip install "ketqat-runner[qec]"
+pip install "ketqat[qec]"
 """
 
 
