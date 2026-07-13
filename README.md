@@ -197,6 +197,8 @@ scripts/release-preflight.sh v0.2.0
 
 It performs read-only duplicate-version checks against npm and PyPI and then validates both release artifacts from clean installs. It never publishes and does not read registry credentials.
 
+Public registry readback, artifact attestation, GitHub Release creation, and partial-release recovery are documented in [`docs/release-recovery.md`](docs/release-recovery.md).
+
 ## Scientific Limitations
 
 Demo data is synthetic and marked with `is_demo: true`. It must not be read as performance evidence, popularity ranking, or scientific verification. Real local QEC runs are still small software simulations, not QPU evidence. Threshold claims require real benchmark methodology and review outside this MVP.
