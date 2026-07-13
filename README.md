@@ -199,6 +199,8 @@ It performs read-only duplicate-version checks against npm and PyPI and then val
 
 Public registry readback, artifact attestation, GitHub Release creation, and partial-release recovery are documented in [`docs/release-recovery.md`](docs/release-recovery.md).
 
+The first public release remains blocked on the human ownership, Trusted Publisher, protected Environment, and approval steps in [`docs/first-release-checklist.md`](docs/first-release-checklist.md). Do not create a release tag until every hard-stop item is signed off.
+
 ## Scientific Limitations
 
 Demo data is synthetic and marked with `is_demo: true`. It must not be read as performance evidence, popularity ranking, or scientific verification. Real local QEC runs are still small software simulations, not QPU evidence. Threshold claims require real benchmark methodology and review outside this MVP.
