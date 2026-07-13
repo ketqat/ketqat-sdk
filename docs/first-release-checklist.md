@@ -17,7 +17,7 @@ The following read-only checks were performed against SDK `main` at `42c062c8839
 | Repository rulesets | One active branch ruleset; no tag ruleset | Release tags are not yet restricted. |
 | Default `GITHUB_TOKEN` workflow permission | Read | The release job requests explicit `contents: write`, `attestations: write`, and `id-token: write`; organization policy must still allow them. |
 
-Re-run these checks immediately before setup. A 404 changing to 200 is a stop condition, not proof that KetQat gained ownership.
+Re-run these checks immediately before setup. A package-level 404 changing to 200 before an approved bootstrap is a stop condition, not proof that KetQat gained ownership. After an approved npm bootstrap, the package-level endpoint is expected to return 200, but the authenticated owner must match the approval and the intended new version endpoint must still return 404.
 
 ## Values that must match exactly
 
@@ -167,7 +167,7 @@ Do not execute these commands while any earlier checkbox is open.
 
 - [ ] Pull the reviewed `main` commit and confirm a clean worktree.
 - [ ] Confirm `package.json`, `python/pyproject.toml`, `ketqat_runner.__version__`, and runner `SDK_VERSION` all equal the intended version.
-- [ ] Recheck both registry APIs and authenticated ownership/publisher pages.
+- [ ] Recheck the exact version endpoints `https://registry.npmjs.org/ketqat-sdk/0.2.0` and `https://pypi.org/pypi/ketqat/0.2.0/json`; both must return 404, while any package/project-level 200 response must match the authenticated ownership decision.
 - [ ] Run `scripts/release-preflight.sh v0.2.0` and retain the non-sensitive output plus commit SHA.
 - [ ] Review `npm pack --dry-run --json --ignore-scripts`, wheel/sdist verification, and all current CI checks.
 - [ ] Confirm release notes state scientific limitations and do not claim registry success before readback.
@@ -188,7 +188,7 @@ Workflow to rerun: use **Re-run failed jobs** on the same tag workflow for a tra
 
 ## Package-name conflict fallback
 
-If either 404 becomes 200 before ownership is proven, stop the release and inspect the authenticated owner. Never depend on, take over, or publish to an unknown project merely because its name matches KetQat.
+If either package/project-level 404 becomes 200 before ownership or an approved bootstrap is proven, stop the release and inspect the authenticated owner. If either exact intended-version endpoint returns 200 at any time, that version is permanently unavailable for this release. Never depend on, take over, or publish to an unknown project merely because its name matches KetQat.
 
 - npm fallback candidate: `@ketqat/sdk`, only after an authorized human proves control of the `@ketqat` npm scope.
 - PyPI fallback candidate: `ketqat-runner`; the import package may remain `ketqat_runner`.
