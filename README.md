@@ -169,6 +169,7 @@ Cross-domain comparison is rejected. Runs are comparable only when benchmark sui
 ## Contributing & project structure
 
 - SDK bugs and feature requests: open an [Issue](https://github.com/ketqat/ketqat-sdk/issues) in this repository. See [CONTRIBUTING.md](CONTRIBUTING.md) and our [Code of Conduct](CODE_OF_CONDUCT.md).
+- OSS maturity work is tracked against the dated [Claude for OSS readiness audit](docs/oss-readiness/claude-for-oss-readiness-audit.md). The audit reports unknown metrics as unknown and does not claim current program eligibility.
 - Cross-repository proposals, RFCs, and roadmap live in [`ketqat/ketqat-planning`](https://github.com/ketqat/ketqat-planning).
 - The web application (persistence, UI, APIs, authorization, deployment) is a separate repository; this SDK stays framework-independent.
 - Substantial pull requests should link an Issue and describe schema, reproducibility, scientific-validity, and security impact.
