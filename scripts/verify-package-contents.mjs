@@ -54,18 +54,18 @@ const requiredFiles = [
 ]
 
 const allowedRootFiles = new Set(["LICENSE", "README.md", "package.json"])
-const allowedPrefixes = ["dist/", "schemas/", "examples/"]
+const isAllowedPackageFile = (path) =>
+  allowedRootFiles.has(path) ||
+  (path.startsWith("dist/") && /(?:\.js|\.js\.map|\.d\.ts|\.d\.ts\.map)$/.test(path)) ||
+  (path.startsWith("schemas/") && path.endsWith(".schema.json")) ||
+  (path.startsWith("examples/") && /\.ya?ml$/.test(path))
 const forbiddenPath =
   /(^|\/)(?:python|tests?|test-results|coverage|\.nyc_output|\.pytest_cache|__pycache__|node_modules|tmp|temp|\.env(?:\..*)?|\.DS_Store|\.idea|\.vscode)(\/|$)|(?:\.py[co]|\.log|\.tmp|\.swp|~)$/i
 
 const missingFiles = requiredFiles.filter((path) => !filePaths.has(path))
 const unexpectedFiles = files
   .map(({ path }) => path)
-  .filter(
-    (path) =>
-      !allowedRootFiles.has(path) &&
-      !allowedPrefixes.some((prefix) => path.startsWith(prefix)),
-  )
+  .filter((path) => !isAllowedPackageFile(path))
 const forbiddenFiles = files
   .map(({ path }) => path)
   .filter((path) => forbiddenPath.test(path))
