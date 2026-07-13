@@ -112,6 +112,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           packages-dir: python/dist
+          attestations: true
 
   verify-and-release:
     needs: [publish-npm, publish-pypi]
@@ -171,4 +172,4 @@ jobs:
             --verify-tag \
             --title "KetQat ${GITHUB_REF_NAME#v}" \
             --generate-notes \
-            --notes "Both npm and PyPI publication were verified by API digest readback and clean registry installs before this release was created. Attached artifacts have GitHub build-provenance attestations; verify them with: gh attestation verify <artifact> --repo ketqat/ketqat-sdk. npm provenance can be checked from an installed package with: npm audit signatures. Recovery policy: https://github.com/ketqat/ketqat-sdk/blob/main/docs/release-recovery.md"
+            --notes "Both npm and PyPI publication were verified by API digest readback, PyPI Integrity API publish attestations, and clean registry installs before this release was created. Attached artifacts have GitHub build-provenance attestations; verify them with: gh attestation verify <artifact> --repo ketqat/ketqat-sdk. npm provenance can be checked from an installed package with: npm audit signatures. Recovery policy: https://github.com/ketqat/ketqat-sdk/blob/main/docs/release-recovery.md"

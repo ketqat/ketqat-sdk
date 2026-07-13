@@ -33,3 +33,9 @@ npm audit signatures
 ```
 
 Registry metadata is available at `https://registry.npmjs.org/ketqat-sdk/<version>` and `https://pypi.org/pypi/ketqat/<version>/json`. The workflow compares npm SHA-512/SHA-1 and PyPI SHA-256 values with the exact files attached to the GitHub Release.
+
+PyPI publish attestations can be independently verified against the expected repository identity with the official `pypi-attestations` CLI and each file URL returned by the PyPI JSON API:
+
+```bash
+pypi-attestations verify pypi --repository https://github.com/ketqat/ketqat <pypi-file-url>
+```

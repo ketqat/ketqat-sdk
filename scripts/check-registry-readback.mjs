@@ -94,6 +94,30 @@ for (const name of pythonArtifacts) {
   if (digest("sha256", join(artifactDirectory, name), "hex") !== published.digests?.sha256) {
     throw new Error(`PyPI SHA-256 does not match the workflow artifact ${name}`)
   }
+  const provenance = await fetchPublishedJson(
+    `PyPI provenance for ${name}`,
+    `${pypiRegistryBase}/integrity/ketqat/${encodeURIComponent(version)}/${encodeURIComponent(name)}/provenance`,
+  )
+  const statements = (provenance.attestation_bundles ?? [])
+    .flatMap((bundle) => bundle.attestations ?? [])
+    .map((attestation) => {
+      try {
+        return JSON.parse(Buffer.from(attestation.envelope?.statement ?? "", "base64").toString("utf8"))
+      } catch {
+        return null
+      }
+    })
+    .filter(Boolean)
+  const hasBoundPublishAttestation = statements.some(
+    (statement) =>
+      statement.predicateType === "https://docs.pypi.org/attestations/publish/v1" &&
+      statement.subject?.some(
+        (subject) => subject.name === name && subject.digest?.sha256 === published.digests.sha256,
+      ),
+  )
+  if (!hasBoundPublishAttestation) {
+    throw new Error(`PyPI Integrity API lacks a publish attestation bound to ${name}`)
+  }
 }
 
-console.log(`Registry APIs expose ketqat-sdk and ketqat ${version} with exact artifact digests.`)
+console.log(`Registry APIs expose ketqat-sdk and ketqat ${version} with exact artifact digests and PyPI publish attestations.`)
