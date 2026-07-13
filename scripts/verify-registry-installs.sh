@@ -30,8 +30,9 @@ cd - >/dev/null
 "$TEMP_ROOT/python/bin/python" -m pip install "ketqat[qec]==$VERSION"
 "$TEMP_ROOT/python/bin/ketqat" --help >/dev/null
 "$TEMP_ROOT/python/bin/python" -c "from importlib.metadata import version; from importlib.resources import files; import ketqat_runner; assert version('ketqat') == '$VERSION'; assert files('ketqat_runner').joinpath('schemas/qec-experiment-manifest.schema.json').is_file()"
-"$TEMP_ROOT/python/bin/ketqat" run examples/algorithms/grover-search.yaml --output "$TEMP_ROOT/algorithm.json"
-"$TEMP_ROOT/python/bin/ketqat" run examples/qec/surface-code-memory.yaml --output "$TEMP_ROOT/qec.json"
+"$TEMP_ROOT/python/bin/ketqat" examples list >/dev/null
+"$TEMP_ROOT/python/bin/ketqat" run grover-search --output "$TEMP_ROOT/algorithm.json"
+"$TEMP_ROOT/python/bin/ketqat" run surface-code-memory --output "$TEMP_ROOT/qec.json"
 "$TEMP_ROOT/python/bin/python" -c "import json,sys; data=json.load(open(sys.argv[1])); assert data['metric_points'][0]['metadata']['backend'] == 'stim-pymatching'" "$TEMP_ROOT/qec.json"
 
 echo "Clean registry installs passed for npm and PyPI version $VERSION."

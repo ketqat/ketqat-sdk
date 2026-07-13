@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from ketqat_runner.examples import list_example_manifests, read_example_manifest
 from ketqat_runner.runner import QEC_DEPENDENCY_MESSAGE, _derive_coordinate_seed, run_experiment
 from ketqat_runner.validation import KetQatValidationError, validate_manifest, validate_result
 
@@ -107,6 +108,57 @@ def test_cli_rejects_malformed_yaml_without_writing_output(tmp_path: Path) -> No
     assert completed.returncode != 0
     assert "Invalid YAML manifest" in completed.stderr
     assert not output.exists()
+
+
+def test_cli_lists_and_copies_packaged_examples(tmp_path: Path) -> None:
+    listed = subprocess.run(
+        [sys.executable, "-m", "ketqat_runner.cli", "examples", "list"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "surface-code-memory" in listed.stdout
+    assert "grover-search" in listed.stdout
+
+    destination = tmp_path / "grover.yaml"
+    copied = subprocess.run(
+        [sys.executable, "-m", "ketqat_runner.cli", "examples", "copy", "grover-search", "--output", str(destination)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert "Wrote" in copied.stdout
+    assert yaml.safe_load(destination.read_text())["domain"] == "ALGORITHM"
+
+
+def test_cli_runs_packaged_algorithm_example_by_name(tmp_path: Path) -> None:
+    output = tmp_path / "algorithm.json"
+    completed = subprocess.run(
+        [sys.executable, "-m", "ketqat_runner.cli", "run", "grover-search", "--output", str(output)],
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    data = json.loads(output.read_text())
+    assert data["domain"] == "ALGORITHM"
+    assert data["is_demo"] is False
+    assert data["reproducibility_hash"]
+
+
+def test_packaged_examples_are_readable_resources() -> None:
+    names = {example.name for example in list_example_manifests()}
+
+    assert names == {"surface-code-memory", "grover-search"}
+    assert yaml.safe_load(read_example_manifest("qec/surface-code-memory"))["domain"] == "QEC"
+    assert yaml.safe_load(read_example_manifest("examples/algorithms/grover-search.yaml"))["domain"] == "ALGORITHM"
+
+
+def test_packaged_examples_match_repository_examples() -> None:
+    for example in list_example_manifests():
+        repository_copy = REPO_ROOT / example.package_path
+        assert read_example_manifest(example.name) == repository_copy.read_text()
 
 
 def test_result_schema_validation_rejects_malformed_result() -> None:

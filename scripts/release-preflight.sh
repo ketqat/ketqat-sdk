@@ -40,11 +40,12 @@ SDIST=$(realpath python/dist/*.tar.gz)
 "$TEMP_ROOT/base/bin/python" -m pip install "$WHEEL"
 "$TEMP_ROOT/base/bin/ketqat" --help >/dev/null
 "$TEMP_ROOT/base/bin/python" -c "from importlib.resources import files; import ketqat_runner; assert files('ketqat_runner').joinpath('schemas/qec-experiment-manifest.schema.json').is_file()"
-"$TEMP_ROOT/base/bin/ketqat" run examples/algorithms/grover-search.yaml --output "$TEMP_ROOT/algorithm.json"
+"$TEMP_ROOT/base/bin/ketqat" examples list >/dev/null
+"$TEMP_ROOT/base/bin/ketqat" run grover-search --output "$TEMP_ROOT/algorithm.json"
 test -s "$TEMP_ROOT/algorithm.json"
 
 set +e
-"$TEMP_ROOT/base/bin/ketqat" run examples/qec/surface-code-memory.yaml --output "$TEMP_ROOT/missing-extra.json" 2>"$TEMP_ROOT/missing-extra.stderr"
+"$TEMP_ROOT/base/bin/ketqat" run surface-code-memory --output "$TEMP_ROOT/missing-extra.json" 2>"$TEMP_ROOT/missing-extra.stderr"
 missing_extra_exit=$?
 set -e
 test "$missing_extra_exit" -ne 0
@@ -55,7 +56,7 @@ grep -F 'pip install "ketqat[qec]"' "$TEMP_ROOT/missing-extra.stderr" >/dev/null
 "$TEMP_ROOT/qec/bin/python" -m pip install --upgrade pip
 "$TEMP_ROOT/qec/bin/python" -m pip install "${WHEEL}[qec]"
 "$TEMP_ROOT/qec/bin/python" -c "from importlib.metadata import version; import numpy, pymatching, stim; from ketqat_runner import __version__; assert __version__ == version('ketqat')"
-"$TEMP_ROOT/qec/bin/ketqat" run examples/qec/surface-code-memory.yaml --output "$TEMP_ROOT/qec.json"
+"$TEMP_ROOT/qec/bin/ketqat" run surface-code-memory --output "$TEMP_ROOT/qec.json"
 "$TEMP_ROOT/qec/bin/python" -c "import json,sys; data=json.load(open(sys.argv[1])); assert data['metric_points'][0]['metadata']['backend'] == 'stim-pymatching'" "$TEMP_ROOT/qec.json"
 
 "$PYTHON_BIN" -m venv "$TEMP_ROOT/sdist-builder"

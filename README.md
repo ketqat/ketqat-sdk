@@ -7,21 +7,25 @@
 
 This repository contains everything you need to participate:
 
-- **`ketqat` (Python)** -- the local runner: executes benchmark manifests against real dependencies (Stim + PyMatching for QEC) and produces results with canonical reproducibility hashes. A PyPI release is being prepared; install from source today (below).
+- **`ketqat` (Python)** -- the local runner: executes benchmark manifests against real dependencies (Stim + PyMatching for QEC) and produces results with canonical reproducibility hashes. A PyPI release is being prepared; install from source today or use the package command after publication.
 - **`ketqat-sdk` (TypeScript)** -- the contract layer: typed schemas, validators, hashing, scientific-compatibility helpers, and a REST client for [ketqat.com](https://ketqat.com). An npm release is being prepared alongside.
 
-## Run your first benchmark in 10 minutes
+## Run your first benchmark in 3 minutes
+
+After the first public release, the clone-free path is:
 
 ```bash
 # 1. Install the runner with real QEC dependencies (Python 3.10+)
-git clone https://github.com/ketqat/ketqat-sdk
-cd ketqat-sdk
-pip install -e "python[qec]"
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install "ketqat[qec]"
 
 # 2. Run a real surface-code memory experiment (Stim sampling + MWPM decoding)
-ketqat run examples/qec/surface-code-memory.yaml --output run.json
+ketqat examples list
+ketqat run surface-code-memory --output run.json
 
-# 3. Publish it (create a token at https://ketqat.com/settings after signing in)
+# 3. Publish it later, if you choose (create a token after signing in)
 export KETQAT_API_TOKEN="kq_..."
 curl -X POST https://ketqat.com/api/runs/import \
   -H "Authorization: Bearer $KETQAT_API_TOKEN" \
@@ -31,7 +35,7 @@ curl -X POST https://ketqat.com/api/runs/import \
 
 The server independently recalculates the reproducibility hash and rejects the import if it doesn't match -- a published run can't silently drift from what you actually ran. Your run appears on your [dashboard](https://ketqat.com/dashboard), gets its own page with a downloadable reproducibility bundle, and -- if it targets a standard QEC suite -- lands on the [leaderboard](https://ketqat.com/leaderboard) next to every other run on the exact same suite and version.
 
-Full walkthrough: [ketqat.com/docs/quickstart](https://ketqat.com/docs/quickstart)
+The public packages are not published yet. Until the human first-release checklist is complete, use the source-install path in the canonical quickstart: [`docs/quickstart.md`](docs/quickstart.md). The same page should be mirrored for web users at [ketqat.com/docs/quickstart](https://ketqat.com/docs/quickstart).
 
 ## Reproducing someone else's result
 
@@ -116,8 +120,11 @@ npm run build
 The local runner lives in `python/` and exposes:
 
 ```bash
-ketqat run examples/algorithms/grover-search.yaml --output output/run.json
-ketqat run examples/qec/surface-code-memory.yaml --output output/run.json
+ketqat examples list
+ketqat examples copy surface-code-memory --output surface-code-memory.yaml
+ketqat run grover-search --output output/algorithm-run.json
+ketqat run surface-code-memory --output output/qec-run.json
+ketqat run surface-code-memory.yaml --output output/customized-qec-run.json
 ```
 
 Install from PyPI (distribution name `ketqat`, importable as `ketqat_runner`):
@@ -185,6 +192,7 @@ npm install
 npm run build
 npm test
 npm run verify:clean-install
+npm run verify:quickstart
 python3.11 -m pip install -e "python[qec]" pytest
 python3.11 -m pytest python/tests
 ```
