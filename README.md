@@ -57,6 +57,8 @@ The web app owns persistence, UI, APIs, authorization, charts, and deployment.
 npm install ketqat-sdk
 ```
 
+The npm tarball contains only the TypeScript SDK runtime, declarations, schemas, and examples. The Python runner is a separate PyPI distribution named `ketqat`; Python source and test caches are not part of `ketqat-sdk`.
+
 During coordinated development, the web app should consume a released package, exact Git commit dependency, or generated package tarball. Do not use the old vendored `lib/ketqat-sdk` copy.
 
 ## Public Exports
