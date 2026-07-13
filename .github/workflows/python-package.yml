@@ -86,6 +86,6 @@ jobs:
           python -m venv "$RUNNER_TEMP/qec"
           "$RUNNER_TEMP/qec/bin/python" -m pip install --upgrade pip
           "$RUNNER_TEMP/qec/bin/python" -m pip install "${WHEEL}[qec]"
-          "$RUNNER_TEMP/qec/bin/python" -c "import numpy, pymatching, stim; from ketqat_runner import __version__; assert __version__ == '0.2.0'"
+          "$RUNNER_TEMP/qec/bin/python" -c "from importlib.metadata import version; import numpy, pymatching, stim; from ketqat_runner import __version__; assert __version__ == version('ketqat')"
           "$RUNNER_TEMP/qec/bin/ketqat" run examples/qec/surface-code-memory.yaml --output "$RUNNER_TEMP/qec.json"
           "$RUNNER_TEMP/qec/bin/python" -c "import json, os; data=json.load(open(os.environ['RUNNER_TEMP'] + '/qec.json')); assert data['metric_points'][0]['metadata']['backend'] == 'stim-pymatching'"
