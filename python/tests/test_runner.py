@@ -62,7 +62,7 @@ def test_missing_qec_dependency_is_a_clear_error(monkeypatch: pytest.MonkeyPatch
         return original_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
-    with pytest.raises(RuntimeError, match="ketqat-runner\\[qec\\]"):
+    with pytest.raises(RuntimeError, match="ketqat\\[qec\\]"):
         run_experiment(_manifest())
 
     assert "deterministic-local-fallback" not in QEC_DEPENDENCY_MESSAGE

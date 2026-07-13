@@ -1,0 +1,91 @@
+name: Python package validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  distributions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Build wheel and sdist
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build python
+
+      - name: Verify metadata and archive contents
+        run: |
+          python -m twine check python/dist/*
+          python scripts/verify-python-distributions.py python/dist
+          cmp LICENSE python/LICENSE
+
+      - name: Rebuild wheel from the sdist
+        run: |
+          python -m venv "$RUNNER_TEMP/sdist-builder"
+          "$RUNNER_TEMP/sdist-builder/bin/python" -m pip install --upgrade pip build
+          "$RUNNER_TEMP/sdist-builder/bin/python" -m pip wheel --no-deps --wheel-dir "$RUNNER_TEMP/rebuilt" python/dist/*.tar.gz
+          test -f "$RUNNER_TEMP/rebuilt/ketqat-"*.whl
+
+  clean-install:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build release artifacts
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build python
+
+      - name: Clean-install the base wheel and run an algorithm
+        run: |
+          WHEEL=$(realpath python/dist/*.whl)
+          python -m venv "$RUNNER_TEMP/base"
+          "$RUNNER_TEMP/base/bin/python" -m pip install --upgrade pip
+          "$RUNNER_TEMP/base/bin/python" -m pip install "$WHEEL"
+          "$RUNNER_TEMP/base/bin/ketqat" --help
+          "$RUNNER_TEMP/base/bin/python" -c "from importlib.resources import files; import ketqat_runner; assert files('ketqat_runner').joinpath('schemas/qec-experiment-manifest.schema.json').is_file()"
+          "$RUNNER_TEMP/base/bin/ketqat" run examples/algorithms/grover-search.yaml --output "$RUNNER_TEMP/algorithm.json"
+          test -s "$RUNNER_TEMP/algorithm.json"
+
+      - name: Confirm QEC fails closed without its extra
+        run: |
+          set +e
+          "$RUNNER_TEMP/base/bin/ketqat" run examples/qec/surface-code-memory.yaml --output "$RUNNER_TEMP/missing-extra.json" 2>"$RUNNER_TEMP/missing-extra.stderr"
+          exit_code=$?
+          set -e
+          test "$exit_code" -ne 0
+          test ! -e "$RUNNER_TEMP/missing-extra.json"
+          grep -F 'pip install "ketqat[qec]"' "$RUNNER_TEMP/missing-extra.stderr"
+
+      - name: Clean-install the QEC extra and run Stim with PyMatching
+        run: |
+          WHEEL=$(realpath python/dist/*.whl)
+          python -m venv "$RUNNER_TEMP/qec"
+          "$RUNNER_TEMP/qec/bin/python" -m pip install --upgrade pip
+          "$RUNNER_TEMP/qec/bin/python" -m pip install "${WHEEL}[qec]"
+          "$RUNNER_TEMP/qec/bin/python" -c "import numpy, pymatching, stim; from ketqat_runner import __version__; assert __version__ == '0.2.0'"
+          "$RUNNER_TEMP/qec/bin/ketqat" run examples/qec/surface-code-memory.yaml --output "$RUNNER_TEMP/qec.json"
+          "$RUNNER_TEMP/qec/bin/python" -c "import json, os; data=json.load(open(os.environ['RUNNER_TEMP'] + '/qec.json')); assert data['metric_points'][0]['metadata']['backend'] == 'stim-pymatching'"
