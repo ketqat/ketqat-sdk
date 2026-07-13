@@ -20,6 +20,9 @@
   },
   "bugs": "https://github.com/ketqat/ketqat-sdk/issues",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -64,11 +67,12 @@
     "generate:schemas": "npm run build",
     "test": "npm run build && node tests/sdk.test.mjs && npm run verify:package-contents",
     "test:python": "python3.11 -m pytest python/tests",
+    "verify:clean-install": "node scripts/verify-npm-clean-install.mjs",
     "verify:package-contents": "node scripts/verify-package-contents.mjs",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "@types/node": "^20.19.1",
+    "@types/node": "^22.0.0",
     "typescript": "^5.5.4",
     "zod-to-json-schema": "^3.25.2"
   },

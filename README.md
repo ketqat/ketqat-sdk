@@ -59,6 +59,8 @@ npm install ketqat-sdk
 
 The npm tarball contains only the TypeScript SDK runtime, declarations, schemas, and examples. The Python runner is a separate PyPI distribution named `ketqat`; Python source and test caches are not part of `ketqat-sdk`.
 
+Node.js 22 or newer is required. CI clean-installs and type-checks the packed tarball on every currently supported Node.js LTS line (22 and 24); EOL Node.js releases are not supported.
+
 During coordinated development, the web app should consume a released package, exact Git commit dependency, or generated package tarball. Do not use the old vendored `lib/ketqat-sdk` copy.
 
 ## Public Exports
@@ -182,6 +184,7 @@ Cross-domain comparison is rejected. Runs are comparable only when benchmark sui
 npm install
 npm run build
 npm test
+npm run verify:clean-install
 python3.11 -m pip install -e "python[qec]" pytest
 python3.11 -m pytest python/tests
 ```
