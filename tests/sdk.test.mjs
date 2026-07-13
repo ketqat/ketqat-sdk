@@ -250,6 +250,23 @@ const wrappedBundleClient = new KetQatClient({
 })
 assert.equal((await wrappedBundleClient.runs.getBundle("surface-code-memory-parity")).reproducibility_hash, expectedHashes.qec_result)
 
+const importClient = new KetQatClient({
+  baseUrl: "https://ketqat.example/",
+  token: "kq_test_token",
+  fetch: async (url, init) => {
+    assert.equal(url, "https://ketqat.example/api/runs/import")
+    assert.equal(init.method, "POST")
+    assert.equal(init.headers.get("authorization"), "Bearer kq_test_token")
+    assert.equal(init.headers.get("content-type"), "application/json")
+    assert.deepEqual(JSON.parse(init.body), { result: qecRun, visibility: "PRIVATE" })
+    return new Response(JSON.stringify({ run: { ...qecRun, visibility: "PRIVATE" } }), {
+      status: 201,
+      headers: { "content-type": "application/json" },
+    })
+  },
+})
+assert.equal((await importClient.runs.import(qecRun, { visibility: "PRIVATE" })).visibility, "PRIVATE")
+
 assert.throws(() =>
   VerificationEvidenceSchema.parse({
     schema_version: "0.1",

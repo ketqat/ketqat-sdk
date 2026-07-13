@@ -160,6 +160,17 @@ const bundle = await client.runs.getBundle("surface-code-mwpm-baseline-4aefa985"
 
 Use `client.runs.downloadBundle(slug)` when raw download behavior is required.
 
+Authenticated clients can import benchmark results into the Web registry. Pass a KetQat API token from Web settings as `token`; by default the raw benchmark result is submitted, and private imports can be requested with the optional `visibility` field:
+
+```ts
+const client = new KetQatClient({
+  baseUrl: "https://ketqat.com",
+  token: process.env.KETQAT_API_TOKEN,
+})
+
+const imported = await client.runs.import(result, { visibility: "PRIVATE" })
+```
+
 ## Compatibility
 
 Use:

@@ -1,8 +1,11 @@
-import { type Artifact, type ArtifactListQuery, type BenchmarkResult, type BenchmarkSuite, type ReproducibilityBundle } from "../contracts/index.js";
+import { type Artifact, type ArtifactListQuery, type BenchmarkResult, type BenchmarkSuite, type ReproducibilityBundle, type Visibility } from "../contracts/index.js";
 export interface KetQatClientOptions {
     baseUrl: string;
     fetch?: typeof fetch;
     token?: string;
+}
+export interface RunImportOptions {
+    visibility?: Visibility;
 }
 export declare class KetQatClient {
     private readonly baseUrl;
@@ -25,7 +28,7 @@ export declare class KetQatClient {
             status?: string;
         }) => Promise<BenchmarkResult[]>;
         get: (slug: string) => Promise<BenchmarkResult>;
-        import: (result: BenchmarkResult) => Promise<BenchmarkResult>;
+        import: (result: BenchmarkResult, options?: RunImportOptions) => Promise<BenchmarkResult>;
         getBundle: (slug: string) => Promise<ReproducibilityBundle>;
         downloadBundle: (slug: string) => Promise<Blob>;
     };

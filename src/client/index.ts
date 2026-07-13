@@ -8,12 +8,17 @@ import {
   type BenchmarkResult,
   type BenchmarkSuite,
   type ReproducibilityBundle,
+  type Visibility,
 } from "../contracts/index.js"
 
 export interface KetQatClientOptions {
   baseUrl: string
   fetch?: typeof fetch
   token?: string
+}
+
+export interface RunImportOptions {
+  visibility?: Visibility
 }
 
 function queryString(params: Record<string, string | boolean | undefined>): string {
@@ -78,8 +83,9 @@ export class KetQatClient {
       const response = await this.getJson(`/api/runs/${encodeURIComponent(slug)}`)
       return BenchmarkResultSchema.parse(responseObject(response).run ?? response)
     },
-    import: async (result: BenchmarkResult): Promise<BenchmarkResult> => {
-      const response = await this.postJson("/api/runs/import", result)
+    import: async (result: BenchmarkResult, options: RunImportOptions = {}): Promise<BenchmarkResult> => {
+      const body = options.visibility ? { result, visibility: options.visibility } : result
+      const response = await this.postJson("/api/runs/import", body)
       return BenchmarkResultSchema.parse(responseObject(response).run ?? response)
     },
     getBundle: async (slug: string): Promise<ReproducibilityBundle> => {
