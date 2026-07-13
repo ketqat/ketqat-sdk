@@ -20,6 +20,10 @@ REQUIRED_SCHEMAS = {
     "qec-benchmark-result.schema.json",
     "qec-experiment-manifest.schema.json",
 }
+REQUIRED_EXAMPLES = {
+    "examples/algorithms/grover-search.yaml",
+    "examples/qec/surface-code-memory.yaml",
+}
 
 
 def fail(message: str) -> None:
@@ -50,6 +54,7 @@ def verify_wheel(wheel: Path, version: str) -> None:
         required = {
             "ketqat_runner/__init__.py",
             "ketqat_runner/cli.py",
+            "ketqat_runner/examples.py",
             "ketqat_runner/runner.py",
             "ketqat_runner/validation.py",
             f"{dist_info}/METADATA",
@@ -58,6 +63,7 @@ def verify_wheel(wheel: Path, version: str) -> None:
             f"{dist_info}/RECORD",
         }
         required.update(f"ketqat_runner/schemas/{name}" for name in REQUIRED_SCHEMAS)
+        required.update(f"ketqat_runner/{name}" for name in REQUIRED_EXAMPLES)
         missing = sorted(required - names)
         if missing:
             fail(f"{wheel.name} is missing required files: {missing}")
@@ -92,9 +98,11 @@ def verify_sdist(sdist: Path, version: str) -> None:
             f"{prefix}PKG-INFO",
             f"{prefix}src/ketqat_runner/__init__.py",
             f"{prefix}src/ketqat_runner/cli.py",
+            f"{prefix}src/ketqat_runner/examples.py",
             f"{prefix}src/ketqat_runner/runner.py",
         }
         required.update(f"{prefix}src/ketqat_runner/schemas/{name}" for name in REQUIRED_SCHEMAS)
+        required.update(f"{prefix}src/ketqat_runner/{name}" for name in REQUIRED_EXAMPLES)
         missing = sorted(required - names)
         if missing:
             fail(f"{sdist.name} is missing required files: {missing}")
