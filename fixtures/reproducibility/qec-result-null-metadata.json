@@ -1,0 +1,92 @@
+{
+  "id": "volatile-run-id",
+  "slug": "volatile-run-slug",
+  "name": "surface-code-memory-parity",
+  "domain": "QEC",
+  "status": "COMPLETED",
+  "benchmark_suite": "surface-code-memory-mwpm",
+  "benchmark_suite_version": "0.1.0",
+  "schema_version": "0.1",
+  "sdk_version": "0.2.0",
+  "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+  "source_repository_url": "https://github.com/ketqat/ketqat-sdk",
+  "configuration": {
+    "benchmark": {
+      "suite": "surface-code-memory-mwpm",
+      "version": "0.1.0"
+    },
+    "domain": "QEC",
+    "experiment": {
+      "name": "surface-code-memory-parity"
+    },
+    "metrics": ["logical_error_rate"],
+    "qec": {
+      "code": {
+        "distances": [3],
+        "family": "rotated-surface-code",
+        "rounds": "distance"
+      },
+      "decoder": {
+        "name": "pymatching",
+        "version": "auto"
+      },
+      "experiment_type": "memory",
+      "noise": {
+        "model": "circuit-level-depolarizing",
+        "physical_error_rates": [0.001]
+      }
+    },
+    "sampling": {
+      "seed": 7,
+      "shots": 100
+    },
+    "schema_version": "0.1",
+    "source": {
+      "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+      "repository_url": "https://github.com/ketqat/ketqat-sdk"
+    }
+  },
+  "environment": {
+    "operating_system": "fixture-os",
+    "architecture": "fixture-arch",
+    "python_version": "3.11.0",
+    "packages": {
+      "ketqat-runner": "0.2.0",
+      "numpy": "1.26.0",
+      "pymatching": "2.2.0",
+      "stim": "1.13.0"
+    },
+    "hardware": {
+      "processor": "fixture-cpu",
+      "accelerator": null
+    }
+  },
+  "summary_metrics": {
+    "logical_error_rate": 0.02,
+    "runtime_seconds": 0.123
+  },
+  "metric_points": [
+    {
+      "metric": "logical_error_rate",
+      "code_distance": 3,
+      "physical_error_rate": 0.001,
+      "logical_failures": 2,
+      "logical_error_rate": 0.02,
+      "standard_error": 0.014,
+      "decoder_latency_ms": 0.5,
+      "sampling_runtime_seconds": 0.002,
+      "runtime_seconds": 0.01,
+      "shots": 100,
+      "seed": 12345,
+      "metadata": {
+        "backend": "stim-pymatching",
+        "decoder_latency_unit": "milliseconds_total_batch"
+      }
+    }
+  ],
+  "started_at": "2026-01-01T00:00:00.000Z",
+  "finished_at": "2026-01-01T00:00:01.000Z",
+  "created_at": "2026-01-01T00:00:02.000Z",
+  "updated_at": "2026-01-01T00:00:03.000Z",
+  "is_demo": false
+}
