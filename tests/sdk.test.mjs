@@ -105,10 +105,13 @@ assert.equal(compareRunCompatibility(qecRun, { ...qecRun, name: "copy" }, demoBe
 const expectedHashes = fixture("expected-hashes.json")
 const qecManifest = fixture("qec-manifest.json")
 const qecResult = fixture("qec-result-before-hash.json")
+const qecResultNullMetadata = fixture("qec-result-null-metadata.json")
 const algorithmResult = fixture("algorithm-result-before-hash.json")
 
 assert.equal(calculateReproducibilityHash(qecManifest), expectedHashes.qec_manifest)
 assert.equal(calculateReproducibilityHash(qecResult), expectedHashes.qec_result)
+assert.equal(calculateReproducibilityHash(qecResultNullMetadata), expectedHashes.qec_result_null_metadata)
+assert.notEqual(expectedHashes.qec_result_null_metadata, expectedHashes.qec_result)
 assert.equal(calculateReproducibilityHash(algorithmResult), expectedHashes.algorithm_result)
 
 const reorderedQecResult = {
@@ -150,6 +153,10 @@ assert.notEqual(calculateReproducibilityHash({ ...qecResult, benchmark_suite_ver
 assert.notEqual(calculateReproducibilityHash({ ...qecResult, sdk_version: "0.2.1" }), expectedHashes.qec_result)
 
 QecBenchmarkResultSchema.parse({ ...qecResult, reproducibility_hash: expectedHashes.qec_result })
+QecBenchmarkResultSchema.parse({
+  ...qecResultNullMetadata,
+  reproducibility_hash: expectedHashes.qec_result_null_metadata,
+})
 
 VerificationEvidenceSchema.parse({
   schema_version: "0.1",
