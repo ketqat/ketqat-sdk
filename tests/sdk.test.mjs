@@ -50,6 +50,8 @@ import {
   shortestPath,
   simulateStatevector,
   transpileForHardware,
+  SUPPORTED_REWRITES,
+  optimizeWithZx,
 } from "../dist/index.js"
 
 const fixture = (name) => JSON.parse(fs.readFileSync(new URL(`../fixtures/reproducibility/${name}`, import.meta.url), "utf8"))
@@ -1056,3 +1058,98 @@ const otherEstimator = { ...estimate, assumptions: { ...estimate.assumptions, es
 const refusal = resourceEstimatesComparable(estimate, otherEstimator)
 assert.equal(refusal.comparable, false)
 assert.match(refusal.reasons.join(" "), /define\s+these quantities differently/)
+
+// ---------------------------------------------------------------------------
+// ZX-calculus optimization (RFC 0002)
+// ---------------------------------------------------------------------------
+
+const zxCircuit = (source) => parseQasm3(source).circuit
+
+// H H cancels to nothing, and the result is *checked*, not asserted.
+const hadamardPair = optimizeWithZx(zxCircuit(`OPENQASM 3;\nqubit[1] q;\nh q[0];\nh q[0];\n`))
+assert.equal(hadamardPair.after.gate_count, 0)
+assert.equal(hadamardPair.equivalence.level, "NUMERICALLY_CHECKED")
+assert.ok(hadamardPair.rewrites.some((entry) => entry.rewrite === "hadamard_pair_cancellation"))
+
+// Self-inverse two-qubit gates cancel too.
+const cxPair = optimizeWithZx(zxCircuit(`OPENQASM 3;\nqubit[2] q;\ncx q[0], q[1];\ncx q[0], q[1];\n`))
+assert.equal(cxPair.after.two_qubit_gate_count, 0)
+assert.equal(cxPair.equivalence.level, "NUMERICALLY_CHECKED")
+
+// Adjacent rotations about the same axis fuse.
+const fused = optimizeWithZx(zxCircuit(`OPENQASM 3;\nqubit[1] q;\nrz(0.3) q[0];\nrz(0.4) q[0];\n`))
+assert.equal(fused.after.gate_count, 1)
+assert.ok(Math.abs(fused.circuit.operations[0].parameters[0] - 0.7) < 1e-12)
+assert.equal(fused.equivalence.level, "NUMERICALLY_CHECKED")
+assert.ok(fused.rewrites.some((entry) => entry.rewrite === "phase_fusion"))
+
+// Rotations summing to zero vanish entirely.
+const cancelled = optimizeWithZx(zxCircuit(`OPENQASM 3;\nqubit[1] q;\nrz(0.5) q[0];\nrz(-0.5) q[0];\n`))
+assert.equal(cancelled.after.gate_count, 0)
+assert.equal(cancelled.equivalence.level, "NUMERICALLY_CHECKED")
+
+// Explicit identities and zero-angle rotations are removed.
+const identities = optimizeWithZx(zxCircuit(`OPENQASM 3;\nqubit[1] q;\nid q[0];\nrz(0) q[0];\nx q[0];\n`))
+assert.equal(identities.after.gate_count, 1)
+assert.equal(identities.equivalence.level, "NUMERICALLY_CHECKED")
+
+// A gate between the pair blocks cancellation, because the pair is no longer
+// adjacent on that qubit.
+const blocked = optimizeWithZx(zxCircuit(`OPENQASM 3;\nqubit[1] q;\nh q[0];\nx q[0];\nh q[0];\n`))
+assert.equal(blocked.after.gate_count, 3)
+assert.equal(blocked.equivalence.level, "NUMERICALLY_CHECKED")
+
+// Gates on disjoint qubits are not mistaken for a cancelling pair.
+const disjoint = optimizeWithZx(zxCircuit(`OPENQASM 3;\nqubit[2] q;\nh q[0];\nh q[1];\n`))
+assert.equal(disjoint.after.gate_count, 2)
+
+// A measurement between two gates blocks rewriting across it. Optimizing
+// across a measurement is not an optimization -- it changes the program.
+const acrossMeasure = optimizeWithZx(zxCircuit(`OPENQASM 3;
+qubit[1] q;
+bit[1] c;
+h q[0];
+c[0] = measure q[0];
+h q[0];
+`))
+assert.equal(acrossMeasure.after.gate_count, 2, "must not cancel H pair across a measurement")
+
+// A free parameter cannot be fused numerically, and guessing a value would
+// change the circuit, so the rotation is left alone.
+const freeParameter = optimizeWithZx(zxCircuit(`OPENQASM 3;\nqubit[1] q;\nrz(theta) q[0];\nrz(theta) q[0];\n`))
+assert.equal(freeParameter.after.gate_count, 2)
+
+// A larger circuit reduces and stays verifiably equivalent.
+const larger = optimizeWithZx(zxCircuit(`OPENQASM 3;
+qubit[3] q;
+h q[0];
+h q[0];
+rz(0.2) q[1];
+rz(0.3) q[1];
+cx q[0], q[2];
+cx q[0], q[2];
+id q[1];
+x q[2];
+`))
+assert.ok(larger.after.gate_count < larger.before.gate_count)
+assert.equal(larger.after.two_qubit_gate_count, 0)
+assert.equal(larger.equivalence.level, "NUMERICALLY_CHECKED")
+assert.ok(larger.before.depth >= larger.after.depth)
+
+// Above the verification width, equivalence is INCONCLUSIVE with a reason --
+// never a claim that the rewrite was verified, and never FAILED.
+const unverified = optimizeWithZx(zxCircuit(`OPENQASM 3;\nqubit[4] q;\nh q[0];\nh q[0];\n`), {
+  maxVerificationQubits: 2,
+})
+assert.equal(unverified.equivalence.level, "INCONCLUSIVE")
+assert.match(unverified.equivalence.reason, /not evidence that the circuits differ/)
+EquivalenceEvidenceSchema.parse(unverified.equivalence)
+
+// The transformation record validates against the shared contract and carries
+// the rewrite set that was actually available.
+CircuitTransformationSchema.parse(larger.transformation)
+assert.equal(larger.transformation.kind, "ZX_REWRITE")
+assert.deepEqual(larger.transformation.options.supported_rewrites, [...SUPPORTED_REWRITES])
+
+// An optimization is only usable downstream if its equivalence evidence says so.
+assert.equal(chainHasSemanticLoss([larger.transformation]), false)
