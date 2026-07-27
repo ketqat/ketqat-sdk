@@ -36,6 +36,20 @@ import {
   usesClassicalControl,
   usesMidCircuitMeasurement,
   usesReset,
+  CircuitTransformationSchema,
+  HardwareProfileSchema,
+  NormalizedResourceEstimateSchema,
+  RESOURCE_ESTIMATOR,
+  checkCircuitEquivalence,
+  compareShotResults,
+  couplingAdjacency,
+  estimateResources,
+  evaluateParameter,
+  linearTopology,
+  resourceEstimatesComparable,
+  shortestPath,
+  simulateStatevector,
+  transpileForHardware,
 } from "../dist/index.js"
 
 const fixture = (name) => JSON.parse(fs.readFileSync(new URL(`../fixtures/reproducibility/${name}`, import.meta.url), "utf8"))
@@ -736,3 +750,309 @@ assert.equal(commented.operations.length, 1)
 for (const entry of legacy.loss_report) {
   LossReportEntrySchema.parse(entry)
 }
+
+// ---------------------------------------------------------------------------
+// Engine: statevector simulation, routing, resources (RFC 0001)
+// ---------------------------------------------------------------------------
+
+const close = (actual, expected, tolerance = 1e-9) => Math.abs(actual - expected) <= tolerance
+
+// Parameter expressions are evaluated by a hand-written parser, never eval.
+assert.equal(evaluateParameter(0.5), 0.5)
+assert.ok(close(evaluateParameter("pi"), Math.PI))
+assert.ok(close(evaluateParameter("pi/2"), Math.PI / 2))
+assert.ok(close(evaluateParameter("-pi/4"), -Math.PI / 4))
+assert.ok(close(evaluateParameter("2*pi"), 2 * Math.PI))
+assert.ok(close(evaluateParameter("(1+2)*3"), 9))
+assert.ok(close(evaluateParameter("2**3"), 8))
+assert.ok(close(evaluateParameter("sqrt(4)"), 2))
+assert.ok(close(evaluateParameter("cos(0)"), 1))
+assert.throws(() => evaluateParameter("theta"), /no value/)
+assert.throws(() => evaluateParameter("1/0"), /Division by zero/)
+assert.throws(() => evaluateParameter("nope(1)"), /Unknown function/)
+// Anything resembling code execution must be rejected, not evaluated.
+assert.throws(() => evaluateParameter("process.exit(1)"))
+assert.throws(() => evaluateParameter("(()=>1)()"))
+
+// --- Known-circuit physics -------------------------------------------------
+
+// Bell state: (|00> + |11>)/sqrt(2)
+const bellCircuit = parseQasm3(`OPENQASM 3;
+qubit[2] q;
+h q[0];
+cx q[0], q[1];
+`).circuit
+const bellState = simulateStatevector(bellCircuit)
+assert.ok(close(bellState.statevector.real[0], Math.SQRT1_2))
+assert.ok(close(bellState.statevector.real[1], 0))
+assert.ok(close(bellState.statevector.real[2], 0))
+assert.ok(close(bellState.statevector.real[3], Math.SQRT1_2))
+assert.ok(bellState.statevector.imaginary.every((value) => close(value, 0)))
+
+// GHZ state on three qubits: (|000> + |111>)/sqrt(2)
+const ghzState = simulateStatevector(parseQasm3(`OPENQASM 3;
+qubit[3] q;
+h q[0];
+cx q[0], q[1];
+cx q[1], q[2];
+`).circuit)
+assert.ok(close(ghzState.statevector.real[0], Math.SQRT1_2))
+assert.ok(close(ghzState.statevector.real[7], Math.SQRT1_2))
+assert.ok(close(ghzState.statevector.real.reduce((sum, value) => sum + value * value, 0), 1))
+
+// Normalization holds for a nontrivial parameterized circuit.
+const parameterizedState = simulateStatevector(parseQasm3(`OPENQASM 3;
+qubit[3] q;
+h q[0];
+rx(pi/3) q[1];
+ry(0.7) q[2];
+cx q[0], q[1];
+rz(pi/5) q[2];
+cx q[1], q[2];
+t q[0];
+`).circuit)
+const norm = parameterizedState.statevector.real.reduce(
+  (sum, value, index) => sum + value * value + parameterizedState.statevector.imaginary[index] ** 2,
+  0,
+)
+assert.ok(close(norm, 1), `statevector must stay normalized, got ${norm}`)
+
+// X gate flips |0> to |1>; little-endian means index 1 is q0 = 1.
+const flipped = simulateStatevector(parseQasm3(`OPENQASM 3;\nqubit[1] q;\nx q[0];\n`).circuit)
+assert.ok(close(flipped.statevector.real[1], 1))
+
+// rz is a phase gate: it must not change measurement probabilities of |0>.
+const rzState = simulateStatevector(parseQasm3(`OPENQASM 3;\nqubit[1] q;\nrz(0.9) q[0];\n`).circuit)
+assert.ok(close(Math.hypot(rzState.statevector.real[0], rzState.statevector.imaginary[0]), 1))
+
+// H then H is the identity.
+assert.equal(
+  checkCircuitEquivalence(
+    parseQasm3(`OPENQASM 3;\nqubit[1] q;\nh q[0];\nh q[0];\n`).circuit,
+    parseQasm3(`OPENQASM 3;\nqubit[1] q;\nid q[0];\n`).circuit,
+  ).level,
+  "NUMERICALLY_CHECKED",
+)
+
+// X and Z do not commute into each other: a real counterexample, so FAILED.
+const notEquivalent = checkCircuitEquivalence(
+  parseQasm3(`OPENQASM 3;\nqubit[1] q;\nx q[0];\n`).circuit,
+  parseQasm3(`OPENQASM 3;\nqubit[1] q;\nz q[0];\n`).circuit,
+)
+assert.equal(notEquivalent.level, "FAILED")
+assert.ok(notEquivalent.counterexample)
+
+// Global phase is unobservable, so circuits differing only by one are equivalent.
+assert.equal(
+  checkCircuitEquivalence(
+    parseQasm3(`OPENQASM 3;\nqubit[1] q;\nz q[0];\n`).circuit,
+    parseQasm3(`OPENQASM 3;\nqubit[1] q;\nrz(pi) q[0];\n`).circuit,
+  ).level,
+  "NUMERICALLY_CHECKED",
+)
+// ... and are NOT equivalent once global phase is taken seriously.
+assert.equal(
+  checkCircuitEquivalence(
+    parseQasm3(`OPENQASM 3;\nqubit[1] q;\nz q[0];\n`).circuit,
+    parseQasm3(`OPENQASM 3;\nqubit[1] q;\nrz(pi) q[0];\n`).circuit,
+    { ignoreGlobalPhase: false },
+  ).level,
+  "FAILED",
+)
+
+// A check that cannot run reports INCONCLUSIVE with a reason -- never FAILED.
+const tooWide = checkCircuitEquivalence(
+  parseQasm3(`OPENQASM 3;\nqubit[4] q;\nh q[0];\n`).circuit,
+  parseQasm3(`OPENQASM 3;\nqubit[4] q;\nx q[0];\n`).circuit,
+  { maxQubits: 2 },
+)
+assert.equal(tooWide.level, "INCONCLUSIVE")
+assert.match(tooWide.reason, /not evidence that the circuits differ/)
+EquivalenceEvidenceSchema.parse(tooWide)
+
+// Measurement is simulated on the state, so a Bell pair is perfectly correlated:
+// "01" and "10" must never appear.
+const bellCounts = simulateStatevector(parseQasm3(`OPENQASM 3;
+qubit[2] q;
+bit[2] c;
+h q[0];
+cx q[0], q[1];
+c[0] = measure q[0];
+c[1] = measure q[1];
+`).circuit, { shots: 2000, seed: 7 })
+assert.equal(bellCounts.deterministic, true)
+assert.equal(Object.keys(bellCounts.counts).sort().join(","), "00,11")
+assert.equal(bellCounts.counts["00"] + bellCounts.counts["11"], 2000)
+assert.ok(Math.abs(bellCounts.counts["00"] / 2000 - 0.5) < 0.05)
+
+// Same seed reproduces exactly; a different seed generally does not.
+const repeat = simulateStatevector(parseQasm3(`OPENQASM 3;
+qubit[2] q;
+bit[2] c;
+h q[0];
+cx q[0], q[1];
+c[0] = measure q[0];
+c[1] = measure q[1];
+`).circuit, { shots: 2000, seed: 7 })
+assert.deepEqual(repeat.counts, bellCounts.counts)
+// An unseeded run is honest about not being reproducible.
+assert.equal(simulateStatevector(parseQasm3(`OPENQASM 3;
+qubit[1] q;
+bit[1] c;
+h q[0];
+c[0] = measure q[0];
+`).circuit, { shots: 10 }).deterministic, false)
+
+// Mid-circuit measurement and feed-forward actually branch.
+// q0 is flipped to |1>, measured, and the condition then flips q1.
+const feedForward = simulateStatevector(parseQasm3(`OPENQASM 3;
+qubit[2] q;
+bit[1] c;
+x q[0];
+c[0] = measure q[0];
+if (c == 1) x q[1];
+`).circuit, { shots: 50, seed: 3 })
+assert.equal(Object.keys(feedForward.counts).length, 1)
+assert.equal(Object.keys(feedForward.counts)[0], "1")
+
+// Reset returns a qubit to |0> regardless of what preceded it.
+const afterReset = simulateStatevector(parseQasm3(`OPENQASM 3;
+qubit[1] q;
+bit[1] c;
+x q[0];
+reset q[0];
+c[0] = measure q[0];
+`).circuit, { shots: 100, seed: 11 })
+assert.deepEqual(Object.keys(afterReset.counts), ["0"])
+
+// Unsupported gates are rejected, not approximated into something else.
+assert.throws(
+  () => simulateStatevector(parseQasm3(`OPENQASM 3;\nqubit[1] q;\niswap q[0];\n`).circuit),
+  /not supported by the statevector backend/,
+)
+
+// --- Differential verification --------------------------------------------
+
+const agreeing = compareShotResults(
+  { backend: "a", counts: { "00": 500, "11": 500 }, shots: 1000 },
+  { backend: "b", counts: { "00": 510, "11": 490 }, shots: 1000 },
+)
+assert.equal(agreeing.agreed, true)
+const disagreeing = compareShotResults(
+  { backend: "a", counts: { "00": 1000 }, shots: 1000 },
+  { backend: "b", counts: { "11": 1000 }, shots: 1000 },
+)
+assert.equal(disagreeing.agreed, false)
+// A disagreement is recorded as a disagreement, not as a verdict on either side.
+assert.match(disagreeing.detail, /does not establish which backend is correct/)
+
+// --- Hardware profiles and routing ----------------------------------------
+
+const linearDevice = HardwareProfileSchema.parse({
+  schema_version: "0.1",
+  provider: "simulator",
+  backend: "linear-5",
+  snapshot_id: "2026-07-28T00:00:00Z",
+  modality: "SIMULATED",
+  qubit_count: 5,
+  native_gates: ["h", "x", "rz", "cx", "swap"],
+  basis_two_qubit_gate: "cx",
+  couplings: linearTopology(5),
+  qubits: Array.from({ length: 5 }, (_unused, index) => ({ index, operational: true })),
+  capabilities: { mid_circuit_measurement: true, feed_forward: true, reset: true },
+  retrieved_at: "2026-07-28T00:00:00Z",
+  source: "synthetic topology for tests",
+})
+
+const adjacency = couplingAdjacency(linearDevice)
+assert.deepEqual([...(adjacency.get(0) ?? [])], [1])
+assert.deepEqual([...(adjacency.get(2) ?? [])].sort(), [1, 3])
+assert.deepEqual(shortestPath(adjacency, 0, 4), [0, 1, 2, 3, 4])
+assert.equal(shortestPath(adjacency, 0, 0).length, 1)
+
+// A gate between distant qubits must gain SWAPs on a line.
+const distant = parseQasm3(`OPENQASM 3;\nqubit[5] q;\ncx q[0], q[4];\n`).circuit
+const routed = transpileForHardware(distant, linearDevice)
+assert.ok(routed.swap_count >= 3, `expected SWAPs on a line, got ${routed.swap_count}`)
+assert.equal(routed.two_qubit_gate_count, 1)
+
+// Every two-qubit gate in the routed circuit acts on a coupled pair -- the
+// property routing exists to establish.
+for (const operation of routed.circuit.operations) {
+  if (operation.kind === "gate" && operation.qubits.length === 2) {
+    const [a, b] = operation.qubits.map((bit) => bit.index)
+    assert.ok(adjacency.get(a)?.has(b), `gate ${operation.name} on uncoupled pair ${a},${b}`)
+  }
+}
+
+// An already-adjacent gate needs no routing at all.
+assert.equal(transpileForHardware(parseQasm3(`OPENQASM 3;\nqubit[2] q;\ncx q[0], q[1];\n`).circuit, linearDevice).swap_count, 0)
+
+// Routing preserves the circuit up to the recorded permutation, and says so
+// rather than claiming a proof it has not performed.
+assert.equal(routed.transformation.equivalence.level, "NOT_CHECKED")
+CircuitTransformationSchema.parse(routed.transformation)
+
+// A circuit too wide for the device is refused.
+assert.throws(
+  () => transpileForHardware(parseQasm3(`OPENQASM 3;\nqubit[9] q;\nh q[0];\n`).circuit, linearDevice),
+  /has 5/,
+)
+
+// A device without feed-forward records a semantic loss rather than dropping
+// the condition and emitting the body unconditionally.
+const noFeedForward = HardwareProfileSchema.parse({
+  ...linearDevice,
+  backend: "no-feedforward",
+  capabilities: { mid_circuit_measurement: false, feed_forward: false, reset: false },
+})
+const conditionalCircuit = parseQasm3(`OPENQASM 3;
+qubit[2] q;
+bit[1] c;
+c[0] = measure q[0];
+if (c == 1) x q[1];
+`).circuit
+const withLoss = transpileForHardware(conditionalCircuit, noFeedForward)
+assert.ok(withLoss.loss_report.some((entry) => entry.feature === "classical_feed_forward" && entry.severity === "semantic"))
+assert.equal(chainHasSemanticLoss([withLoss.transformation]), true)
+// The same circuit on a capable device carries no semantic loss.
+assert.equal(chainHasSemanticLoss([transpileForHardware(conditionalCircuit, linearDevice).transformation]), false)
+
+// --- Resource estimation ---------------------------------------------------
+
+const resourceCircuit = parseQasm3(`OPENQASM 3;
+qubit[3] q;
+bit[1] c;
+h q[0];
+t q[1];
+cx q[0], q[1];
+ccx q[0], q[1], q[2];
+reset q[2];
+barrier q[0], q[1];
+c[0] = measure q[0];
+`).circuit
+const estimate = estimateResources(resourceCircuit)
+NormalizedResourceEstimateSchema.parse(estimate)
+assert.equal(estimate.nisq.logical_qubits, 3)
+assert.equal(estimate.nisq.two_qubit_gate_count, 1)
+assert.equal(estimate.nisq.measurement_count, 1)
+assert.equal(estimate.nisq.reset_count, 1)
+assert.equal(estimate.nisq.barrier_count, 1)
+assert.equal(estimate.fault_tolerant.t_count, 1)
+assert.equal(estimate.fault_tolerant.toffoli_count, 1)
+assert.ok(estimate.nisq.circuit_depth > 0)
+// Assumptions travel with the numbers.
+assert.equal(estimate.assumptions.estimator, RESOURCE_ESTIMATOR)
+assert.ok(estimate.assumptions.gate_set.includes("ccx"))
+assert.ok(estimate.assumptions.notes.some((note) => /No hardware snapshot/.test(note)))
+// Without characterized errors, fidelity and duration are absent rather than guessed.
+assert.equal(estimate.nisq.estimated_success_probability, undefined)
+assert.equal(estimate.nisq.estimated_duration_ns, undefined)
+
+// Estimates under different assumptions are refused for comparison, and there
+// is deliberately no function that averages them.
+assert.equal(resourceEstimatesComparable(estimate, estimate).comparable, true)
+const otherEstimator = { ...estimate, assumptions: { ...estimate.assumptions, estimator: "qualtran" } }
+const refusal = resourceEstimatesComparable(estimate, otherEstimator)
+assert.equal(refusal.comparable, false)
+assert.match(refusal.reasons.join(" "), /define\s+these quantities differently/)
