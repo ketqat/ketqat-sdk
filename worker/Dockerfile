@@ -37,10 +37,30 @@ USER 10001:10001
 # mounted here.
 ENV TMPDIR=/tmp
 
-# Jobs simulate circuits from their own parameters and need no egress. Deploy
-# with egress denied; an allowlist becomes relevant only if a provider adapter
-# is added under ADR 0004.
-ENV KETQAT_WORKER_NETWORK=disabled
+# Egress is required, and narrowly.
+#
+# An earlier revision of this file said to deploy with egress denied, which was
+# correct while a job arrived on stdin and its result left on stdout. Callback
+# mode changed that on purpose: a manifest passed through the environment shows
+# up in `gcloud run jobs executions describe` output and in platform audit
+# entries, and a result written to stdout is captured by the log sink, whose
+# retention and access differ from the registry's. Both were worse than needing
+# a network path.
+#
+# The worker therefore reaches exactly two destinations:
+#
+#   * the instance metadata server, to mint its own identity token
+#   * the control plane named by KETQAT_API_BASE_URL
+#
+# It initiates every connection; it listens on nothing. Note that this is a
+# property of the code, not one Cloud Run enforces per host today -- restricting
+# egress by destination would need a VPC connector and an egress policy, which
+# is worth doing and is not done here. Recorded rather than implied, because an
+# unenforced control that reads as enforced is worse than a named gap.
+#
+# None of this is the security model. The model is that a job cannot express
+# arbitrary code in the first place -- see src/worker/job.ts.
+ENV KETQAT_WORKER_EGRESS=control-plane-only
 
 # --disallow-code-generation-from-strings makes eval and new Function throw at
 # the process level. Nothing in the engine uses them -- parameter expressions go
