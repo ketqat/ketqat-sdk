@@ -55,6 +55,17 @@ Registry commands (need --registry <url> or KETQAT_URL):
   pull <slug>                            Fetch an artifact with its versions and relations
   push <slug> <card.json> --version <v>  Publish a Quantum Card version
 
+Execution commands (need --registry <url> or KETQAT_URL, and a token):
+  job submit <file.qasm>                 Queue a simulation; --shots, --seed, --wait
+  job status <id>                        Status and audit trail for one job
+  job list                               Your queued and finished jobs; --status, --limit
+  job cancel <id>                        Request cancellation
+  job bundle <id>                        Download the result bundle as JSON
+
+The local "simulate" command runs on this machine. "job submit" runs the same
+engine in a sandboxed container with enforced limits and an audit trail, and is
+what to use for anything whose result will be published.
+
 Authentication reads KETQAT_TOKEN from the environment. A token is never
 accepted as a command-line argument, because arguments appear in shell history
 and in the process list.
@@ -293,6 +304,97 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
           client.artifactRelations.list(slug),
         ])
         return { exitCode: 0, stdout: { command: "pull", artifact, versions, relations } }
+      }
+
+      case "job": {
+        // Every path here enqueues; none executes. A CLI that ran the circuit
+        // locally and uploaded the answer would produce a registry record with
+        // no audit trail and no enforced limits, indistinguishable from one the
+        // worker produced.
+        const client = registryClient(flags, { requireToken: true })
+
+        switch (subcommand) {
+          case "submit": {
+            const path = positional[2]
+            if (!path) return { exitCode: 2, stderr: "job submit requires a file path." }
+            // Read and parse locally so a malformed circuit fails here, naming
+            // the construct, rather than as a 400 from the server.
+            const { circuit, loss } = readCircuit(path)
+            const qasm = readFileSync(path, "utf8")
+
+            const submitted = await client.execution.submit({
+              schema_version: "1.0",
+              parameters: {
+                operation: "simulate",
+                qasm,
+                ...(numberFlag(flags, "shots") !== undefined ? { shots: numberFlag(flags, "shots") } : {}),
+                ...(numberFlag(flags, "seed") !== undefined ? { seed: numberFlag(flags, "seed") } : {}),
+              },
+              ...(flags.get("idempotency-key")
+                ? { idempotency_key: flags.get("idempotency-key") }
+                : {}),
+            })
+
+            const job = (submitted.job ?? {}) as { id?: string; status?: string }
+            const base = {
+              command: "job submit",
+              job,
+              dispatched: submitted.dispatched ?? false,
+              circuit: circuitSummary(circuit),
+              // Conversion loss is reported at submission, not swallowed. A
+              // result computed from a lossily-converted circuit answers a
+              // different question than the one the file asked.
+              ...(loss.length > 0 ? { conversion_loss: loss } : {}),
+            }
+
+            if (!flags.has("wait") || !job.id) {
+              return { exitCode: 0, stdout: base }
+            }
+
+            const finished = await client.execution.waitFor(job.id, {
+              timeoutMs: (numberFlag(flags, "timeout") ?? 180) * 1000,
+            })
+            const finalJob = (finished.job ?? finished) as { status?: string }
+            return {
+              // A job that failed exits non-zero, so `job submit --wait` can be
+              // used in a script without parsing the JSON to find out.
+              exitCode: finalJob.status === "SUCCEEDED" ? 0 : 1,
+              stdout: { ...base, job: finalJob, waited: true },
+            }
+          }
+
+          case "status": {
+            const jobId = positional[2]
+            if (!jobId) return { exitCode: 2, stderr: "job status requires a job id." }
+            return { exitCode: 0, stdout: { command: "job status", ...(await client.execution.get(jobId)) } }
+          }
+
+          case "list": {
+            const jobs = await client.execution.list({
+              ...(flags.get("status") ? { status: flags.get("status") as string } : {}),
+              ...(numberFlag(flags, "limit") !== undefined ? { limit: numberFlag(flags, "limit") as number } : {}),
+            })
+            return { exitCode: 0, stdout: { command: "job list", jobs, count: jobs.length } }
+          }
+
+          case "cancel": {
+            const jobId = positional[2]
+            if (!jobId) return { exitCode: 2, stderr: "job cancel requires a job id." }
+            return { exitCode: 0, stdout: { command: "job cancel", ...(await client.execution.cancel(jobId)) } }
+          }
+
+          case "bundle": {
+            const jobId = positional[2]
+            if (!jobId) return { exitCode: 2, stderr: "job bundle requires a job id." }
+            return { exitCode: 0, stdout: { command: "job bundle", ...(await client.execution.bundle(jobId)) } }
+          }
+
+          default:
+            return {
+              exitCode: 2,
+              stderr: "usage: job <submit|status|list|cancel|bundle> [...]\n\n" + USAGE,
+            }
+        }
       }
 
       case "push": {

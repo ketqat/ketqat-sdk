@@ -1901,3 +1901,236 @@ assert.match(serialized, /ibm/)
     "the job manifest must not be read from the environment in callback mode",
   )
 }
+
+// ---------------------------------------------------------------------------
+// Execution from the CLI and MCP
+//
+// Both surfaces must enqueue rather than execute. A CLI or MCP server that ran
+// the circuit locally and uploaded the answer would produce a registry record
+// with no audit trail and no enforced limits, indistinguishable from one the
+// worker produced.
+// ---------------------------------------------------------------------------
+{
+  const { KetQatClient: Client } = await import("../dist/index.js")
+  const {
+    EXECUTION_MCP_TOOLS,
+    cancelExecutionJobTool,
+    getExecutionJobTool,
+    listExecutionTools,
+    submitExecutionJobTool,
+    MCP_TOOLS: readOnlyTools,
+  } = await import("../dist/index.js")
+
+  const BELL_QASM = `OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+h q[0];
+cx q[0], q[1];
+c[0] = measure q[0];
+c[1] = measure q[1];
+`
+
+  function recordingClient(responder) {
+    const calls = []
+    const client = new Client({
+      baseUrl: "https://ketqat.example",
+      token: "kq_test",
+      fetch: async (url, init) => {
+        calls.push({ url: String(url), method: init?.method ?? "GET", body: init?.body })
+        return responder(String(url), init)
+      },
+    })
+    return { client, calls }
+  }
+
+  // --- the read-only MCP surface stays read-only ---------------------------
+  // The annotation on those tools is only meaningful if a mutating tool cannot
+  // join them by accident, which is why the mutating ones live in their own
+  // module with their own type.
+  for (const tool of readOnlyTools) {
+    assert.equal(tool.readOnly, true, `${tool.name} must stay read-only`)
+  }
+  const readOnlyNames = new Set(readOnlyTools.map((tool) => tool.name))
+  for (const tool of EXECUTION_MCP_TOOLS) {
+    assert.equal(readOnlyNames.has(tool.name), false, `${tool.name} must not be in the read-only list`)
+  }
+  assert.equal(submitExecutionJobTool.readOnly, false)
+  assert.equal(submitExecutionJobTool.requiresConfirmation, true)
+  assert.equal(getExecutionJobTool.readOnly, true)
+
+  // A host that wants a strictly read-only server can filter and still get
+  // something useful, rather than having to drop the module entirely.
+  const listed = listExecutionTools()
+  assert.equal(listed.filter((tool) => tool.readOnly).length, 1)
+
+  // --- submission refuses without confirmation -----------------------------
+  {
+    const { client, calls } = recordingClient(async () => new Response("{}", { status: 200 }))
+    const preview = await submitExecutionJobTool.handler(
+      { qasm: BELL_QASM, shots: 512, confirmed: false },
+      client,
+    )
+    assert.equal(preview.confirmation_required, true)
+    assert.equal(calls.length, 0, "an unconfirmed submission must not reach the network")
+
+    // The refusal has to carry what a person needs in order to agree. A
+    // confirmation prompt that omits the cost is not a confirmation.
+    assert.equal(preview.summary.shots, 512)
+    assert.equal(preview.summary.qubits, 2)
+    assert.equal(preview.summary.execution_class, "SIMULATION")
+    assert.equal(preview.summary.reaches_hardware, false)
+    assert.equal(preview.summary.spends_provider_quota, false)
+  }
+
+  // Defaulting `confirmed` to false is the load-bearing part: a model that
+  // simply omits the field must not thereby submit.
+  {
+    const { client, calls } = recordingClient(async () => new Response("{}", { status: 200 }))
+    const omitted = await submitExecutionJobTool.handler({ qasm: BELL_QASM }, client)
+    assert.equal(omitted.confirmation_required, true)
+    assert.equal(calls.length, 0, "omitting `confirmed` must behave as refusing")
+  }
+
+  // --- a confirmed submission enqueues, and only enqueues ------------------
+  {
+    const { client, calls } = recordingClient(async () =>
+      new Response(JSON.stringify({ job: { id: "job-9", status: "QUEUED" }, created: true }), {
+        status: 202,
+      }),
+    )
+    const queued = await submitExecutionJobTool.handler(
+      { qasm: BELL_QASM, shots: 256, seed: 3, confirmed: true },
+      client,
+    )
+    assert.equal(queued.job.id, "job-9")
+    assert.equal(calls.length, 1)
+    assert.equal(calls[0].method, "POST")
+    assert.match(calls[0].url, /\/api\/execution\/jobs$/)
+
+    // No counts anywhere in the response: the tool queued work, it did not
+    // produce a result. A result here would mean something ran in-process.
+    assert.doesNotMatch(JSON.stringify(queued), /"counts"/)
+  }
+
+  // A repeated idempotency key returns the original job, and the tool says so
+  // rather than presenting it as a fresh run.
+  {
+    const { client } = recordingClient(async () =>
+      new Response(JSON.stringify({ job: { id: "job-1" }, created: false }), { status: 200 }),
+    )
+    const repeated = await submitExecutionJobTool.handler(
+      { qasm: BELL_QASM, confirmed: true, idempotency_key: "k" },
+      client,
+    )
+    assert.match(repeated.message, /already existed/)
+  }
+
+  // --- a bad circuit is named before confirmation, not after ---------------
+  {
+    const { client, calls } = recordingClient(async () => new Response("{}", { status: 200 }))
+    const rejected = await submitExecutionJobTool.handler(
+      { qasm: "OPENQASM 3.0;\nqubit[2] q;\nbit[2] c;\nc = measure q;\n", confirmed: true },
+      client,
+    )
+    assert.equal(rejected.error, "qasm_parse_error")
+    assert.match(rejected.message, /register/i)
+    assert.equal(calls.length, 0, "an unparseable circuit must not be submitted")
+  }
+
+  // --- the client validates locally before the network ---------------------
+  // validateJob rejects code- and credential-implying fields at any depth, so a
+  // mistake of that shape never leaves the caller's machine.
+  {
+    const { client, calls } = recordingClient(async () => new Response("{}", { status: 200 }))
+    await assert.rejects(() =>
+      client.execution.submit({
+        schema_version: "1.0",
+        parameters: { operation: "simulate", qasm: BELL_QASM, token: "kq_leak" },
+      }),
+    )
+    assert.equal(calls.length, 0, "a forbidden field must be caught before the request")
+  }
+
+  // --- waitFor stops on a terminal status and on its deadline --------------
+  {
+    let polls = 0
+    const { client } = recordingClient(async () => {
+      polls += 1
+      const status = polls >= 3 ? "SUCCEEDED" : "RUNNING"
+      return new Response(JSON.stringify({ job: { id: "job-2", status } }), { status: 200 })
+    })
+    const finished = await client.execution.waitFor("job-2", { intervalMs: 1, sleep: async () => {} })
+    assert.equal(finished.job.status, "SUCCEEDED")
+    assert.equal(polls, 3)
+  }
+  {
+    const { client } = recordingClient(async () =>
+      new Response(JSON.stringify({ job: { id: "job-3", status: "RUNNING" } }), { status: 200 }),
+    )
+    // On timeout it returns the job as it stands rather than throwing: the job
+    // is still running, and saying so is more useful than an error that loses
+    // the id.
+    const pending = await client.execution.waitFor("job-3", {
+      timeoutMs: 5,
+      intervalMs: 1,
+      sleep: async () => {},
+    })
+    assert.equal(pending.job.status, "RUNNING")
+  }
+
+  // --- cancellation is not gated behind confirmation -----------------------
+  // Its failure mode is far smaller than an unwanted submission's, and
+  // requiring confirmation everywhere teaches a model to confirm reflexively.
+  assert.equal(cancelExecutionJobTool.requiresConfirmation, false)
+  assert.equal(cancelExecutionJobTool.readOnly, false)
+
+  // --- the CLI enqueues rather than running ---------------------------------
+  {
+    const { runCli } = await import("../dist/index.js")
+    const cliCalls = []
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = async (url, init) => {
+      cliCalls.push({ url: String(url), method: init?.method ?? "GET" })
+      return new Response(JSON.stringify({ job: { id: "cli-job", status: "QUEUED" }, created: true }), {
+        status: 202,
+      })
+    }
+    const originalToken = process.env.KETQAT_TOKEN
+    process.env.KETQAT_TOKEN = "kq_test"
+    try {
+      fs.writeFileSync("/tmp/ketqat-cli-job.qasm", BELL_QASM)
+      const result = await runCli([
+        "job",
+        "submit",
+        "/tmp/ketqat-cli-job.qasm",
+        "--registry",
+        "https://ketqat.example",
+        "--shots",
+        "128",
+      ])
+      assert.equal(result.exitCode, 0)
+      assert.equal(result.stdout.job.id, "cli-job")
+      assert.equal(cliCalls.length, 1)
+      assert.match(cliCalls[0].url, /\/api\/execution\/jobs$/)
+      assert.equal(cliCalls[0].method, "POST")
+      // The circuit summary comes from local parsing; the counts do not exist,
+      // because the CLI did not run anything.
+      assert.equal(result.stdout.circuit.qubits, 2)
+      assert.doesNotMatch(JSON.stringify(result.stdout), /"counts"/)
+    } finally {
+      globalThis.fetch = originalFetch
+      if (originalToken === undefined) delete process.env.KETQAT_TOKEN
+      else process.env.KETQAT_TOKEN = originalToken
+    }
+  }
+
+  // The usage text must point at the queue for anything publishable, otherwise
+  // people reach for `simulate` and upload a local result.
+  {
+    const { runCli } = await import("../dist/index.js")
+    const help = await runCli(["help"])
+    assert.match(help.stderr, /job submit/)
+    assert.match(help.stderr, /sandboxed container/)
+  }
+}

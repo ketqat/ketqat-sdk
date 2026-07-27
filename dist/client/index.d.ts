@@ -49,6 +49,50 @@ export declare class KetQatClient {
         list: (slug: string) => Promise<unknown[]>;
         create: (slug: string, input: Record<string, unknown>) => Promise<unknown>;
     };
+    /**
+     * Sandboxed execution.
+     *
+     * Every path here enqueues; none of them executes. That is the same rule the
+     * web application follows, and it is why the CLI and the MCP server call
+     * these methods rather than running a circuit locally and uploading the
+     * answer: a result that reaches the registry should have come from the same
+     * worker, under the same limits, with the same audit trail, whichever surface
+     * asked for it.
+     */
+    readonly execution: {
+        /**
+         * Queue a job.
+         *
+         * The manifest is validated locally first, so an invalid job fails before a
+         * network round trip and names the offending field instead of returning a
+         * bare 400. `validateJob` also rejects any code- or credential-implying
+         * field at any depth, which means a mistake of that shape never leaves the
+         * caller's machine.
+         */
+        submit: (manifest: unknown, options?: {
+            idempotencyKey?: string;
+        }) => Promise<Record<string, unknown>>;
+        get: (jobId: string) => Promise<Record<string, unknown>>;
+        list: (query?: {
+            status?: string;
+            limit?: number;
+        }) => Promise<unknown[]>;
+        cancel: (jobId: string) => Promise<Record<string, unknown>>;
+        bundle: (jobId: string) => Promise<Record<string, unknown>>;
+        /**
+         * Poll until the job reaches a terminal state.
+         *
+         * Bounded by a deadline rather than an attempt count, because what a caller
+         * cares about is how long they are willing to wait. On timeout it returns
+         * the job as it stands rather than throwing: the job is still running, and
+         * reporting that is more useful than an error that loses the id.
+         */
+        waitFor: (jobId: string, options?: {
+            timeoutMs?: number;
+            intervalMs?: number;
+            sleep?: (ms: number) => Promise<void>;
+        }) => Promise<Record<string, unknown>>;
+    };
     readonly search: {
         query: (term: string) => Promise<Record<string, unknown>>;
     };
