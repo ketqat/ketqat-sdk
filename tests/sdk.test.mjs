@@ -56,6 +56,9 @@ import {
   foldCircuit,
   mitigateReadout,
   zeroNoiseExtrapolation,
+  callTool,
+  listTools,
+  runCli,
 } from "../dist/index.js"
 
 const fixture = (name) => JSON.parse(fs.readFileSync(new URL(`../fixtures/reproducibility/${name}`, import.meta.url), "utf8"))
@@ -1294,3 +1297,101 @@ const singular = mitigateReadout({ "0": 500, "1": 500 }, { p0_given_0: 0.5, p1_g
 assert.equal(singular.mitigated_value, singular.raw_value)
 assert.ok(singular.warnings.some((warning) => /singular/.test(warning)))
 assert.ok(singular.assumptions.some((entry) => /not a measurement/.test(entry)))
+
+// ---------------------------------------------------------------------------
+// CLI and MCP (RFC 0005: read-only by default, structured output)
+// ---------------------------------------------------------------------------
+
+const BELL_QASM = `OPENQASM 3;
+qubit[2] q;
+bit[2] c;
+h q[0];
+cx q[0], q[1];
+c[0] = measure q[0];
+c[1] = measure q[1];
+`
+
+const cliFixture = new URL("./fixtures-cli-bell.qasm", import.meta.url)
+fs.writeFileSync(cliFixture, BELL_QASM)
+
+// Every command returns one structured object; no command prints prose to stdout.
+const inspect = runCli(["circuit", "inspect", cliFixture.pathname])
+assert.equal(inspect.exitCode, 0)
+assert.equal(inspect.stdout.command, "circuit.inspect")
+assert.equal(inspect.stdout.summary.qubits, 2)
+assert.equal(inspect.stdout.summary.two_qubit_gate_count, 1)
+
+const simulated = runCli(["simulate", cliFixture.pathname, "--shots", "500", "--seed", "3"])
+assert.equal(simulated.exitCode, 0)
+assert.equal(simulated.stdout.deterministic, true)
+assert.deepEqual(Object.keys(simulated.stdout.counts).sort(), ["00", "11"])
+
+// An unparseable circuit fails with the feature named, not a bare stack trace.
+fs.writeFileSync(cliFixture, "OPENQASM 3;\nqubit[1] q;\nfor int i in [0:3] { h q[0]; }\n")
+const rejected = runCli(["circuit", "inspect", cliFixture.pathname])
+assert.equal(rejected.exitCode, 1)
+assert.equal(rejected.stdout.error, "qasm_parse_error")
+assert.equal(rejected.stdout.feature, "control_flow_loop")
+fs.writeFileSync(cliFixture, BELL_QASM)
+
+// Unknown commands and missing arguments exit 2 with usage on stderr.
+assert.equal(runCli(["not-a-command"]).exitCode, 2)
+assert.equal(runCli(["simulate"]).exitCode, 2)
+assert.equal(runCli([]).exitCode, 2)
+assert.ok(runCli(["help"]).stderr.includes("ketqat-engine"))
+
+// A FAILED equivalence is a finding, not a tool error, so it still exits 0.
+const leftFixture = new URL("./fixtures-cli-x.qasm", import.meta.url)
+const rightFixture = new URL("./fixtures-cli-z.qasm", import.meta.url)
+fs.writeFileSync(leftFixture, "OPENQASM 3;\nqubit[1] q;\nx q[0];\n")
+fs.writeFileSync(rightFixture, "OPENQASM 3;\nqubit[1] q;\nz q[0];\n")
+const equivalence = runCli(["equivalence", leftFixture.pathname, rightFixture.pathname])
+assert.equal(equivalence.exitCode, 0)
+assert.equal(equivalence.stdout.evidence.level, "FAILED")
+assert.ok(equivalence.stdout.evidence.counterexample)
+
+// mitigate zne refuses to run without a noise model rather than silently
+// mitigating against nothing.
+assert.equal(runCli(["mitigate", "zne", cliFixture.pathname]).exitCode, 2)
+
+fs.rmSync(cliFixture); fs.rmSync(leftFixture); fs.rmSync(rightFixture)
+
+// --- MCP -------------------------------------------------------------------
+
+// Every advertised tool is read-only. A tool that spends money or mutates state
+// is not defined in this module at all, so it cannot leak out by accident.
+const tools = listTools()
+assert.ok(tools.length >= 7)
+assert.ok(tools.every((tool) => tool.readOnly === true), "every MCP tool must be read-only")
+assert.ok(tools.every((tool) => tool.name && tool.title && tool.description))
+
+// Structured output, not prose.
+const mcpInspect = callTool("inspect_circuit", { qasm: BELL_QASM })
+assert.equal(mcpInspect.qubits, 2)
+assert.equal(mcpInspect.two_qubit_gate_count, 1)
+assert.deepEqual(mcpInspect.loss_report, [])
+
+const mcpSimulate = callTool("simulate_circuit", { qasm: BELL_QASM, shots: 400, seed: 11 })
+assert.equal(mcpSimulate.deterministic, true)
+assert.deepEqual(Object.keys(mcpSimulate.counts).sort(), ["00", "11"])
+
+const mcpEquivalence = callTool("check_circuit_equivalence", {
+  left_qasm: "OPENQASM 3;\nqubit[1] q;\nh q[0];\nh q[0];\n",
+  right_qasm: "OPENQASM 3;\nqubit[1] q;\nid q[0];\n",
+})
+assert.equal(mcpEquivalence.level, "NUMERICALLY_CHECKED")
+
+const mcpZx = callTool("optimize_with_zx", { qasm: "OPENQASM 3;\nqubit[1] q;\nh q[0];\nh q[0];\n" })
+assert.equal(mcpZx.after.gate_count, 0)
+assert.equal(mcpZx.equivalence.level, "NUMERICALLY_CHECKED")
+
+// Errors are structured too, and name the offending feature.
+const mcpBad = callTool("inspect_circuit", { qasm: "OPENQASM 3;\nqubit[1] q;\ndefcal x $0 { }\n" })
+assert.equal(mcpBad.error, "qasm_parse_error")
+assert.equal(mcpBad.feature, "pulse_calibration")
+
+assert.equal(callTool("delete_everything", {}).error, "unknown_tool")
+assert.equal(callTool("simulate_circuit", { qasm: "" }).error, "invalid_input")
+// A shot count beyond the declared cap is refused by the input schema rather
+// than accepted and run.
+assert.equal(callTool("simulate_circuit", { qasm: BELL_QASM, shots: 10_000_000 }).error, "invalid_input")
