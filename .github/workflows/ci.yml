@@ -90,6 +90,46 @@ jobs:
       - name: Smoke-test real QEC runner
         run: ketqat run surface-code-memory --output /tmp/ketqat-qec-run.json
 
+  # Provider adapters run against the vendors' own local and fake facilities.
+  # Their own job because the SDKs are large and the base install must stay
+  # small; installing them into the main Python job would make every run pay for
+  # them. Nothing here can submit a paid task or reach a physical device.
+  providers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install the provider extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "python[ibm,braket]"
+          python -m pip install pytest
+
+      # No AWS or IBM credentials are configured, and that is deliberate: the
+      # tests must pass without them, since the not-run paths are part of what
+      # they check.
+      - name: Run provider tests
+        run: pytest python/tests/test_providers.py -v
+
+      # The tests would still pass if both extras were missing, because each is
+      # skipped when its SDK is absent. That would be a silent hole, so this
+      # asserts the extras actually installed.
+      - name: Assert the adapters were exercised, not skipped
+        run: |
+          python - <<'PY'
+          from ketqat_runner.providers import braket, ibm
+          missing = [name for name, mod in (("ibm", ibm), ("braket", braket)) if not mod.available()]
+          if missing:
+              raise SystemExit(f"provider extras did not install: {missing}")
+          print("both provider adapters are installed and were exercised")
+          PY
+
   quickstart:
     runs-on: ubuntu-latest
     steps:
