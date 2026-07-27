@@ -1,11 +1,37 @@
+import { chainHasSemanticLoss } from "../contracts/transformation.js";
 function reason(code, message, path) {
     return { code, message, path };
 }
-export function compareRunCompatibility(left, right, suites = []) {
+export function compareRunCompatibility(left, right, suites = [], options = {}) {
     const reasons = [];
     const comparableCoordinates = findComparableMetricCoordinates(left, right);
     if (left.domain !== right.domain) {
         reasons.push(reason("DOMAIN_MISMATCH", "Runs from QEC and algorithm domains cannot be compared.", "domain"));
+    }
+    // Only flagged when both runs state their execution class. Runs recorded
+    // before this field existed leave it absent, and absence is treated as
+    // "not recorded" rather than as a guessed value, so existing stored
+    // comparisons keep behaving as they did.
+    if (!options.allowMixedExecutionClasses &&
+        left.execution_class !== undefined &&
+        right.execution_class !== undefined &&
+        left.execution_class !== right.execution_class) {
+        reasons.push(reason("EXECUTION_CLASS_MISMATCH", `Runs were produced differently (${left.execution_class} vs ${right.execution_class}) and cannot be ranked ` +
+            "against each other. Present them as an explicitly labelled comparison instead.", "execution_class"));
+    }
+    // A circuit that reached its final form through a semantically lossy
+    // conversion is no longer the same program, so a metric measured on it is not
+    // measuring what the other run measured.
+    if (!options.allowSemanticTransformationLoss) {
+        for (const [label, run] of [
+            ["left", left],
+            ["right", right],
+        ]) {
+            if (run.transformation_chain && chainHasSemanticLoss(run.transformation_chain)) {
+                reasons.push(reason("SEMANTIC_TRANSFORMATION_LOSS", `The ${label} run's circuit lost semantic content during transformation, so it does not describe the ` +
+                    "same program as an unmodified run.", "transformation_chain"));
+            }
+        }
     }
     if (left.benchmark_suite !== right.benchmark_suite) {
         reasons.push(reason("BENCHMARK_SUITE_MISMATCH", "Benchmark suite slugs differ.", "benchmark_suite"));
@@ -45,8 +71,8 @@ export function findComparableMetricCoordinates(left, right) {
     const rightCoordinates = new Set(right.metric_points.map(metricCoordinateKey));
     return Array.from(new Set(left.metric_points.map(metricCoordinateKey))).filter((coordinate) => rightCoordinates.has(coordinate));
 }
-export function compareExactReproductionConfiguration(left, right) {
-    const base = compareRunCompatibility(left, right);
+export function compareExactReproductionConfiguration(left, right, options = {}) {
+    const base = compareRunCompatibility(left, right, [], options);
     const reasons = [...base.reasons];
     if (left.reproducibility_hash !== right.reproducibility_hash) {
         reasons.push(reason("HASH_MISMATCH", "Reproducibility hashes differ.", "reproducibility_hash"));

@@ -24,15 +24,15 @@ export declare const VerificationEvidenceSourceSchema: z.ZodObject<{
     manifest_path: z.ZodOptional<z.ZodString>;
     runner: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    repository_url?: string | undefined;
     commit_sha?: string | undefined;
     command?: string | undefined;
+    repository_url?: string | undefined;
     manifest_path?: string | undefined;
     runner?: string | undefined;
 }, {
-    repository_url?: string | undefined;
     commit_sha?: string | undefined;
     command?: string | undefined;
+    repository_url?: string | undefined;
     manifest_path?: string | undefined;
     runner?: string | undefined;
 }>;
@@ -65,15 +65,15 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
         manifest_path: z.ZodOptional<z.ZodString>;
         runner: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
         command?: string | undefined;
+        repository_url?: string | undefined;
         manifest_path?: string | undefined;
         runner?: string | undefined;
     }, {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
         command?: string | undefined;
+        repository_url?: string | undefined;
         manifest_path?: string | undefined;
         runner?: string | undefined;
     }>>;
@@ -106,10 +106,11 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     status: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED";
     schema_version: string;
+    summary: string;
     source: {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
         command?: string | undefined;
+        repository_url?: string | undefined;
         manifest_path?: string | undefined;
         runner?: string | undefined;
     };
@@ -120,7 +121,6 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
         version?: string | undefined;
     };
     evidence_kind: "SCHEMA_VALIDATION" | "HASH_VERIFICATION" | "INDEPENDENT_REPRODUCTION" | "DEMO_FIXTURE_REPRODUCTION" | "REVIEW_NOTE";
-    summary: string;
     is_demo_evidence: boolean;
     checked_at: string;
     id?: string | undefined;
@@ -138,19 +138,19 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
 }, {
     status: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED";
     schema_version: string;
+    summary: string;
     subject: {
         type: "BENCHMARK_SUITE" | "ARTIFACT" | "BENCHMARK_RUN";
         slug: string;
         version?: string | undefined;
     };
     evidence_kind: "SCHEMA_VALIDATION" | "HASH_VERIFICATION" | "INDEPENDENT_REPRODUCTION" | "DEMO_FIXTURE_REPRODUCTION" | "REVIEW_NOTE";
-    summary: string;
     checked_at: string;
     id?: string | undefined;
     source?: {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
         command?: string | undefined;
+        repository_url?: string | undefined;
         manifest_path?: string | undefined;
         runner?: string | undefined;
     } | undefined;
@@ -170,10 +170,11 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
 }>, {
     status: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED";
     schema_version: string;
+    summary: string;
     source: {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
         command?: string | undefined;
+        repository_url?: string | undefined;
         manifest_path?: string | undefined;
         runner?: string | undefined;
     };
@@ -184,7 +185,6 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
         version?: string | undefined;
     };
     evidence_kind: "SCHEMA_VALIDATION" | "HASH_VERIFICATION" | "INDEPENDENT_REPRODUCTION" | "DEMO_FIXTURE_REPRODUCTION" | "REVIEW_NOTE";
-    summary: string;
     is_demo_evidence: boolean;
     checked_at: string;
     id?: string | undefined;
@@ -202,19 +202,19 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
 }, {
     status: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED";
     schema_version: string;
+    summary: string;
     subject: {
         type: "BENCHMARK_SUITE" | "ARTIFACT" | "BENCHMARK_RUN";
         slug: string;
         version?: string | undefined;
     };
     evidence_kind: "SCHEMA_VALIDATION" | "HASH_VERIFICATION" | "INDEPENDENT_REPRODUCTION" | "DEMO_FIXTURE_REPRODUCTION" | "REVIEW_NOTE";
-    summary: string;
     checked_at: string;
     id?: string | undefined;
     source?: {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
         command?: string | undefined;
+        repository_url?: string | undefined;
         manifest_path?: string | undefined;
         runner?: string | undefined;
     } | undefined;

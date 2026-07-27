@@ -1,4 +1,7 @@
 export * from "./common.js"
+export * from "./quantum-card.js"
+export * from "./artifact-relation.js"
+export * from "./transformation.js"
 export * from "./artifact.js"
 export * from "./benchmark-suite.js"
 export * from "./experiment-manifest.js"

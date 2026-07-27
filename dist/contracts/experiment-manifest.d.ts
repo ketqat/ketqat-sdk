@@ -25,11 +25,11 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
         repository_url: z.ZodOptional<z.ZodString>;
         commit_sha: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     }, {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     }>>;
     sampling: z.ZodObject<{
         shots: z.ZodNumber;
@@ -107,11 +107,11 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             distances: number[];
             rounds: number | "distance";
         };
-        experiment_type: string;
         noise: {
             model: string;
             physical_error_rates: number[];
         };
+        experiment_type: string;
         decoder: {
             name: string;
             version?: string | undefined;
@@ -122,17 +122,18 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             distances: number[];
             rounds: number | "distance";
         };
-        experiment_type: string;
         noise: {
             model: string;
             physical_error_rates: number[];
         };
+        experiment_type: string;
         decoder: {
             name: string;
             version?: string | undefined;
         };
     }>;
 }, "strip", z.ZodTypeAny, {
+    schema_version: string;
     domain: "QEC";
     qec: {
         code: {
@@ -140,17 +141,16 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             distances: number[];
             rounds: number | "distance";
         };
-        experiment_type: string;
         noise: {
             model: string;
             physical_error_rates: number[];
         };
+        experiment_type: string;
         decoder: {
             name: string;
             version?: string | undefined;
         };
     };
-    schema_version: string;
     benchmark: {
         version: string;
         suite: string;
@@ -160,8 +160,8 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
         description?: string | undefined;
     };
     source: {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     };
     sampling: {
         shots: number;
@@ -177,6 +177,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
         node_version?: string | undefined;
     } | undefined;
 }, {
+    schema_version: string;
     domain: "QEC";
     qec: {
         code: {
@@ -184,17 +185,16 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             distances: number[];
             rounds: number | "distance";
         };
-        experiment_type: string;
         noise: {
             model: string;
             physical_error_rates: number[];
         };
+        experiment_type: string;
         decoder: {
             name: string;
             version?: string | undefined;
         };
     };
-    schema_version: string;
     benchmark: {
         version: string;
         suite: string;
@@ -209,8 +209,8 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
     };
     metrics: string[];
     source?: {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     } | undefined;
     environment?: {
         operating_system?: string | undefined;
@@ -248,11 +248,11 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
         repository_url: z.ZodOptional<z.ZodString>;
         commit_sha: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     }, {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     }>>;
     sampling: z.ZodObject<{
         shots: z.ZodNumber;
@@ -308,11 +308,11 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
             engine: z.ZodString;
             method: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            engine: string;
             method: string;
+            engine: string;
         }, {
-            engine: string;
             method: string;
+            engine: string;
         }>;
     }, "strip", z.ZodTypeAny, {
         family: string;
@@ -322,8 +322,8 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
             marked_state?: string | undefined;
         };
         execution: {
-            engine: string;
             method: string;
+            engine: string;
         };
     }, {
         family: string;
@@ -333,11 +333,12 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
             marked_state?: string | undefined;
         };
         execution: {
-            engine: string;
             method: string;
+            engine: string;
         };
     }>;
 }, "strip", z.ZodTypeAny, {
+    schema_version: string;
     domain: "ALGORITHM";
     algorithm: {
         family: string;
@@ -347,11 +348,10 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
             marked_state?: string | undefined;
         };
         execution: {
-            engine: string;
             method: string;
+            engine: string;
         };
     };
-    schema_version: string;
     benchmark: {
         version: string;
         suite: string;
@@ -361,8 +361,8 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
         description?: string | undefined;
     };
     source: {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     };
     sampling: {
         shots: number;
@@ -378,6 +378,7 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
         node_version?: string | undefined;
     } | undefined;
 }, {
+    schema_version: string;
     domain: "ALGORITHM";
     algorithm: {
         family: string;
@@ -387,11 +388,10 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
             marked_state?: string | undefined;
         };
         execution: {
-            engine: string;
             method: string;
+            engine: string;
         };
     };
-    schema_version: string;
     benchmark: {
         version: string;
         suite: string;
@@ -406,8 +406,8 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
     };
     metrics: string[];
     source?: {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     } | undefined;
     environment?: {
         operating_system?: string | undefined;
@@ -445,11 +445,11 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
         repository_url: z.ZodOptional<z.ZodString>;
         commit_sha: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     }, {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     }>>;
     sampling: z.ZodObject<{
         shots: z.ZodNumber;
@@ -527,11 +527,11 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             distances: number[];
             rounds: number | "distance";
         };
-        experiment_type: string;
         noise: {
             model: string;
             physical_error_rates: number[];
         };
+        experiment_type: string;
         decoder: {
             name: string;
             version?: string | undefined;
@@ -542,17 +542,18 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             distances: number[];
             rounds: number | "distance";
         };
-        experiment_type: string;
         noise: {
             model: string;
             physical_error_rates: number[];
         };
+        experiment_type: string;
         decoder: {
             name: string;
             version?: string | undefined;
         };
     }>;
 }, "strip", z.ZodTypeAny, {
+    schema_version: string;
     domain: "QEC";
     qec: {
         code: {
@@ -560,17 +561,16 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             distances: number[];
             rounds: number | "distance";
         };
-        experiment_type: string;
         noise: {
             model: string;
             physical_error_rates: number[];
         };
+        experiment_type: string;
         decoder: {
             name: string;
             version?: string | undefined;
         };
     };
-    schema_version: string;
     benchmark: {
         version: string;
         suite: string;
@@ -580,8 +580,8 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
         description?: string | undefined;
     };
     source: {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     };
     sampling: {
         shots: number;
@@ -597,6 +597,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
         node_version?: string | undefined;
     } | undefined;
 }, {
+    schema_version: string;
     domain: "QEC";
     qec: {
         code: {
@@ -604,17 +605,16 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             distances: number[];
             rounds: number | "distance";
         };
-        experiment_type: string;
         noise: {
             model: string;
             physical_error_rates: number[];
         };
+        experiment_type: string;
         decoder: {
             name: string;
             version?: string | undefined;
         };
     };
-    schema_version: string;
     benchmark: {
         version: string;
         suite: string;
@@ -629,8 +629,8 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
     };
     metrics: string[];
     source?: {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     } | undefined;
     environment?: {
         operating_system?: string | undefined;
@@ -666,11 +666,11 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
         repository_url: z.ZodOptional<z.ZodString>;
         commit_sha: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     }, {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     }>>;
     sampling: z.ZodObject<{
         shots: z.ZodNumber;
@@ -726,11 +726,11 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             engine: z.ZodString;
             method: z.ZodString;
         }, "strip", z.ZodTypeAny, {
-            engine: string;
             method: string;
+            engine: string;
         }, {
-            engine: string;
             method: string;
+            engine: string;
         }>;
     }, "strip", z.ZodTypeAny, {
         family: string;
@@ -740,8 +740,8 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             marked_state?: string | undefined;
         };
         execution: {
-            engine: string;
             method: string;
+            engine: string;
         };
     }, {
         family: string;
@@ -751,11 +751,12 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             marked_state?: string | undefined;
         };
         execution: {
-            engine: string;
             method: string;
+            engine: string;
         };
     }>;
 }, "strip", z.ZodTypeAny, {
+    schema_version: string;
     domain: "ALGORITHM";
     algorithm: {
         family: string;
@@ -765,11 +766,10 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             marked_state?: string | undefined;
         };
         execution: {
-            engine: string;
             method: string;
+            engine: string;
         };
     };
-    schema_version: string;
     benchmark: {
         version: string;
         suite: string;
@@ -779,8 +779,8 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
         description?: string | undefined;
     };
     source: {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     };
     sampling: {
         shots: number;
@@ -796,6 +796,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
         node_version?: string | undefined;
     } | undefined;
 }, {
+    schema_version: string;
     domain: "ALGORITHM";
     algorithm: {
         family: string;
@@ -805,11 +806,10 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             marked_state?: string | undefined;
         };
         execution: {
-            engine: string;
             method: string;
+            engine: string;
         };
     };
-    schema_version: string;
     benchmark: {
         version: string;
         suite: string;
@@ -824,8 +824,8 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
     };
     metrics: string[];
     source?: {
-        repository_url?: string | undefined;
         commit_sha?: string | undefined;
+        repository_url?: string | undefined;
     } | undefined;
     environment?: {
         operating_system?: string | undefined;
