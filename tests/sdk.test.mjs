@@ -1315,44 +1315,44 @@ const cliFixture = new URL("./fixtures-cli-bell.qasm", import.meta.url)
 fs.writeFileSync(cliFixture, BELL_QASM)
 
 // Every command returns one structured object; no command prints prose to stdout.
-const inspect = runCli(["circuit", "inspect", cliFixture.pathname])
+const inspect = await runCli(["circuit", "inspect", cliFixture.pathname])
 assert.equal(inspect.exitCode, 0)
 assert.equal(inspect.stdout.command, "circuit.inspect")
 assert.equal(inspect.stdout.summary.qubits, 2)
 assert.equal(inspect.stdout.summary.two_qubit_gate_count, 1)
 
-const simulated = runCli(["simulate", cliFixture.pathname, "--shots", "500", "--seed", "3"])
+const simulated = await runCli(["simulate", cliFixture.pathname, "--shots", "500", "--seed", "3"])
 assert.equal(simulated.exitCode, 0)
 assert.equal(simulated.stdout.deterministic, true)
 assert.deepEqual(Object.keys(simulated.stdout.counts).sort(), ["00", "11"])
 
 // An unparseable circuit fails with the feature named, not a bare stack trace.
 fs.writeFileSync(cliFixture, "OPENQASM 3;\nqubit[1] q;\nfor int i in [0:3] { h q[0]; }\n")
-const rejected = runCli(["circuit", "inspect", cliFixture.pathname])
+const rejected = await runCli(["circuit", "inspect", cliFixture.pathname])
 assert.equal(rejected.exitCode, 1)
 assert.equal(rejected.stdout.error, "qasm_parse_error")
 assert.equal(rejected.stdout.feature, "control_flow_loop")
 fs.writeFileSync(cliFixture, BELL_QASM)
 
 // Unknown commands and missing arguments exit 2 with usage on stderr.
-assert.equal(runCli(["not-a-command"]).exitCode, 2)
-assert.equal(runCli(["simulate"]).exitCode, 2)
-assert.equal(runCli([]).exitCode, 2)
-assert.ok(runCli(["help"]).stderr.includes("ketqat-engine"))
+assert.equal((await runCli(["not-a-command"])).exitCode, 2)
+assert.equal((await runCli(["simulate"])).exitCode, 2)
+assert.equal((await runCli([])).exitCode, 2)
+assert.ok((await runCli(["help"])).stderr.includes("ketqat-engine"))
 
 // A FAILED equivalence is a finding, not a tool error, so it still exits 0.
 const leftFixture = new URL("./fixtures-cli-x.qasm", import.meta.url)
 const rightFixture = new URL("./fixtures-cli-z.qasm", import.meta.url)
 fs.writeFileSync(leftFixture, "OPENQASM 3;\nqubit[1] q;\nx q[0];\n")
 fs.writeFileSync(rightFixture, "OPENQASM 3;\nqubit[1] q;\nz q[0];\n")
-const equivalence = runCli(["equivalence", leftFixture.pathname, rightFixture.pathname])
+const equivalence = await runCli(["equivalence", leftFixture.pathname, rightFixture.pathname])
 assert.equal(equivalence.exitCode, 0)
 assert.equal(equivalence.stdout.evidence.level, "FAILED")
 assert.ok(equivalence.stdout.evidence.counterexample)
 
 // mitigate zne refuses to run without a noise model rather than silently
 // mitigating against nothing.
-assert.equal(runCli(["mitigate", "zne", cliFixture.pathname]).exitCode, 2)
+assert.equal((await runCli(["mitigate", "zne", cliFixture.pathname])).exitCode, 2)
 
 fs.rmSync(cliFixture); fs.rmSync(leftFixture); fs.rmSync(rightFixture)
 
@@ -1395,3 +1395,73 @@ assert.equal(callTool("simulate_circuit", { qasm: "" }).error, "invalid_input")
 // A shot count beyond the declared cap is refused by the input schema rather
 // than accepted and run.
 assert.equal(callTool("simulate_circuit", { qasm: BELL_QASM, shots: 10_000_000 }).error, "invalid_input")
+
+// --- Registry commands (A1) -------------------------------------------------
+
+// Registry commands need a URL, and say where to put it.
+const noRegistry = await runCli(["search", "grover"])
+assert.equal(noRegistry.exitCode, 2)
+assert.match(noRegistry.stderr, /--registry <url> or set KETQAT_URL/)
+
+// A push without a token refuses, and explains why the token is not a flag.
+const previousToken = process.env.KETQAT_TOKEN
+delete process.env.KETQAT_TOKEN
+const cardFixture = new URL("./fixtures-cli-card.json", import.meta.url)
+fs.writeFileSync(
+  cardFixture,
+  JSON.stringify({
+    schema_version: "0.1",
+    name: "Surface code memory",
+    slug: "surface-code-memory",
+    version: "0.1.0",
+    artifact_type: "QEC_CODE",
+    description: "Rotated surface code memory experiment.",
+    problem_definition: "Preserve one logical qubit for d rounds under circuit-level noise.",
+    provenance: { license: "Apache-2.0", authors: ["A. Researcher"] },
+    assumptions: { noise: ["Uniform circuit-level depolarizing noise"] },
+    known_limitations: ["None identified"],
+  }),
+)
+const noToken = await runCli(["push", "surface-code-memory", cardFixture.pathname, "--registry", "https://example.test"])
+assert.equal(noToken.exitCode, 2)
+assert.match(noToken.stderr, /KETQAT_TOKEN/)
+// The reason matters: a flag would leak the token into shell history.
+assert.match(noToken.stderr, /shell history/)
+
+// Usage errors are reported before any network call is attempted.
+assert.equal((await runCli(["push", "only-a-slug"])).exitCode, 2)
+assert.equal((await runCli(["pull"])).exitCode, 2)
+assert.equal((await runCli(["search"])).exitCode, 2)
+
+fs.rmSync(cardFixture)
+if (previousToken !== undefined) process.env.KETQAT_TOKEN = previousToken
+
+// The client validates a Quantum Card locally before publishing, so an invalid
+// card fails with the offending field rather than a bare 400 from the server.
+const publishClient = new KetQatClient({
+  baseUrl: "https://example.test",
+  token: "kq_test",
+  fetch: async () => {
+    throw new Error("network should not be reached for an invalid card")
+  },
+})
+await assert.rejects(
+  () => publishClient.artifactVersions.publish("slug", { version: "0.1.0", quantum_card: { name: "incomplete" } }),
+  (error) => /known_limitations|assumptions|Required/i.test(error.message),
+)
+
+// A server error message is surfaced rather than reduced to a status code.
+const failingClient = new KetQatClient({
+  baseUrl: "https://example.test",
+  token: "kq_test",
+  fetch: async () =>
+    new Response(JSON.stringify({ error: "That version already exists and cannot be overwritten." }), {
+      status: 409,
+      statusText: "Conflict",
+      headers: { "content-type": "application/json" },
+    }),
+})
+await assert.rejects(
+  () => failingClient.artifacts.get("slug"),
+  (error) => /409/.test(error.message) && /already exists/.test(error.message),
+)

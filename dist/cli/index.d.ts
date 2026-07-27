@@ -14,5 +14,5 @@ export interface CommandResult {
     stdout?: unknown;
     stderr?: string;
 }
-export declare function runCli(argv: string[]): CommandResult;
+export declare function runCli(argv: string[]): Promise<CommandResult>;
 //# sourceMappingURL=index.d.ts.map

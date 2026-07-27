@@ -32,6 +32,26 @@ export declare class KetQatClient {
         getBundle: (slug: string) => Promise<ReproducibilityBundle>;
         downloadBundle: (slug: string) => Promise<Blob>;
     };
+    readonly artifactVersions: {
+        list: (slug: string) => Promise<unknown[]>;
+        /**
+         * Publish a Quantum Card. The card is validated locally first, so an
+         * invalid card fails before a network round trip and reports the failing
+         * field rather than a bare 400.
+         */
+        publish: (slug: string, input: {
+            version: string;
+            quantum_card: unknown;
+            commit_sha?: string;
+        }) => Promise<unknown>;
+    };
+    readonly artifactRelations: {
+        list: (slug: string) => Promise<unknown[]>;
+        create: (slug: string, input: Record<string, unknown>) => Promise<unknown>;
+    };
+    readonly search: {
+        query: (term: string) => Promise<Record<string, unknown>>;
+    };
     readonly github: {
         importRepository: (input: Record<string, unknown>) => Promise<Artifact>;
     };
