@@ -52,6 +52,10 @@ import {
   transpileForHardware,
   SUPPORTED_REWRITES,
   optimizeWithZx,
+  expectationFromCounts,
+  foldCircuit,
+  mitigateReadout,
+  zeroNoiseExtrapolation,
 } from "../dist/index.js"
 
 const fixture = (name) => JSON.parse(fs.readFileSync(new URL(`../fixtures/reproducibility/${name}`, import.meta.url), "utf8"))
@@ -1153,3 +1157,140 @@ assert.deepEqual(larger.transformation.options.supported_rewrites, [...SUPPORTED
 
 // An optimization is only usable downstream if its equivalence evidence says so.
 assert.equal(chainHasSemanticLoss([larger.transformation]), false)
+
+// ---------------------------------------------------------------------------
+// Noise and error mitigation (RFC 0001)
+// ---------------------------------------------------------------------------
+
+const mitCircuit = (source) => parseQasm3(source).circuit
+const identityChain = mitCircuit(`OPENQASM 3;
+qubit[1] q;
+bit[1] c;
+h q[0];
+h q[0];
+h q[0];
+h q[0];
+c[0] = measure q[0];
+`)
+const depolarizing = { model: "depolarizing", one_qubit_error: 0.02, two_qubit_error: 0, readout_error: 0 }
+
+// The circuit is the identity, so the ideal expectation is exactly +1.
+const idealCounts = simulateStatevector(identityChain, { shots: 4000, seed: 1 })
+assert.equal(expectationFromCounts(idealCounts.counts, 0).value, 1)
+
+// Noise degrades it, and the noise model is recorded on the result so a noisy
+// run cannot be mistaken for an ideal one.
+const noisyRun = simulateStatevector(identityChain, { shots: 4000, seed: 1, noise: depolarizing })
+const noisyValue = expectationFromCounts(noisyRun.counts, 0).value
+assert.ok(noisyValue < 1, "depolarizing noise must degrade the expectation")
+assert.ok(noisyValue > 0.5, `noise should be modest at p=0.02, got ${noisyValue}`)
+assert.deepEqual(noisyRun.noise, depolarizing)
+
+// A noisy run is still exactly reproducible from its seed.
+assert.deepEqual(
+  simulateStatevector(identityChain, { shots: 4000, seed: 1, noise: depolarizing }).counts,
+  noisyRun.counts,
+)
+
+// A noiseless model leaves the result untouched and records no noise.
+assert.equal(
+  simulateStatevector(identityChain, {
+    shots: 200,
+    seed: 1,
+    noise: { model: "depolarizing", one_qubit_error: 0, two_qubit_error: 0, readout_error: 0 },
+  }).noise,
+  undefined,
+)
+
+// A noise model without shots is refused rather than silently returning the
+// noiseless state under a noisy label.
+assert.throws(
+  () => simulateStatevector(mitCircuit(`OPENQASM 3;\nqubit[1] q;\nh q[0];\n`), { noise: depolarizing }),
+  /requires a positive shot count/,
+)
+
+// Readout error flips outcomes.
+const readoutNoisy = simulateStatevector(identityChain, {
+  shots: 4000,
+  seed: 5,
+  noise: { model: "depolarizing", one_qubit_error: 0, two_qubit_error: 0, readout_error: 0.1 },
+})
+assert.ok(Math.abs(expectationFromCounts(readoutNoisy.counts, 0).value - 0.8) < 0.05)
+
+// --- Unitary folding -------------------------------------------------------
+
+const foldBase = mitCircuit(`OPENQASM 3;\nqubit[1] q;\nbit[1] c;\nrz(0.3) q[0];\nh q[0];\nc[0] = measure q[0];\n`)
+assert.equal(foldCircuit(foldBase, 1), foldBase)
+const folded3 = foldCircuit(foldBase, 3)
+// Two gates fold to six; the measurement is not folded.
+assert.equal(folded3.operations.filter((operation) => operation.kind === "gate").length, 6)
+assert.equal(folded3.operations.filter((operation) => operation.kind === "measure").length, 1)
+
+// Folding preserves the ideal unitary, which the equivalence checker confirms.
+const unmeasured = mitCircuit(`OPENQASM 3;\nqubit[1] q;\nrz(0.3) q[0];\nh q[0];\n`)
+assert.equal(checkCircuitEquivalence(unmeasured, foldCircuit(unmeasured, 3)).level, "NUMERICALLY_CHECKED")
+assert.equal(checkCircuitEquivalence(unmeasured, foldCircuit(unmeasured, 5)).level, "NUMERICALLY_CHECKED")
+
+// Even and fractional scale factors are refused rather than rounded, because a
+// silently adjusted scale makes the reported factor a lie.
+assert.throws(() => foldCircuit(foldBase, 2), /odd integer scale factors/)
+assert.throws(() => foldCircuit(foldBase, 1.5), /odd integer scale factors/)
+assert.throws(() => foldCircuit(foldBase, 0), /odd integer scale factors/)
+
+// A gate with no known inverse is refused, not approximated.
+assert.throws(
+  () => foldCircuit(mitCircuit(`OPENQASM 3;\nqubit[1] q;\nu2(0.1, 0.2) q[0];\n`), 3),
+  /Cannot invert gate/,
+)
+
+// --- Zero-noise extrapolation ---------------------------------------------
+
+const zne = zeroNoiseExtrapolation(identityChain, depolarizing, {
+  shots: 8000,
+  seed: 7,
+  scaleFactors: [1, 3, 5],
+})
+assert.equal(zne.method, "zero_noise_extrapolation")
+// Raw is retained alongside the mitigated estimate; a mitigated number is a
+// model-dependent estimate, not a measurement.
+assert.ok(zne.raw_value < 1)
+assert.equal(zne.data_points.length, 3)
+assert.equal(zne.total_shots, 24000)
+// The ZNE premise: the observable degrades monotonically with noise scale.
+assert.ok(zne.data_points[0].value > zne.data_points[1].value)
+assert.ok(zne.data_points[1].value > zne.data_points[2].value)
+// Extrapolation recovers close to the ideal value of 1.
+assert.ok(Math.abs(zne.mitigated_value - 1) < 0.1, `ZNE should approach 1, got ${zne.mitigated_value}`)
+assert.ok(zne.mitigated_value > zne.raw_value, "mitigation should move the estimate toward the ideal")
+assert.ok(zne.assumptions.some((entry) => /not a measurement/.test(entry)))
+CircuitTransformationSchema.parse(zne.transformation)
+
+// Scale factors must include 1, which anchors the fit to the raw result.
+assert.throws(() => zeroNoiseExtrapolation(identityChain, depolarizing, { scaleFactors: [3, 5] }), /must include 1/)
+
+// An unphysical extrapolation is reported, not clamped into a plausible number.
+const unphysical = zeroNoiseExtrapolation(identityChain, depolarizing, {
+  shots: 4000,
+  seed: 3,
+  scaleFactors: [1, 3, 5],
+  extrapolation: "linear",
+})
+if (unphysical.mitigated_value > 1) {
+  assert.ok(unphysical.warnings.some((warning) => /outside the physical range/.test(warning)))
+}
+
+// --- Readout mitigation ----------------------------------------------------
+
+const readoutCorrected = mitigateReadout({ "0": 900, "1": 100 }, { p0_given_0: 0.95, p1_given_1: 0.95 }, 0)
+assert.equal(readoutCorrected.method, "readout_error_mitigation")
+assert.ok(Math.abs(readoutCorrected.raw_value - 0.8) < 1e-9)
+// Correcting for 5% symmetric readout error scales 0.8 up toward 0.889.
+assert.ok(readoutCorrected.mitigated_value > readoutCorrected.raw_value)
+assert.ok(Math.abs(readoutCorrected.mitigated_value - 0.8 / 0.9) < 1e-9)
+
+// A singular confusion matrix means readout carries no information, so no
+// correction is possible and the raw value is returned with a warning.
+const singular = mitigateReadout({ "0": 500, "1": 500 }, { p0_given_0: 0.5, p1_given_1: 0.5 }, 0)
+assert.equal(singular.mitigated_value, singular.raw_value)
+assert.ok(singular.warnings.some((warning) => /singular/.test(warning)))
+assert.ok(singular.assumptions.some((entry) => /not a measurement/.test(entry)))

@@ -1,4 +1,5 @@
 import type { QuantumCircuit } from "../circuit/graph.js";
+import { type NoiseModel } from "./noise.js";
 /**
  * Exact statevector simulator for small circuits.
  *
@@ -31,6 +32,12 @@ export interface RunOptions {
     shots?: number;
     /** Omitting the seed makes the run non-reproducible, and the result says so. */
     seed?: number;
+    /**
+     * Sample Pauli-error trajectories per shot. Requires shots: a noise model has
+     * no meaning for an exact statevector, and silently ignoring it would produce
+     * a noiseless result labelled as noisy.
+     */
+    noise?: NoiseModel;
 }
 export interface SimulationResult {
     qubit_count: number;
@@ -46,6 +53,8 @@ export interface SimulationResult {
     seed: number | null;
     deterministic: boolean;
     backend: string;
+    /** Present when a noise model was applied, so a noisy result cannot be mistaken for an ideal one. */
+    noise?: NoiseModel;
 }
 export declare const STATEVECTOR_BACKEND = "ketqat-statevector";
 export declare const STATEVECTOR_BACKEND_VERSION = "0.1.0";
