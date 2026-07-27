@@ -27,7 +27,12 @@ RUN groupadd --system --gid 10001 ketqat \
 WORKDIR /app
 COPY --from=builder --chown=root:root /build/node_modules ./node_modules
 COPY --from=builder --chown=root:root /build/dist ./dist
-COPY --chown=root:root worker/entrypoint.mjs ./entrypoint.mjs
+# Kept under worker/ so the layout matches the repository. The entrypoint
+# imports ../dist/index.js; flattening it to /app/entrypoint.mjs resolved that
+# to /dist and the container failed at startup with ERR_MODULE_NOT_FOUND. The
+# image was built and pushed in that state because nothing ever ran it -- which
+# is why verify-worker-image.mjs below now runs the container in CI.
+COPY --chown=root:root worker/entrypoint.mjs ./worker/entrypoint.mjs
 
 # Application files are root-owned and not writable by the runtime user, so a
 # compromised job cannot rewrite the code that runs the next one.
@@ -66,4 +71,4 @@ ENV KETQAT_WORKER_EGRESS=control-plane-only
 # the process level. Nothing in the engine uses them -- parameter expressions go
 # through a hand-written parser precisely so they cannot -- and this turns that
 # from a code-review property into a runtime guarantee.
-ENTRYPOINT ["node", "--disallow-code-generation-from-strings", "/app/entrypoint.mjs"]
+ENTRYPOINT ["node", "--disallow-code-generation-from-strings", "/app/worker/entrypoint.mjs"]
