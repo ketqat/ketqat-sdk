@@ -1719,3 +1719,178 @@ assert.match(serialized, /\[redacted\]/)
 // Non-secret values survive, so redaction stays useful for debugging.
 assert.match(serialized, /visible/)
 assert.match(serialized, /ibm/)
+
+// ---------------------------------------------------------------------------
+// Worker callback transport
+//
+// The worker holds no secret: it authenticates as its own service account with
+// a token minted per call. These cases pin the parts of that arrangement that
+// would fail silently and dangerously if they broke -- an unauthenticated
+// request going out, a validation failure being retried until the budget is
+// gone, or a job payload leaking into the environment.
+// ---------------------------------------------------------------------------
+{
+  const { CallbackError, callbackConfigFromEnv, claimJob, reportResult } = await import(
+    "../dist/index.js"
+  )
+
+  const identity = (token) => ({ fetchIdentityToken: async () => token })
+
+  // Absent an identity token, the worker must fail rather than send the request
+  // without one. A fallback here would turn a misconfigured deploy into an
+  // endpoint anyone can call.
+  {
+    let called = false
+    const config = {
+      apiBaseUrl: "https://control.example",
+      jobId: "job-1",
+      attempt: 1,
+      identity: identity(null),
+      fetchImpl: async () => {
+        called = true
+        return new Response("{}", { status: 200 })
+      },
+    }
+    await assert.rejects(
+      () => claimJob(config),
+      (error) => error instanceof CallbackError && /no fallback credential/i.test(error.message),
+    )
+    assert.equal(called, false, "no request may be sent without an identity token")
+  }
+
+  // The token is audienced to the control plane and sent as a bearer token, and
+  // the attempt number goes with it so the ceiling is enforced server-side.
+  {
+    let seen = null
+    const config = {
+      apiBaseUrl: "https://control.example/",
+      jobId: "job-2",
+      attempt: 3,
+      identity: {
+        fetchIdentityToken: async (audience) => `token-for-${audience}`,
+      },
+      fetchImpl: async (url, init) => {
+        seen = { url, headers: new Headers(init.headers), body: init.body }
+        return new Response(JSON.stringify({ job: { job_id: "job-2" } }), { status: 200 })
+      },
+    }
+    const claimed = await claimJob(config)
+    assert.equal(claimed.job.job_id, "job-2")
+    assert.equal(seen.url, "https://control.example/api/execution/jobs/job-2/claim")
+    assert.equal(seen.headers.get("authorization"), "Bearer token-for-https://control.example/")
+    assert.equal(seen.headers.get("x-ketqat-attempt"), "3")
+  }
+
+  // 5xx, 408, and 429 may succeed on another attempt. A 4xx will not, and
+  // retrying it burns the attempt budget while delaying the error reaching the
+  // person who submitted the job.
+  for (const [status, retryable] of [
+    [500, true],
+    [503, true],
+    [408, true],
+    [429, true],
+    [400, false],
+    [403, false],
+    [404, false],
+    [409, false],
+  ]) {
+    const config = {
+      apiBaseUrl: "https://control.example",
+      jobId: "job-3",
+      attempt: 1,
+      identity: identity("t"),
+      fetchImpl: async () => new Response("nope", { status }),
+    }
+    await assert.rejects(
+      () => claimJob(config),
+      (error) => {
+        assert.ok(error instanceof CallbackError)
+        assert.equal(error.retryable, retryable, `status ${status} retryable`)
+        return true
+      },
+    )
+  }
+
+  // A network failure is retryable: the control plane may simply not have been
+  // reachable yet.
+  {
+    const config = {
+      apiBaseUrl: "https://control.example",
+      jobId: "job-4",
+      attempt: 1,
+      identity: identity("t"),
+      fetchImpl: async () => {
+        throw new Error("ECONNREFUSED")
+      },
+    }
+    await assert.rejects(
+      () => claimJob(config),
+      (error) => error instanceof CallbackError && error.retryable === true,
+    )
+  }
+
+  // An error page is truncated before it becomes the worker's log volume.
+  {
+    const config = {
+      apiBaseUrl: "https://control.example",
+      jobId: "job-5",
+      attempt: 1,
+      identity: identity("t"),
+      fetchImpl: async () => new Response("x".repeat(50_000), { status: 500 }),
+    }
+    await assert.rejects(
+      () => claimJob(config),
+      (error) => error.message.length < 700,
+    )
+  }
+
+  // Results are posted, not printed. Worker stdout is captured by the platform's
+  // logging, which has different retention and access than the registry.
+  {
+    let body = null
+    const config = {
+      apiBaseUrl: "https://control.example",
+      jobId: "job-6",
+      attempt: 1,
+      identity: identity("t"),
+      fetchImpl: async (_url, init) => {
+        body = JSON.parse(init.body)
+        return new Response("{}", { status: 200 })
+      },
+    }
+    await reportResult(config, { job_id: "job-6", status: "SUCCEEDED" })
+    assert.deepEqual(body, { job_id: "job-6", status: "SUCCEEDED" })
+  }
+
+  // Callback mode requires both the base URL and the job id. With either
+  // missing the worker runs locally instead of half-configured.
+  assert.equal(callbackConfigFromEnv({}), null)
+  assert.equal(callbackConfigFromEnv({ KETQAT_API_BASE_URL: "https://x" }), null)
+  assert.equal(callbackConfigFromEnv({ KETQAT_JOB_ID: "j" }), null)
+  assert.deepEqual(
+    callbackConfigFromEnv({
+      KETQAT_API_BASE_URL: "https://x",
+      KETQAT_JOB_ID: "j",
+      KETQAT_JOB_ATTEMPT: "4",
+    }),
+    { apiBaseUrl: "https://x", jobId: "j", attempt: 4 },
+  )
+  // A malformed or absent attempt counts as the first, never as zero, which
+  // would make a retry ceiling of N allow N + 1 runs.
+  for (const attempt of [undefined, "", "nonsense", "0", "-3"]) {
+    const config = callbackConfigFromEnv({
+      KETQAT_API_BASE_URL: "https://x",
+      KETQAT_JOB_ID: "j",
+      KETQAT_JOB_ATTEMPT: attempt,
+    })
+    assert.equal(config.attempt, 1, `attempt ${String(attempt)} defaults to 1`)
+  }
+
+  // The dispatcher passes an id and a URL, never the manifest. A payload in the
+  // environment would appear in `gcloud run jobs describe` and in crash dumps.
+  const entrypoint = fs.readFileSync(new URL("../worker/entrypoint.mjs", import.meta.url), "utf8")
+  assert.ok(
+    !/KETQAT_JOB_PAYLOAD|KETQAT_JOB_MANIFEST/.test(entrypoint),
+    "the job manifest must not be read from the environment in callback mode",
+  )
+}
