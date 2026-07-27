@@ -18,7 +18,23 @@ import {
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const outputDir = resolve(root, "schemas")
+// The Python runner validates against a copy packaged inside the wheel, and
+// `resources.files("ketqat_runner")` finds that copy before the repository's
+// `schemas/`. Writing both from this one generator is what keeps them from
+// drifting: a stale packaged copy silently validates against an older contract,
+// which is how a manifest can be rejected for using a field the TypeScript
+// contract already accepts.
+const pythonSchemaDir = resolve(root, "python", "src", "ketqat_runner", "schemas")
 mkdirSync(outputDir, { recursive: true })
+mkdirSync(pythonSchemaDir, { recursive: true })
+
+/** Schemas the Python runner validates against, packaged inside the wheel. */
+const PYTHON_VALIDATED_SCHEMAS = new Set([
+  "qec-experiment-manifest.schema.json",
+  "algorithm-experiment-manifest.schema.json",
+  "qec-benchmark-result.schema.json",
+  "algorithm-benchmark-result.schema.json",
+])
 
 const schemas = {
   "artifact.schema.json": ArtifactSchema,
@@ -43,5 +59,9 @@ for (const [filename, schema] of Object.entries(schemas)) {
     // Schema consumers. No contract is recursive, so full inlining is safe.
     $refStrategy: "none",
   })
-  writeFileSync(resolve(outputDir, filename), `${JSON.stringify(jsonSchema, null, 2)}\n`)
+  const serialized = `${JSON.stringify(jsonSchema, null, 2)}\n`
+  writeFileSync(resolve(outputDir, filename), serialized)
+  if (PYTHON_VALIDATED_SCHEMAS.has(filename)) {
+    writeFileSync(resolve(pythonSchemaDir, filename), serialized)
+  }
 }

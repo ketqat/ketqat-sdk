@@ -190,12 +190,40 @@
                 },
                 "version": {
                   "type": "string"
+                },
+                "options": {
+                  "type": "object",
+                  "additionalProperties": {}
                 }
               },
               "required": [
                 "name"
               ],
               "additionalProperties": false
+            },
+            "decoders": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "version": {
+                    "type": "string"
+                  },
+                  "options": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1
             }
           },
           "required": [
