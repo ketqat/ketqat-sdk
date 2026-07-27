@@ -65,6 +65,14 @@
     "./hardware": {
       "types": "./dist/hardware/profile.d.ts",
       "import": "./dist/hardware/profile.js"
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js"
     }
   },
   "files": [
@@ -93,5 +101,8 @@
   },
   "dependencies": {
     "zod": "^3.25.76"
+  },
+  "bin": {
+    "ketqat-engine": "./dist/cli/bin.js"
   }
 }
