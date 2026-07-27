@@ -1,45 +1,45 @@
-"""QEC code catalog and code-to-hardware suitability (RFC 0006).
+"""QEC code catalog, loaded from the generated single source.
 
-The catalog records families, their structural properties, and what a device
-must be able to do to run them. Two things it deliberately does not do:
+The catalog is defined once in ``src/contracts/qec-code.ts`` and emitted to
+``schemas/qec-code-catalog.json`` and the packaged copy alongside it. This
+module reads that file rather than keeping a second hand-maintained copy.
 
-* It does not reproduce any external catalog's data or prose. Entries here are
-  structural facts stated in the project's own words, with external references
-  recorded as pointers rather than copied content.
-* It does not emit recommendations. A code-to-hardware pairing carries an
-  evidence level, and ``THEORETICALLY_SUITABLE`` is never displayed as though
-  it were ``DEMONSTRATED``.
+Two hand-maintained copies drift. A drifted JSON Schema already caused a real
+failure in this repository, where the runner rejected a manifest the TypeScript
+contract accepted and the error named the field rather than the staleness. A
+drifted *scientific* catalog would be worse, because it looks authoritative
+while being wrong.
+
+What the catalog deliberately does not do:
+
+* It does not reproduce any external catalog's data or prose. Entries are
+  structural facts in the project's own words; external catalogs are pointers.
+* It does not emit recommendations. Suitability is derived from a hardware
+  snapshot's capability fields so the claim can be checked, and capability
+  matching never reports SIMULATED or DEMONSTRATED -- only a recorded run can
+  raise the level that far.
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
+from functools import lru_cache
+from importlib import resources
+from pathlib import Path
 from typing import Any
 
-#: Structural families. A code may belong to several, e.g. the surface code is
+CATALOG_FILENAME = "qec-code-catalog.json"
+
+#: Structural families. A code may belong to several: the surface code is
 #: stabilizer, CSS, and topological at once.
 CODE_FAMILIES = (
-    "STABILIZER",
-    "CSS",
-    "SUBSYSTEM",
-    "TOPOLOGICAL",
-    "SURFACE",
-    "TORIC",
-    "COLOR",
-    "QUANTUM_LDPC",
-    "HYPERGRAPH_PRODUCT",
-    "BIVARIATE_BICYCLE",
-    "CONCATENATED",
-    "BOSONIC",
-    "GKP",
-    "CAT",
-    "QUDIT",
-    "ERASURE_TOLERANT",
-    "APPROXIMATE",
-    "FLOQUET",
+    "STABILIZER", "CSS", "SUBSYSTEM", "TOPOLOGICAL", "SURFACE", "TORIC", "COLOR",
+    "QUANTUM_LDPC", "HYPERGRAPH_PRODUCT", "BIVARIATE_BICYCLE", "CONCATENATED",
+    "BOSONIC", "GKP", "CAT", "QUDIT", "ERASURE_TOLERANT", "APPROXIMATE", "FLOQUET",
 )
 
-#: How well a code/hardware pairing is supported. Ordered weakest to strongest,
-#: with the negative and unknown cases kept distinct from each other.
+#: Ordered weakest to strongest. The negative and unknown cases stay distinct:
+#: "we do not know" and "this does not work" are different statements.
 SUITABILITY_LEVELS = (
     "UNKNOWN",
     "INCOMPATIBLE_UNDER_ASSUMPTIONS",
@@ -57,116 +57,109 @@ SUITABILITY_LEVELS = (
 class QecCode:
     """A code family entry.
 
-    ``requires_*`` fields are the properties a device must have. They exist so
-    suitability can be *derived* from a hardware snapshot rather than asserted,
-    which keeps the claim checkable.
+    The ``requires_*`` fields exist so suitability can be *derived* from a
+    hardware snapshot rather than asserted, which keeps the claim checkable.
     """
 
     slug: str
     name: str
     families: tuple[str, ...]
     description: str
-    #: Whether syndrome extraction needs measurement partway through a circuit.
     requires_mid_circuit_measurement: bool = True
-    #: Whether the code needs classical feedback within the circuit.
     requires_feed_forward: bool = False
-    #: Whether it needs couplings beyond nearest neighbours on a planar grid.
     requires_nonlocal_connectivity: bool = False
-    #: Whether it depends on detecting lost or leaked qubits.
     requires_loss_detection: bool = False
-    #: Distances the packaged runner can actually simulate, when applicable.
     supported_distances: tuple[int, ...] = ()
-    #: Stim circuit generator name, when this code is directly runnable.
     stim_generator: str | None = None
-    #: External references as pointers, never copied content.
     references: tuple[str, ...] = ()
     notes: tuple[str, ...] = field(default_factory=tuple)
 
 
-CATALOG: dict[str, QecCode] = {
-    code.slug: code
-    for code in (
-        QecCode(
-            slug="rotated-surface-code-memory-x",
-            name="Rotated surface code (X memory)",
-            families=("STABILIZER", "CSS", "TOPOLOGICAL", "SURFACE"),
-            description=(
-                "Planar topological code on a rotated lattice, preserving one logical qubit "
-                "through repeated rounds of syndrome extraction."
-            ),
-            supported_distances=(3, 5, 7, 9),
-            stim_generator="surface_code:rotated_memory_x",
-            references=("https://errorcorrectionzoo.org/c/surface",),
-            notes=("Nearest-neighbour connectivity on a two-dimensional grid is sufficient.",),
-        ),
-        QecCode(
-            slug="rotated-surface-code-memory-z",
-            name="Rotated surface code (Z memory)",
-            families=("STABILIZER", "CSS", "TOPOLOGICAL", "SURFACE"),
-            description="Rotated surface code memory experiment in the Z basis.",
-            supported_distances=(3, 5, 7, 9),
-            stim_generator="surface_code:rotated_memory_z",
-            references=("https://errorcorrectionzoo.org/c/surface",),
-        ),
-        QecCode(
-            slug="unrotated-surface-code-memory-x",
-            name="Unrotated surface code (X memory)",
-            families=("STABILIZER", "CSS", "TOPOLOGICAL", "SURFACE"),
-            description="Unrotated surface code memory; more physical qubits per distance than the rotated layout.",
-            supported_distances=(3, 5, 7),
-            stim_generator="surface_code:unrotated_memory_x",
-            references=("https://errorcorrectionzoo.org/c/surface",),
-        ),
-        QecCode(
-            slug="repetition-code-memory",
-            name="Repetition code (memory)",
-            families=("STABILIZER", "CSS"),
-            description=(
-                "One-dimensional classical repetition code protecting against a single error "
-                "type. Useful as a control: it is not a full quantum code."
-            ),
-            supported_distances=(3, 5, 7, 9, 11),
-            stim_generator="repetition_code:memory",
-            references=("https://errorcorrectionzoo.org/c/quantum_repetition",),
-            notes=(
-                "Protects against one error type only, so a low logical error rate here is not "
-                "evidence of quantum error correction.",
-            ),
-        ),
-        QecCode(
-            slug="color-code-memory-xyz",
-            name="Color code (XYZ memory)",
-            families=("STABILIZER", "CSS", "TOPOLOGICAL", "COLOR"),
-            description="Triangular color code memory, admitting transversal Clifford gates.",
-            supported_distances=(3, 5, 7),
-            stim_generator="color_code:memory_xyz",
-            references=("https://errorcorrectionzoo.org/c/color",),
-            notes=("Syndrome extraction uses weight-six stabilizers on a three-colorable lattice.",),
-        ),
+def _catalog_path() -> Path:
+    packaged = resources.files("ketqat_runner").joinpath("schemas", CATALOG_FILENAME)
+    if packaged.is_file():
+        with resources.as_file(packaged) as path:
+            return path
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "schemas" / CATALOG_FILENAME
+        if candidate.is_file():
+            return candidate
+    raise FileNotFoundError(
+        f"{CATALOG_FILENAME} not found. It is generated by `npm run build` in the SDK root."
     )
-}
+
+
+@lru_cache(maxsize=1)
+def _load_catalog() -> dict[str, QecCode]:
+    payload = json.loads(_catalog_path().read_text(encoding="utf-8"))
+    codes: dict[str, QecCode] = {}
+    for entry in payload["codes"]:
+        codes[entry["slug"]] = QecCode(
+            slug=entry["slug"],
+            name=entry["name"],
+            families=tuple(entry["families"]),
+            description=entry["description"],
+            requires_mid_circuit_measurement=entry.get("requires_mid_circuit_measurement", True),
+            requires_feed_forward=entry.get("requires_feed_forward", False),
+            requires_nonlocal_connectivity=entry.get("requires_nonlocal_connectivity", False),
+            requires_loss_detection=entry.get("requires_loss_detection", False),
+            supported_distances=tuple(entry.get("supported_distances", ())),
+            stim_generator=entry.get("stim_generator"),
+            references=tuple(entry.get("references", ())),
+            notes=tuple(entry.get("notes", ())),
+        )
+    return codes
+
+
+class _CatalogMapping(dict):
+    """Lazy view over the generated catalog, so imports stay cheap."""
+
+    def __getitem__(self, key: str) -> QecCode:
+        return _load_catalog()[key]
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return _load_catalog().get(key, default)
+
+    def __iter__(self):
+        return iter(_load_catalog())
+
+    def __len__(self) -> int:
+        return len(_load_catalog())
+
+    def values(self):
+        return _load_catalog().values()
+
+    def items(self):
+        return _load_catalog().items()
+
+    def keys(self):
+        return _load_catalog().keys()
+
+    def __contains__(self, key: object) -> bool:
+        return key in _load_catalog()
+
+
+CATALOG: dict[str, QecCode] = _CatalogMapping()
 
 
 def get_code(slug: str) -> QecCode:
-    code = CATALOG.get(slug)
+    codes = _load_catalog()
+    code = codes.get(slug)
     if code is None:
-        raise KeyError(f"Unknown QEC code {slug!r}. Known codes: {', '.join(sorted(CATALOG))}.")
+        raise KeyError(f"Unknown QEC code {slug!r}. Known codes: {', '.join(sorted(codes))}.")
     return code
 
 
 def codes_in_family(family: str) -> list[QecCode]:
     upper = family.upper()
-    return [code for code in CATALOG.values() if upper in code.families]
+    return [code for code in _load_catalog().values() if upper in code.families]
 
 
 def assess_suitability(code: QecCode, capabilities: dict[str, Any]) -> dict[str, Any]:
     """Derive a code/hardware suitability level from a hardware snapshot.
 
-    Derived, not asserted: every blocking requirement is listed, so the claim
-    can be checked against the snapshot it came from. The result never exceeds
-    ``THEORETICALLY_SUITABLE`` here, because ``SIMULATED`` and ``DEMONSTRATED``
-    are claims about experiments that were actually run, not about capability
-    matching, and only a recorded run may raise the level.
+    Mirrors ``assessQecSuitability`` in the TypeScript contracts; both read the
+    same catalog, and a parity test asserts the two agree.
     """
     blockers: list[str] = []
     level = "THEORETICALLY_SUITABLE"

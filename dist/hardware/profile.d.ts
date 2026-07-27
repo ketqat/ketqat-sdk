@@ -213,7 +213,7 @@ export declare const HardwareProfileSchema: z.ZodObject<{
     provider: string;
     backend: string;
     snapshot_id: string;
-    modality: "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE" | "SIMULATED";
+    modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
     native_gates: string[];
     basis_two_qubit_gate: string;
     couplings: {
@@ -244,7 +244,7 @@ export declare const HardwareProfileSchema: z.ZodObject<{
     provider: string;
     backend: string;
     snapshot_id: string;
-    modality: "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE" | "SIMULATED";
+    modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
     native_gates: string[];
     basis_two_qubit_gate: string;
     capabilities: {

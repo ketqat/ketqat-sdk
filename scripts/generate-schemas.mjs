@@ -11,6 +11,7 @@ import {
   CircuitTransformationSchema,
   QecBenchmarkResultSchema,
   QecExperimentManifestSchema,
+  QEC_CODE_CATALOG,
   QuantumCardSchema,
   ReproducibilityBundleSchema,
   VerificationEvidenceSchema,
@@ -49,6 +50,13 @@ const schemas = {
   "artifact-relation.schema.json": ArtifactRelationSchema,
   "circuit-transformation.schema.json": CircuitTransformationSchema,
 }
+
+// The QEC code catalog is data, not a schema, and is emitted to both locations
+// for the same reason: the Python runner must read one source rather than keep
+// a second hand-maintained copy that can drift.
+const catalogJson = `${JSON.stringify({ schema_version: "0.1", codes: QEC_CODE_CATALOG }, null, 2)}\n`
+writeFileSync(resolve(outputDir, "qec-code-catalog.json"), catalogJson)
+writeFileSync(resolve(pythonSchemaDir, "qec-code-catalog.json"), catalogJson)
 
 for (const [filename, schema] of Object.entries(schemas)) {
   const jsonSchema = zodToJsonSchema(schema, {

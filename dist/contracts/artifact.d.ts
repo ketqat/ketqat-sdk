@@ -8,16 +8,16 @@ export declare const QecArtifactMetadataSchema: z.ZodObject<{
     decoder_interface_version: z.ZodOptional<z.ZodString>;
     supported_experiment_types: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
-    code_families: string[];
     supported_distances: number[];
+    code_families: string[];
     noise_models: string[];
     supported_experiment_types: string[];
     decoder_family?: string | undefined;
     syndrome_format?: string | undefined;
     decoder_interface_version?: string | undefined;
 }, {
-    code_families?: string[] | undefined;
     supported_distances?: number[] | undefined;
+    code_families?: string[] | undefined;
     decoder_family?: string | undefined;
     noise_models?: string[] | undefined;
     syndrome_format?: string | undefined;
@@ -364,16 +364,16 @@ export declare const QecArtifactSchema: z.ZodObject<{
         decoder_interface_version: z.ZodOptional<z.ZodString>;
         supported_experiment_types: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     }, "strip", z.ZodTypeAny, {
-        code_families: string[];
         supported_distances: number[];
+        code_families: string[];
         noise_models: string[];
         supported_experiment_types: string[];
         decoder_family?: string | undefined;
         syndrome_format?: string | undefined;
         decoder_interface_version?: string | undefined;
     }, {
-        code_families?: string[] | undefined;
         supported_distances?: number[] | undefined;
+        code_families?: string[] | undefined;
         decoder_family?: string | undefined;
         noise_models?: string[] | undefined;
         syndrome_format?: string | undefined;
@@ -395,8 +395,8 @@ export declare const QecArtifactSchema: z.ZodObject<{
     tags: string[];
     is_demo: boolean;
     qec: {
-        code_families: string[];
         supported_distances: number[];
+        code_families: string[];
         noise_models: string[];
         supported_experiment_types: string[];
         decoder_family?: string | undefined;
@@ -487,8 +487,8 @@ export declare const QecArtifactSchema: z.ZodObject<{
     domain: "QEC";
     is_demo: boolean;
     qec: {
-        code_families?: string[] | undefined;
         supported_distances?: number[] | undefined;
+        code_families?: string[] | undefined;
         decoder_family?: string | undefined;
         noise_models?: string[] | undefined;
         syndrome_format?: string | undefined;
@@ -1410,16 +1410,16 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         decoder_interface_version: z.ZodOptional<z.ZodString>;
         supported_experiment_types: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     }, "strip", z.ZodTypeAny, {
-        code_families: string[];
         supported_distances: number[];
+        code_families: string[];
         noise_models: string[];
         supported_experiment_types: string[];
         decoder_family?: string | undefined;
         syndrome_format?: string | undefined;
         decoder_interface_version?: string | undefined;
     }, {
-        code_families?: string[] | undefined;
         supported_distances?: number[] | undefined;
+        code_families?: string[] | undefined;
         decoder_family?: string | undefined;
         noise_models?: string[] | undefined;
         syndrome_format?: string | undefined;
@@ -1441,8 +1441,8 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
     tags: string[];
     is_demo: boolean;
     qec: {
-        code_families: string[];
         supported_distances: number[];
+        code_families: string[];
         noise_models: string[];
         supported_experiment_types: string[];
         decoder_family?: string | undefined;
@@ -1533,8 +1533,8 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
     domain: "QEC";
     is_demo: boolean;
     qec: {
-        code_families?: string[] | undefined;
         supported_distances?: number[] | undefined;
+        code_families?: string[] | undefined;
         decoder_family?: string | undefined;
         noise_models?: string[] | undefined;
         syndrome_format?: string | undefined;

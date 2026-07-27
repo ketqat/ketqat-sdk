@@ -35,6 +35,19 @@ jobs:
         with:
           python-version: "3.11"
 
+      # The cross-language catalog parity test runs the TypeScript suitability
+      # implementation through node and compares it with the Python one, so this
+      # job needs the JS dependencies. Without them the test would skip, and a
+      # divergence between the two languages would reach users unnoticed.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
       - name: Install runner with real QEC dependencies
         run: |
           python -m pip install --upgrade pip

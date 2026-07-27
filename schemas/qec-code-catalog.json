@@ -1,0 +1,138 @@
+{
+  "schema_version": "0.1",
+  "codes": [
+    {
+      "slug": "rotated-surface-code-memory-x",
+      "name": "Rotated surface code (X memory)",
+      "families": [
+        "STABILIZER",
+        "CSS",
+        "TOPOLOGICAL",
+        "SURFACE"
+      ],
+      "description": "Planar topological code on a rotated lattice, preserving one logical qubit through repeated rounds of syndrome extraction.",
+      "requires_mid_circuit_measurement": true,
+      "requires_feed_forward": false,
+      "requires_nonlocal_connectivity": false,
+      "requires_loss_detection": false,
+      "supported_distances": [
+        3,
+        5,
+        7,
+        9
+      ],
+      "stim_generator": "surface_code:rotated_memory_x",
+      "references": [
+        "https://errorcorrectionzoo.org/c/surface"
+      ],
+      "notes": [
+        "Nearest-neighbour connectivity on a two-dimensional grid is sufficient."
+      ]
+    },
+    {
+      "slug": "rotated-surface-code-memory-z",
+      "name": "Rotated surface code (Z memory)",
+      "families": [
+        "STABILIZER",
+        "CSS",
+        "TOPOLOGICAL",
+        "SURFACE"
+      ],
+      "description": "Rotated surface code memory experiment in the Z basis.",
+      "requires_mid_circuit_measurement": true,
+      "requires_feed_forward": false,
+      "requires_nonlocal_connectivity": false,
+      "requires_loss_detection": false,
+      "supported_distances": [
+        3,
+        5,
+        7,
+        9
+      ],
+      "stim_generator": "surface_code:rotated_memory_z",
+      "references": [
+        "https://errorcorrectionzoo.org/c/surface"
+      ],
+      "notes": []
+    },
+    {
+      "slug": "unrotated-surface-code-memory-x",
+      "name": "Unrotated surface code (X memory)",
+      "families": [
+        "STABILIZER",
+        "CSS",
+        "TOPOLOGICAL",
+        "SURFACE"
+      ],
+      "description": "Unrotated surface code memory; uses more physical qubits per distance than the rotated layout.",
+      "requires_mid_circuit_measurement": true,
+      "requires_feed_forward": false,
+      "requires_nonlocal_connectivity": false,
+      "requires_loss_detection": false,
+      "supported_distances": [
+        3,
+        5,
+        7
+      ],
+      "stim_generator": "surface_code:unrotated_memory_x",
+      "references": [
+        "https://errorcorrectionzoo.org/c/surface"
+      ],
+      "notes": []
+    },
+    {
+      "slug": "repetition-code-memory",
+      "name": "Repetition code (memory)",
+      "families": [
+        "STABILIZER",
+        "CSS"
+      ],
+      "description": "One-dimensional classical repetition code protecting against a single error type. Useful as a control: it is not a full quantum code.",
+      "requires_mid_circuit_measurement": true,
+      "requires_feed_forward": false,
+      "requires_nonlocal_connectivity": false,
+      "requires_loss_detection": false,
+      "supported_distances": [
+        3,
+        5,
+        7,
+        9,
+        11
+      ],
+      "stim_generator": "repetition_code:memory",
+      "references": [
+        "https://errorcorrectionzoo.org/c/quantum_repetition"
+      ],
+      "notes": [
+        "Protects against one error type only, so a low logical error rate here is not evidence of quantum error correction."
+      ]
+    },
+    {
+      "slug": "color-code-memory-xyz",
+      "name": "Color code (XYZ memory)",
+      "families": [
+        "STABILIZER",
+        "CSS",
+        "TOPOLOGICAL",
+        "COLOR"
+      ],
+      "description": "Triangular color code memory, admitting transversal Clifford gates.",
+      "requires_mid_circuit_measurement": true,
+      "requires_feed_forward": false,
+      "requires_nonlocal_connectivity": false,
+      "requires_loss_detection": false,
+      "supported_distances": [
+        3,
+        5,
+        7
+      ],
+      "stim_generator": "color_code:memory_xyz",
+      "references": [
+        "https://errorcorrectionzoo.org/c/color"
+      ],
+      "notes": [
+        "Syndrome extraction uses weight-six stabilizers on a three-colorable lattice."
+      ]
+    }
+  ]
+}
