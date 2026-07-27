@@ -58,6 +58,9 @@ const isAllowedPackageFile = (path) =>
   allowedRootFiles.has(path) ||
   (path.startsWith("dist/") && /(?:\.js|\.js\.map|\.d\.ts|\.d\.ts\.map)$/.test(path)) ||
   (path.startsWith("schemas/") && path.endsWith(".schema.json")) ||
+  // The QEC code catalog is generated data rather than a schema, and ships for
+  // the same reason: consumers must read one source rather than a second copy.
+  path === "schemas/qec-code-catalog.json" ||
   (path.startsWith("examples/") && /\.ya?ml$/.test(path))
 const forbiddenPath =
   /(^|\/)(?:python|tests?|test-results|coverage|\.nyc_output|\.pytest_cache|__pycache__|node_modules|tmp|temp|\.env(?:\..*)?|\.DS_Store|\.idea|\.vscode)(\/|$)|(?:\.py[co]|\.log|\.tmp|\.swp|~)$/i

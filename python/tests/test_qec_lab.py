@@ -253,3 +253,86 @@ def test_packaged_and_repository_examples_stay_in_sync() -> None:
     packaged = resources.files("ketqat_runner").joinpath("examples", "decoder-comparison.yaml")
     assert packaged.is_file()
     assert packaged.read_text() == (REPOSITORY_ROOT / "examples" / "qec" / "decoder-comparison.yaml").read_text()
+
+
+# --- Cross-language catalog parity -------------------------------------------
+
+
+def test_catalog_is_loaded_from_the_generated_single_source() -> None:
+    """The Python catalog must be the generated file, not a second copy.
+
+    Two hand-maintained copies drift, and a drifted scientific catalog looks
+    authoritative while being wrong.
+    """
+    generated = json.loads((REPOSITORY_ROOT / "schemas" / "qec-code-catalog.json").read_text())
+    generated_slugs = {entry["slug"] for entry in generated["codes"]}
+    assert generated_slugs == set(CATALOG), "Python catalog must match the generated source exactly"
+
+    for entry in generated["codes"]:
+        code = get_code(entry["slug"])
+        assert code.name == entry["name"]
+        assert list(code.families) == entry["families"]
+        assert code.stim_generator == entry.get("stim_generator")
+        assert list(code.supported_distances) == entry.get("supported_distances", [])
+        assert code.requires_mid_circuit_measurement == entry.get(
+            "requires_mid_circuit_measurement", True
+        )
+
+
+def test_packaged_catalog_matches_the_repository_catalog() -> None:
+    """The wheel's copy is what actually loads, so it must not drift either."""
+    from importlib import resources
+
+    packaged = resources.files("ketqat_runner").joinpath("schemas", "qec-code-catalog.json")
+    assert packaged.is_file()
+    assert json.loads(packaged.read_text()) == json.loads(
+        (REPOSITORY_ROOT / "schemas" / "qec-code-catalog.json").read_text()
+    )
+
+
+def test_python_and_typescript_suitability_agree() -> None:
+    """Both languages derive suitability from the same catalog and rules.
+
+    Runs the TypeScript implementation through node and compares its verdict
+    with this module's, so a divergence fails here rather than showing a user
+    two different answers for the same device.
+    """
+    import subprocess
+
+    capability_sets = [
+        {"mid_circuit_measurement": True},
+        {"mid_circuit_measurement": False},
+        {"mid_circuit_measurement": True, "feed_forward": True},
+        {},
+    ]
+
+    script = """
+import { QEC_CODE_CATALOG, assessQecSuitability } from '../dist/index.js'
+const capabilities = JSON.parse(process.argv[2])
+const out = {}
+for (const code of QEC_CODE_CATALOG) {
+  const result = assessQecSuitability(code, capabilities)
+  out[code.slug] = { level: result.level, blockers: result.blockers }
+}
+process.stdout.write(JSON.stringify(out))
+"""
+    (REPOSITORY_ROOT / "tests" / "_suitability_parity.mjs").write_text(script)
+    try:
+        for capabilities in capability_sets:
+            completed = subprocess.run(
+                ["node", "tests/_suitability_parity.mjs", json.dumps(capabilities)],
+                cwd=REPOSITORY_ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            typescript = json.loads(completed.stdout)
+            for slug, expected in typescript.items():
+                actual = assess_suitability(get_code(slug), capabilities)
+                assert actual["level"] == expected["level"], (
+                    f"{slug} under {capabilities}: python said {actual['level']}, "
+                    f"typescript said {expected['level']}"
+                )
+                assert actual["blockers"] == expected["blockers"]
+    finally:
+        (REPOSITORY_ROOT / "tests" / "_suitability_parity.mjs").unlink(missing_ok=True)

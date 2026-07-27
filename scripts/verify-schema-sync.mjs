@@ -25,6 +25,7 @@ const PYTHON_VALIDATED_SCHEMAS = [
   "algorithm-experiment-manifest.schema.json",
   "qec-benchmark-result.schema.json",
   "algorithm-benchmark-result.schema.json",
+  "qec-code-catalog.json",
 ]
 
 const drifted = []
