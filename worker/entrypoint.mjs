@@ -2,15 +2,34 @@
 /**
  * Worker entry point.
  *
- * Reads one job from stdin or from KETQAT_JOB, executes it, and writes the
- * result to stdout as a single JSON object. It does not listen on a socket, does
- * not read a credential, and does not write outside TMPDIR.
+ * Two modes, chosen by what the environment supplies:
  *
- * A rejected job and a failed job exit differently on purpose: exit 2 means the
- * submission was invalid and retrying it unchanged will not help, while exit 1
- * means a valid job ran and did not succeed.
+ * **Local mode** reads one job from stdin or KETQAT_JOB and writes the result to
+ * stdout. Used for development and for the container smoke test.
+ *
+ * **Callback mode** is what runs in the execution plane. Given only a job id and
+ * a control-plane URL, the worker authenticates as its own service account,
+ * claims the job, executes it, and posts the result back. The manifest never
+ * passes through an environment variable and the result never passes through
+ * stdout -- see src/worker/callback.ts for why each of those matters.
+ *
+ * It does not listen on a socket, does not read a credential from disk, and does
+ * not write outside TMPDIR.
+ *
+ * Exit codes are meaningful to the dispatcher:
+ *   0   the job ran and succeeded
+ *   1   the job ran and did not succeed, or a retryable transport failure
+ *   2   the submission was invalid; retrying it unchanged will not help
+ *   124 the job exceeded its own wall-clock limit
  */
-import { enforceResultSize, executeJob, validateJob } from "../dist/index.js"
+import {
+  callbackConfigFromEnv,
+  claimJob,
+  enforceResultSize,
+  executeJob,
+  reportResult,
+  validateJob,
+} from "../dist/index.js"
 
 async function readStdin() {
   if (process.stdin.isTTY) return ""
@@ -19,10 +38,75 @@ async function readStdin() {
   return Buffer.concat(chunks).toString("utf8")
 }
 
-async function main() {
+/**
+ * Run one validated job under its own wall-clock ceiling.
+ *
+ * Enforced here as well as by the platform's task timeout, because the platform
+ * kills the container without producing a record. This one resolves first and
+ * yields a TIMED_OUT result, so the submitter learns the job timed out rather
+ * than that it vanished.
+ */
+async function runWithTimeout(job) {
+  let timer
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(
+      () =>
+        resolve({
+          job_id: job.job_id,
+          status: "TIMED_OUT",
+          operation: job.parameters.operation,
+          error: `Exceeded the ${job.limits.timeout_seconds}s limit for this job.`,
+        }),
+      job.limits.timeout_seconds * 1000,
+    )
+  })
+
+  try {
+    return await Promise.race([
+      executeJob(job).then((value) => enforceResultSize(value, job.limits.max_result_bytes)),
+      timeout,
+    ])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function runCallbackMode(config) {
+  let job
+  try {
+    const claimed = await claimJob(config)
+    job = validateJob(claimed?.job ?? claimed)
+  } catch (error) {
+    // A claim that fails leaves no job to report against, so there is nothing to
+    // post back. The control plane owns the timeout that reaps a job whose
+    // worker never claimed it; a worker inventing a failure record for a job it
+    // never held would be asserting something it does not know.
+    process.stderr.write(`Could not claim job ${config.jobId}: ${error.message}\n`)
+    process.exit(error.retryable === false ? 2 : 1)
+  }
+
+  const result = await runWithTimeout(job)
+
+  try {
+    await reportResult(config, result)
+  } catch (error) {
+    // The job ran. Losing the result to a transport failure is the one case
+    // worth retrying at this level, since re-running would cost the work again.
+    process.stderr.write(`Could not report result for ${config.jobId}: ${error.message}\n`)
+    process.exit(1)
+  }
+
+  if (result.status === "TIMED_OUT") process.exit(124)
+  process.exit(result.status === "SUCCEEDED" ? 0 : 1)
+}
+
+async function runLocalMode() {
   const raw = process.env.KETQAT_JOB ?? (await readStdin())
   if (!raw.trim()) {
-    process.stderr.write("No job supplied. Provide it on stdin or in KETQAT_JOB.\n")
+    process.stderr.write(
+      "No job supplied. Provide it on stdin or in KETQAT_JOB, or set KETQAT_API_BASE_URL and " +
+        "KETQAT_JOB_ID to run against a control plane.\n",
+    )
     process.exit(2)
   }
 
@@ -34,24 +118,19 @@ async function main() {
     process.exit(2)
   }
 
-  // A wall-clock ceiling enforced in-process, in addition to the platform's own
-  // task timeout. Belt and braces: the container timeout kills the task without
-  // producing a record, while this one emits a TIMED_OUT result first.
-  const timer = setTimeout(() => {
-    process.stdout.write(
-      `${JSON.stringify({
-        job_id: job.job_id,
-        status: "TIMED_OUT",
-        error: `Exceeded the ${job.limits.timeout_seconds}s limit for this job.`,
-      })}\n`,
-    )
-    process.exit(124)
-  }, job.limits.timeout_seconds * 1000)
-
-  const result = enforceResultSize(await executeJob(job), job.limits.max_result_bytes)
-  clearTimeout(timer)
+  const result = await runWithTimeout(job)
   process.stdout.write(`${JSON.stringify(result)}\n`)
+  if (result.status === "TIMED_OUT") process.exit(124)
   process.exit(result.status === "SUCCEEDED" ? 0 : 1)
+}
+
+async function main() {
+  const config = callbackConfigFromEnv(process.env)
+  if (config) {
+    await runCallbackMode(config)
+    return
+  }
+  await runLocalMode()
 }
 
 main().catch((error) => {
