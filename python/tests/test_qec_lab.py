@@ -299,6 +299,12 @@ def test_python_and_typescript_suitability_agree() -> None:
     """
     import subprocess
 
+    if not (REPOSITORY_ROOT / "node_modules" / "zod").is_dir():
+        pytest.skip(
+            "JavaScript dependencies are not installed, so the TypeScript side cannot be run. "
+            "CI installs them precisely so this parity check is not skipped there."
+        )
+
     capability_sets = [
         {"mid_circuit_measurement": True},
         {"mid_circuit_measurement": False},
