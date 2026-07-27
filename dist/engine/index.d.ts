@@ -4,4 +4,6 @@ export * from "./transpile.js";
 export * from "./differential.js";
 export * from "./resources.js";
 export * from "./zx.js";
+export * from "./noise.js";
+export * from "./mitigation.js";
 //# sourceMappingURL=index.d.ts.map

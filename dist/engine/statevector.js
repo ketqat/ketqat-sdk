@@ -1,4 +1,5 @@
 import { evaluateParameter } from "./parameters.js";
+import { applyPauliNoise, isNoiseless } from "./noise.js";
 /**
  * Exact statevector simulator for small circuits.
  *
@@ -407,6 +408,10 @@ export function simulateStatevector(circuit, options = {}) {
     const hasMeasurement = circuitHasMeasurement(circuit);
     const seed = options.seed ?? null;
     const shots = options.shots ?? 0;
+    if (options.noise && !isNoiseless(options.noise) && shots <= 0) {
+        throw new SimulationError("A noise model requires a positive shot count. Trajectory sampling has no meaning for an " +
+            "exact statevector, and returning the noiseless state would mislabel it as noisy.");
+    }
     if (!hasMeasurement && shots === 0) {
         const state = zeroState(qubitCount);
         executeOnce(circuit, layout, state, createRandom(seed ?? 1));
@@ -423,10 +428,21 @@ export function simulateStatevector(circuit, options = {}) {
         throw new SimulationError("A circuit with measurement requires a positive shot count.");
     }
     const random = createRandom(seed ?? Math.floor(Math.random() * 2 ** 32));
+    const noise = options.noise && !isNoiseless(options.noise) ? options.noise : undefined;
     const counts = {};
     for (let shot = 0; shot < shots; shot += 1) {
         const state = zeroState(qubitCount);
-        const clbits = executeOnce(circuit, layout, state, random);
+        // Noise is resampled per shot from the run's own generator, so a noisy run
+        // stays exactly reproducible from its seed.
+        const trajectory = noise ? applyPauliNoise(circuit, noise, random) : circuit;
+        const clbits = executeOnce(trajectory, layout, state, random);
+        if (noise && noise.readout_error > 0) {
+            for (let bit = 0; bit < clbits.length; bit += 1) {
+                if (random() < noise.readout_error) {
+                    clbits[bit] = clbits[bit] === 1 ? 0 : 1;
+                }
+            }
+        }
         const key = formatBitstring(clbits);
         counts[key] = (counts[key] ?? 0) + 1;
     }
@@ -443,6 +459,7 @@ export function simulateStatevector(circuit, options = {}) {
         // An unseeded run cannot be reproduced, and saying so is the point.
         deterministic: seed !== null,
         backend: STATEVECTOR_BACKEND,
+        ...(noise ? { noise } : {}),
     };
 }
 //# sourceMappingURL=statevector.js.map
