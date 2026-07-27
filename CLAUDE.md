@@ -73,9 +73,20 @@ This is the repository's most load-bearing behavior. `src/reproducibility/index.
 
 ## Boundary
 
-Do not add web UI, Prisma, PostgreSQL, authentication, deployment, or provider-catalog functionality here, and do not duplicate behavior that belongs in `ketqat-web`.
+Do not add web UI, Prisma, PostgreSQL, authentication, or deployment functionality here, and do not duplicate behavior that belongs in `ketqat-web`.
 
-Per [ADR 0001](https://github.com/ketqat/ketqat-planning/blob/main/docs/architecture/adr/0001-focus-on-qec-and-algorithms.md), QPU marketplaces, billing, credential storage, provider status monitoring, and hardware-provider catalogs are out of scope. ADR 0004 proposes narrowing that clause, but it is **Proposed, not Accepted**; until a maintainer accepts it, this boundary stands.
+[ADR 0004](https://github.com/ketqat/ketqat-planning/blob/main/docs/architecture/adr/0004-scientific-execution-and-hardware-characterization-scope.md) was **accepted on 2026-07-28** and supersedes the provider clause of [ADR 0001](https://github.com/ketqat/ketqat-planning/blob/main/docs/architecture/adr/0001-focus-on-qec-and-algorithms.md).
+
+**In scope here:** hardware characterization snapshot contracts, provider adapter contracts, and circuit/result translation. Adapter implementations must stay behind optional extras so the core dependency set remains `zod` only.
+
+**Out of scope:** QPU marketplace, billing, pricing aggregation, provider status monitoring, persistent credential storage, and commercial execution aggregation.
+
+**Binding conditions** for any code touching this area:
+
+- Never read, write, or log a provider credential. The SDK holds no secrets.
+- Every result records an execution class; a simulated result is never described as hardware.
+- Absent credentials produce not-run records. Never commit a fixture that imitates an executed hardware result.
+- Hardware snapshots are immutable dated observations and are never refreshed in place.
 
 ## Release state
 
