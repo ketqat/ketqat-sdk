@@ -6,6 +6,7 @@ export * from "./engine/index.js";
 export * from "./cli/index.js";
 export * from "./mcp/index.js";
 export * from "./worker/index.js";
+export * from "./providers/index.js";
 export * from "./schemas/index.js";
 export * from "./reproducibility/index.js";
 export * from "./compatibility/index.js";
