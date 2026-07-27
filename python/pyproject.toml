@@ -15,6 +15,14 @@ dependencies = [
 [project.optional-dependencies]
 qec = ["numpy>=1.26", "stim>=1.13", "pymatching>=2.2"]
 algorithms = ["numpy>=1.26"]
+# Provider adapters are extras so the base install stays small and a machine
+# without a vendor SDK gets a clear message instead of an ImportError deep in a
+# call stack. qiskit-aer is required, not optional: IBM's fake backends need it
+# to apply the recorded device noise, and without it they silently fall back to
+# a 24-qubit ideal simulator that cannot run a circuit routed onto a 127-qubit
+# device.
+ibm = ["qiskit>=1.2", "qiskit-ibm-runtime>=0.30", "qiskit-aer>=0.15"]
+braket = ["amazon-braket-sdk>=1.80"]
 all = ["numpy>=1.26", "stim>=1.13", "pymatching>=2.2"]
 
 [project.scripts]
