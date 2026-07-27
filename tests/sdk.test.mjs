@@ -59,6 +59,13 @@ import {
   callTool,
   listTools,
   runCli,
+  FORBIDDEN_JOB_FIELDS,
+  JobRejectedError,
+  JobResultSchema,
+  assertWithinLimits,
+  enforceResultSize,
+  executeJob,
+  validateJob,
 } from "../dist/index.js"
 
 const fixture = (name) => JSON.parse(fs.readFileSync(new URL(`../fixtures/reproducibility/${name}`, import.meta.url), "utf8"))
@@ -1464,4 +1471,140 @@ const failingClient = new KetQatClient({
 await assert.rejects(
   () => failingClient.artifacts.get("slug"),
   (error) => /409/.test(error.message) && /already exists/.test(error.message),
+)
+
+// ---------------------------------------------------------------------------
+// Execution plane (H2): jobs cannot express arbitrary code
+// ---------------------------------------------------------------------------
+
+const baseJob = {
+  schema_version: "0.1",
+  job_id: "job-1",
+  idempotency_key: "key-1",
+  submitted_by: "alice",
+  parameters: {
+    operation: "simulate",
+    qasm: "OPENQASM 3;\nqubit[2] q;\nbit[2] c;\nh q[0];\ncx q[0], q[1];\nc[0] = measure q[0];\nc[1] = measure q[1];\n",
+  },
+}
+
+// A valid job names an approved operation and supplies jobValidated parameters.
+const jobValidated = validateJob(baseJob)
+assert.equal(jobValidated.parameters.operation, "simulate")
+// Limits are applied by default rather than left unbounded.
+assert.ok(jobValidated.limits.timeout_seconds > 0)
+assert.ok(jobValidated.limits.max_qubits > 0)
+assert.ok(jobValidated.limits.max_result_bytes > 0)
+
+// The security model is the shape: a job has no field for code, and one cannot
+// be smuggled in at any depth. Each forbidden field is rejected individually.
+for (const field of FORBIDDEN_JOB_FIELDS) {
+  assert.throws(
+    () => validateJob({ ...baseJob, [field]: "anything" }),
+    (error) => error instanceof JobRejectedError && new RegExp(field, "i").test(error.message),
+    `a job carrying '${field}' at the top level must be rejected`,
+  )
+  // ... including nested, where a shallow check would miss it.
+  assert.throws(
+    () => validateJob({ ...baseJob, parameters: { ...baseJob.parameters, nested: { deeper: { [field]: "x" } } } }),
+    (error) => error instanceof JobRejectedError,
+    `a job carrying '${field}' nested three levels deep must be rejected`,
+  )
+}
+
+// An unapproved operation cannot be requested.
+assert.throws(
+  () => validateJob({ ...baseJob, parameters: { operation: "run_arbitrary_python", qasm: "x" } }),
+  JobRejectedError,
+)
+
+// Limits are enforced against the job's own parameters, not just declared.
+assert.throws(
+  () =>
+    assertWithinLimits(
+      validateJob({
+        ...baseJob,
+        parameters: { ...baseJob.parameters, shots: 500_000 },
+        limits: { timeout_seconds: 60, max_qubits: 10, max_shots: 1000, max_result_bytes: 1000 },
+      }),
+    ),
+  /above this job's limit/,
+)
+
+// --- Execution -------------------------------------------------------------
+
+const jobSimulateResult = await executeJob(
+  validateJob({ ...baseJob, parameters: { ...baseJob.parameters, shots: 500, seed: 5 } }),
+)
+assert.equal(jobSimulateResult.status, "SUCCEEDED")
+// A sandboxed result is always SIMULATION, so it can never be read as hardware.
+assert.equal(jobSimulateResult.execution_class, "SIMULATION")
+assert.deepEqual(Object.keys(jobSimulateResult.output.counts).sort(), ["00", "11"])
+assert.ok(jobSimulateResult.duration_ms >= 0)
+JobResultSchema.parse(jobSimulateResult)
+
+// A circuit above the job's qubit limit fails with an explanation, and the
+// failure is a result record rather than an exception escaping the worker.
+const jobTooWide = await executeJob(
+  validateJob({
+    ...baseJob,
+    parameters: {
+      operation: "simulate",
+      qasm: "OPENQASM 3;\nqubit[8] q;\nbit[1] c;\nh q[0];\nc[0] = measure q[0];\n",
+      shots: 10,
+    },
+    limits: { timeout_seconds: 60, max_qubits: 4, max_shots: 1000, max_result_bytes: 1_000_000 },
+  }),
+)
+assert.equal(jobTooWide.status, "FAILED")
+assert.match(jobTooWide.error, /above this job's limit/)
+
+// A parse failure is summarized, never a raw stack trace.
+const jobBadCircuit = await executeJob(
+  validateJob({ ...baseJob, parameters: { operation: "optimize_zx", qasm: "OPENQASM 3;\nqubit[1] q;\ndefcal x $0 { }\n" } }),
+)
+assert.equal(jobBadCircuit.status, "FAILED")
+assert.match(jobBadCircuit.error, /could not be parsed/)
+assert.doesNotMatch(jobBadCircuit.error, /at .*\.js:\d+/)
+
+// Every approved operation runs.
+const jobZx = await executeJob(
+  validateJob({ ...baseJob, parameters: { operation: "optimize_zx", qasm: "OPENQASM 3;\nqubit[1] q;\nh q[0];\nh q[0];\n" } }),
+)
+assert.equal(jobZx.status, "SUCCEEDED")
+assert.equal(jobZx.output.equivalence.level, "NUMERICALLY_CHECKED")
+
+const jobEquivalence = await executeJob(
+  validateJob({
+    ...baseJob,
+    parameters: {
+      operation: "check_equivalence",
+      left_qasm: "OPENQASM 3;\nqubit[1] q;\nx q[0];\n",
+      right_qasm: "OPENQASM 3;\nqubit[1] q;\nz q[0];\n",
+    },
+  }),
+)
+assert.equal(jobEquivalence.status, "SUCCEEDED")
+assert.equal(jobEquivalence.output.evidence.level, "FAILED")
+
+const jobResources = await executeJob(
+  validateJob({ ...baseJob, parameters: { operation: "estimate_resources", qasm: "OPENQASM 3;\nqubit[2] q;\nt q[0];\ncx q[0], q[1];\n" } }),
+)
+assert.equal(jobResources.status, "SUCCEEDED")
+assert.equal(jobResources.output.fault_tolerant.t_count, 1)
+
+// An jobOversized result is failed rather than truncated: a partial scientific
+// result is worse than none.
+const jobOversized = enforceResultSize(jobSimulateResult, 10)
+assert.equal(jobOversized.status, "FAILED")
+assert.equal(jobOversized.output, undefined)
+assert.match(jobOversized.error, /rather than\s*truncated/)
+// A result within the limit passes through untouched.
+assert.deepEqual(enforceResultSize(jobSimulateResult, 5_000_000), jobSimulateResult)
+
+// Sampling a circuit with no classical bits is refused rather than returning a
+// histogram of empty outcomes that looks like data.
+assert.throws(
+  () => simulateStatevector(parseQasm3("OPENQASM 3;\nqubit[2] q;\nh q[0];\n").circuit, { shots: 100, seed: 1 }),
+  /nothing to sample/,
 )

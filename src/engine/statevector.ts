@@ -515,6 +515,16 @@ export function simulateStatevector(circuit: QuantumCircuit, options: RunOptions
     throw new SimulationError("A circuit with measurement requires a positive shot count.")
   }
 
+  // Sampling a circuit with no classical bits would return one empty outcome for
+  // every shot -- a histogram that looks like data and contains none. Refusing
+  // is more useful than producing it.
+  if (layout.clbitCount === 0) {
+    throw new SimulationError(
+      "This circuit declares no classical bits, so there is nothing to sample. Add a measurement, " +
+        "or omit shots to get the exact statevector.",
+    )
+  }
+
   const random = createRandom(seed ?? Math.floor(Math.random() * 2 ** 32))
   const noise = options.noise && !isNoiseless(options.noise) ? options.noise : undefined
   const counts: Record<string, number> = {}
