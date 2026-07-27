@@ -24,6 +24,36 @@ jobs:
       - name: Build and test
         run: npm test
 
+  # The image shipped broken once: the entrypoint imports ../dist/index.js, the
+  # Dockerfile flattened it to /app/entrypoint.mjs, and every container exited
+  # with ERR_MODULE_NOT_FOUND. Nothing caught it -- `npm test` runs the
+  # entrypoint from the repository where the path is right, and a Docker build
+  # does not run the entrypoint. So the container is now built and a real job is
+  # run through it.
+  worker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # dist/ is committed, but building here means the image is verified
+      # against the current source rather than against whatever was last
+      # committed.
+      - name: Build
+        run: npm run build
+
+      - name: Build the worker image and run a job through it
+        run: npm run verify:worker-image
+
   python:
     runs-on: ubuntu-latest
     steps:
@@ -34,6 +64,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      # The cross-language catalog parity test runs the TypeScript suitability
+      # implementation through node and compares it with the Python one, so this
+      # job needs the JS dependencies. Without them the test would skip, and a
+      # divergence between the two languages would reach users unnoticed.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install JavaScript dependencies
+        run: npm ci
 
       - name: Install runner with real QEC dependencies
         run: |
@@ -46,6 +89,46 @@ jobs:
 
       - name: Smoke-test real QEC runner
         run: ketqat run surface-code-memory --output /tmp/ketqat-qec-run.json
+
+  # Provider adapters run against the vendors' own local and fake facilities.
+  # Their own job because the SDKs are large and the base install must stay
+  # small; installing them into the main Python job would make every run pay for
+  # them. Nothing here can submit a paid task or reach a physical device.
+  providers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install the provider extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "python[ibm,braket]"
+          python -m pip install pytest
+
+      # No AWS or IBM credentials are configured, and that is deliberate: the
+      # tests must pass without them, since the not-run paths are part of what
+      # they check.
+      - name: Run provider tests
+        run: pytest python/tests/test_providers.py -v
+
+      # The tests would still pass if both extras were missing, because each is
+      # skipped when its SDK is absent. That would be a silent hole, so this
+      # asserts the extras actually installed.
+      - name: Assert the adapters were exercised, not skipped
+        run: |
+          python - <<'PY'
+          from ketqat_runner.providers import braket, ibm
+          missing = [name for name, mod in (("ibm", ibm), ("braket", braket)) if not mod.available()]
+          if missing:
+              raise SystemExit(f"provider extras did not install: {missing}")
+          print("both provider adapters are installed and were exercised")
+          PY
 
   quickstart:
     runs-on: ubuntu-latest

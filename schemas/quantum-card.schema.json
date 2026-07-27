@@ -1,0 +1,335 @@
+{
+  "$ref": "#/definitions/quantum-card",
+  "definitions": {
+    "quantum-card": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_type": {
+          "type": "string",
+          "enum": [
+            "ALGORITHM",
+            "CIRCUIT",
+            "QEC_CODE",
+            "DECODER",
+            "NOISE_MODEL",
+            "HARDWARE_PROFILE",
+            "BENCHMARK_SUITE",
+            "DATASET",
+            "MITIGATION_PIPELINE",
+            "RESOURCE_MODEL",
+            "COMPILER_OR_TRANSPILER",
+            "EXPERIMENT_TEMPLATE"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "problem_definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "source_repository_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "commit_sha": {
+              "type": "string",
+              "minLength": 7
+            },
+            "license": {
+              "type": "string",
+              "minLength": 1
+            },
+            "authors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            },
+            "contributors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "default": []
+            },
+            "citation": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "authors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "default": []
+                },
+                "year": {
+                  "type": "integer",
+                  "minimum": 1900,
+                  "maximum": 2200
+                },
+                "doi": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "bibtex": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "reference_papers": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              },
+              "default": []
+            }
+          },
+          "required": [
+            "license",
+            "authors"
+          ],
+          "additionalProperties": false
+        },
+        "interface": {
+          "type": "object",
+          "properties": {
+            "supported_frameworks": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "default": []
+            },
+            "supported_input_formats": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "default": []
+            },
+            "supported_output_formats": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "default": []
+            }
+          },
+          "additionalProperties": false,
+          "default": {
+            "supported_frameworks": [],
+            "supported_input_formats": [],
+            "supported_output_formats": []
+          }
+        },
+        "applicability": {
+          "type": "object",
+          "properties": {
+            "qubit_range": {
+              "type": "object",
+              "properties": {
+                "minimum": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "maximum": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": [
+                "minimum"
+              ],
+              "additionalProperties": false
+            },
+            "gate_set": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "default": []
+            },
+            "classical_requirements": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "default": []
+            }
+          },
+          "additionalProperties": false,
+          "default": {
+            "gate_set": [],
+            "classical_requirements": []
+          }
+        },
+        "assumptions": {
+          "type": "object",
+          "properties": {
+            "resource": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "default": []
+            },
+            "noise": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "default": []
+            },
+            "hardware": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "default": []
+            },
+            "other": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "default": []
+            }
+          },
+          "additionalProperties": false
+        },
+        "known_limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "verification_status": {
+          "type": "string",
+          "enum": [
+            "UNVERIFIED",
+            "SCHEMA_VALIDATED",
+            "HASH_VERIFIED",
+            "SOURCE_VERIFIED",
+            "ENVIRONMENT_RECORDED",
+            "REPRODUCED",
+            "INDEPENDENTLY_REPRODUCED",
+            "REVIEWED"
+          ],
+          "default": "UNVERIFIED"
+        },
+        "security_notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        },
+        "example_commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "command": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "description",
+              "command"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "benchmark_compatibility": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "schema_version",
+        "name",
+        "slug",
+        "version",
+        "artifact_type",
+        "description",
+        "problem_definition",
+        "provenance",
+        "assumptions",
+        "known_limitations"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

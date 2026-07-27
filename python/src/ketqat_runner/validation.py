@@ -7,8 +7,33 @@ from typing import Any
 
 from jsonschema import Draft7Validator
 
+from .decoders import DecoderError, resolve_decoder
+
 SUPPORTED_SCHEMA_VERSION = "0.1"
-SUPPORTED_QEC_BENCHMARKS = {("surface-code-memory-mwpm", "0.1.0")}
+#: Benchmark suites the runner can execute, pinned by version.
+#:
+#: An allowlist rather than a free field: a suite name and version fix the
+#: circuit, noise model, and stopping rule, so results carrying the same pair
+#: are comparable and results carrying different pairs are not (RFC 0006).
+#: Code families the runner can execute, matching the Stim generators it knows.
+#: An unknown family is rejected rather than defaulted, so a manifest cannot
+#: request one code and silently measure another.
+SUPPORTED_QEC_CODE_FAMILIES = {
+    "rotated-surface-code",
+    "rotated-surface-code-memory-x",
+    "rotated-surface-code-memory-z",
+    "unrotated-surface-code",
+    "unrotated-surface-code-memory-x",
+    "repetition-code",
+    "repetition-code-memory",
+    "color-code",
+    "color-code-memory-xyz",
+}
+
+SUPPORTED_QEC_BENCHMARKS = {
+    ("surface-code-memory-mwpm", "0.1.0"),
+    ("surface-code-memory-decoder-comparison", "0.1.0"),
+}
 
 
 class KetQatValidationError(ValueError):
@@ -91,12 +116,20 @@ def _validate_qec_contract(manifest: dict[str, Any]) -> None:
     qec = manifest["qec"]
     if qec["experiment_type"] != "memory":
         raise KetQatValidationError("Only QEC memory experiments are supported by this runner.")
-    if qec["code"]["family"] != "rotated-surface-code":
-        raise KetQatValidationError("Only rotated-surface-code experiments are supported by this runner.")
+    if qec["code"]["family"].lower() not in SUPPORTED_QEC_CODE_FAMILIES:
+        known = ", ".join(sorted(SUPPORTED_QEC_CODE_FAMILIES))
+        raise KetQatValidationError(
+            f"Unsupported QEC code family {qec['code']['family']!r}. Supported families: {known}."
+        )
     if qec["noise"]["model"] != "circuit-level-depolarizing":
         raise KetQatValidationError("Only circuit-level-depolarizing noise is supported by this runner.")
-    if qec["decoder"]["name"] != "pymatching":
-        raise KetQatValidationError("Only the pymatching decoder is supported by this runner.")
+    # Every configured decoder is checked, so a manifest cannot list a decoder
+    # the runner would later fail on halfway through a long benchmark.
+    for decoder in qec.get("decoders") or [qec["decoder"]]:
+        try:
+            resolve_decoder(decoder["name"])
+        except DecoderError as exc:
+            raise KetQatValidationError(str(exc)) from exc
 
     for distance in qec["code"]["distances"]:
         if int(distance) <= 0 or int(distance) % 2 == 0:

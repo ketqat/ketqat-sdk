@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { DomainSchema, EnvironmentSchema, IsoDateTimeSchema, VisibilitySchema } from "./common.js";
+import { DomainSchema, EnvironmentSchema, ExecutionClassSchema, IsoDateTimeSchema, VisibilitySchema, } from "./common.js";
+import { TransformationChainSchema } from "./transformation.js";
 const BaseMetricPointSchema = z.object({
     metric: z.string().min(1),
     shots: z.number().int().positive().optional(),
@@ -53,6 +54,18 @@ const BaseBenchmarkResultSchema = z.object({
     visibility: VisibilitySchema.optional(),
     created_at: IsoDateTimeSchema.optional(),
     updated_at: IsoDateTimeSchema.optional(),
+    // Platform 2.0 additions (RFC 0002, RFC 0003).
+    //
+    // `.optional()` with no default is required here: these fields participate in
+    // the reproducibility hash, so defaulting them would change the hash of every
+    // existing result. An absent optional field is dropped by canonicalization
+    // and leaves stored hashes untouched. Do not add `.default(...)`.
+    //
+    // `execution_class` is intentionally absent rather than inferred from
+    // `is_demo`. A result that did not record how it was produced should read as
+    // "not recorded", not as a guess.
+    execution_class: ExecutionClassSchema.optional(),
+    transformation_chain: TransformationChainSchema.optional(),
 });
 export const QecBenchmarkResultSchema = BaseBenchmarkResultSchema.extend({
     domain: z.literal("QEC"),

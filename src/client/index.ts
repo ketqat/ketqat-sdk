@@ -2,6 +2,7 @@ import {
   ArtifactSchema,
   BenchmarkResultSchema,
   BenchmarkSuiteSchema,
+  QuantumCardSchema,
   ReproducibilityBundleSchema,
   type Artifact,
   type ArtifactListQuery,
@@ -98,6 +99,46 @@ export class KetQatClient {
     },
   }
 
+  readonly artifactVersions = {
+    list: async (slug: string): Promise<unknown[]> => {
+      const response = await this.getJson(`/api/artifacts/${encodeURIComponent(slug)}/versions`)
+      const object = responseObject(response)
+      return Array.isArray(object.versions) ? object.versions : []
+    },
+    /**
+     * Publish a Quantum Card. The card is validated locally first, so an
+     * invalid card fails before a network round trip and reports the failing
+     * field rather than a bare 400.
+     */
+    publish: async (
+      slug: string,
+      input: { version: string; quantum_card: unknown; commit_sha?: string },
+    ): Promise<unknown> => {
+      QuantumCardSchema.parse(input.quantum_card)
+      const response = await this.postJson(`/api/artifacts/${encodeURIComponent(slug)}/versions`, input)
+      return responseObject(response).version ?? response
+    },
+  }
+
+  readonly artifactRelations = {
+    list: async (slug: string): Promise<unknown[]> => {
+      const response = await this.getJson(`/api/artifacts/${encodeURIComponent(slug)}/relations`)
+      const object = responseObject(response)
+      return Array.isArray(object.relations) ? object.relations : []
+    },
+    create: async (slug: string, input: Record<string, unknown>): Promise<unknown> => {
+      const response = await this.postJson(`/api/artifacts/${encodeURIComponent(slug)}/relations`, input)
+      return responseObject(response).relation ?? response
+    },
+  }
+
+  readonly search = {
+    query: async (term: string): Promise<Record<string, unknown>> => {
+      const response = await this.getJson(`/api/search${queryString({ q: term })}`)
+      return responseObject(response)
+    },
+  }
+
   readonly github = {
     importRepository: async (input: Record<string, unknown>): Promise<Artifact> => {
       const response = await this.postJson("/api/github/import", input)
@@ -126,7 +167,17 @@ export class KetQatClient {
     }
     const response = await this.fetchImpl(`${this.baseUrl}${path}`, { ...init, headers })
     if (!response.ok) {
-      throw new Error(`KetQat request failed: ${response.status} ${response.statusText}`)
+      // Include the server's message when it sent one: a bare status code sends
+      // the caller looking in the wrong place, and the API reports why it
+      // refused (invalid card, version already published, not the owner).
+      let detail = ""
+      try {
+        const body = responseObject(await response.clone().json())
+        if (typeof body.error === "string") detail = ` -- ${body.error}`
+      } catch {
+        // Non-JSON error body; the status line is all there is.
+      }
+      throw new Error(`KetQat request failed: ${response.status} ${response.statusText}${detail}`)
     }
     return response
   }

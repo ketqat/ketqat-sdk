@@ -11,7 +11,15 @@ Supported domains:
 
 Explicit non-goals:
 
-- QPU marketplace, billing, credential storage, commercial QPU execution aggregation, provider status monitoring, and hardware-access catalog features
+- QPU marketplace, billing, persistent credential storage, commercial QPU execution aggregation, provider pricing aggregation, provider status monitoring, and hardware-provider catalog features presented as purchasing advice
+
+In scope per [ADR 0004](https://github.com/ketqat/ketqat-planning/blob/main/docs/architecture/adr/0004-scientific-execution-and-hardware-characterization-scope.md), accepted 2026-07-28, which supersedes the provider clause of ADR 0001:
+
+- Hardware characterization snapshots: immutable, dated device descriptions used as scientific inputs to transpilation, resource estimation, and QEC analysis
+- User-initiated execution on real hardware (BYOC), where credentials are supplied per job and never persisted
+- Provider adapters that translate KetQat circuits and results to and from a provider's formats
+
+Binding conditions: credentials never persist including on failure and crash paths; explicit pre-submission confirmation of provider, backend, shots, cost, and quota; execution class on every result; absent credentials produce not-run records rather than fixtures imitating hardware results; snapshots are dated observations, never refreshed in place.
 
 ## Repository responsibility
 

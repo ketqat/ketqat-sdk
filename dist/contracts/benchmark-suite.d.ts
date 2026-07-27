@@ -106,14 +106,14 @@ export declare const QecBenchmarkSuiteSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     name: string;
     description: string;
-    id: string;
+    schema_version: string;
     slug: string;
-    domain: "QEC";
-    is_demo: boolean;
+    version: string;
     created_at: string;
     updated_at: string;
-    version: string;
-    schema_version: string;
+    id: string;
+    domain: "QEC";
+    is_demo: boolean;
     experiment_type: string;
     metric_definitions: {
         name: string;
@@ -136,14 +136,14 @@ export declare const QecBenchmarkSuiteSchema: z.ZodObject<{
 }, {
     name: string;
     description: string;
-    id: string;
+    schema_version: string;
     slug: string;
-    domain: "QEC";
-    is_demo: boolean;
+    version: string;
     created_at: string;
     updated_at: string;
-    version: string;
-    schema_version: string;
+    id: string;
+    domain: "QEC";
+    is_demo: boolean;
     experiment_type: string;
     metric_definitions: {
         name: string;
@@ -226,14 +226,14 @@ export declare const AlgorithmBenchmarkSuiteSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     name: string;
     description: string;
-    id: string;
+    schema_version: string;
     slug: string;
-    domain: "ALGORITHM";
-    is_demo: boolean;
+    version: string;
     created_at: string;
     updated_at: string;
-    version: string;
-    schema_version: string;
+    id: string;
+    domain: "ALGORITHM";
+    is_demo: boolean;
     experiment_type: string;
     metric_definitions: {
         name: string;
@@ -257,14 +257,14 @@ export declare const AlgorithmBenchmarkSuiteSchema: z.ZodObject<{
 }, {
     name: string;
     description: string;
-    id: string;
+    schema_version: string;
     slug: string;
-    domain: "ALGORITHM";
-    is_demo: boolean;
+    version: string;
     created_at: string;
     updated_at: string;
-    version: string;
-    schema_version: string;
+    id: string;
+    domain: "ALGORITHM";
+    is_demo: boolean;
     experiment_type: string;
     metric_definitions: {
         name: string;
@@ -345,14 +345,14 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
 }, "strip", z.ZodTypeAny, {
     name: string;
     description: string;
-    id: string;
+    schema_version: string;
     slug: string;
-    domain: "QEC";
-    is_demo: boolean;
+    version: string;
     created_at: string;
     updated_at: string;
-    version: string;
-    schema_version: string;
+    id: string;
+    domain: "QEC";
+    is_demo: boolean;
     experiment_type: string;
     metric_definitions: {
         name: string;
@@ -375,14 +375,14 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
 }, {
     name: string;
     description: string;
-    id: string;
+    schema_version: string;
     slug: string;
-    domain: "QEC";
-    is_demo: boolean;
+    version: string;
     created_at: string;
     updated_at: string;
-    version: string;
-    schema_version: string;
+    id: string;
+    domain: "QEC";
+    is_demo: boolean;
     experiment_type: string;
     metric_definitions: {
         name: string;
@@ -463,14 +463,14 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
 }, "strip", z.ZodTypeAny, {
     name: string;
     description: string;
-    id: string;
+    schema_version: string;
     slug: string;
-    domain: "ALGORITHM";
-    is_demo: boolean;
+    version: string;
     created_at: string;
     updated_at: string;
-    version: string;
-    schema_version: string;
+    id: string;
+    domain: "ALGORITHM";
+    is_demo: boolean;
     experiment_type: string;
     metric_definitions: {
         name: string;
@@ -494,14 +494,14 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
 }, {
     name: string;
     description: string;
-    id: string;
+    schema_version: string;
     slug: string;
-    domain: "ALGORITHM";
-    is_demo: boolean;
+    version: string;
     created_at: string;
     updated_at: string;
-    version: string;
-    schema_version: string;
+    id: string;
+    domain: "ALGORITHM";
+    is_demo: boolean;
     experiment_type: string;
     metric_definitions: {
         name: string;

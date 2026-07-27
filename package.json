@@ -46,6 +46,10 @@
       "types": "./dist/compatibility/index.d.ts",
       "import": "./dist/compatibility/index.js"
     },
+    "./circuit": {
+      "types": "./dist/circuit/index.d.ts",
+      "import": "./dist/circuit/index.js"
+    },
     "./client": {
       "types": "./dist/client/index.d.ts",
       "import": "./dist/client/index.js"
@@ -53,6 +57,30 @@
     "./demo": {
       "types": "./dist/demo/index.d.ts",
       "import": "./dist/demo/index.js"
+    },
+    "./engine": {
+      "types": "./dist/engine/index.d.ts",
+      "import": "./dist/engine/index.js"
+    },
+    "./hardware": {
+      "types": "./dist/hardware/profile.d.ts",
+      "import": "./dist/hardware/profile.js"
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js"
+    },
+    "./providers": {
+      "types": "./dist/providers/index.d.ts",
+      "import": "./dist/providers/index.js"
     }
   },
   "files": [
@@ -65,12 +93,15 @@
     "build": "rm -rf dist && tsc -p tsconfig.json && node scripts/generate-schemas.mjs",
     "clean": "rm -rf dist",
     "generate:schemas": "npm run build",
-    "test": "npm run build && node tests/sdk.test.mjs && npm run verify:package-contents",
+    "test": "npm run build && node tests/sdk.test.mjs && npm run verify:package-contents && npm run verify:dist-tracked && npm run verify:schema-sync",
     "test:python": "python3.11 -m pytest python/tests",
     "verify:clean-install": "node scripts/verify-npm-clean-install.mjs",
     "verify:package-contents": "node scripts/verify-package-contents.mjs",
     "verify:quickstart": "bash scripts/verify-quickstart.sh",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "verify:dist-tracked": "node scripts/verify-dist-tracked.mjs",
+    "verify:schema-sync": "node scripts/verify-schema-sync.mjs",
+    "verify:worker-image": "node scripts/verify-worker-image.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -79,5 +110,8 @@
   },
   "dependencies": {
     "zod": "^3.25.76"
+  },
+  "bin": {
+    "ketqat-engine": "./dist/cli/bin.js"
   }
 }
