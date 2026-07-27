@@ -66,6 +66,11 @@ import {
   enforceResultSize,
   executeJob,
   validateJob,
+  NotRunRecordSchema,
+  ProviderSubmissionSchema,
+  REFERENCE_PROVIDER,
+  redactCredentials,
+  resolveProvider,
 } from "../dist/index.js"
 
 const fixture = (name) => JSON.parse(fs.readFileSync(new URL(`../fixtures/reproducibility/${name}`, import.meta.url), "utf8"))
@@ -1608,3 +1613,109 @@ assert.throws(
   () => simulateStatevector(parseQasm3("OPENQASM 3;\nqubit[2] q;\nh q[0];\n").circuit, { shots: 100, seed: 1 }),
   /nothing to sample/,
 )
+
+// ---------------------------------------------------------------------------
+// BYOC provider adapter (H3)
+// ---------------------------------------------------------------------------
+
+const byocCircuit = parseQasm3(
+  "OPENQASM 3;\nqubit[3] q;\nbit[3] c;\nh q[0];\ncx q[0], q[2];\nc[0] = measure q[0];\nc[2] = measure q[2];\n",
+).circuit
+const provider = resolveProvider(REFERENCE_PROVIDER)
+
+// A provider is rejected rather than defaulted, so a submission cannot silently
+// go somewhere other than where it was addressed.
+assert.throws(() => resolveProvider("ibm-quantum"), /Unknown provider/)
+assert.throws(() => resolveProvider("ibm-quantum"), /rather than defaulted/)
+
+// The backend snapshot is available before any spend, and states what it is.
+const byocProfile = await provider.describeBackend("line-5")
+assert.equal(byocProfile.provider, REFERENCE_PROVIDER)
+assert.equal(byocProfile.qubit_count, 5)
+assert.match(byocProfile.source, /[Nn]ot an observation of any physical device/)
+await assert.rejects(() => provider.describeBackend("no-such-backend"), /Unknown backend/)
+
+// --- Confirmation before spend ---------------------------------------------
+
+const byocEstimate = await provider.estimate(byocCircuit, "line-5", 1000)
+assert.equal(byocEstimate.shots, 1000)
+assert.equal(byocEstimate.estimated_cost.currency, "USD")
+assert.match(byocEstimate.confirmation_prompt, /1000 shots/)
+assert.match(byocEstimate.confirmation_prompt, /Estimated cost/)
+assert.match(byocEstimate.confirmation_prompt, /Remaining quota/)
+// The user is told this costs money.
+assert.match(byocEstimate.confirmation_prompt, /billed for/)
+assert.ok(byocEstimate.warnings.some((warning) => /contract-test adapter/.test(warning)))
+
+// An unknown cost is reported as unknown, never rendered as free.
+const unknownCost = await provider.estimate(byocCircuit, "line-9", 500)
+assert.equal(unknownCost.estimated_cost, null)
+assert.match(unknownCost.confirmation_prompt, /Estimated cost: unknown/)
+assert.ok(unknownCost.warnings.some((warning) => /not the same as free/.test(warning)))
+
+// --- NOT_RUN rather than an imitation result -------------------------------
+
+// No credential: recorded as not run, with no counts at all.
+const noCredential = await provider.submit(byocCircuit, "line-5", 100, { confirmed: true })
+assert.equal(noCredential.status, "NOT_RUN")
+assert.equal(noCredential.reason, "credentials_unavailable")
+assert.equal(noCredential.counts, undefined)
+assert.match(noCredential.detail, /rather than simulated in place of a hardware result/)
+NotRunRecordSchema.parse(noCredential)
+
+// Unconfirmed: also not run, and the reason is distinct from the above.
+const unconfirmed = await provider.submit(byocCircuit, "line-5", 100, {
+  credential: { token: "kq_provider_secret" },
+  confirmed: false,
+})
+assert.equal(unconfirmed.status, "NOT_RUN")
+assert.equal(unconfirmed.reason, "confirmation_declined")
+assert.equal(unconfirmed.counts, undefined)
+
+// Exhausted quota: not run rather than a failed submission that still bills.
+const exhausted = await provider.submit(byocCircuit, "exhausted", 100, {
+  credential: { token: "kq_provider_secret" },
+  confirmed: true,
+})
+assert.equal(exhausted.status, "NOT_RUN")
+assert.equal(exhausted.reason, "quota_exhausted")
+
+// --- A completed contract-test submission is never labelled HARDWARE -------
+
+const submitted = await provider.submit(byocCircuit, "line-5", 200, {
+  credential: { token: "kq_provider_secret" },
+  confirmed: true,
+})
+assert.equal(submitted.status, "COMPLETED")
+// The whole point: a contract-test adapter cannot produce a hardware result.
+assert.equal(submitted.execution_class, "SIMULATION")
+assert.notEqual(submitted.execution_class, "HARDWARE")
+// The result records which device snapshot it was compiled against.
+assert.equal(submitted.hardware_snapshot_id, "contract-test-line-5")
+assert.ok(Object.keys(submitted.counts).length > 0)
+ProviderSubmissionSchema.parse(submitted)
+
+// The credential is an argument, never adapter state, so nothing holds it.
+assert.equal(JSON.stringify(provider).includes("kq_provider_secret"), false)
+assert.equal(JSON.stringify(submitted).includes("kq_provider_secret"), false)
+assert.equal(JSON.stringify(noCredential).includes("kq_provider_secret"), false)
+
+// --- Redaction --------------------------------------------------------------
+
+// A stack trace or debug dump carrying a token is a normal accident, so
+// redaction is a function rather than a rule reviewers must remember.
+const redacted = redactCredentials({
+  provider: "ibm",
+  credential: { token: "kq_secret", scope: "project" },
+  nested: { deeper: { api_key: "AKIA-secret", authorization: "Bearer abc" } },
+  list: [{ password: "hunter2" }],
+  harmless: "visible",
+})
+const serialized = JSON.stringify(redacted)
+for (const secret of ["kq_secret", "AKIA-secret", "Bearer abc", "hunter2"]) {
+  assert.equal(serialized.includes(secret), false, `'${secret}' must be redacted`)
+}
+assert.match(serialized, /\[redacted\]/)
+// Non-secret values survive, so redaction stays useful for debugging.
+assert.match(serialized, /visible/)
+assert.match(serialized, /ibm/)
