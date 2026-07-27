@@ -46,6 +46,10 @@
       "types": "./dist/compatibility/index.d.ts",
       "import": "./dist/compatibility/index.js"
     },
+    "./circuit": {
+      "types": "./dist/circuit/index.d.ts",
+      "import": "./dist/circuit/index.js"
+    },
     "./client": {
       "types": "./dist/client/index.d.ts",
       "import": "./dist/client/index.js"
