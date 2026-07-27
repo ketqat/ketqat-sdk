@@ -25,6 +25,17 @@ import {
   demoRuns,
   findComparableMetricCoordinates,
   isEvidencedRelation,
+  LossReportEntrySchema,
+  QuantumCircuitSchema,
+  Qasm3ParseError,
+  emitQasm3,
+  gateCount,
+  parseQasm3,
+  totalQubits,
+  twoQubitGateCount,
+  usesClassicalControl,
+  usesMidCircuitMeasurement,
+  usesReset,
 } from "../dist/index.js"
 
 const fixture = (name) => JSON.parse(fs.readFileSync(new URL(`../fixtures/reproducibility/${name}`, import.meta.url), "utf8"))
@@ -547,3 +558,181 @@ assert.equal(
 )
 assert.throws(() => ArtifactRelationSchema.parse({ ...relation, asserted_by: undefined }))
 assert.throws(() => ArtifactRelationSchema.parse({ ...relation, relation: "vaguely_similar_to" }))
+
+// ---------------------------------------------------------------------------
+// Circuit graph and OpenQASM 3 adapter (RFC 0002)
+// ---------------------------------------------------------------------------
+
+const roundTripCorpus = {
+  bell: `OPENQASM 3;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+h q[0];
+cx q[0], q[1];
+c[0] = measure q[0];
+c[1] = measure q[1];
+`,
+  parameterized: `OPENQASM 3;
+include "stdgates.inc";
+qubit[2] q;
+rz(0.5) q[0];
+rx(pi/2) q[1];
+u(0.1, 0.2, 0.3) q[0];
+cp(-1.5e-3) q[0], q[1];
+`,
+  midCircuitAndFeedForward: `OPENQASM 3;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+h q[0];
+c[0] = measure q[0];
+reset q[0];
+if (c == 1) x q[1];
+barrier q[0], q[1];
+c[1] = measure q[1];
+`,
+  blockCondition: `OPENQASM 3;
+include "stdgates.inc";
+qubit[2] q;
+bit[1] c;
+c[0] = measure q[0];
+if (c == 1) { x q[1]; }
+`,
+  barrierAll: `OPENQASM 3;
+qubit[2] q;
+barrier;
+`,
+}
+
+// Round-trip is semantic, not textual: parse -> emit -> parse must reach the
+// same structure. Formatting, declaration order, and normalized syntax may
+// differ; the circuit may not.
+for (const [name, source] of Object.entries(roundTripCorpus)) {
+  const first = parseQasm3(source)
+  const second = parseQasm3(emitQasm3(first.circuit))
+  assert.deepEqual(second.circuit, first.circuit, `round-trip changed the circuit for '${name}'`)
+  QuantumCircuitSchema.parse(first.circuit)
+}
+
+// Structure of the Bell fixture
+const bell = parseQasm3(roundTripCorpus.bell).circuit
+assert.deepEqual(bell.qubit_registers, [{ name: "q", size: 2 }])
+assert.deepEqual(bell.clbit_registers, [{ name: "c", size: 2 }])
+assert.equal(gateCount(bell), 2)
+assert.equal(twoQubitGateCount(bell), 1)
+assert.equal(totalQubits(bell), 2)
+assert.equal(usesMidCircuitMeasurement(bell), false)
+
+// Parameters keep their written form. Evaluating `pi/2` to a float here would
+// silently rewrite the program on emit.
+const parameterized = parseQasm3(roundTripCorpus.parameterized).circuit
+assert.deepEqual(parameterized.operations[0].parameters, [0.5])
+assert.deepEqual(parameterized.operations[1].parameters, ["pi/2"])
+assert.deepEqual(parameterized.operations[2].parameters, [0.1, 0.2, 0.3])
+assert.deepEqual(parameterized.operations[3].parameters, [-0.0015])
+
+// Mid-circuit measurement, reset, and feed-forward survive intact.
+const dynamic = parseQasm3(roundTripCorpus.midCircuitAndFeedForward).circuit
+assert.equal(usesMidCircuitMeasurement(dynamic), true)
+assert.equal(usesClassicalControl(dynamic), true)
+assert.equal(usesReset(dynamic), true)
+const conditional = dynamic.operations.find((operation) => operation.kind === "conditional")
+assert.equal(conditional.register, "c")
+assert.equal(conditional.equals, 1)
+assert.equal(conditional.body.kind, "gate")
+assert.equal(conditional.body.name, "x")
+
+// Braced condition bodies parse to the same structure as unbraced ones.
+const braced = parseQasm3(roundTripCorpus.blockCondition).circuit
+assert.equal(braced.operations.filter((operation) => operation.kind === "conditional").length, 1)
+
+// `barrier;` with no operands means all qubits, and stays that way.
+assert.deepEqual(parseQasm3(roundTripCorpus.barrierAll).circuit.operations, [{ kind: "barrier", qubits: [] }])
+
+// Register broadcast expands to one operation per index.
+const broadcast = parseQasm3(`OPENQASM 3;
+qubit[3] q;
+h q;
+`).circuit
+assert.equal(broadcast.operations.length, 3)
+assert.deepEqual(
+  broadcast.operations.map((operation) => operation.qubits[0].index),
+  [0, 1, 2],
+)
+
+// Unsupported constructs are rejected by name, never silently dropped. This is
+// the invariant RFC 0002 exists to enforce: a parser that ignores what it does
+// not understand is how the circuit that ran stops being the circuit written.
+const rejections = [
+  ["gate mygate a, b { cx a, b; }", "custom_gate_definition"],
+  ["def helper(int n) { }", "subroutine_definition"],
+  ["for int i in [0:3] { h q[i]; }", "control_flow_loop"],
+  ["while (c == 0) { h q[0]; }", "control_flow_loop"],
+  ["defcal x $0 { }", "pulse_calibration"],
+  ["delay[100ns] q[0];", "explicit_timing"],
+  ["box { h q[0]; }", "box_scoping"],
+  ["ctrl @ x q[0], q[1];", "gate_modifier"],
+  ["input float theta;", "io_declaration"],
+  ["array[int, 4] values;", "array_declaration"],
+]
+for (const [snippet, expectedFeature] of rejections) {
+  const source = `OPENQASM 3;\nqubit[2] q;\nbit[2] c;\n${snippet}\n`
+  assert.throws(
+    () => parseQasm3(source),
+    (error) => {
+      assert.ok(error instanceof Qasm3ParseError, `expected Qasm3ParseError for '${snippet}'`)
+      assert.equal(error.feature, expectedFeature, `wrong feature reported for '${snippet}'`)
+      return true
+    },
+    `'${snippet}' must be rejected, not silently ignored`,
+  )
+}
+
+// A non-equality classical condition is rejected rather than approximated.
+assert.throws(
+  () => parseQasm3(`OPENQASM 3;\nqubit[1] q;\nbit[2] c;\nif (c > 1) x q[0];\n`),
+  (error) => error.feature === "classical_condition_general",
+)
+
+// Unresolvable includes and wrong versions are rejected.
+assert.throws(() => parseQasm3(`OPENQASM 3;\ninclude "other.inc";\n`), (error) => error.feature === "include_resolution")
+assert.throws(() => parseQasm3(`OPENQASM 2.0;\nqreg q[1];\n`), (error) => error.feature === "version_declaration")
+
+// Out-of-range and undeclared operands fail loudly.
+assert.throws(() => parseQasm3(`OPENQASM 3;\nqubit[2] q;\nh q[5];\n`), Qasm3ParseError)
+assert.throws(() => parseQasm3(`OPENQASM 3;\nqubit[2] q;\nh r[0];\n`), Qasm3ParseError)
+
+// Deprecated OpenQASM 2 syntax is accepted but reported as a cosmetic loss,
+// because the emitted program will not be byte-identical to the input.
+const legacy = parseQasm3(`OPENQASM 3;
+qreg q[2];
+creg c[2];
+h q[0];
+measure q[0] -> c[0];
+`)
+assert.equal(legacy.circuit.qubit_registers[0].size, 2)
+const legacyFeatures = legacy.loss_report.map((entry) => entry.feature)
+assert.ok(legacyFeatures.includes("openqasm2_register_syntax"))
+assert.ok(legacyFeatures.includes("openqasm2_measure_syntax"))
+assert.ok(legacy.loss_report.every((entry) => entry.severity === "cosmetic"))
+// Cosmetic loss must not make runs incomparable.
+assert.equal(chainHasSemanticLoss([{ kind: "IMPORT", adapter: "x", adapter_version: "1", loss_report: legacy.loss_report, options: {} }]), false)
+
+// A missing version header is recorded rather than assumed silently.
+assert.ok(parseQasm3(`qubit[1] q;\nh q[0];\n`).loss_report.some((entry) => entry.feature === "version_declaration"))
+
+// Comments do not become part of the circuit.
+const commented = parseQasm3(`OPENQASM 3;
+// leading comment
+qubit[1] q; // trailing comment
+/* block
+   comment */
+h q[0];
+`).circuit
+assert.equal(commented.operations.length, 1)
+
+// Loss reports produced by this adapter validate against the shared contract.
+for (const entry of legacy.loss_report) {
+  LossReportEntrySchema.parse(entry)
+}
