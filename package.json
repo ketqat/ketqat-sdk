@@ -100,7 +100,8 @@
     "verify:quickstart": "bash scripts/verify-quickstart.sh",
     "prepublishOnly": "npm run build",
     "verify:dist-tracked": "node scripts/verify-dist-tracked.mjs",
-    "verify:schema-sync": "node scripts/verify-schema-sync.mjs"
+    "verify:schema-sync": "node scripts/verify-schema-sync.mjs",
+    "verify:worker-image": "node scripts/verify-worker-image.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

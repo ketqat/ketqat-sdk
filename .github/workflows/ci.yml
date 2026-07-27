@@ -24,6 +24,36 @@ jobs:
       - name: Build and test
         run: npm test
 
+  # The image shipped broken once: the entrypoint imports ../dist/index.js, the
+  # Dockerfile flattened it to /app/entrypoint.mjs, and every container exited
+  # with ERR_MODULE_NOT_FOUND. Nothing caught it -- `npm test` runs the
+  # entrypoint from the repository where the path is right, and a Docker build
+  # does not run the entrypoint. So the container is now built and a real job is
+  # run through it.
+  worker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # dist/ is committed, but building here means the image is verified
+      # against the current source rather than against whatever was last
+      # committed.
+      - name: Build
+        run: npm run build
+
+      - name: Build the worker image and run a job through it
+        run: npm run verify:worker-image
+
   python:
     runs-on: ubuntu-latest
     steps:
