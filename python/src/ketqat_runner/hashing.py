@@ -25,7 +25,7 @@ def _canonicalize(value: Any) -> Any:
         return {
             key: _canonicalize(value[key])
             for key in sorted(value.keys())
-            if key not in EXCLUDED_KEYS and value[key] is not None
+            if key not in EXCLUDED_KEYS
         }
     return value
 

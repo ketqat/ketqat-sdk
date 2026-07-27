@@ -152,6 +152,8 @@ It does not execute arbitrary user source code and does not submit jobs to QPUs.
 
 Cross-language parity fixtures live in `fixtures/reproducibility/` and are tested from both TypeScript and Python.
 
+Canonical JSON includes explicit `null` values and excludes only documented volatile/access-control fields. Python runner hashes before the null-parity fix omitted `null` object fields, so results containing explicit null metadata must be rehashed with the current SDK/runner before import; inputs without explicit nulls keep their existing hashes.
+
 Verification evidence is modeled as a separate contract. It records schema validation, hash verification, review notes, and reproduction evidence without becoming part of existing benchmark-result hash inputs. Hash verification alone is not accepted as `REPRODUCED`; independent reproduction evidence must include a durable evidence URL, the verified reproducibility hash, and a command or immutable source commit.
 
 Registry records may include `owner_username` and `visibility` when returned by the multi-user Web platform. These fields are access-control and attribution metadata. They are intentionally accepted by artifact, benchmark-suite, and benchmark-result contracts, but they are excluded from reproducibility hash inputs.

@@ -18,7 +18,9 @@ def test_python_hash_matches_shared_expected_fixtures() -> None:
 
     assert calculate_reproducibility_hash(_fixture("qec-manifest.json")) == expected["qec_manifest"]
     assert calculate_reproducibility_hash(_fixture("qec-result-before-hash.json")) == expected["qec_result"]
+    assert calculate_reproducibility_hash(_fixture("qec-result-null-metadata.json")) == expected["qec_result_null_metadata"]
     assert calculate_reproducibility_hash(_fixture("algorithm-result-before-hash.json")) == expected["algorithm_result"]
+    assert expected["qec_result_null_metadata"] != expected["qec_result"]
 
 
 def test_volatile_fields_are_excluded_but_scientific_fields_are_not() -> None:
