@@ -11,6 +11,14 @@ import {
   type ReproducibilityBundle,
   type Visibility,
 } from "../contracts/index.js"
+import { validateJob } from "../worker/job.js"
+
+/**
+ * States a job never leaves. Kept here rather than imported from the queue,
+ * which lives in the private control plane; the client must know when to stop
+ * polling without depending on it.
+ */
+const TERMINAL_JOB_STATUSES = ["SUCCEEDED", "FAILED", "CANCELLED", "TIMED_OUT"]
 
 export interface KetQatClientOptions {
   baseUrl: string
@@ -129,6 +137,98 @@ export class KetQatClient {
     create: async (slug: string, input: Record<string, unknown>): Promise<unknown> => {
       const response = await this.postJson(`/api/artifacts/${encodeURIComponent(slug)}/relations`, input)
       return responseObject(response).relation ?? response
+    },
+  }
+
+  /**
+   * Sandboxed execution.
+   *
+   * Every path here enqueues; none of them executes. That is the same rule the
+   * web application follows, and it is why the CLI and the MCP server call
+   * these methods rather than running a circuit locally and uploading the
+   * answer: a result that reaches the registry should have come from the same
+   * worker, under the same limits, with the same audit trail, whichever surface
+   * asked for it.
+   */
+  readonly execution = {
+    /**
+     * Queue a job.
+     *
+     * The manifest is validated locally first, so an invalid job fails before a
+     * network round trip and names the offending field instead of returning a
+     * bare 400. `validateJob` also rejects any code- or credential-implying
+     * field at any depth, which means a mistake of that shape never leaves the
+     * caller's machine.
+     */
+    submit: async (
+      manifest: unknown,
+      options: { idempotencyKey?: string } = {},
+    ): Promise<Record<string, unknown>> => {
+      validateJob({
+        ...(typeof manifest === "object" && manifest !== null ? manifest : {}),
+        // Placeholders only. The control plane assigns the real values and
+        // ignores these; they exist so local validation sees a complete job
+        // rather than failing on fields the server owns.
+        job_id: "client-side-validation",
+        idempotency_key: options.idempotencyKey ?? "client-side-validation",
+        submitted_by: "client-side-validation",
+      })
+
+      const response = await this.postJson("/api/execution/jobs", {
+        job: manifest,
+        ...(options.idempotencyKey ? { idempotency_key: options.idempotencyKey } : {}),
+      })
+      return responseObject(response)
+    },
+    get: async (jobId: string): Promise<Record<string, unknown>> => {
+      const response = await this.getJson(`/api/execution/jobs/${encodeURIComponent(jobId)}`)
+      return responseObject(response)
+    },
+    list: async (query: { status?: string; limit?: number } = {}): Promise<unknown[]> => {
+      const response = await this.getJson(
+        `/api/execution/jobs${queryString({
+          ...(query.status ? { status: query.status } : {}),
+          ...(query.limit !== undefined ? { limit: String(query.limit) } : {}),
+        })}`,
+      )
+      const object = responseObject(response)
+      return Array.isArray(object.jobs) ? object.jobs : []
+    },
+    cancel: async (jobId: string): Promise<Record<string, unknown>> => {
+      const response = await this.postJson(
+        `/api/execution/jobs/${encodeURIComponent(jobId)}/cancel`,
+        {},
+      )
+      return responseObject(response)
+    },
+    bundle: async (jobId: string): Promise<Record<string, unknown>> => {
+      const response = await this.getJson(`/api/execution/jobs/${encodeURIComponent(jobId)}/bundle`)
+      return responseObject(response)
+    },
+    /**
+     * Poll until the job reaches a terminal state.
+     *
+     * Bounded by a deadline rather than an attempt count, because what a caller
+     * cares about is how long they are willing to wait. On timeout it returns
+     * the job as it stands rather than throwing: the job is still running, and
+     * reporting that is more useful than an error that loses the id.
+     */
+    waitFor: async (
+      jobId: string,
+      options: { timeoutMs?: number; intervalMs?: number; sleep?: (ms: number) => Promise<void> } = {},
+    ): Promise<Record<string, unknown>> => {
+      const timeoutMs = options.timeoutMs ?? 180_000
+      const intervalMs = options.intervalMs ?? 2_000
+      const sleep = options.sleep ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)))
+      const deadline = Date.now() + timeoutMs
+
+      for (;;) {
+        const payload = await this.execution.get(jobId)
+        const job = (payload.job ?? payload) as { status?: string }
+        if (job.status && TERMINAL_JOB_STATUSES.includes(job.status)) return payload
+        if (Date.now() + intervalMs > deadline) return payload
+        await sleep(intervalMs)
+      }
     },
   }
 

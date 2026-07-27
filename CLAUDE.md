@@ -41,7 +41,8 @@ CI splits Node and Python jobs, installs the real QEC dependencies, validates np
 - `src/schemas/` -- JSON Schema generation
 - `src/reproducibility/` -- canonical serialization and hashing
 - `src/compatibility/` -- run comparison rules
-- `src/client/` -- typed REST client
+- `src/client/` -- typed REST client, including `client.execution` for the sandboxed job queue
+- `src/mcp/index.ts` -- read-only MCP tools; `src/mcp/execution.ts` -- the mutating ones, kept apart on purpose
 - `src/demo/` -- demo fixtures, all marked `is_demo: true`
 - `python/src/ketqat_runner/` -- CLI, runner, hashing, validation, environment capture
 - `fixtures/reproducibility/` -- cross-language hash parity fixtures
@@ -63,6 +64,14 @@ This is the repository's most load-bearing behavior. `src/reproducibility/index.
 - Do not rank or compare incompatible runs. `src/compatibility/` refuses comparisons across domains, differing suite or schema versions, missing required metrics, and non-overlapping metric coordinates. Loosening any of those makes invalid comparisons possible.
 - Review backward compatibility for every public contract change.
 - Report what was not run as not run.
+
+## Execution surfaces
+
+The CLI's `job` commands and the MCP execution tools **enqueue; they never execute**. A surface that ran a circuit locally and uploaded the answer would produce a registry record with no audit trail and no enforced limits, indistinguishable from one the worker produced.
+
+`src/mcp/index.ts` is entirely `readOnly: true`, and that annotation is only meaningful if a mutating tool cannot join the list by accident. Mutating tools therefore live in `src/mcp/execution.ts`, behind their own type and their own list function, so "what can this MCP server change?" is answered by one short file.
+
+`submit_execution_job` refuses unless `confirmed: true`, and `confirmed` **defaults to false** -- a model that omits the field must not thereby submit. The refusal carries operation, qubits, shots, execution class, and any conversion loss, because a confirmation prompt that omits the cost is not a confirmation.
 
 ## Security
 

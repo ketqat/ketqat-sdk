@@ -253,6 +253,7 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
     }>;
 }, "strip", z.ZodTypeAny, {
     qasm: string;
+    operation: "transpile";
     hardware_profile: {
         schema_version: string;
         qubit_count: number;
@@ -293,9 +294,9 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
         notes?: string | undefined;
         calibration_timestamp?: string | undefined;
     };
-    operation: "transpile";
 }, {
     qasm: string;
+    operation: "transpile";
     hardware_profile: {
         schema_version: string;
         qubit_count: number;
@@ -336,7 +337,6 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
         }[] | undefined;
         calibration_timestamp?: string | undefined;
     };
-    operation: "transpile";
 }>, z.ZodObject<{
     /** OpenQASM 3 source. Parsed by the declared subset; never evaluated. */
     qasm: z.ZodString;
@@ -609,14 +609,14 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
     right_qasm: z.ZodString;
     tolerance: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
+    operation: "check_equivalence";
     left_qasm: string;
     right_qasm: string;
-    operation: "check_equivalence";
     tolerance?: number | undefined;
 }, {
+    operation: "check_equivalence";
     left_qasm: string;
     right_qasm: string;
-    operation: "check_equivalence";
     tolerance?: number | undefined;
 }>, z.ZodObject<{
     /** OpenQASM 3 source. Parsed by the declared subset; never evaluated. */
@@ -891,6 +891,7 @@ export declare const ExecutionJobSchema: z.ZodObject<{
         }>;
     }, "strip", z.ZodTypeAny, {
         qasm: string;
+        operation: "transpile";
         hardware_profile: {
             schema_version: string;
             qubit_count: number;
@@ -931,9 +932,9 @@ export declare const ExecutionJobSchema: z.ZodObject<{
             notes?: string | undefined;
             calibration_timestamp?: string | undefined;
         };
-        operation: "transpile";
     }, {
         qasm: string;
+        operation: "transpile";
         hardware_profile: {
             schema_version: string;
             qubit_count: number;
@@ -974,7 +975,6 @@ export declare const ExecutionJobSchema: z.ZodObject<{
             }[] | undefined;
             calibration_timestamp?: string | undefined;
         };
-        operation: "transpile";
     }>, z.ZodObject<{
         /** OpenQASM 3 source. Parsed by the declared subset; never evaluated. */
         qasm: z.ZodString;
@@ -1247,14 +1247,14 @@ export declare const ExecutionJobSchema: z.ZodObject<{
         right_qasm: z.ZodString;
         tolerance: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
+        operation: "check_equivalence";
         left_qasm: string;
         right_qasm: string;
-        operation: "check_equivalence";
         tolerance?: number | undefined;
     }, {
+        operation: "check_equivalence";
         left_qasm: string;
         right_qasm: string;
-        operation: "check_equivalence";
         tolerance?: number | undefined;
     }>, z.ZodObject<{
         /** OpenQASM 3 source. Parsed by the declared subset; never evaluated. */
@@ -1335,6 +1335,7 @@ export declare const ExecutionJobSchema: z.ZodObject<{
         seed?: number | undefined;
     } | {
         qasm: string;
+        operation: "transpile";
         hardware_profile: {
             schema_version: string;
             qubit_count: number;
@@ -1375,7 +1376,6 @@ export declare const ExecutionJobSchema: z.ZodObject<{
             notes?: string | undefined;
             calibration_timestamp?: string | undefined;
         };
-        operation: "transpile";
     } | {
         qasm: string;
         operation: "estimate_resources";
@@ -1423,9 +1423,9 @@ export declare const ExecutionJobSchema: z.ZodObject<{
         qasm: string;
         operation: "optimize_zx";
     } | {
+        operation: "check_equivalence";
         left_qasm: string;
         right_qasm: string;
-        operation: "check_equivalence";
         tolerance?: number | undefined;
     } | {
         noise: {
@@ -1463,6 +1463,7 @@ export declare const ExecutionJobSchema: z.ZodObject<{
         seed?: number | undefined;
     } | {
         qasm: string;
+        operation: "transpile";
         hardware_profile: {
             schema_version: string;
             qubit_count: number;
@@ -1503,7 +1504,6 @@ export declare const ExecutionJobSchema: z.ZodObject<{
             }[] | undefined;
             calibration_timestamp?: string | undefined;
         };
-        operation: "transpile";
     } | {
         qasm: string;
         operation: "estimate_resources";
@@ -1551,9 +1551,9 @@ export declare const ExecutionJobSchema: z.ZodObject<{
         qasm: string;
         operation: "optimize_zx";
     } | {
+        operation: "check_equivalence";
         left_qasm: string;
         right_qasm: string;
-        operation: "check_equivalence";
         tolerance?: number | undefined;
     } | {
         noise: {
