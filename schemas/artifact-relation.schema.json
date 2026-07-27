@@ -1,0 +1,84 @@
+{
+  "$ref": "#/definitions/artifact-relation",
+  "definitions": {
+    "artifact-relation": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relation": {
+          "type": "string",
+          "enum": [
+            "derived_from",
+            "forks",
+            "implements",
+            "supersedes",
+            "benchmarked_by",
+            "compatible_with",
+            "requires",
+            "cites",
+            "decodes",
+            "targets",
+            "contradicts"
+          ]
+        },
+        "from_artifact_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to_artifact_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to_artifact_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "asserted_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "asserted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "evidence": {
+          "type": "object",
+          "properties": {
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "supporting_record_slug": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "summary"
+          ],
+          "additionalProperties": false
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "schema_version",
+        "relation",
+        "from_artifact_slug",
+        "to_artifact_slug",
+        "asserted_by"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

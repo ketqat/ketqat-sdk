@@ -1,4 +1,5 @@
 import type { BenchmarkResult, BenchmarkSuite } from "../contracts/index.js"
+import { chainHasSemanticLoss } from "../contracts/transformation.js"
 
 export interface IncompatibilityReason {
   code: string
@@ -11,6 +12,20 @@ export interface CompatibilityResult {
   reasons: IncompatibilityReason[]
 }
 
+/**
+ * Escape hatches for comparisons that are scientifically meaningful but not
+ * like-for-like rankings (RFC 0003).
+ *
+ * Both default to `false`. Enabling one is a statement that the caller is
+ * presenting a labelled, explicitly scoped comparison -- for example ideal
+ * versus noisy versus device behaviour -- rather than ranking runs against each
+ * other as if they measured the same thing.
+ */
+export interface CompatibilityOptions {
+  allowMixedExecutionClasses?: boolean
+  allowSemanticTransformationLoss?: boolean
+}
+
 function reason(code: string, message: string, path?: string): IncompatibilityReason {
   return { code, message, path }
 }
@@ -19,12 +34,54 @@ export function compareRunCompatibility(
   left: BenchmarkResult,
   right: BenchmarkResult,
   suites: BenchmarkSuite[] = [],
+  options: CompatibilityOptions = {},
 ): CompatibilityResult {
   const reasons: IncompatibilityReason[] = []
   const comparableCoordinates = findComparableMetricCoordinates(left, right)
 
   if (left.domain !== right.domain) {
     reasons.push(reason("DOMAIN_MISMATCH", "Runs from QEC and algorithm domains cannot be compared.", "domain"))
+  }
+
+  // Only flagged when both runs state their execution class. Runs recorded
+  // before this field existed leave it absent, and absence is treated as
+  // "not recorded" rather than as a guessed value, so existing stored
+  // comparisons keep behaving as they did.
+  if (
+    !options.allowMixedExecutionClasses &&
+    left.execution_class !== undefined &&
+    right.execution_class !== undefined &&
+    left.execution_class !== right.execution_class
+  ) {
+    reasons.push(
+      reason(
+        "EXECUTION_CLASS_MISMATCH",
+        `Runs were produced differently (${left.execution_class} vs ${right.execution_class}) and cannot be ranked ` +
+          "against each other. Present them as an explicitly labelled comparison instead.",
+        "execution_class",
+      ),
+    )
+  }
+
+  // A circuit that reached its final form through a semantically lossy
+  // conversion is no longer the same program, so a metric measured on it is not
+  // measuring what the other run measured.
+  if (!options.allowSemanticTransformationLoss) {
+    for (const [label, run] of [
+      ["left", left],
+      ["right", right],
+    ] as const) {
+      if (run.transformation_chain && chainHasSemanticLoss(run.transformation_chain)) {
+        reasons.push(
+          reason(
+            "SEMANTIC_TRANSFORMATION_LOSS",
+            `The ${label} run's circuit lost semantic content during transformation, so it does not describe the ` +
+              "same program as an unmodified run.",
+            "transformation_chain",
+          ),
+        )
+      }
+    }
   }
   if (left.benchmark_suite !== right.benchmark_suite) {
     reasons.push(reason("BENCHMARK_SUITE_MISMATCH", "Benchmark suite slugs differ.", "benchmark_suite"))
@@ -86,8 +143,9 @@ export function findComparableMetricCoordinates(left: BenchmarkResult, right: Be
 export function compareExactReproductionConfiguration(
   left: BenchmarkResult,
   right: BenchmarkResult,
+  options: CompatibilityOptions = {},
 ): CompatibilityResult {
-  const base = compareRunCompatibility(left, right)
+  const base = compareRunCompatibility(left, right, [], options)
   const reasons = [...base.reasons]
 
   if (left.reproducibility_hash !== right.reproducibility_hash) {

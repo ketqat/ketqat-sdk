@@ -2,20 +2,29 @@ import assert from "node:assert/strict"
 import fs from "node:fs"
 import {
   AlgorithmExperimentManifestSchema,
+  ArtifactRelationSchema,
+  ArtifactTypeSchema,
   BenchmarkResultSchema,
   BenchmarkSuiteSchema,
   ArtifactSchema,
+  EquivalenceEvidenceSchema,
   QecExperimentManifestSchema,
   QecBenchmarkResultSchema,
+  QuantumCardSchema,
   ReproducibilityBundleSchema,
+  TRUST_LEVEL_ORDER,
+  TransformationChainSchema,
   VerificationEvidenceSchema,
   KetQatClient,
   calculateReproducibilityHash,
+  chainHasSemanticLoss,
   compareRunCompatibility,
+  compareTrustLevels,
   demoArtifacts,
   demoBenchmarkSuites,
   demoRuns,
   findComparableMetricCoordinates,
+  isEvidencedRelation,
 } from "../dist/index.js"
 
 const fixture = (name) => JSON.parse(fs.readFileSync(new URL(`../fixtures/reproducibility/${name}`, import.meta.url), "utf8"))
@@ -369,3 +378,172 @@ assert.deepEqual(noOverlapForRequiredQecMetrics.reasons, [
     path: "metric_points",
   },
 ])
+
+// ---------------------------------------------------------------------------
+// Platform 2.0 contract additions (RFC 0002, RFC 0003, RFC 0004)
+// ---------------------------------------------------------------------------
+
+// Backward-compatibility gate. Extending the schemas must not move a single
+// stored hash, so the frozen fixture corpus is re-asserted here after the
+// extension. If any of these fail, every stored run's comparability is broken.
+assert.equal(calculateReproducibilityHash(qecManifest), expectedHashes.qec_manifest)
+assert.equal(calculateReproducibilityHash(qecResult), expectedHashes.qec_result)
+assert.equal(calculateReproducibilityHash(algorithmResult), expectedHashes.algorithm_result)
+assert.equal(
+  calculateReproducibilityHash(fixture("qec-result-float-edge-cases.json")),
+  expectedHashes.qec_result_float_edge_cases,
+)
+
+// Parsing must not inject the new fields. A `.default(...)` on any of them
+// would make the parsed object hash differently from the raw one, which is the
+// exact failure this asserts against.
+const parsedQecResult = QecBenchmarkResultSchema.parse({
+  ...qecResult,
+  reproducibility_hash: expectedHashes.qec_result,
+})
+assert.equal(Object.hasOwn(parsedQecResult, "execution_class"), false)
+assert.equal(Object.hasOwn(parsedQecResult, "transformation_chain"), false)
+assert.equal(calculateReproducibilityHash(parsedQecResult), expectedHashes.qec_result)
+
+const parsedArtifact = ArtifactSchema.parse(demoArtifacts[0])
+assert.equal(Object.hasOwn(parsedArtifact, "artifact_type"), false)
+assert.equal(Object.hasOwn(parsedArtifact, "quantum_card"), false)
+
+// An absent optional field leaves the hash alone; an explicit null does not.
+// This is why RFC 0003 requires new fields to be optional-and-absent.
+assert.equal(calculateReproducibilityHash({ ...qecResult, execution_class: undefined }), expectedHashes.qec_result)
+assert.notEqual(calculateReproducibilityHash({ ...qecResult, execution_class: null }), expectedHashes.qec_result)
+assert.notEqual(
+  calculateReproducibilityHash({ ...qecResult, execution_class: "SIMULATION" }),
+  expectedHashes.qec_result,
+)
+
+// Artifact type and Quantum Card
+assert.equal(ArtifactTypeSchema.parse("DECODER"), "DECODER")
+assert.throws(() => ArtifactTypeSchema.parse("NOT_A_TYPE"))
+
+const validCard = {
+  schema_version: "0.1",
+  name: "Surface code memory",
+  slug: "surface-code-memory",
+  version: "0.1.0",
+  artifact_type: "QEC_CODE",
+  description: "Rotated surface code memory experiment.",
+  problem_definition: "Preserve one logical qubit for d rounds under circuit-level noise.",
+  provenance: {
+    license: "Apache-2.0",
+    authors: ["A. Researcher"],
+  },
+  assumptions: {
+    noise: ["Uniform circuit-level depolarizing noise"],
+  },
+  known_limitations: ["None identified"],
+}
+const parsedCard = QuantumCardSchema.parse(validCard)
+assert.equal(parsedCard.verification_status, "UNVERIFIED")
+assert.deepEqual(parsedCard.assumptions.hardware, [])
+
+// Assumptions and limitations are required on purpose: an artifact whose
+// assumptions are unstated cannot be validly compared.
+assert.throws(() => QuantumCardSchema.parse({ ...validCard, known_limitations: [] }))
+assert.throws(() => QuantumCardSchema.parse({ ...validCard, known_limitations: undefined }))
+assert.throws(() => QuantumCardSchema.parse({ ...validCard, assumptions: undefined }))
+assert.throws(() => QuantumCardSchema.parse({ ...validCard, provenance: { license: "Apache-2.0", authors: [] } }))
+assert.throws(() =>
+  QuantumCardSchema.parse({ ...validCard, applicability: { qubit_range: { minimum: 10, maximum: 4 } } }),
+)
+
+// An artifact may carry a card without disturbing existing records.
+ArtifactSchema.parse({ ...demoArtifacts[0], artifact_type: "QEC_CODE", quantum_card: validCard })
+
+// Equivalence evidence: FAILED and INCONCLUSIVE are not interchangeable.
+assert.throws(
+  () => EquivalenceEvidenceSchema.parse({ level: "FAILED" }),
+  /counterexample/,
+  "FAILED without a counterexample must be rejected -- failing to prove equality is not proving inequality",
+)
+EquivalenceEvidenceSchema.parse({ level: "FAILED", counterexample: "|01> amplitude differs by 0.5" })
+assert.throws(() => EquivalenceEvidenceSchema.parse({ level: "INCONCLUSIVE" }), /reason/)
+EquivalenceEvidenceSchema.parse({ level: "INCONCLUSIVE", reason: "full_reduce did not reach the identity" })
+assert.throws(() => EquivalenceEvidenceSchema.parse({ level: "NUMERICALLY_CHECKED" }), /tolerance/)
+EquivalenceEvidenceSchema.parse({ level: "NUMERICALLY_CHECKED", tolerance: 1e-9, global_phase_ignored: true })
+EquivalenceEvidenceSchema.parse({ level: "NOT_CHECKED" })
+
+// Transformation chains and semantic loss
+const lossyStep = {
+  kind: "CONVERSION",
+  adapter: "example-adapter",
+  adapter_version: "0.1.0",
+  loss_report: [
+    {
+      feature: "mid_circuit_measurement",
+      severity: "semantic",
+      action: "dropped",
+      detail: "target backend has no mid-circuit measurement",
+    },
+  ],
+}
+const cosmeticStep = {
+  kind: "EXPORT",
+  adapter: "openqasm3",
+  adapter_version: "0.1.0",
+  loss_report: [
+    { feature: "comments", severity: "cosmetic", action: "dropped", detail: "comments are not preserved" },
+  ],
+}
+assert.equal(chainHasSemanticLoss(TransformationChainSchema.parse([lossyStep])), true)
+assert.equal(chainHasSemanticLoss(TransformationChainSchema.parse([cosmeticStep])), false)
+assert.equal(chainHasSemanticLoss(TransformationChainSchema.parse([])), false)
+
+// Compatibility: mixed execution classes are not ranked against each other.
+const simulatedRun = { ...qecRun, execution_class: "SIMULATION" }
+const hardwareRun = { ...qecRun, execution_class: "HARDWARE" }
+const mixedClass = compareRunCompatibility(simulatedRun, hardwareRun)
+assert.equal(mixedClass.compatible, false)
+assert.ok(mixedClass.reasons.some((entry) => entry.code === "EXECUTION_CLASS_MISMATCH"))
+
+// The escape hatch exists for explicitly labelled comparisons.
+assert.equal(
+  compareRunCompatibility(simulatedRun, hardwareRun, [], { allowMixedExecutionClasses: true }).compatible,
+  true,
+)
+
+// Same class compares normally, and runs recorded before the field existed are
+// unaffected -- absence means "not recorded", never a guessed value.
+assert.equal(compareRunCompatibility(simulatedRun, { ...qecRun, execution_class: "SIMULATION" }).compatible, true)
+assert.equal(compareRunCompatibility(qecRun, hardwareRun).compatible, true)
+assert.equal(compareRunCompatibility(qecRun, qecRun).compatible, true)
+
+// Compatibility: a semantically lossy circuit is not silently comparable.
+const lossyRun = { ...qecRun, transformation_chain: [lossyStep] }
+const lossyComparison = compareRunCompatibility(lossyRun, qecRun)
+assert.equal(lossyComparison.compatible, false)
+assert.ok(lossyComparison.reasons.some((entry) => entry.code === "SEMANTIC_TRANSFORMATION_LOSS"))
+assert.equal(
+  compareRunCompatibility(lossyRun, qecRun, [], { allowSemanticTransformationLoss: true }).compatible,
+  true,
+)
+assert.equal(compareRunCompatibility({ ...qecRun, transformation_chain: [cosmeticStep] }, qecRun).compatible, true)
+
+// Trust ladder ordering
+assert.ok(compareTrustLevels("UNVERIFIED", "REVIEWED") < 0)
+assert.ok(compareTrustLevels("REPRODUCED", "HASH_VERIFIED") > 0)
+assert.equal(compareTrustLevels("SOURCE_VERIFIED", "SOURCE_VERIFIED"), 0)
+assert.equal(TRUST_LEVEL_ORDER.length, 8)
+
+// Relations carry an asserter, and evidence is what separates a supported claim
+// from an attributed assertion.
+const relation = ArtifactRelationSchema.parse({
+  schema_version: "0.1",
+  relation: "compatible_with",
+  from_artifact_slug: "surface-code-memory",
+  to_artifact_slug: "pymatching-decoder",
+  asserted_by: "a-researcher",
+})
+assert.equal(isEvidencedRelation(relation), false)
+assert.equal(
+  isEvidencedRelation({ ...relation, evidence: { summary: "Both assume circuit-level depolarizing noise." } }),
+  true,
+)
+assert.throws(() => ArtifactRelationSchema.parse({ ...relation, asserted_by: undefined }))
+assert.throws(() => ArtifactRelationSchema.parse({ ...relation, relation: "vaguely_similar_to" }))

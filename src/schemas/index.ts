@@ -27,3 +27,12 @@ export {
 export {
   ReproducibilityBundleSchema,
 } from "../contracts/reproducibility-bundle.js"
+export {
+  QuantumCardSchema,
+} from "../contracts/quantum-card.js"
+export {
+  ArtifactRelationSchema,
+} from "../contracts/artifact-relation.js"
+export {
+  CircuitTransformationSchema,
+} from "../contracts/transformation.js"

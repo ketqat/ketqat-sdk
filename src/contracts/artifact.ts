@@ -1,6 +1,7 @@
 import { z } from "zod"
 import {
   ArtifactKindSchema,
+  ArtifactTypeSchema,
   CitationSchema,
   DomainSchema,
   IsoDateTimeSchema,
@@ -8,6 +9,7 @@ import {
   VerificationStatusSchema,
   VisibilitySchema,
 } from "./common.js"
+import { QuantumCardSchema } from "./quantum-card.js"
 
 const BaseArtifactSchema = z.object({
   id: z.string().min(1),
@@ -33,6 +35,15 @@ const BaseArtifactSchema = z.object({
   visibility: VisibilitySchema.optional(),
   created_at: IsoDateTimeSchema,
   updated_at: IsoDateTimeSchema,
+
+  // Platform 2.0 additions (RFC 0003).
+  //
+  // Both are `.optional()` with no default, deliberately. Canonical
+  // serialization drops `undefined` but preserves `null`, so an absent optional
+  // field cannot change an existing record's reproducibility hash, while a
+  // field defaulted to `null` silently would. Do not add `.default(...)` here.
+  artifact_type: ArtifactTypeSchema.optional(),
+  quantum_card: QuantumCardSchema.optional(),
 })
 
 export const QecArtifactMetadataSchema = z.object({

@@ -5,10 +5,13 @@ import { zodToJsonSchema } from "zod-to-json-schema"
 import {
   AlgorithmBenchmarkResultSchema,
   AlgorithmExperimentManifestSchema,
+  ArtifactRelationSchema,
   ArtifactSchema,
   BenchmarkSuiteSchema,
+  CircuitTransformationSchema,
   QecBenchmarkResultSchema,
   QecExperimentManifestSchema,
+  QuantumCardSchema,
   ReproducibilityBundleSchema,
   VerificationEvidenceSchema,
 } from "../dist/index.js"
@@ -26,6 +29,9 @@ const schemas = {
   "algorithm-benchmark-result.schema.json": AlgorithmBenchmarkResultSchema,
   "verification-evidence.schema.json": VerificationEvidenceSchema,
   "reproducibility-bundle.schema.json": ReproducibilityBundleSchema,
+  "quantum-card.schema.json": QuantumCardSchema,
+  "artifact-relation.schema.json": ArtifactRelationSchema,
+  "circuit-transformation.schema.json": CircuitTransformationSchema,
 }
 
 for (const [filename, schema] of Object.entries(schemas)) {
