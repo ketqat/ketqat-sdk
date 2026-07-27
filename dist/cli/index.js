@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { KetQatClient } from "../client/index.js";
 import { HardwareProfileSchema } from "../hardware/profile.js";
 import { emitQasm3, parseQasm3, Qasm3ParseError } from "../circuit/qasm3.js";
 import { gateCount, totalClbits, totalQubits, twoQubitGateCount, usesClassicalControl, usesMidCircuitMeasurement, usesReset, } from "../circuit/graph.js";
@@ -20,6 +21,15 @@ Commands:
   zx optimize <file.qasm>                Optimize and report checked equivalence
   equivalence <a.qasm> <b.qasm>          Compare two circuits
   mitigate zne <file.qasm>               Zero-noise extrapolation; requires --noise-1q or --noise-2q
+
+Registry commands (need --registry <url> or KETQAT_URL):
+  search <query>                         Search artifacts, suites, and runs
+  pull <slug>                            Fetch an artifact with its versions and relations
+  push <slug> <card.json> --version <v>  Publish a Quantum Card version
+
+Authentication reads KETQAT_TOKEN from the environment. A token is never
+accepted as a command-line argument, because arguments appear in shell history
+and in the process list.
 
 Every command prints one JSON object to stdout.`;
 function parseFlags(argv) {
@@ -80,6 +90,27 @@ function noiseFrom(flags) {
         readout_error: readout,
     });
 }
+class RegistryConfigurationError extends Error {
+}
+/**
+ * Build a registry client.
+ *
+ * The token is read from the environment only. Accepting it as a flag would put
+ * it in shell history and in the process list, where other users on the machine
+ * can read it.
+ */
+function registryClient(flags, options = {}) {
+    const baseUrl = flags.get("registry") ?? process.env.KETQAT_URL;
+    if (!baseUrl) {
+        throw new RegistryConfigurationError("No registry URL. Pass --registry <url> or set KETQAT_URL.");
+    }
+    const token = process.env.KETQAT_TOKEN;
+    if (options.requireToken && !token) {
+        throw new RegistryConfigurationError("No API token. Set KETQAT_TOKEN in the environment. Tokens are not accepted as arguments, " +
+            "because arguments appear in shell history and in the process list.");
+    }
+    return new KetQatClient({ baseUrl, ...(token ? { token } : {}) });
+}
 function circuitSummary(circuit) {
     return {
         qubits: totalQubits(circuit),
@@ -92,7 +123,7 @@ function circuitSummary(circuit) {
         uses_reset: usesReset(circuit),
     };
 }
-export function runCli(argv) {
+export async function runCli(argv) {
     const { positional, flags } = parseFlags(argv);
     const [command, subcommand] = positional;
     if (command === undefined || flags.has("help") || command === "help") {
@@ -205,11 +236,55 @@ export function runCli(argv) {
                 });
                 return { exitCode: 0, stdout: { command: "mitigate.zne", ...result } };
             }
+            case "search": {
+                const term = positional.slice(1).join(" ");
+                if (!term)
+                    return { exitCode: 2, stderr: "search requires a query." };
+                const client = registryClient(flags);
+                return { exitCode: 0, stdout: { command: "search", results: await client.search.query(term) } };
+            }
+            case "pull": {
+                const slug = positional[1];
+                if (!slug)
+                    return { exitCode: 2, stderr: "pull requires an artifact slug." };
+                const client = registryClient(flags);
+                const [artifact, versions, relations] = await Promise.all([
+                    client.artifacts.get(slug),
+                    client.artifactVersions.list(slug),
+                    client.artifactRelations.list(slug),
+                ]);
+                return { exitCode: 0, stdout: { command: "pull", artifact, versions, relations } };
+            }
+            case "push": {
+                const [, slug, cardPath] = positional;
+                const version = flags.get("version");
+                if (!slug || !cardPath) {
+                    return { exitCode: 2, stderr: "usage: push <slug> <card.json> --version <version>" };
+                }
+                const card = JSON.parse(readFileSync(cardPath, "utf8"));
+                const resolved = version ?? card.version;
+                if (!resolved) {
+                    return {
+                        exitCode: 2,
+                        stderr: "push requires --version, or a version field in the card.",
+                    };
+                }
+                const client = registryClient(flags, { requireToken: true });
+                const published = await client.artifactVersions.publish(slug, {
+                    version: resolved,
+                    quantum_card: card,
+                    ...(flags.get("commit") ? { commit_sha: flags.get("commit") } : {}),
+                });
+                return { exitCode: 0, stdout: { command: "push", version: published } };
+            }
             default:
                 return { exitCode: 2, stderr: `Unknown command '${command}'.\n\n${USAGE}` };
         }
     }
     catch (error) {
+        if (error instanceof RegistryConfigurationError) {
+            return { exitCode: 2, stderr: error.message };
+        }
         if (error instanceof Qasm3ParseError) {
             return {
                 exitCode: 1,
