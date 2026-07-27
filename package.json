@@ -57,6 +57,14 @@
     "./demo": {
       "types": "./dist/demo/index.d.ts",
       "import": "./dist/demo/index.js"
+    },
+    "./engine": {
+      "types": "./dist/engine/index.d.ts",
+      "import": "./dist/engine/index.js"
+    },
+    "./hardware": {
+      "types": "./dist/hardware/profile.d.ts",
+      "import": "./dist/hardware/profile.js"
     }
   },
   "files": [
