@@ -94,13 +94,42 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
         decoder: z.ZodObject<{
             name: z.ZodString;
             version: z.ZodOptional<z.ZodString>;
+            options: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
         }, "strip", z.ZodTypeAny, {
             name: string;
+            options?: Record<string, unknown> | undefined;
             version?: string | undefined;
         }, {
             name: string;
+            options?: Record<string, unknown> | undefined;
             version?: string | undefined;
         }>;
+        /**
+         * Benchmark several decoders against one identical set of syndrome samples
+         * (RFC 0006).
+         *
+         * Optional and absent by default: manifests are hashed, and canonical
+         * serialization drops `undefined`, so an absent field leaves every existing
+         * manifest hash untouched. Do not give this a default.
+         *
+         * When present it supersedes `decoder` for execution. Every listed decoder
+         * sees the same shots at the same coordinate seed, which is what makes the
+         * comparison fair -- decoders benchmarked on different samples are not
+         * competitors.
+         */
+        decoders: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            name: z.ZodString;
+            version: z.ZodOptional<z.ZodString>;
+            options: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+        }, "strip", z.ZodTypeAny, {
+            name: string;
+            options?: Record<string, unknown> | undefined;
+            version?: string | undefined;
+        }, {
+            name: string;
+            options?: Record<string, unknown> | undefined;
+            version?: string | undefined;
+        }>, "many">>;
     }, "strip", z.ZodTypeAny, {
         code: {
             family: string;
@@ -114,8 +143,14 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
         experiment_type: string;
         decoder: {
             name: string;
+            options?: Record<string, unknown> | undefined;
             version?: string | undefined;
         };
+        decoders?: {
+            name: string;
+            options?: Record<string, unknown> | undefined;
+            version?: string | undefined;
+        }[] | undefined;
     }, {
         code: {
             family: string;
@@ -129,8 +164,14 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
         experiment_type: string;
         decoder: {
             name: string;
+            options?: Record<string, unknown> | undefined;
             version?: string | undefined;
         };
+        decoders?: {
+            name: string;
+            options?: Record<string, unknown> | undefined;
+            version?: string | undefined;
+        }[] | undefined;
     }>;
 }, "strip", z.ZodTypeAny, {
     schema_version: string;
@@ -148,8 +189,14 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
         experiment_type: string;
         decoder: {
             name: string;
+            options?: Record<string, unknown> | undefined;
             version?: string | undefined;
         };
+        decoders?: {
+            name: string;
+            options?: Record<string, unknown> | undefined;
+            version?: string | undefined;
+        }[] | undefined;
     };
     benchmark: {
         version: string;
@@ -192,8 +239,14 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
         experiment_type: string;
         decoder: {
             name: string;
+            options?: Record<string, unknown> | undefined;
             version?: string | undefined;
         };
+        decoders?: {
+            name: string;
+            options?: Record<string, unknown> | undefined;
+            version?: string | undefined;
+        }[] | undefined;
     };
     benchmark: {
         version: string;
@@ -514,13 +567,42 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
         decoder: z.ZodObject<{
             name: z.ZodString;
             version: z.ZodOptional<z.ZodString>;
+            options: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
         }, "strip", z.ZodTypeAny, {
             name: string;
+            options?: Record<string, unknown> | undefined;
             version?: string | undefined;
         }, {
             name: string;
+            options?: Record<string, unknown> | undefined;
             version?: string | undefined;
         }>;
+        /**
+         * Benchmark several decoders against one identical set of syndrome samples
+         * (RFC 0006).
+         *
+         * Optional and absent by default: manifests are hashed, and canonical
+         * serialization drops `undefined`, so an absent field leaves every existing
+         * manifest hash untouched. Do not give this a default.
+         *
+         * When present it supersedes `decoder` for execution. Every listed decoder
+         * sees the same shots at the same coordinate seed, which is what makes the
+         * comparison fair -- decoders benchmarked on different samples are not
+         * competitors.
+         */
+        decoders: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            name: z.ZodString;
+            version: z.ZodOptional<z.ZodString>;
+            options: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+        }, "strip", z.ZodTypeAny, {
+            name: string;
+            options?: Record<string, unknown> | undefined;
+            version?: string | undefined;
+        }, {
+            name: string;
+            options?: Record<string, unknown> | undefined;
+            version?: string | undefined;
+        }>, "many">>;
     }, "strip", z.ZodTypeAny, {
         code: {
             family: string;
@@ -534,8 +616,14 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
         experiment_type: string;
         decoder: {
             name: string;
+            options?: Record<string, unknown> | undefined;
             version?: string | undefined;
         };
+        decoders?: {
+            name: string;
+            options?: Record<string, unknown> | undefined;
+            version?: string | undefined;
+        }[] | undefined;
     }, {
         code: {
             family: string;
@@ -549,8 +637,14 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
         experiment_type: string;
         decoder: {
             name: string;
+            options?: Record<string, unknown> | undefined;
             version?: string | undefined;
         };
+        decoders?: {
+            name: string;
+            options?: Record<string, unknown> | undefined;
+            version?: string | undefined;
+        }[] | undefined;
     }>;
 }, "strip", z.ZodTypeAny, {
     schema_version: string;
@@ -568,8 +662,14 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
         experiment_type: string;
         decoder: {
             name: string;
+            options?: Record<string, unknown> | undefined;
             version?: string | undefined;
         };
+        decoders?: {
+            name: string;
+            options?: Record<string, unknown> | undefined;
+            version?: string | undefined;
+        }[] | undefined;
     };
     benchmark: {
         version: string;
@@ -612,8 +712,14 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
         experiment_type: string;
         decoder: {
             name: string;
+            options?: Record<string, unknown> | undefined;
             version?: string | undefined;
         };
+        decoders?: {
+            name: string;
+            options?: Record<string, unknown> | undefined;
+            version?: string | undefined;
+        }[] | undefined;
     };
     benchmark: {
         version: string;

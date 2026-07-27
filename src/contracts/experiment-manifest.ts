@@ -48,7 +48,31 @@ export const QecExperimentManifestSchema = BaseExperimentManifestSchema.extend({
     decoder: z.object({
       name: z.string().min(1),
       version: z.string().optional(),
+      options: z.record(z.unknown()).optional(),
     }),
+    /**
+     * Benchmark several decoders against one identical set of syndrome samples
+     * (RFC 0006).
+     *
+     * Optional and absent by default: manifests are hashed, and canonical
+     * serialization drops `undefined`, so an absent field leaves every existing
+     * manifest hash untouched. Do not give this a default.
+     *
+     * When present it supersedes `decoder` for execution. Every listed decoder
+     * sees the same shots at the same coordinate seed, which is what makes the
+     * comparison fair -- decoders benchmarked on different samples are not
+     * competitors.
+     */
+    decoders: z
+      .array(
+        z.object({
+          name: z.string().min(1),
+          version: z.string().optional(),
+          options: z.record(z.unknown()).optional(),
+        }),
+      )
+      .min(1)
+      .optional(),
   }),
 })
 export type QecExperimentManifest = z.infer<typeof QecExperimentManifestSchema>

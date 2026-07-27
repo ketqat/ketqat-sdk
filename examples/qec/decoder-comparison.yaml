@@ -1,0 +1,34 @@
+# Benchmarks two decoders against one identical set of syndrome samples.
+#
+# Both decoders see the same shots at the same coordinate seed. Re-sampling per
+# decoder would make this a comparison of luck as much as of decoders.
+schema_version: "0.1"
+domain: QEC
+benchmark:
+  suite: surface-code-memory-decoder-comparison
+  version: "0.1.0"
+experiment:
+  name: surface-code-decoder-comparison
+  description: MWPM versus truncated maximum-likelihood lookup on identical samples
+qec:
+  experiment_type: memory
+  code:
+    family: rotated-surface-code
+    distances: [3]
+    rounds: distance
+  noise:
+    model: circuit-level-depolarizing
+    physical_error_rates: [0.01]
+  decoder:
+    name: pymatching
+  decoders:
+    - name: pymatching
+    - name: ketqat-lookup
+      options:
+        max_fault_weight: 2
+sampling:
+  shots: 2000
+  seed: 42
+metrics:
+  - logical_error_rate
+  - decoder_latency_ms
