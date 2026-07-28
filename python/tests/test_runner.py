@@ -199,12 +199,90 @@ def test_the_same_experiment_run_twice_produces_the_same_hash() -> None:
     first = run_experiment(manifest)
     second = run_experiment(manifest)
 
-    # The science is deterministic; only the hash is not.
-    assert first["summary_metrics"]["logical_error_rate"] == pytest.approx(
-        second["summary_metrics"]["logical_error_rate"]
+    # The science is deterministic under a fixed seed. Compared on the metric
+    # point rather than the summary, because a zero-failure run has no measured
+    # rate to summarise (ketqat-sdk#92) -- the point is where the number lives.
+    first_point = first["metric_points"][0]
+    second_point = second["metric_points"][0]
+    assert first_point["logical_failures"] == second_point["logical_failures"]
+    assert first_point["logical_error_rate"] == pytest.approx(
+        second_point["logical_error_rate"]
     ), "the scientific result should already be deterministic under a fixed seed"
+
+    # And the durations genuinely differ, so a passing hash comparison below is
+    # evidence that timing is excluded rather than evidence of a cached result.
+    assert first_point["runtime_seconds"] != second_point["runtime_seconds"]
 
     assert first["reproducibility_hash"] == second["reproducibility_hash"], (
         "the same experiment must hash the same twice, or REPRODUCED evidence "
         "cannot be produced by anyone"
     )
+
+
+def test_a_zero_failure_run_is_not_summarised_as_a_rate_of_zero() -> None:
+    """ketqat-sdk#92.
+
+    `summary_metrics` is the field a leaderboard query reaches for, an importer
+    maps, and a reader quotes. It used to copy the point's value verbatim, so a
+    run that observed no logical failures produced
+
+        "summary_metrics": {"logical_error_rate": 0.0}
+
+    while the point it came from said, one level down, that the rate is an upper
+    bound and explicitly not zero. The record held an honest statement and, one
+    level up, the exact claim that statement exists to deny.
+    """
+    from ketqat_runner.runner import _summarize
+
+    bounded = _summarize(
+        [
+            {
+                "metric": "logical_error_rate",
+                "logical_error_rate": 0.0,
+                "metadata": {"is_upper_bound_only": True, "confidence_interval_upper": 3.84e-4},
+            }
+        ]
+    )
+    assert "logical_error_rate" not in bounded, "a bounded run must not report a measured rate"
+    assert bounded["logical_error_rate_upper_bound"] == 3.84e-4, "the bound is a real result and is kept"
+
+
+def test_a_measured_rate_is_still_summarised_as_a_rate() -> None:
+    # The fix must not swallow genuine measurements, which is the obvious way to
+    # over-correct here.
+    from ketqat_runner.runner import _summarize
+
+    measured = _summarize(
+        [
+            {
+                "metric": "logical_error_rate",
+                "logical_error_rate": 0.0221,
+                "metadata": {"is_upper_bound_only": False, "confidence_interval_upper": 0.025},
+            }
+        ]
+    )
+    assert measured == {"logical_error_rate": 0.0221}
+
+
+def test_a_bound_with_no_interval_summarises_to_nothing() -> None:
+    # There is no honest number to report, and inventing one -- or falling back
+    # to the bare zero -- is what this whole change exists to prevent.
+    from ketqat_runner.runner import _summarize
+
+    assert _summarize(
+        [
+            {
+                "metric": "logical_error_rate",
+                "logical_error_rate": 0.0,
+                "metadata": {"is_upper_bound_only": True},
+            }
+        ]
+    ) == {}
+
+
+def test_non_qec_metrics_are_unaffected() -> None:
+    from ketqat_runner.runner import _summarize
+
+    assert _summarize(
+        [{"metric": "success_probability", "success_probability": 0.96, "metadata": {}}]
+    ) == {"success_probability": 0.96}

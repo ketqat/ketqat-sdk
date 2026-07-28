@@ -329,11 +329,37 @@ def _finish_result(manifest: dict[str, Any], metric_points: list[dict[str, Any]]
 
 
 def _summarize(metric_points: list[dict[str, Any]]) -> dict[str, Any]:
+    """Roll metric points up into the convenience block, without losing a caveat.
+
+    `summary_metrics` is the field a leaderboard query reaches for, an importer
+    maps, and a reader quotes. It used to copy the point's value verbatim, which
+    for a run that observed no logical failures meant
+
+        "summary_metrics": {"logical_error_rate": 0.0}
+
+    while the point it came from said, one level down, that the rate is an upper
+    bound and explicitly not zero (ketqat-sdk#92). The record contained an honest
+    statement and, above it, the exact claim that statement exists to deny.
+
+    So a bounded measurement is summarised under a different key. A consumer
+    reading `logical_error_rate` finds nothing -- correct, because there is no
+    measured rate -- and one wanting the science finds the bound, named as a
+    bound. Omitting it entirely was the alternative, and it would have thrown
+    away a real result to avoid a misreading.
+    """
     summary: dict[str, Any] = {}
     for point in metric_points:
         metric = point["metric"]
-        if metric in point:
-            summary[metric] = point[metric]
+        if metric not in point:
+            continue
+        metadata = point.get("metadata") or {}
+        if metadata.get("is_upper_bound_only"):
+            bound = metadata.get("confidence_interval_upper")
+            if isinstance(bound, (int, float)) and not isinstance(bound, bool):
+                summary[f"{metric}_upper_bound"] = bound
+            # No bound recorded means there is nothing honest to summarise.
+            continue
+        summary[metric] = point[metric]
     return summary
 
 
