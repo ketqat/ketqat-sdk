@@ -2651,6 +2651,21 @@ c[0] = measure q[0];
   )
   assert.ok(overshoot.mitigated_value > 1, "the 1% case is documented as overshooting the physical range")
   assert.equal(overshoot.warnings.length, 1, "an unphysical extrapolation must warn")
-  assert.match(readme, new RegExp(overshoot.warnings[0].split(".")[0].replace(/[[\]]/g, "\\$&")),
-    "the README quotes the warning verbatim and must match it")
+  // Compared as a substring rather than compiled into a RegExp.
+  //
+  // The first version built a pattern from the warning text and escaped only
+  // square brackets, which CodeQL correctly flagged: the message contains
+  // "[-1, 1]" today and any regex metacharacter tomorrow, and a half-escaped
+  // pattern either throws or silently matches something else. Nothing here
+  // needs a regex -- the README is supposed to quote the sentence verbatim, so
+  // verbatim is exactly the right comparison.
+  // Split on ". " rather than ".", because the sentence contains the number
+  // 1.003063 and splitting on every period compared only "Extrapolated value 1"
+  // -- which matches whatever digits the README happens to carry, so the
+  // assertion passed while the quoted value was wrong.
+  const quotedWarning = overshoot.warnings[0].split(". ")[0]
+  assert.ok(
+    readme.includes(quotedWarning),
+    `the README must quote the warning verbatim; expected to find: ${quotedWarning}`,
+  )
 }
