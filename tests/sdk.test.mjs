@@ -2202,18 +2202,23 @@ c[1] = measure q[1];
 // trustworthy, against a real collection run.
 // ---------------------------------------------------------------------------
 {
-  const metricsPath = new URL("../.tmp-metrics.json", import.meta.url)
-  let metrics = null
-  try {
-    metrics = JSON.parse(fs.readFileSync(metricsPath, "utf8"))
-  } catch {
-    // Collection needs network and gh. Skipping is correct; claiming a pass is
-    // not, so the absence is announced.
-    console.log("# skip: OSS metrics were not collected, so their shape was NOT verified")
-  }
-
-  if (metrics) {
-    assert.equal(metrics.schema_version, "1.0")
+  /**
+   * Check a metrics document against the rules the collector exists to enforce.
+   *
+   * This was originally written inline against a collected document, which was
+   * a mistake worth recording: the document is written to a gitignored path
+   * that nothing generated -- not CI, not `npm run metrics:oss`, which prints
+   * to stdout. So the block announced `# skip` on every run and every assertion
+   * below had never once executed. A check that cannot fail is not a check, and
+   * this one was load-bearing for the claim that the published numbers do not
+   * flatter.
+   *
+   * Extracting it into a function is what makes it testable: the malformed
+   * documents further down prove the rules actually reject what they describe,
+   * with no network and no gh, so they run everywhere and always.
+   */
+  const assertMetricsShape = (metrics, label) => {
+    assert.equal(metrics.schema_version, "1.0", `${label}: schema_version`)
     assert.ok(metrics.generated_at, "a metric without a timestamp cannot be judged current")
 
     /**
@@ -2231,7 +2236,10 @@ c[1] = measure q[1];
       for (const child of Object.values(node)) walk(child)
     }
     walk(metrics)
-    assert.ok(entries.length > 8, `expected several metrics, found ${entries.length}`)
+    // Enough entries that the per-entry rules below are doing work. The richer
+    // "the collector reports a full picture" count belongs to the collected
+    // document, not to the small documents that prove the rules bite.
+    assert.ok(entries.length >= 5, `${label}: expected several metrics, found ${entries.length}`)
 
     for (const entry of entries) {
       // The rule the whole file exists for: unknown is null, and null carries a
@@ -2259,21 +2267,111 @@ c[1] = measure q[1];
       )
     }
 
-    // Bot activity must not be counted as adoption.
-    const source = fs.readFileSync(new URL("../scripts/collect-oss-metrics.mjs", import.meta.url), "utf8")
-    assert.match(source, /\[bot\]/, "the collector must exclude automation accounts")
+    // A contributor count without a date reads as current activity whether or
+    // not it is. Whenever the count is above zero the recency must be reported
+    // alongside it, so the flattering reading cannot stand unchallenged.
+    if (metrics.contribution.external_contributors_last_12_months.value > 0) {
+      assert.ok(
+        metrics.contribution.most_recent_external_merge.value,
+        "a non-zero external contributor count must report when the most recent contribution landed",
+      )
+      assert.equal(
+        typeof metrics.contribution.days_since_external_merge.value,
+        "number",
+        "a non-zero external contributor count must report how long ago that was",
+      )
+    }
 
     // No personal data. Logins are public handles; names and emails are not.
     const serialized = JSON.stringify(metrics)
-    assert.doesNotMatch(serialized, /"email"/, "metrics must not carry email addresses")
-    assert.doesNotMatch(serialized, /@[\w.-]+\.(com|org|net)/, "metrics must not carry email addresses")
+    assert.doesNotMatch(serialized, /"email"/, `${label}: metrics must not carry email addresses`)
+    assert.doesNotMatch(serialized, /@[\w.-]+\.(com|org|net)/, `${label}: metrics must not carry email addresses`)
 
     // Demo and real scientific runs must never be summed.
     assert.equal(
       metrics.scientific_usage.public_non_demo_runs.value,
       null,
-      "run counts must stay unknown until a source guarantees demo records are excluded",
+      `${label}: run counts must stay unknown until a source guarantees demo records are excluded`,
     )
+  }
+
+  // Bot activity must not be counted as adoption. A property of the collector
+  // rather than of any one document, so it is checked against the source.
+  const source = fs.readFileSync(new URL("../scripts/collect-oss-metrics.mjs", import.meta.url), "utf8")
+  assert.match(source, /\[bot\]/, "the collector must exclude automation accounts")
+
+  /**
+   * A document that satisfies every rule. Each malformed case below is this
+   * document with exactly one thing wrong, so a case that fails to throw has
+   * identified a rule that does not actually hold.
+   */
+  const wellFormed = () => ({
+    schema_version: "1.0",
+    generated_at: "2026-07-29T00:00:00.000Z",
+    contribution: {
+      external_contributors_last_12_months: { value: 2, estimated: false, source: "https://github.com/ketqat" },
+      most_recent_external_merge: { value: "2026-02-05T09:24:26Z", estimated: false, source: "https://github.com/ketqat" },
+      days_since_external_merge: { value: 173, estimated: false, source: "https://github.com/ketqat" },
+      sampled: { value: 9, estimated: true, source: "https://github.com/ketqat", how: "the most recent 100 PRs" },
+    },
+    distribution: { npm: { value: null, estimated: false, source: "https://registry.npmjs.org/x", why: "not published" } },
+    downloads: { npm_last_month: { value: null, estimated: false, source: "https://api.npmjs.org", why: "nothing published" } },
+    scientific_usage: {
+      public_non_demo_runs: { value: null, estimated: false, source: "https://ketqat.com/runs", why: "needs registry access" },
+    },
+  })
+
+  // The well-formed document must pass, or every case below passes vacuously.
+  assertMetricsShape(wellFormed(), "well-formed")
+
+  const mustReject = (mutate, why) => {
+    const document = wellFormed()
+    mutate(document)
+    assert.throws(
+      () => assertMetricsShape(document, "malformed"),
+      (error) => error instanceof assert.AssertionError,
+      `the shape check must reject ${why}`,
+    )
+  }
+
+  mustReject((d) => { d.schema_version = "2.0" }, "an unknown schema version")
+  mustReject((d) => { delete d.generated_at }, "a document with no collection timestamp")
+  mustReject(
+    (d) => { delete d.distribution.npm.why },
+    "a null metric that does not say why it is unknown -- the rule the collector exists for",
+  )
+  mustReject((d) => { delete d.contribution.sampled.how }, "an estimate that does not explain its method")
+  mustReject((d) => { delete d.contribution.sampled.source }, "a metric with no source anyone can open")
+  mustReject((d) => { d.contribution.sampled.source = "github.com/ketqat" }, "a source that is not a URL")
+  mustReject(
+    (d) => { d.downloads.npm_last_month = { value: 0, estimated: false, source: "https://api.npmjs.org" } },
+    "zero downloads for an unpublished package -- zero is a measurement, null is an admission",
+  )
+  mustReject(
+    (d) => { d.contribution.most_recent_external_merge = { value: null, estimated: false, source: "https://github.com/ketqat", why: "none" } },
+    "a non-zero contributor count with no date beside it, which reads as current activity",
+  )
+  mustReject(
+    (d) => { d.scientific_usage.public_non_demo_runs = { value: 41, estimated: false, source: "https://ketqat.com/runs" } },
+    "a run count that cannot guarantee demo records were excluded",
+  )
+  mustReject(
+    (d) => { d.contribution.maintainer = { value: "a@b.com", estimated: false, source: "https://github.com/ketqat" } },
+    "an email address in what is meant to be aggregate data",
+  )
+
+  // Finally, the live document when one has been collected. The rules above are
+  // proved by construction; this proves the collector's real output obeys them.
+  let collected = null
+  try {
+    collected = JSON.parse(fs.readFileSync(new URL("../.tmp-metrics.json", import.meta.url), "utf8"))
+  } catch {
+    console.log("# note: no collected metrics document; the rules were verified, this run's output was not")
+  }
+  if (collected) {
+    assertMetricsShape(collected, "collected")
+    const count = JSON.stringify(collected).split('"estimated"').length - 1
+    assert.ok(count > 8, `a real collection should report many metrics, found ${count}`)
   }
 }
 
