@@ -1,5 +1,9 @@
 # Claude for OSS readiness audit
 
+> **Superseded for current status.** This is the 2026-07-13 baseline and is kept
+> for the record. The current assessment, with the program criteria re-verified,
+> is [`readiness-report.md`](readiness-report.md).
+
 Verified: 2026-07-13 (Asia/Tokyo)
 
 This audit records KetQat's current, evidence-backed OSS baseline. It is not a claim that KetQat qualifies for, has applied to, or has been accepted into the Claude for Open Source program. Unknown values remain unknown; they are not converted to zero.
