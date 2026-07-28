@@ -112,7 +112,7 @@
     "zod-to-json-schema": "^3.25.2"
   },
   "dependencies": {
-    "zod": "^3.25.76"
+    "zod": "^4.4.3"
   },
   "bin": {
     "ketqat-engine": "./dist/cli/bin.js"
