@@ -11,10 +11,11 @@ result does not mean, which is the part that matters.
 | [`algorithms/grover-search.yaml`](algorithms/grover-search.yaml) | algorithm benchmark | `ketqat run grover-search` |
 | [`mitigation/zero-noise-extrapolation.json`](mitigation/zero-noise-extrapolation.json) | `mitigate_zne` | execution plane, below |
 | [`equivalence/cx-decomposition.json`](equivalence/cx-decomposition.json) | `check_equivalence` | execution plane, below |
+| [`resources/t-count-with-toffoli.json`](resources/t-count-with-toffoli.json) | `estimate_resources` | execution plane, below |
 
-`transpile`, `estimate_resources`, and `optimize_zx` have no example yet — see
+`transpile` and `optimize_zx` have no example yet — see
 [ketqat-sdk#88](https://github.com/ketqat/ketqat-sdk/issues/88). One
-well-explained example is worth more than three thin ones, so they are left open
+well-explained example is worth more than two thin ones, so they are left open
 rather than filled in quickly.
 
 ---
@@ -180,3 +181,75 @@ be misread. It does **not** mean the circuits differ, and it does not mean they
 match. It means the question was not answered. Treating it as either is how a
 transpiler bug survives review: nobody checked, and the record said something
 that looked like a check.
+
+---
+
+## Counting the cost of a circuit
+
+```bash
+ketqat-engine job submit examples/resources/t-count-with-toffoli.json \
+  --registry https://ketqat.com --wait
+```
+
+### What it produces
+
+```json
+"fault_tolerant": {
+  "t_count": 3,
+  "clifford_count": 2,
+  "toffoli_count": 1,
+  "unsupported_for_ft_count": 0
+}
+```
+
+### The number you must not quote on its own
+
+**`t_count: 3` is not this circuit's T-count.**
+
+T-count is the usual proxy for fault-tolerant cost, because magic-state distillation
+dominates the resource budget. So `t_count` is exactly the field a reader lifts
+into a slide. Here it is an undercount by more than a factor of three, and the
+reason is sitting next to it: `toffoli_count: 1`.
+
+A Toffoli is not a Clifford gate. Decomposed into the Clifford+T basis it costs
+**seven T gates**. This circuit therefore needs roughly `3 + 7 = 10` T gates once
+it is expressed in a basis a fault-tolerant machine can execute — not 3.
+
+The estimator is not wrong; it says what it did:
+
+```json
+"notes": [
+  "Static count over the circuit as written. No synthesis, decomposition, or optimization is applied.",
+  ...
+]
+```
+
+**A static count over the circuit as written.** Toffolis are reported in their own
+field precisely so the gap is visible rather than folded silently into a single
+number. Counting them as one gate each and calling the total a T-count would be
+the misleading version, and it would look tidier.
+
+### What else it declines to estimate
+
+```json
+"Duration not estimated: the hardware snapshot does not characterize every gate used.",
+"Success probability not estimated: the hardware snapshot does not characterize every gate used.",
+"No hardware snapshot supplied, so duration and fidelity are not estimated."
+```
+
+Runtime and success probability are absent rather than defaulted. Both depend on
+per-gate durations and error rates that only a hardware profile supplies, and a
+plausible-looking number derived from nothing is worse than no number — it is
+indistinguishable from a measurement until someone tries to reproduce it.
+
+Pass `hardware_profile` to get those estimates, and they will then be estimates
+*under that profile*, not properties of the circuit.
+
+### What this is not
+
+- **Not a compilation.** Nothing was synthesised, decomposed, routed, or
+  optimised. A real toolchain will change every one of these counts.
+- **Not a lower bound.** Optimisation can reduce T-count; decomposition
+  increases it. The number moves in both directions.
+- **Not hardware-specific.** No connectivity, no native gate set, no calibration
+  data entered into it.
