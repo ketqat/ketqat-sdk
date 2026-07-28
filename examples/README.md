@@ -10,11 +10,12 @@ result does not mean, which is the part that matters.
 | [`qec/decoder-comparison.yaml`](qec/decoder-comparison.yaml) | QEC, two decoders | `ketqat run qec/decoder-comparison` |
 | [`algorithms/grover-search.yaml`](algorithms/grover-search.yaml) | algorithm benchmark | `ketqat run grover-search` |
 | [`mitigation/zero-noise-extrapolation.json`](mitigation/zero-noise-extrapolation.json) | `mitigate_zne` | execution plane, below |
+| [`equivalence/cx-decomposition.json`](equivalence/cx-decomposition.json) | `check_equivalence` | execution plane, below |
 
-`transpile`, `estimate_resources`, `optimize_zx`, and `check_equivalence` have
-no example yet — see [ketqat-sdk#88](https://github.com/ketqat/ketqat-sdk/issues/88).
-One well-explained example is worth more than four thin ones, so they are left
-open rather than filled in quickly.
+`transpile`, `estimate_resources`, and `optimize_zx` have no example yet — see
+[ketqat-sdk#88](https://github.com/ketqat/ketqat-sdk/issues/88). One
+well-explained example is worth more than three thin ones, so they are left open
+rather than filled in quickly.
 
 ---
 
@@ -101,3 +102,81 @@ This runs on the statevector simulator with Monte Carlo Pauli trajectories.
 Every result the execution plane produces is recorded as `SIMULATION`, in the
 record, on the page, and inside the downloaded bundle. Nothing here reaches a
 quantum device, and no number from it describes one.
+
+---
+
+## Checking that two circuits are the same
+
+```bash
+ketqat-engine job submit examples/equivalence/cx-decomposition.json \
+  --registry https://ketqat.com --wait
+```
+
+The two circuits are `cx q[0], q[1]` and its standard decomposition
+`h q[1]; cz q[0], q[1]; h q[1]`. They are a well-known identity, so the expected
+answer is known before the tool runs — which is what makes the example able to
+show whether the check works.
+
+### What it produces
+
+```json
+{
+  "level": "NUMERICALLY_CHECKED",
+  "method": "statevector",
+  "tolerance": 1e-9,
+  "global_phase_ignored": true,
+  "qubit_count": 2
+}
+```
+
+### `NUMERICALLY_CHECKED` does not mean proven
+
+This is the part worth reading twice. The level is not `PROVEN`, and the
+difference is not modesty:
+
+- The circuits were compared by **simulating both exactly and comparing
+  amplitudes**, at a tolerance of `1e-9`, on this specific input state.
+- It is a numerical result on a 2-qubit state space, not an algebraic proof of
+  unitary equality.
+- **Global phase was ignored.** Two circuits differing only by an overall phase
+  are reported as equivalent, which is usually what you want and is occasionally
+  not — a controlled version of a phase-differing circuit is *not* equivalent.
+
+Quoting this as "the compiler proved my optimisation correct" overstates it. It
+checked, exactly, at a tolerance, on this many qubits, up to global phase.
+
+### The other three answers
+
+**A real difference**, `x q[0]` against `z q[0]`:
+
+```json
+{
+  "level": "FAILED",
+  "counterexample": "Maximum amplitude difference 1.000e+0 exceeds tolerance 1.000e-9 (state fidelity 0.000000000000)."
+}
+```
+
+A `FAILED` verdict names the discrepancy rather than only reporting a verdict,
+so you can tell a genuine semantic difference from a tolerance that is too tight.
+
+**A structural mismatch** — different qubit counts:
+
+```json
+{ "level": "FAILED", "counterexample": "Circuits act on different numbers of qubits: 2 and 3." }
+```
+
+**Too large to check** — beyond the exact-simulation limit:
+
+```json
+{
+  "level": "INCONCLUSIVE",
+  "qubit_count": 26,
+  "reason": "Exact comparison needs 2^26 amplitudes, above the 24-qubit limit. Not attempted; this is not evidence that the circuits differ."
+}
+```
+
+`INCONCLUSIVE` is the answer that matters most, and it is the one most likely to
+be misread. It does **not** mean the circuits differ, and it does not mean they
+match. It means the question was not answered. Treating it as either is how a
+transpiler bug survives review: nobody checked, and the record said something
+that looked like a check.
