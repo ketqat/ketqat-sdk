@@ -16,6 +16,35 @@ ketqat examples list
 ketqat run surface-code-memory --output ketqat-qec-run.json
 ```
 
+### What you will see
+
+```
+surface-code-mwpm-baseline  [COMPLETED]
+  suite       surface-code-memory-mwpm 0.1.0
+  domain      QEC
+  points      1
+  d=3, p=0.001  logical error rate < 0.0369935 (upper bound, 95% confidence)
+      No logical failures in 100 shots. This bounds the rate; it does not show it is zero.
+  backend     stim-pymatching
+  hash        369a635373fab00c...
+  written to  ketqat-qec-run.json
+```
+
+**Read that third line carefully, because it is the whole result.** The run saw
+no logical failures. That does not mean the logical error rate is zero — it
+means the rate is small enough that 100 shots could not resolve it. All the run
+established is an upper bound, and quoting it as "zero" would be a claim the
+data does not support. Increase `shots` in the manifest to tighten the bound.
+
+The `backend` line names the real decoder that ran. There is no synthetic
+fallback: if Stim and PyMatching are not installed, the run fails and tells you
+what to install rather than simulating something easier and reporting it as a
+QEC result.
+
+Timed from a clean virtual environment with a cold package cache, the install
+and first QEC benchmark together take about 21 seconds; the algorithm-only path
+takes about 4. The three minutes in the title is the budget, not the target.
+
 For a lighter algorithm-only smoke test:
 
 ```bash

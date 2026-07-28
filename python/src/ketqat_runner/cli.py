@@ -9,6 +9,7 @@ import yaml
 
 from .examples import get_example_manifest, list_example_manifests, read_example_manifest
 from .runner import run_experiment
+from .summary import format_run_summary
 from .validation import KetQatValidationError
 
 
@@ -18,6 +19,11 @@ def main() -> int:
     run_parser = subcommands.add_parser("run", help="Run a KetQat experiment manifest locally.")
     run_parser.add_argument("manifest", help="Manifest file path or packaged example name.")
     run_parser.add_argument("--output", type=Path, required=True)
+    run_parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Write the result file without printing a summary.",
+    )
 
     examples_parser = subcommands.add_parser("examples", help="List or copy packaged KetQat example manifests.")
     examples_subcommands = examples_parser.add_subparsers(dest="examples_command", required=True)
@@ -46,6 +52,8 @@ def main() -> int:
 
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(result, indent=2) + "\n")
+        if not args.quiet:
+            print(format_run_summary(result, str(args.output)))
         return 0
 
     if args.command == "examples":

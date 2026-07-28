@@ -36,7 +36,34 @@ grep -F 'pip install "ketqat[qec]"' "$TEMP_ROOT/missing-extra.stderr" >/dev/null
 "$TEMP_ROOT/qec/bin/python" -m pip install --upgrade pip
 "$TEMP_ROOT/qec/bin/python" -m pip install "${WHEEL}[qec]"
 "$TEMP_ROOT/qec/bin/ketqat" examples copy surface-code-memory --output "$TEMP_ROOT/surface-code-memory.yaml"
-"$TEMP_ROOT/qec/bin/ketqat" run surface-code-memory --output "$TEMP_ROOT/qec.json"
+"$TEMP_ROOT/qec/bin/ketqat" run surface-code-memory --output "$TEMP_ROOT/qec.json" | tee "$TEMP_ROOT/qec.stdout"
+
+# The first command a new user runs must explain what it found. It used to
+# print nothing at all, which left the one fact that matters about a
+# zero-failure run -- that the rate is bounded, not zero -- readable only by
+# opening the JSON and knowing which of a dozen fields to look at.
+grep -F "logical error rate" "$TEMP_ROOT/qec.stdout" >/dev/null
+grep -F "written to" "$TEMP_ROOT/qec.stdout" >/dev/null
+"$TEMP_ROOT/qec/bin/python" - "$TEMP_ROOT/qec.json" "$TEMP_ROOT/qec.stdout" <<'PY'
+import json, sys
+
+result = json.load(open(sys.argv[1]))
+printed = open(sys.argv[2]).read()
+point = result["metric_points"][0]
+
+# When no logical failure was observed, the summary must say so in the terms
+# the result should be quoted in, and must never print a bare rate of zero.
+if point["metadata"].get("is_upper_bound_only"):
+    assert "upper bound" in printed, "a zero-failure run must be reported as a bound"
+    assert "does not show it is zero" in printed, "the bound must say what it does not show"
+    assert "logical error rate 0" not in printed, "a zero-failure run must never print a rate of zero"
+PY
+
+# --quiet exists for scripts, and must actually suppress the summary while
+# still writing the result.
+"$TEMP_ROOT/qec/bin/ketqat" run surface-code-memory --quiet --output "$TEMP_ROOT/quiet.json" > "$TEMP_ROOT/quiet.stdout"
+test ! -s "$TEMP_ROOT/quiet.stdout"
+test -s "$TEMP_ROOT/quiet.json"
 "$TEMP_ROOT/qec/bin/ketqat" run qec/surface-code-memory --output "$TEMP_ROOT/qec-by-path-alias.json"
 "$TEMP_ROOT/qec/bin/python" -c "import json,sys; data=json.load(open(sys.argv[1])); point=data['metric_points'][0]; assert data['domain'] == 'QEC'; assert data['is_demo'] is False; assert point['metadata']['backend'] == 'stim-pymatching'; assert 'stim' in data['environment']['packages']; assert 'pymatching' in data['environment']['packages']" "$TEMP_ROOT/qec.json"
 
