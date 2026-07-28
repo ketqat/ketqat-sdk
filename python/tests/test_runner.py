@@ -167,3 +167,43 @@ def test_result_schema_validation_rejects_malformed_result() -> None:
 
     with pytest.raises(KetQatValidationError, match="logical_error_rate"):
         validate_result(result)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "ketqat-sdk#89: duration measurements are inside the hashed payload, so the same "
+        "experiment hashes differently on every run. Strict, so that fixing the defect fails "
+        "this test and forces it to be turned into a positive assertion."
+    ),
+)
+def test_the_same_experiment_run_twice_produces_the_same_hash() -> None:
+    """The property the whole platform rests on, and it does not currently hold.
+
+    A reproducibility hash exists so a second person can re-run an experiment and
+    show they obtained the same thing. The verification contract requires exactly
+    that: REPRODUCED evidence must carry a matching hash.
+
+    Today no honest reproduction can produce one. `runtime_seconds`,
+    `decoder_latency_ms`, and five other duration fields are hashed, and they
+    differ on every run -- on the same machine, seconds apart, let alone across
+    machines. The hash fingerprints machine speed rather than science.
+
+    Nothing else in the suite covers this. The cross-language fixtures prove
+    TypeScript and Python hash *the same input* identically, which they do; they
+    say nothing about whether the same *experiment* hashes the same twice.
+    """
+    manifest = _manifest()
+
+    first = run_experiment(manifest)
+    second = run_experiment(manifest)
+
+    # The science is deterministic; only the hash is not.
+    assert first["summary_metrics"]["logical_error_rate"] == pytest.approx(
+        second["summary_metrics"]["logical_error_rate"]
+    ), "the scientific result should already be deterministic under a fixed seed"
+
+    assert first["reproducibility_hash"] == second["reproducibility_hash"], (
+        "the same experiment must hash the same twice, or REPRODUCED evidence "
+        "cannot be produced by anyone"
+    )
