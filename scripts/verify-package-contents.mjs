@@ -61,7 +61,14 @@ const isAllowedPackageFile = (path) =>
   // The QEC code catalog is generated data rather than a schema, and ships for
   // the same reason: consumers must read one source rather than a second copy.
   path === "schemas/qec-code-catalog.json" ||
-  (path.startsWith("examples/") && /\.ya?ml$/.test(path))
+  // Example manifests ship so `ketqat examples copy` and the docs work from an
+  // installed package rather than only from a clone. JSON alongside YAML,
+  // because execution-plane job manifests are JSON.
+  (path.startsWith("examples/") && /\.(?:ya?ml|json)$/.test(path)) ||
+  // The prose is the point of the mitigation example -- a mitigated value is an
+  // estimate under a model, and an example shipped without that sentence
+  // teaches the wrong lesson. So the README ships with the manifests.
+  path === "examples/README.md"
 const forbiddenPath =
   /(^|\/)(?:python|tests?|test-results|coverage|\.nyc_output|\.pytest_cache|__pycache__|node_modules|tmp|temp|\.env(?:\..*)?|\.DS_Store|\.idea|\.vscode)(\/|$)|(?:\.py[co]|\.log|\.tmp|\.swp|~)$/i
 

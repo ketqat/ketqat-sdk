@@ -57,6 +57,7 @@ import {
   foldCircuit,
   mitigateReadout,
   zeroNoiseExtrapolation,
+  JobParametersSchema,
   callTool,
   listTools,
   runCli,
@@ -2578,4 +2579,93 @@ c[0] = measure q[0];
       `a rate outside [0,1] must be refused: ${JSON.stringify(bad)}`,
     )
   }
+}
+// ---------------------------------------------------------------------------
+// The worked ZNE example must stay runnable and its README must stay true.
+//
+// A documentation example rots silently: the code moves, the numbers in the
+// prose stop matching, and nobody notices because nothing runs it. The prose is
+// the point of this example -- it exists to teach that a mitigated value is an
+// estimate under a model -- so a stale number here teaches the wrong lesson
+// with the project's own authority behind it.
+// ---------------------------------------------------------------------------
+{
+  const manifest = JSON.parse(
+    fs.readFileSync(new URL("../examples/mitigation/zero-noise-extrapolation.json", import.meta.url), "utf8"),
+  )
+  const readme = fs.readFileSync(new URL("../examples/README.md", import.meta.url), "utf8")
+
+  // The example must be submittable without editing.
+  const parsedParameters = JobParametersSchema.safeParse(manifest.parameters)
+  assert.ok(
+    parsedParameters.success,
+    `the example manifest must validate: ${JSON.stringify(parsedParameters.error?.issues?.slice(0, 2))}`,
+  )
+
+  const circuit = parseQasm3(manifest.parameters.qasm).circuit
+  const result = zeroNoiseExtrapolation(circuit, manifest.parameters.noise, {
+    shots: manifest.parameters.shots,
+    seed: manifest.parameters.seed,
+    scaleFactors: [1, 3, 5],
+  })
+
+  // Every number the README prints must be the number the example produces.
+  //
+  // Matched against the labelled line rather than anywhere in the file. An
+  // earlier version searched the whole README, which passed when the headline
+  // figure was edited because the same number also appears in the prose below
+  // it -- a check that survives the exact edit it exists to catch.
+  const labelled = (label) => {
+    const match = readme.match(new RegExp(`^${label}\\s+([0-9.]+)`, "m"))
+    assert.ok(match, `README has no "${label}" line to check`)
+    return match[1]
+  }
+  assert.equal(labelled("raw"), result.raw_value.toFixed(4), "README raw value is stale")
+  assert.equal(labelled("mitigated"), result.mitigated_value.toFixed(4), "README mitigated value is stale")
+  assert.equal(labelled("uncertainty"), result.uncertainty.toFixed(4), "README uncertainty is stale")
+
+  // The circuit is h;h, the identity, so the ideal answer is exactly 1. That is
+  // what makes this example able to show whether mitigation helped at all.
+  assert.ok(
+    Math.abs(result.mitigated_value - 1) < Math.abs(result.raw_value - 1),
+    "the example must actually demonstrate mitigation moving toward the true value",
+  )
+
+  // The result must carry its assumptions, and say the value is not a measurement.
+  assert.ok(result.assumptions.length > 0)
+  assert.ok(
+    result.assumptions.some((line) => /not a measurement/i.test(line)),
+    "a mitigated value must state that it is not a measurement",
+  )
+
+  // And the README must not sell it as one.
+  assert.match(readme, /estimate under a model, not a measurement/i)
+  assert.match(readme, /statistical only/i, "the README must say the uncertainty excludes model error")
+
+  // The overshoot case: at 1% the extrapolation exceeds the physical range and
+  // must warn rather than clamp. The README quotes that warning verbatim.
+  const overshoot = zeroNoiseExtrapolation(
+    circuit,
+    { ...manifest.parameters.noise, one_qubit_error: 0.01, two_qubit_error: 0.01 },
+    { shots: manifest.parameters.shots, seed: manifest.parameters.seed, scaleFactors: [1, 3, 5] },
+  )
+  assert.ok(overshoot.mitigated_value > 1, "the 1% case is documented as overshooting the physical range")
+  assert.equal(overshoot.warnings.length, 1, "an unphysical extrapolation must warn")
+  // Compared as a substring rather than compiled into a RegExp.
+  //
+  // The first version built a pattern from the warning text and escaped only
+  // square brackets, which CodeQL correctly flagged: the message contains
+  // "[-1, 1]" today and any regex metacharacter tomorrow, and a half-escaped
+  // pattern either throws or silently matches something else. Nothing here
+  // needs a regex -- the README is supposed to quote the sentence verbatim, so
+  // verbatim is exactly the right comparison.
+  // Split on ". " rather than ".", because the sentence contains the number
+  // 1.003063 and splitting on every period compared only "Extrapolated value 1"
+  // -- which matches whatever digits the README happens to carry, so the
+  // assertion passed while the quoted value was wrong.
+  const quotedWarning = overshoot.warnings[0].split(". ")[0]
+  assert.ok(
+    readme.includes(quotedWarning),
+    `the README must quote the warning verbatim; expected to find: ${quotedWarning}`,
+  )
 }
