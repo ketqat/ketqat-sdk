@@ -93,7 +93,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.json && node scripts/generate-schemas.mjs",
     "clean": "rm -rf dist",
     "generate:schemas": "npm run build",
-    "test": "npm run build && node tests/sdk.test.mjs && npm run verify:package-contents && npm run verify:dist-tracked && npm run verify:schema-sync && npm run verify:license && npm run verify:citation && npm run verify:workflows",
+    "test": "npm run build && node tests/sdk.test.mjs && npm run verify:package-contents && npm run verify:dist-tracked && npm run verify:schema-sync && npm run verify:license && npm run verify:citation && npm run verify:workflows && npm run verify:outreach",
     "test:python": "python3.11 -m pytest python/tests",
     "verify:clean-install": "node scripts/verify-npm-clean-install.mjs",
     "verify:package-contents": "node scripts/verify-package-contents.mjs",
@@ -107,7 +107,8 @@
     "verify:workflows": "node scripts/verify-workflow-hardening.mjs",
     "verify:maintainers": "node scripts/verify-maintainers.mjs",
     "metrics:oss": "node scripts/collect-oss-metrics.mjs",
-    "validate:contribution": "node scripts/validate-contribution.mjs"
+    "validate:contribution": "node scripts/validate-contribution.mjs",
+    "verify:outreach": "node scripts/verify-outreach-claims.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
