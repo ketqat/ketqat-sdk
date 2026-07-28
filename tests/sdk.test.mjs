@@ -2134,3 +2134,61 @@ c[1] = measure q[1];
     assert.match(help.stderr, /sandboxed container/)
   }
 }
+
+// ---------------------------------------------------------------------------
+// Documentation that describes the contract must track the contract.
+//
+// docs/verification-levels.md makes specific claims about which evidence kinds
+// each status accepts. A doc that drifts from the code is worse than none: it
+// is read as authoritative and cited as if checked.
+// ---------------------------------------------------------------------------
+{
+  const levels = fs.readFileSync(new URL("../docs/verification-levels.md", import.meta.url), "utf8")
+  const contract = fs.readFileSync(
+    new URL("../src/contracts/verification-evidence.ts", import.meta.url),
+    "utf8",
+  )
+
+  // Every evidence kind the contract defines must appear in the table, or the
+  // table is silently incomplete.
+  const kinds = [...contract.matchAll(/"(SCHEMA_VALIDATION|HASH_VERIFICATION|INDEPENDENT_REPRODUCTION|DEMO_FIXTURE_REPRODUCTION|REVIEW_NOTE)"/g)]
+    .map((match) => match[1])
+  for (const kind of new Set(kinds)) {
+    assert.ok(levels.includes(kind), `docs/verification-levels.md does not mention ${kind}`)
+  }
+
+  // The two claims the document rests on, checked against the code rather than
+  // taken on trust.
+  assert.match(
+    contract,
+    /HASH_VERIFICATION[\s\S]{0,200}REPRODUCED/,
+    "the doc claims hash verification alone cannot reach REPRODUCED; the contract must enforce it",
+  )
+  assert.ok(
+    contract.includes("DEMO_FIXTURE_REPRODUCTION") && contract.includes("INDEPENDENT_REPRODUCTION"),
+    "the doc claims both kinds share status REPRODUCED",
+  )
+
+  // The doc states these statuses do not exist. If someone adds them, the doc
+  // becomes wrong in the most misleading possible way, so it fails here first.
+  for (const absent of ["INDEPENDENTLY_REPRODUCED", "REVIEWED"]) {
+    const common = fs.readFileSync(new URL("../src/contracts/common.ts", import.meta.url), "utf8")
+    const statusBlock = /VerificationStatusSchema = z\.enum\(\[[\s\S]*?\]\)/.exec(common)?.[0] ?? ""
+    assert.ok(
+      !statusBlock.includes(absent),
+      `${absent} was added to the status enum; docs/verification-levels.md explains why it is absent and must be updated`,
+    )
+  }
+
+  // The exclusion set the provenance doc lists must match the code's.
+  const provenance = fs.readFileSync(new URL("../docs/provenance.md", import.meta.url), "utf8")
+  const repro = fs.readFileSync(new URL("../src/reproducibility/index.ts", import.meta.url), "utf8")
+  const excluded = [...repro.matchAll(/"(id|slug|started_at|finished_at|created_at|updated_at|submitted_at|ui_metadata|reproducibility_hash|owner_username|visibility)"/g)]
+    .map((match) => match[1])
+  for (const field of new Set(excluded)) {
+    assert.ok(
+      provenance.includes(`\`${field}\``),
+      `docs/provenance.md omits the excluded field ${field}; an incomplete list understates what the hash ignores`,
+    )
+  }
+}
