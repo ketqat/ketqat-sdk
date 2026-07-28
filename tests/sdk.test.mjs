@@ -2894,3 +2894,76 @@ c[0] = measure q[0];
     else process.env.KETQAT_TOKEN = originalToken
   }
 }
+
+// ---------------------------------------------------------------------------
+// The routing and ZX examples must stay runnable and their numbers must stay
+// true.
+//
+// Both exist to teach a limit rather than a capability: routing moves qubits
+// and asserts equivalence rather than checking it, and an optimisation that is
+// "verified" on one circuit is merely "applied" on the same circuit with
+// measurements. A stale figure here teaches the wrong limit.
+// ---------------------------------------------------------------------------
+{
+  const readme = fs.readFileSync(new URL("../examples/README.md", import.meta.url), "utf8")
+
+  // --- transpile -----------------------------------------------------------
+  const routing = JSON.parse(
+    fs.readFileSync(new URL("../examples/transpile/routing-on-a-line.json", import.meta.url), "utf8"),
+  ).parameters
+  assert.ok(JobParametersSchema.safeParse(routing).success, "the routing example must be submittable")
+
+  const routed = transpileForHardware(parseQasm3(routing.qasm).circuit, routing.hardware_profile)
+  assert.equal(routed.swap_count, 3, "README documents 3 SWAPs")
+  assert.match(readme, new RegExp(`swap_count ${routed.swap_count}`))
+  assert.match(readme, new RegExp(`"final_layout":\\s+\\[${routed.final_layout.join(", ")}\\]`))
+
+  // The claim the example rests on: the qubits actually move, so reading the
+  // output without the layout gives a plausible wrong answer.
+  assert.notDeepEqual(
+    routed.final_layout,
+    routed.initial_layout,
+    "the example depends on routing permuting the qubits",
+  )
+
+  // And routing asserts equivalence rather than checking it.
+  assert.equal(routed.transformation.equivalence.level, "NOT_CHECKED")
+  assert.ok(
+    readme.includes(routed.transformation.equivalence.method),
+    "the README quotes the router's own equivalence note verbatim",
+  )
+
+  // --- optimize_zx ---------------------------------------------------------
+  const optimization = JSON.parse(
+    fs.readFileSync(new URL("../examples/optimization/cancelling-gates.json", import.meta.url), "utf8"),
+  ).parameters
+  assert.ok(JobParametersSchema.safeParse(optimization).success, "the ZX example must be submittable")
+
+  const optimized = optimizeWithZx(parseQasm3(optimization.qasm).circuit)
+  assert.equal(optimized.before.gate_count, 6)
+  assert.equal(optimized.after.gate_count, 2)
+  assert.equal(optimized.equivalence.level, "NUMERICALLY_CHECKED", "no measurements, so it is checkable")
+
+  // The pairing that makes the example worth reading: the same rewrites on the
+  // same circuit *with measurements* cannot be verified. If that ever starts
+  // succeeding, the README's lesson is wrong and this fails.
+  const withMeasurement = parseQasm3(
+    optimization.qasm.replace(
+      "qubit[2] q;",
+      "qubit[2] q;\nbit[2] c;",
+    ) + "c[0] = measure q[0];\nc[1] = measure q[1];\n",
+  ).circuit
+  const unverifiable = optimizeWithZx(withMeasurement)
+  assert.deepEqual(
+    unverifiable.rewrites.map((entry) => entry.rewrite),
+    optimized.rewrites.map((entry) => entry.rewrite),
+    "the same rewrites must apply, or the two cases are not comparable",
+  )
+  assert.equal(
+    unverifiable.equivalence.level,
+    "INCONCLUSIVE",
+    "a circuit with measurement cannot be compared as a statevector",
+  )
+  assert.ok(readme.includes(unverifiable.equivalence.reason), "the README quotes that reason verbatim")
+  assert.match(readme, /separate\s+claims/i)
+}
