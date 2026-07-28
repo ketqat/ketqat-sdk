@@ -1,0 +1,38 @@
+# Dependency and action updates.
+#
+# The `github-actions` ecosystem is the one that matters most here. Every action
+# in this repository is pinned to an immutable SHA, which is the right security
+# property and also means a pin goes stale silently -- ci.yml was floating to
+# tags while the release workflows pinned commits from an earlier version of the
+# same action. Dependabot rewrites the pinned SHA and records the version in the
+# comment, so pinning stops being a maintenance burden that gets abandoned.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(actions)"
+    groups:
+      # One PR for the routine bumps. Separate PRs per action produce enough
+      # noise that they stop being read, which defeats the point.
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      dev-dependencies:
+        dependency-type: development
+
+  - package-ecosystem: pip
+    directory: /python
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(python)"

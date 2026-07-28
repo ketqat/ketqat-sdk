@@ -75,6 +75,15 @@ The CLI's `job` commands and the MCP execution tools **enqueue; they never execu
 
 ## Security
 
+`npm run verify:workflows` enforces two OpenSSF Scorecard criteria in the repository rather than reporting them after the fact:
+
+- **Every action is pinned to a commit SHA.** A tag is a mutable pointer; whoever controls the action repository can move `v4` to different code, which then runs with whatever token the workflow holds. Dependabot keeps the pins current so pinning does not become abandoned maintenance.
+- **Every workflow declares `permissions:`.** Without a block it inherits the repository default, which may include write scopes. `ci.yml` had none and runs on `pull_request`, so it executed fork-authored code with inherited permissions.
+
+Both were *partly* true before, which is why nobody noticed: the release workflows pinned SHAs while `ci.yml` floated, so a glance at the repository suggested pinning was done.
+
+Report vulnerabilities through `SECURITY.md`. The SDK holds no secrets and opens no listener, so the real surface is untrusted-payload parsing, hash canonicalization, and validation bypass.
+
 - Do not commit secrets.
 - Do not execute arbitrary uploaded code.
 - Do not store provider credentials.
