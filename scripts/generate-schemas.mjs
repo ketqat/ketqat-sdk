@@ -58,6 +58,96 @@ const catalogJson = `${JSON.stringify({ schema_version: "0.1", codes: QEC_CODE_C
 writeFileSync(resolve(outputDir, "qec-code-catalog.json"), catalogJson)
 writeFileSync(resolve(pythonSchemaDir, "qec-code-catalog.json"), catalogJson)
 
+/**
+ * Refuse to emit a schema that would validate anything.
+ *
+ * An empty JSON Schema -- `{}` -- accepts every document. A generator that
+ * silently produces one turns every downstream contract check into a
+ * no-op while every build stays green, which is the worst failure mode
+ * available to a validation pipeline: it does not break, it stops
+ * objecting.
+ *
+ * This has already happened here once. `$refStrategy: "seen"` collapsed
+ * repeated sub-schemas to `{}` and left fields like the bundle-level
+ * environment unvalidated; the comment above records the fix but no check
+ * was added, so nothing would have caught a recurrence.
+ *
+ * It recurs. Building with zod 4 emits `{}` for all eleven definitions --
+ * `zod-to-json-schema` does not understand zod 4's internals -- and the
+ * full test suite passes, because `verify-schema-sync` compares the
+ * TypeScript copy against the Python copy and both are equally empty.
+ * Two copies of the same nothing agree perfectly.
+ *
+ * So the generator checks its own output, at the point where the
+ * information to judge it still exists.
+ */
+function assertSchemaIsNotVacuous(filename, jsonSchema, zodSchema) {
+  const definitions = jsonSchema.definitions ?? {}
+  const [name] = Object.keys(definitions)
+  const definition = name ? definitions[name] : jsonSchema
+
+  if (!definition || Object.keys(definition).length === 0) {
+    throw new Error(
+      `${filename}: the generated schema is empty, so it would accept any document. ` +
+        "This usually means zod-to-json-schema does not understand the installed zod version.",
+    )
+  }
+
+  // A schema with no properties and no composition constrains nothing beyond
+  // "is an object", which is not a contract.
+  const constrains =
+    (definition.properties && Object.keys(definition.properties).length > 0) ||
+    definition.anyOf ||
+    definition.oneOf ||
+    definition.allOf
+  if (!constrains) {
+    throw new Error(`${filename}: the generated schema declares no properties and no composition.`)
+  }
+
+  // Every field the zod object declares must survive into the output. This is
+  // the check that ties the artifact to its source of truth rather than to a
+  // shape it merely resembles.
+  const shape = zodSchema?._def?.shape
+  const zodKeys = typeof shape === "function" ? Object.keys(shape()) : shape ? Object.keys(shape) : []
+  if (zodKeys.length > 0 && definition.properties) {
+    const missing = zodKeys.filter((key) => !(key in definition.properties))
+    if (missing.length > 0) {
+      throw new Error(
+        `${filename}: fields present in the zod schema are absent from the generated JSON Schema: ` +
+          `${missing.join(", ")}. Documents violating them would validate.`,
+      )
+    }
+  }
+
+  // And no nested field may be an unconstrained `{}` -- the original bug.
+  const vacuous = []
+  const walk = (node, path) => {
+    if (!node || typeof node !== "object") return
+    if (Array.isArray(node)) {
+      node.forEach((item, index) => walk(item, `${path}[${index}]`))
+      return
+    }
+    for (const [key, value] of Object.entries(node.properties ?? {})) {
+      if (value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0) {
+        vacuous.push(`${path}.${key}`)
+      }
+      walk(value, `${path}.${key}`)
+    }
+    for (const key of ["items", "additionalProperties"]) {
+      if (node[key] && typeof node[key] === "object") walk(node[key], `${path}.${key}`)
+    }
+    for (const key of ["anyOf", "oneOf", "allOf"]) {
+      if (Array.isArray(node[key])) node[key].forEach((item, index) => walk(item, `${path}.${key}[${index}]`))
+    }
+  }
+  walk(definition, name ?? "root")
+  if (vacuous.length > 0) {
+    throw new Error(
+      `${filename}: these fields generated an empty schema and would accept any value: ${vacuous.join(", ")}.`,
+    )
+  }
+}
+
 for (const [filename, schema] of Object.entries(schemas)) {
   const jsonSchema = zodToJsonSchema(schema, {
     name: filename.replace(".schema.json", ""),
@@ -67,6 +157,7 @@ for (const [filename, schema] of Object.entries(schemas)) {
     // Schema consumers. No contract is recursive, so full inlining is safe.
     $refStrategy: "none",
   })
+  assertSchemaIsNotVacuous(filename, jsonSchema, schema)
   const serialized = `${JSON.stringify(jsonSchema, null, 2)}\n`
   writeFileSync(resolve(outputDir, filename), serialized)
   if (PYTHON_VALIDATED_SCHEMAS.has(filename)) {
