@@ -92,6 +92,8 @@ metrics.definitions = {
 const perRepo = {}
 let externalContributors = new Set()
 let externalMergedPrs = 0
+/** The most recent external merge, so a stale count cannot read as an active one. */
+let mostRecentExternalMerge = null
 
 for (const repo of PUBLIC_REPOS) {
   const full = `${ORG}/${repo}`
@@ -109,7 +111,12 @@ for (const repo of PUBLIC_REPOS) {
   const recent = merged.filter((pr) => new Date(pr.merged_at).getTime() >= cutoff)
   const external = recent.filter((pr) => !orgMembers.has(pr.login))
 
-  for (const pr of external) externalContributors.add(pr.login)
+  for (const pr of external) {
+    externalContributors.add(pr.login)
+    if (!mostRecentExternalMerge || pr.merged_at > mostRecentExternalMerge) {
+      mostRecentExternalMerge = pr.merged_at
+    }
+  }
   externalMergedPrs += external.length
 
   perRepo[repo] = {
@@ -136,6 +143,20 @@ metrics.contribution = {
     "Distinct non-bot accounts outside the org with a merged PR in the last 12 months.",
   ),
   external_merged_prs_last_12_months: measured(externalMergedPrs, "https://github.com/ketqat"),
+  // A 12-month count says nothing about whether contribution is ongoing. Three
+  // PRs merged in one week eleven months ago and three merged last week produce
+  // the same number, and only one of them describes a project people are
+  // currently contributing to. Reporting the count without the date lets the
+  // more flattering reading stand unchallenged.
+  most_recent_external_merge: mostRecentExternalMerge
+    ? measured(mostRecentExternalMerge, "https://github.com/ketqat")
+    : unknown("https://github.com/ketqat", "no external merge in the sampled pull requests"),
+  days_since_external_merge: mostRecentExternalMerge
+    ? measured(
+        Math.floor((Date.now() - new Date(mostRecentExternalMerge).getTime()) / 86_400_000),
+        "https://github.com/ketqat",
+      )
+    : unknown("https://github.com/ketqat", "no external merge to measure from"),
   per_repo: perRepo,
 }
 
@@ -259,6 +280,7 @@ console.log(`KetQat open-source metrics -- ${generatedAt}\n`)
 console.log("Contribution")
 line("external contributors, last 12 months", metrics.contribution.external_contributors_last_12_months)
 line("external merged PRs, last 12 months", metrics.contribution.external_merged_prs_last_12_months)
+line("days since an external merge", metrics.contribution.days_since_external_merge)
 for (const [repo, data] of Object.entries(perRepo)) {
   line(`${repo}: contributors`, data.contributors_total)
   line(`${repo}: stars`, data.stars)
