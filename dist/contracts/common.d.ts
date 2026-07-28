@@ -61,14 +61,14 @@ export declare const LossReportEntrySchema: z.ZodObject<{
     location: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     feature: string;
-    severity: "semantic" | "structural" | "cosmetic";
-    action: "rejected" | "dropped" | "approximated";
+    severity: "cosmetic" | "semantic" | "structural";
+    action: "approximated" | "dropped" | "rejected";
     detail: string;
     location?: string | undefined;
 }, {
     feature: string;
-    severity: "semantic" | "structural" | "cosmetic";
-    action: "rejected" | "dropped" | "approximated";
+    severity: "cosmetic" | "semantic" | "structural";
+    action: "approximated" | "dropped" | "rejected";
     detail: string;
     location?: string | undefined;
 }>;
@@ -125,12 +125,12 @@ export declare const EnvironmentSchema: z.ZodObject<{
     packages: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
     hardware: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
 }, "strip", z.ZodTypeAny, {
-    packages: Record<string, string>;
-    hardware: Record<string, unknown>;
     operating_system?: string | undefined;
     architecture?: string | undefined;
     python_version?: string | undefined;
     node_version?: string | undefined;
+    packages: Record<string, string>;
+    hardware: Record<string, unknown>;
 }, {
     operating_system?: string | undefined;
     architecture?: string | undefined;

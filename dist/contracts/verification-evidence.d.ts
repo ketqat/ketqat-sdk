@@ -8,11 +8,11 @@ export declare const VerificationSubjectSchema: z.ZodObject<{
     slug: z.ZodString;
     version: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    type: "BENCHMARK_SUITE" | "ARTIFACT" | "BENCHMARK_RUN";
+    type: "ARTIFACT" | "BENCHMARK_RUN" | "BENCHMARK_SUITE";
     slug: string;
     version?: string | undefined;
 }, {
-    type: "BENCHMARK_SUITE" | "ARTIFACT" | "BENCHMARK_RUN";
+    type: "ARTIFACT" | "BENCHMARK_RUN" | "BENCHMARK_SUITE";
     slug: string;
     version?: string | undefined;
 }>;
@@ -24,15 +24,15 @@ export declare const VerificationEvidenceSourceSchema: z.ZodObject<{
     manifest_path: z.ZodOptional<z.ZodString>;
     runner: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
+    repository_url?: string | undefined;
     commit_sha?: string | undefined;
     command?: string | undefined;
-    repository_url?: string | undefined;
     manifest_path?: string | undefined;
     runner?: string | undefined;
 }, {
+    repository_url?: string | undefined;
     commit_sha?: string | undefined;
     command?: string | undefined;
-    repository_url?: string | undefined;
     manifest_path?: string | undefined;
     runner?: string | undefined;
 }>;
@@ -45,11 +45,11 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
         slug: z.ZodString;
         version: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        type: "BENCHMARK_SUITE" | "ARTIFACT" | "BENCHMARK_RUN";
+        type: "ARTIFACT" | "BENCHMARK_RUN" | "BENCHMARK_SUITE";
         slug: string;
         version?: string | undefined;
     }, {
-        type: "BENCHMARK_SUITE" | "ARTIFACT" | "BENCHMARK_RUN";
+        type: "ARTIFACT" | "BENCHMARK_RUN" | "BENCHMARK_SUITE";
         slug: string;
         version?: string | undefined;
     }>;
@@ -65,15 +65,15 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
         manifest_path: z.ZodOptional<z.ZodString>;
         runner: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
+        repository_url?: string | undefined;
         commit_sha?: string | undefined;
         command?: string | undefined;
-        repository_url?: string | undefined;
         manifest_path?: string | undefined;
         runner?: string | undefined;
     }, {
+        repository_url?: string | undefined;
         commit_sha?: string | undefined;
         command?: string | undefined;
-        repository_url?: string | undefined;
         manifest_path?: string | undefined;
         runner?: string | undefined;
     }>>;
@@ -85,12 +85,12 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
         packages: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
         hardware: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     }, "strip", z.ZodTypeAny, {
-        packages: Record<string, string>;
-        hardware: Record<string, unknown>;
         operating_system?: string | undefined;
         architecture?: string | undefined;
         python_version?: string | undefined;
         node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
     }, {
         operating_system?: string | undefined;
         architecture?: string | undefined;
@@ -104,53 +104,54 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
     reviewer: z.ZodOptional<z.ZodString>;
     metadata: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
 }, "strip", z.ZodTypeAny, {
-    status: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED";
+    id?: string | undefined;
     schema_version: string;
-    summary: string;
-    source: {
-        commit_sha?: string | undefined;
-        command?: string | undefined;
-        repository_url?: string | undefined;
-        manifest_path?: string | undefined;
-        runner?: string | undefined;
-    };
-    metadata: Record<string, unknown>;
     subject: {
-        type: "BENCHMARK_SUITE" | "ARTIFACT" | "BENCHMARK_RUN";
+        type: "ARTIFACT" | "BENCHMARK_RUN" | "BENCHMARK_SUITE";
         slug: string;
         version?: string | undefined;
     };
-    evidence_kind: "SCHEMA_VALIDATION" | "HASH_VERIFICATION" | "INDEPENDENT_REPRODUCTION" | "DEMO_FIXTURE_REPRODUCTION" | "REVIEW_NOTE";
-    is_demo_evidence: boolean;
-    checked_at: string;
-    id?: string | undefined;
+    status: "REPRODUCED" | "UNVERIFIED" | "VALIDATED_SCHEMA";
+    evidence_kind: "DEMO_FIXTURE_REPRODUCTION" | "HASH_VERIFICATION" | "INDEPENDENT_REPRODUCTION" | "REVIEW_NOTE" | "SCHEMA_VALIDATION";
+    summary: string;
+    evidence_url?: string | undefined;
+    reproducibility_hash?: string | undefined;
+    source: {
+        repository_url?: string | undefined;
+        commit_sha?: string | undefined;
+        command?: string | undefined;
+        manifest_path?: string | undefined;
+        runner?: string | undefined;
+    };
     environment?: {
-        packages: Record<string, string>;
-        hardware: Record<string, unknown>;
         operating_system?: string | undefined;
         architecture?: string | undefined;
         python_version?: string | undefined;
         node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
     } | undefined;
-    reproducibility_hash?: string | undefined;
-    evidence_url?: string | undefined;
+    is_demo_evidence: boolean;
+    checked_at: string;
     reviewer?: string | undefined;
+    metadata: Record<string, unknown>;
 }, {
-    status: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED";
+    id?: string | undefined;
     schema_version: string;
-    summary: string;
     subject: {
-        type: "BENCHMARK_SUITE" | "ARTIFACT" | "BENCHMARK_RUN";
+        type: "ARTIFACT" | "BENCHMARK_RUN" | "BENCHMARK_SUITE";
         slug: string;
         version?: string | undefined;
     };
-    evidence_kind: "SCHEMA_VALIDATION" | "HASH_VERIFICATION" | "INDEPENDENT_REPRODUCTION" | "DEMO_FIXTURE_REPRODUCTION" | "REVIEW_NOTE";
-    checked_at: string;
-    id?: string | undefined;
+    status: "REPRODUCED" | "UNVERIFIED" | "VALIDATED_SCHEMA";
+    evidence_kind: "DEMO_FIXTURE_REPRODUCTION" | "HASH_VERIFICATION" | "INDEPENDENT_REPRODUCTION" | "REVIEW_NOTE" | "SCHEMA_VALIDATION";
+    summary: string;
+    evidence_url?: string | undefined;
+    reproducibility_hash?: string | undefined;
     source?: {
+        repository_url?: string | undefined;
         commit_sha?: string | undefined;
         command?: string | undefined;
-        repository_url?: string | undefined;
         manifest_path?: string | undefined;
         runner?: string | undefined;
     } | undefined;
@@ -162,59 +163,59 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
         packages?: Record<string, string> | undefined;
         hardware?: Record<string, unknown> | undefined;
     } | undefined;
-    metadata?: Record<string, unknown> | undefined;
-    reproducibility_hash?: string | undefined;
-    evidence_url?: string | undefined;
     is_demo_evidence?: boolean | undefined;
+    checked_at: string;
     reviewer?: string | undefined;
+    metadata?: Record<string, unknown> | undefined;
 }>, {
-    status: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED";
+    id?: string | undefined;
     schema_version: string;
-    summary: string;
-    source: {
-        commit_sha?: string | undefined;
-        command?: string | undefined;
-        repository_url?: string | undefined;
-        manifest_path?: string | undefined;
-        runner?: string | undefined;
-    };
-    metadata: Record<string, unknown>;
     subject: {
-        type: "BENCHMARK_SUITE" | "ARTIFACT" | "BENCHMARK_RUN";
+        type: "ARTIFACT" | "BENCHMARK_RUN" | "BENCHMARK_SUITE";
         slug: string;
         version?: string | undefined;
     };
-    evidence_kind: "SCHEMA_VALIDATION" | "HASH_VERIFICATION" | "INDEPENDENT_REPRODUCTION" | "DEMO_FIXTURE_REPRODUCTION" | "REVIEW_NOTE";
-    is_demo_evidence: boolean;
-    checked_at: string;
-    id?: string | undefined;
+    status: "REPRODUCED" | "UNVERIFIED" | "VALIDATED_SCHEMA";
+    evidence_kind: "DEMO_FIXTURE_REPRODUCTION" | "HASH_VERIFICATION" | "INDEPENDENT_REPRODUCTION" | "REVIEW_NOTE" | "SCHEMA_VALIDATION";
+    summary: string;
+    evidence_url?: string | undefined;
+    reproducibility_hash?: string | undefined;
+    source: {
+        repository_url?: string | undefined;
+        commit_sha?: string | undefined;
+        command?: string | undefined;
+        manifest_path?: string | undefined;
+        runner?: string | undefined;
+    };
     environment?: {
-        packages: Record<string, string>;
-        hardware: Record<string, unknown>;
         operating_system?: string | undefined;
         architecture?: string | undefined;
         python_version?: string | undefined;
         node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
     } | undefined;
-    reproducibility_hash?: string | undefined;
-    evidence_url?: string | undefined;
+    is_demo_evidence: boolean;
+    checked_at: string;
     reviewer?: string | undefined;
+    metadata: Record<string, unknown>;
 }, {
-    status: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED";
+    id?: string | undefined;
     schema_version: string;
-    summary: string;
     subject: {
-        type: "BENCHMARK_SUITE" | "ARTIFACT" | "BENCHMARK_RUN";
+        type: "ARTIFACT" | "BENCHMARK_RUN" | "BENCHMARK_SUITE";
         slug: string;
         version?: string | undefined;
     };
-    evidence_kind: "SCHEMA_VALIDATION" | "HASH_VERIFICATION" | "INDEPENDENT_REPRODUCTION" | "DEMO_FIXTURE_REPRODUCTION" | "REVIEW_NOTE";
-    checked_at: string;
-    id?: string | undefined;
+    status: "REPRODUCED" | "UNVERIFIED" | "VALIDATED_SCHEMA";
+    evidence_kind: "DEMO_FIXTURE_REPRODUCTION" | "HASH_VERIFICATION" | "INDEPENDENT_REPRODUCTION" | "REVIEW_NOTE" | "SCHEMA_VALIDATION";
+    summary: string;
+    evidence_url?: string | undefined;
+    reproducibility_hash?: string | undefined;
     source?: {
+        repository_url?: string | undefined;
         commit_sha?: string | undefined;
         command?: string | undefined;
-        repository_url?: string | undefined;
         manifest_path?: string | undefined;
         runner?: string | undefined;
     } | undefined;
@@ -226,11 +227,10 @@ export declare const VerificationEvidenceSchema: z.ZodEffects<z.ZodObject<{
         packages?: Record<string, string> | undefined;
         hardware?: Record<string, unknown> | undefined;
     } | undefined;
-    metadata?: Record<string, unknown> | undefined;
-    reproducibility_hash?: string | undefined;
-    evidence_url?: string | undefined;
     is_demo_evidence?: boolean | undefined;
+    checked_at: string;
     reviewer?: string | undefined;
+    metadata?: Record<string, unknown> | undefined;
 }>;
 export type VerificationEvidence = z.infer<typeof VerificationEvidenceSchema>;
 //# sourceMappingURL=verification-evidence.d.ts.map

@@ -2424,3 +2424,26 @@ c[1] = measure q[1];
   // objects must be refused rather than interpreted.
   assert.match(source, /anchors, aliases, and tags are not accepted/)
 }
+
+// ---------------------------------------------------------------------------
+// The compiler must be told where Node's types come from.
+//
+// TypeScript 7 does not infer @types/node the way 5.x did. Without an explicit
+// `types` entry the build fails with nine copies of "Cannot find name
+// 'process'", which reads like a missing dependency and is not one -- the
+// package is installed and the tsconfig simply never names it.
+//
+// The entry is a no-op under 5.x: building with it produced a byte-identical
+// dist. So it is safe to keep regardless of which compiler is in use, and
+// removing it breaks the build in a way that sends you looking in the wrong
+// place. That is worth one assertion.
+// ---------------------------------------------------------------------------
+{
+  const tsconfig = JSON.parse(
+    fs.readFileSync(new URL("../tsconfig.json", import.meta.url), "utf8"),
+  )
+  assert.ok(
+    Array.isArray(tsconfig.compilerOptions.types) && tsconfig.compilerOptions.types.includes("node"),
+    'tsconfig must name "node" in compilerOptions.types, or TypeScript 7 cannot find process, Buffer, or node: imports',
+  )
+}

@@ -51,37 +51,37 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
         readout_error: z.ZodDefault<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
         model: "depolarizing";
-        readout_error: number;
         one_qubit_error: number;
         two_qubit_error: number;
+        readout_error: number;
     }, {
         model: "depolarizing";
-        readout_error?: number | undefined;
         one_qubit_error?: number | undefined;
         two_qubit_error?: number | undefined;
+        readout_error?: number | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
     qasm: string;
     operation: "simulate";
-    noise?: {
-        model: "depolarizing";
-        readout_error: number;
-        one_qubit_error: number;
-        two_qubit_error: number;
-    } | undefined;
     shots?: number | undefined;
     seed?: number | undefined;
+    noise?: {
+        model: "depolarizing";
+        one_qubit_error: number;
+        two_qubit_error: number;
+        readout_error: number;
+    } | undefined;
 }, {
     qasm: string;
     operation: "simulate";
-    noise?: {
-        model: "depolarizing";
-        readout_error?: number | undefined;
-        one_qubit_error?: number | undefined;
-        two_qubit_error?: number | undefined;
-    } | undefined;
     shots?: number | undefined;
     seed?: number | undefined;
+    noise?: {
+        model: "depolarizing";
+        one_qubit_error?: number | undefined;
+        two_qubit_error?: number | undefined;
+        readout_error?: number | undefined;
+    } | undefined;
 }>, z.ZodObject<{
     /** OpenQASM 3 source. Parsed by the declared subset; never evaluated. */
     qasm: z.ZodString;
@@ -121,11 +121,11 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
             operational: z.ZodDefault<z.ZodBoolean>;
         }, "strip", z.ZodTypeAny, {
             index: number;
-            operational: boolean;
             t1_us?: number | undefined;
             t2_us?: number | undefined;
             readout_error?: number | undefined;
             single_qubit_error?: number | undefined;
+            operational: boolean;
         }, {
             index: number;
             t1_us?: number | undefined;
@@ -146,21 +146,21 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
             dynamic_connectivity: z.ZodDefault<z.ZodBoolean>;
             noise_bias: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
-            reset: boolean;
             mid_circuit_measurement: boolean;
             feed_forward: boolean;
+            feed_forward_latency_ns?: number | undefined;
+            reset: boolean;
             leakage_detection: boolean;
             loss_detection: boolean;
             erasure_conversion: boolean;
             all_to_all_connectivity: boolean;
             dynamic_connectivity: boolean;
-            feed_forward_latency_ns?: number | undefined;
             noise_bias?: string | undefined;
         }, {
-            reset?: boolean | undefined;
             mid_circuit_measurement?: boolean | undefined;
             feed_forward?: boolean | undefined;
             feed_forward_latency_ns?: number | undefined;
+            reset?: boolean | undefined;
             leakage_detection?: boolean | undefined;
             loss_detection?: boolean | undefined;
             erasure_conversion?: boolean | undefined;
@@ -174,20 +174,11 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
         notes: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         schema_version: string;
-        qubit_count: number;
-        source: string;
-        qubits: {
-            index: number;
-            operational: boolean;
-            t1_us?: number | undefined;
-            t2_us?: number | undefined;
-            readout_error?: number | undefined;
-            single_qubit_error?: number | undefined;
-        }[];
         provider: string;
         backend: string;
         snapshot_id: string;
-        modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+        modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+        qubit_count: number;
         native_gates: string[];
         basis_two_qubit_gate: string;
         couplings: {
@@ -196,45 +187,45 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
             error_rate?: number | undefined;
             duration_ns?: number | undefined;
         }[];
+        qubits: {
+            index: number;
+            t1_us?: number | undefined;
+            t2_us?: number | undefined;
+            readout_error?: number | undefined;
+            single_qubit_error?: number | undefined;
+            operational: boolean;
+        }[];
         capabilities: {
-            reset: boolean;
             mid_circuit_measurement: boolean;
             feed_forward: boolean;
+            feed_forward_latency_ns?: number | undefined;
+            reset: boolean;
             leakage_detection: boolean;
             loss_detection: boolean;
             erasure_conversion: boolean;
             all_to_all_connectivity: boolean;
             dynamic_connectivity: boolean;
-            feed_forward_latency_ns?: number | undefined;
             noise_bias?: string | undefined;
         };
-        retrieved_at: string;
-        notes?: string | undefined;
         calibration_timestamp?: string | undefined;
+        retrieved_at: string;
+        source: string;
+        notes?: string | undefined;
     }, {
         schema_version: string;
-        qubit_count: number;
-        source: string;
         provider: string;
         backend: string;
         snapshot_id: string;
-        modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+        modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+        qubit_count: number;
         native_gates: string[];
         basis_two_qubit_gate: string;
-        capabilities: {
-            reset?: boolean | undefined;
-            mid_circuit_measurement?: boolean | undefined;
-            feed_forward?: boolean | undefined;
-            feed_forward_latency_ns?: number | undefined;
-            leakage_detection?: boolean | undefined;
-            loss_detection?: boolean | undefined;
-            erasure_conversion?: boolean | undefined;
-            all_to_all_connectivity?: boolean | undefined;
-            dynamic_connectivity?: boolean | undefined;
-            noise_bias?: string | undefined;
-        };
-        retrieved_at: string;
-        notes?: string | undefined;
+        couplings?: {
+            control: number;
+            target: number;
+            error_rate?: number | undefined;
+            duration_ns?: number | undefined;
+        }[] | undefined;
         qubits?: {
             index: number;
             t1_us?: number | undefined;
@@ -243,33 +234,33 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
             single_qubit_error?: number | undefined;
             operational?: boolean | undefined;
         }[] | undefined;
-        couplings?: {
-            control: number;
-            target: number;
-            error_rate?: number | undefined;
-            duration_ns?: number | undefined;
-        }[] | undefined;
+        capabilities: {
+            mid_circuit_measurement?: boolean | undefined;
+            feed_forward?: boolean | undefined;
+            feed_forward_latency_ns?: number | undefined;
+            reset?: boolean | undefined;
+            leakage_detection?: boolean | undefined;
+            loss_detection?: boolean | undefined;
+            erasure_conversion?: boolean | undefined;
+            all_to_all_connectivity?: boolean | undefined;
+            dynamic_connectivity?: boolean | undefined;
+            noise_bias?: string | undefined;
+        };
         calibration_timestamp?: string | undefined;
+        retrieved_at: string;
+        source: string;
+        notes?: string | undefined;
     }>;
 }, "strip", z.ZodTypeAny, {
     qasm: string;
     operation: "transpile";
     hardware_profile: {
         schema_version: string;
-        qubit_count: number;
-        source: string;
-        qubits: {
-            index: number;
-            operational: boolean;
-            t1_us?: number | undefined;
-            t2_us?: number | undefined;
-            readout_error?: number | undefined;
-            single_qubit_error?: number | undefined;
-        }[];
         provider: string;
         backend: string;
         snapshot_id: string;
-        modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+        modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+        qubit_count: number;
         native_gates: string[];
         basis_two_qubit_gate: string;
         couplings: {
@@ -278,49 +269,49 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
             error_rate?: number | undefined;
             duration_ns?: number | undefined;
         }[];
+        qubits: {
+            index: number;
+            t1_us?: number | undefined;
+            t2_us?: number | undefined;
+            readout_error?: number | undefined;
+            single_qubit_error?: number | undefined;
+            operational: boolean;
+        }[];
         capabilities: {
-            reset: boolean;
             mid_circuit_measurement: boolean;
             feed_forward: boolean;
+            feed_forward_latency_ns?: number | undefined;
+            reset: boolean;
             leakage_detection: boolean;
             loss_detection: boolean;
             erasure_conversion: boolean;
             all_to_all_connectivity: boolean;
             dynamic_connectivity: boolean;
-            feed_forward_latency_ns?: number | undefined;
             noise_bias?: string | undefined;
         };
-        retrieved_at: string;
-        notes?: string | undefined;
         calibration_timestamp?: string | undefined;
+        retrieved_at: string;
+        source: string;
+        notes?: string | undefined;
     };
 }, {
     qasm: string;
     operation: "transpile";
     hardware_profile: {
         schema_version: string;
-        qubit_count: number;
-        source: string;
         provider: string;
         backend: string;
         snapshot_id: string;
-        modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+        modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+        qubit_count: number;
         native_gates: string[];
         basis_two_qubit_gate: string;
-        capabilities: {
-            reset?: boolean | undefined;
-            mid_circuit_measurement?: boolean | undefined;
-            feed_forward?: boolean | undefined;
-            feed_forward_latency_ns?: number | undefined;
-            leakage_detection?: boolean | undefined;
-            loss_detection?: boolean | undefined;
-            erasure_conversion?: boolean | undefined;
-            all_to_all_connectivity?: boolean | undefined;
-            dynamic_connectivity?: boolean | undefined;
-            noise_bias?: string | undefined;
-        };
-        retrieved_at: string;
-        notes?: string | undefined;
+        couplings?: {
+            control: number;
+            target: number;
+            error_rate?: number | undefined;
+            duration_ns?: number | undefined;
+        }[] | undefined;
         qubits?: {
             index: number;
             t1_us?: number | undefined;
@@ -329,13 +320,22 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
             single_qubit_error?: number | undefined;
             operational?: boolean | undefined;
         }[] | undefined;
-        couplings?: {
-            control: number;
-            target: number;
-            error_rate?: number | undefined;
-            duration_ns?: number | undefined;
-        }[] | undefined;
+        capabilities: {
+            mid_circuit_measurement?: boolean | undefined;
+            feed_forward?: boolean | undefined;
+            feed_forward_latency_ns?: number | undefined;
+            reset?: boolean | undefined;
+            leakage_detection?: boolean | undefined;
+            loss_detection?: boolean | undefined;
+            erasure_conversion?: boolean | undefined;
+            all_to_all_connectivity?: boolean | undefined;
+            dynamic_connectivity?: boolean | undefined;
+            noise_bias?: string | undefined;
+        };
         calibration_timestamp?: string | undefined;
+        retrieved_at: string;
+        source: string;
+        notes?: string | undefined;
     };
 }>, z.ZodObject<{
     /** OpenQASM 3 source. Parsed by the declared subset; never evaluated. */
@@ -376,11 +376,11 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
             operational: z.ZodDefault<z.ZodBoolean>;
         }, "strip", z.ZodTypeAny, {
             index: number;
-            operational: boolean;
             t1_us?: number | undefined;
             t2_us?: number | undefined;
             readout_error?: number | undefined;
             single_qubit_error?: number | undefined;
+            operational: boolean;
         }, {
             index: number;
             t1_us?: number | undefined;
@@ -401,21 +401,21 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
             dynamic_connectivity: z.ZodDefault<z.ZodBoolean>;
             noise_bias: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
-            reset: boolean;
             mid_circuit_measurement: boolean;
             feed_forward: boolean;
+            feed_forward_latency_ns?: number | undefined;
+            reset: boolean;
             leakage_detection: boolean;
             loss_detection: boolean;
             erasure_conversion: boolean;
             all_to_all_connectivity: boolean;
             dynamic_connectivity: boolean;
-            feed_forward_latency_ns?: number | undefined;
             noise_bias?: string | undefined;
         }, {
-            reset?: boolean | undefined;
             mid_circuit_measurement?: boolean | undefined;
             feed_forward?: boolean | undefined;
             feed_forward_latency_ns?: number | undefined;
+            reset?: boolean | undefined;
             leakage_detection?: boolean | undefined;
             loss_detection?: boolean | undefined;
             erasure_conversion?: boolean | undefined;
@@ -429,20 +429,11 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
         notes: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         schema_version: string;
-        qubit_count: number;
-        source: string;
-        qubits: {
-            index: number;
-            operational: boolean;
-            t1_us?: number | undefined;
-            t2_us?: number | undefined;
-            readout_error?: number | undefined;
-            single_qubit_error?: number | undefined;
-        }[];
         provider: string;
         backend: string;
         snapshot_id: string;
-        modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+        modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+        qubit_count: number;
         native_gates: string[];
         basis_two_qubit_gate: string;
         couplings: {
@@ -451,45 +442,45 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
             error_rate?: number | undefined;
             duration_ns?: number | undefined;
         }[];
+        qubits: {
+            index: number;
+            t1_us?: number | undefined;
+            t2_us?: number | undefined;
+            readout_error?: number | undefined;
+            single_qubit_error?: number | undefined;
+            operational: boolean;
+        }[];
         capabilities: {
-            reset: boolean;
             mid_circuit_measurement: boolean;
             feed_forward: boolean;
+            feed_forward_latency_ns?: number | undefined;
+            reset: boolean;
             leakage_detection: boolean;
             loss_detection: boolean;
             erasure_conversion: boolean;
             all_to_all_connectivity: boolean;
             dynamic_connectivity: boolean;
-            feed_forward_latency_ns?: number | undefined;
             noise_bias?: string | undefined;
         };
-        retrieved_at: string;
-        notes?: string | undefined;
         calibration_timestamp?: string | undefined;
+        retrieved_at: string;
+        source: string;
+        notes?: string | undefined;
     }, {
         schema_version: string;
-        qubit_count: number;
-        source: string;
         provider: string;
         backend: string;
         snapshot_id: string;
-        modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+        modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+        qubit_count: number;
         native_gates: string[];
         basis_two_qubit_gate: string;
-        capabilities: {
-            reset?: boolean | undefined;
-            mid_circuit_measurement?: boolean | undefined;
-            feed_forward?: boolean | undefined;
-            feed_forward_latency_ns?: number | undefined;
-            leakage_detection?: boolean | undefined;
-            loss_detection?: boolean | undefined;
-            erasure_conversion?: boolean | undefined;
-            all_to_all_connectivity?: boolean | undefined;
-            dynamic_connectivity?: boolean | undefined;
-            noise_bias?: string | undefined;
-        };
-        retrieved_at: string;
-        notes?: string | undefined;
+        couplings?: {
+            control: number;
+            target: number;
+            error_rate?: number | undefined;
+            duration_ns?: number | undefined;
+        }[] | undefined;
         qubits?: {
             index: number;
             t1_us?: number | undefined;
@@ -498,33 +489,33 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
             single_qubit_error?: number | undefined;
             operational?: boolean | undefined;
         }[] | undefined;
-        couplings?: {
-            control: number;
-            target: number;
-            error_rate?: number | undefined;
-            duration_ns?: number | undefined;
-        }[] | undefined;
+        capabilities: {
+            mid_circuit_measurement?: boolean | undefined;
+            feed_forward?: boolean | undefined;
+            feed_forward_latency_ns?: number | undefined;
+            reset?: boolean | undefined;
+            leakage_detection?: boolean | undefined;
+            loss_detection?: boolean | undefined;
+            erasure_conversion?: boolean | undefined;
+            all_to_all_connectivity?: boolean | undefined;
+            dynamic_connectivity?: boolean | undefined;
+            noise_bias?: string | undefined;
+        };
         calibration_timestamp?: string | undefined;
+        retrieved_at: string;
+        source: string;
+        notes?: string | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
     qasm: string;
     operation: "estimate_resources";
     hardware_profile?: {
         schema_version: string;
-        qubit_count: number;
-        source: string;
-        qubits: {
-            index: number;
-            operational: boolean;
-            t1_us?: number | undefined;
-            t2_us?: number | undefined;
-            readout_error?: number | undefined;
-            single_qubit_error?: number | undefined;
-        }[];
         provider: string;
         backend: string;
         snapshot_id: string;
-        modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+        modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+        qubit_count: number;
         native_gates: string[];
         basis_two_qubit_gate: string;
         couplings: {
@@ -533,49 +524,49 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
             error_rate?: number | undefined;
             duration_ns?: number | undefined;
         }[];
+        qubits: {
+            index: number;
+            t1_us?: number | undefined;
+            t2_us?: number | undefined;
+            readout_error?: number | undefined;
+            single_qubit_error?: number | undefined;
+            operational: boolean;
+        }[];
         capabilities: {
-            reset: boolean;
             mid_circuit_measurement: boolean;
             feed_forward: boolean;
+            feed_forward_latency_ns?: number | undefined;
+            reset: boolean;
             leakage_detection: boolean;
             loss_detection: boolean;
             erasure_conversion: boolean;
             all_to_all_connectivity: boolean;
             dynamic_connectivity: boolean;
-            feed_forward_latency_ns?: number | undefined;
             noise_bias?: string | undefined;
         };
-        retrieved_at: string;
-        notes?: string | undefined;
         calibration_timestamp?: string | undefined;
+        retrieved_at: string;
+        source: string;
+        notes?: string | undefined;
     } | undefined;
 }, {
     qasm: string;
     operation: "estimate_resources";
     hardware_profile?: {
         schema_version: string;
-        qubit_count: number;
-        source: string;
         provider: string;
         backend: string;
         snapshot_id: string;
-        modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+        modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+        qubit_count: number;
         native_gates: string[];
         basis_two_qubit_gate: string;
-        capabilities: {
-            reset?: boolean | undefined;
-            mid_circuit_measurement?: boolean | undefined;
-            feed_forward?: boolean | undefined;
-            feed_forward_latency_ns?: number | undefined;
-            leakage_detection?: boolean | undefined;
-            loss_detection?: boolean | undefined;
-            erasure_conversion?: boolean | undefined;
-            all_to_all_connectivity?: boolean | undefined;
-            dynamic_connectivity?: boolean | undefined;
-            noise_bias?: string | undefined;
-        };
-        retrieved_at: string;
-        notes?: string | undefined;
+        couplings?: {
+            control: number;
+            target: number;
+            error_rate?: number | undefined;
+            duration_ns?: number | undefined;
+        }[] | undefined;
         qubits?: {
             index: number;
             t1_us?: number | undefined;
@@ -584,13 +575,22 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
             single_qubit_error?: number | undefined;
             operational?: boolean | undefined;
         }[] | undefined;
-        couplings?: {
-            control: number;
-            target: number;
-            error_rate?: number | undefined;
-            duration_ns?: number | undefined;
-        }[] | undefined;
+        capabilities: {
+            mid_circuit_measurement?: boolean | undefined;
+            feed_forward?: boolean | undefined;
+            feed_forward_latency_ns?: number | undefined;
+            reset?: boolean | undefined;
+            leakage_detection?: boolean | undefined;
+            loss_detection?: boolean | undefined;
+            erasure_conversion?: boolean | undefined;
+            all_to_all_connectivity?: boolean | undefined;
+            dynamic_connectivity?: boolean | undefined;
+            noise_bias?: string | undefined;
+        };
         calibration_timestamp?: string | undefined;
+        retrieved_at: string;
+        source: string;
+        notes?: string | undefined;
     } | undefined;
 }>, z.ZodObject<{
     /** OpenQASM 3 source. Parsed by the declared subset; never evaluated. */
@@ -630,37 +630,37 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
         readout_error: z.ZodDefault<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
         model: "depolarizing";
-        readout_error: number;
         one_qubit_error: number;
         two_qubit_error: number;
+        readout_error: number;
     }, {
         model: "depolarizing";
-        readout_error?: number | undefined;
         one_qubit_error?: number | undefined;
         two_qubit_error?: number | undefined;
+        readout_error?: number | undefined;
     }>;
     shots: z.ZodOptional<z.ZodNumber>;
     seed: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
-    noise: {
-        model: "depolarizing";
-        readout_error: number;
-        one_qubit_error: number;
-        two_qubit_error: number;
-    };
     qasm: string;
     operation: "mitigate_zne";
+    noise: {
+        model: "depolarizing";
+        one_qubit_error: number;
+        two_qubit_error: number;
+        readout_error: number;
+    };
     shots?: number | undefined;
     seed?: number | undefined;
 }, {
-    noise: {
-        model: "depolarizing";
-        readout_error?: number | undefined;
-        one_qubit_error?: number | undefined;
-        two_qubit_error?: number | undefined;
-    };
     qasm: string;
     operation: "mitigate_zne";
+    noise: {
+        model: "depolarizing";
+        one_qubit_error?: number | undefined;
+        two_qubit_error?: number | undefined;
+        readout_error?: number | undefined;
+    };
     shots?: number | undefined;
     seed?: number | undefined;
 }>]>;
@@ -689,37 +689,37 @@ export declare const ExecutionJobSchema: z.ZodObject<{
             readout_error: z.ZodDefault<z.ZodNumber>;
         }, "strip", z.ZodTypeAny, {
             model: "depolarizing";
-            readout_error: number;
             one_qubit_error: number;
             two_qubit_error: number;
+            readout_error: number;
         }, {
             model: "depolarizing";
-            readout_error?: number | undefined;
             one_qubit_error?: number | undefined;
             two_qubit_error?: number | undefined;
+            readout_error?: number | undefined;
         }>>;
     }, "strip", z.ZodTypeAny, {
         qasm: string;
         operation: "simulate";
-        noise?: {
-            model: "depolarizing";
-            readout_error: number;
-            one_qubit_error: number;
-            two_qubit_error: number;
-        } | undefined;
         shots?: number | undefined;
         seed?: number | undefined;
+        noise?: {
+            model: "depolarizing";
+            one_qubit_error: number;
+            two_qubit_error: number;
+            readout_error: number;
+        } | undefined;
     }, {
         qasm: string;
         operation: "simulate";
-        noise?: {
-            model: "depolarizing";
-            readout_error?: number | undefined;
-            one_qubit_error?: number | undefined;
-            two_qubit_error?: number | undefined;
-        } | undefined;
         shots?: number | undefined;
         seed?: number | undefined;
+        noise?: {
+            model: "depolarizing";
+            one_qubit_error?: number | undefined;
+            two_qubit_error?: number | undefined;
+            readout_error?: number | undefined;
+        } | undefined;
     }>, z.ZodObject<{
         /** OpenQASM 3 source. Parsed by the declared subset; never evaluated. */
         qasm: z.ZodString;
@@ -759,11 +759,11 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 operational: z.ZodDefault<z.ZodBoolean>;
             }, "strip", z.ZodTypeAny, {
                 index: number;
-                operational: boolean;
                 t1_us?: number | undefined;
                 t2_us?: number | undefined;
                 readout_error?: number | undefined;
                 single_qubit_error?: number | undefined;
+                operational: boolean;
             }, {
                 index: number;
                 t1_us?: number | undefined;
@@ -784,21 +784,21 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 dynamic_connectivity: z.ZodDefault<z.ZodBoolean>;
                 noise_bias: z.ZodOptional<z.ZodString>;
             }, "strip", z.ZodTypeAny, {
-                reset: boolean;
                 mid_circuit_measurement: boolean;
                 feed_forward: boolean;
+                feed_forward_latency_ns?: number | undefined;
+                reset: boolean;
                 leakage_detection: boolean;
                 loss_detection: boolean;
                 erasure_conversion: boolean;
                 all_to_all_connectivity: boolean;
                 dynamic_connectivity: boolean;
-                feed_forward_latency_ns?: number | undefined;
                 noise_bias?: string | undefined;
             }, {
-                reset?: boolean | undefined;
                 mid_circuit_measurement?: boolean | undefined;
                 feed_forward?: boolean | undefined;
                 feed_forward_latency_ns?: number | undefined;
+                reset?: boolean | undefined;
                 leakage_detection?: boolean | undefined;
                 loss_detection?: boolean | undefined;
                 erasure_conversion?: boolean | undefined;
@@ -812,20 +812,11 @@ export declare const ExecutionJobSchema: z.ZodObject<{
             notes: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
             schema_version: string;
-            qubit_count: number;
-            source: string;
-            qubits: {
-                index: number;
-                operational: boolean;
-                t1_us?: number | undefined;
-                t2_us?: number | undefined;
-                readout_error?: number | undefined;
-                single_qubit_error?: number | undefined;
-            }[];
             provider: string;
             backend: string;
             snapshot_id: string;
-            modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+            modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+            qubit_count: number;
             native_gates: string[];
             basis_two_qubit_gate: string;
             couplings: {
@@ -834,45 +825,45 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 error_rate?: number | undefined;
                 duration_ns?: number | undefined;
             }[];
+            qubits: {
+                index: number;
+                t1_us?: number | undefined;
+                t2_us?: number | undefined;
+                readout_error?: number | undefined;
+                single_qubit_error?: number | undefined;
+                operational: boolean;
+            }[];
             capabilities: {
-                reset: boolean;
                 mid_circuit_measurement: boolean;
                 feed_forward: boolean;
+                feed_forward_latency_ns?: number | undefined;
+                reset: boolean;
                 leakage_detection: boolean;
                 loss_detection: boolean;
                 erasure_conversion: boolean;
                 all_to_all_connectivity: boolean;
                 dynamic_connectivity: boolean;
-                feed_forward_latency_ns?: number | undefined;
                 noise_bias?: string | undefined;
             };
-            retrieved_at: string;
-            notes?: string | undefined;
             calibration_timestamp?: string | undefined;
+            retrieved_at: string;
+            source: string;
+            notes?: string | undefined;
         }, {
             schema_version: string;
-            qubit_count: number;
-            source: string;
             provider: string;
             backend: string;
             snapshot_id: string;
-            modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+            modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+            qubit_count: number;
             native_gates: string[];
             basis_two_qubit_gate: string;
-            capabilities: {
-                reset?: boolean | undefined;
-                mid_circuit_measurement?: boolean | undefined;
-                feed_forward?: boolean | undefined;
-                feed_forward_latency_ns?: number | undefined;
-                leakage_detection?: boolean | undefined;
-                loss_detection?: boolean | undefined;
-                erasure_conversion?: boolean | undefined;
-                all_to_all_connectivity?: boolean | undefined;
-                dynamic_connectivity?: boolean | undefined;
-                noise_bias?: string | undefined;
-            };
-            retrieved_at: string;
-            notes?: string | undefined;
+            couplings?: {
+                control: number;
+                target: number;
+                error_rate?: number | undefined;
+                duration_ns?: number | undefined;
+            }[] | undefined;
             qubits?: {
                 index: number;
                 t1_us?: number | undefined;
@@ -881,33 +872,33 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 single_qubit_error?: number | undefined;
                 operational?: boolean | undefined;
             }[] | undefined;
-            couplings?: {
-                control: number;
-                target: number;
-                error_rate?: number | undefined;
-                duration_ns?: number | undefined;
-            }[] | undefined;
+            capabilities: {
+                mid_circuit_measurement?: boolean | undefined;
+                feed_forward?: boolean | undefined;
+                feed_forward_latency_ns?: number | undefined;
+                reset?: boolean | undefined;
+                leakage_detection?: boolean | undefined;
+                loss_detection?: boolean | undefined;
+                erasure_conversion?: boolean | undefined;
+                all_to_all_connectivity?: boolean | undefined;
+                dynamic_connectivity?: boolean | undefined;
+                noise_bias?: string | undefined;
+            };
             calibration_timestamp?: string | undefined;
+            retrieved_at: string;
+            source: string;
+            notes?: string | undefined;
         }>;
     }, "strip", z.ZodTypeAny, {
         qasm: string;
         operation: "transpile";
         hardware_profile: {
             schema_version: string;
-            qubit_count: number;
-            source: string;
-            qubits: {
-                index: number;
-                operational: boolean;
-                t1_us?: number | undefined;
-                t2_us?: number | undefined;
-                readout_error?: number | undefined;
-                single_qubit_error?: number | undefined;
-            }[];
             provider: string;
             backend: string;
             snapshot_id: string;
-            modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+            modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+            qubit_count: number;
             native_gates: string[];
             basis_two_qubit_gate: string;
             couplings: {
@@ -916,49 +907,49 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 error_rate?: number | undefined;
                 duration_ns?: number | undefined;
             }[];
+            qubits: {
+                index: number;
+                t1_us?: number | undefined;
+                t2_us?: number | undefined;
+                readout_error?: number | undefined;
+                single_qubit_error?: number | undefined;
+                operational: boolean;
+            }[];
             capabilities: {
-                reset: boolean;
                 mid_circuit_measurement: boolean;
                 feed_forward: boolean;
+                feed_forward_latency_ns?: number | undefined;
+                reset: boolean;
                 leakage_detection: boolean;
                 loss_detection: boolean;
                 erasure_conversion: boolean;
                 all_to_all_connectivity: boolean;
                 dynamic_connectivity: boolean;
-                feed_forward_latency_ns?: number | undefined;
                 noise_bias?: string | undefined;
             };
-            retrieved_at: string;
-            notes?: string | undefined;
             calibration_timestamp?: string | undefined;
+            retrieved_at: string;
+            source: string;
+            notes?: string | undefined;
         };
     }, {
         qasm: string;
         operation: "transpile";
         hardware_profile: {
             schema_version: string;
-            qubit_count: number;
-            source: string;
             provider: string;
             backend: string;
             snapshot_id: string;
-            modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+            modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+            qubit_count: number;
             native_gates: string[];
             basis_two_qubit_gate: string;
-            capabilities: {
-                reset?: boolean | undefined;
-                mid_circuit_measurement?: boolean | undefined;
-                feed_forward?: boolean | undefined;
-                feed_forward_latency_ns?: number | undefined;
-                leakage_detection?: boolean | undefined;
-                loss_detection?: boolean | undefined;
-                erasure_conversion?: boolean | undefined;
-                all_to_all_connectivity?: boolean | undefined;
-                dynamic_connectivity?: boolean | undefined;
-                noise_bias?: string | undefined;
-            };
-            retrieved_at: string;
-            notes?: string | undefined;
+            couplings?: {
+                control: number;
+                target: number;
+                error_rate?: number | undefined;
+                duration_ns?: number | undefined;
+            }[] | undefined;
             qubits?: {
                 index: number;
                 t1_us?: number | undefined;
@@ -967,13 +958,22 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 single_qubit_error?: number | undefined;
                 operational?: boolean | undefined;
             }[] | undefined;
-            couplings?: {
-                control: number;
-                target: number;
-                error_rate?: number | undefined;
-                duration_ns?: number | undefined;
-            }[] | undefined;
+            capabilities: {
+                mid_circuit_measurement?: boolean | undefined;
+                feed_forward?: boolean | undefined;
+                feed_forward_latency_ns?: number | undefined;
+                reset?: boolean | undefined;
+                leakage_detection?: boolean | undefined;
+                loss_detection?: boolean | undefined;
+                erasure_conversion?: boolean | undefined;
+                all_to_all_connectivity?: boolean | undefined;
+                dynamic_connectivity?: boolean | undefined;
+                noise_bias?: string | undefined;
+            };
             calibration_timestamp?: string | undefined;
+            retrieved_at: string;
+            source: string;
+            notes?: string | undefined;
         };
     }>, z.ZodObject<{
         /** OpenQASM 3 source. Parsed by the declared subset; never evaluated. */
@@ -1014,11 +1014,11 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 operational: z.ZodDefault<z.ZodBoolean>;
             }, "strip", z.ZodTypeAny, {
                 index: number;
-                operational: boolean;
                 t1_us?: number | undefined;
                 t2_us?: number | undefined;
                 readout_error?: number | undefined;
                 single_qubit_error?: number | undefined;
+                operational: boolean;
             }, {
                 index: number;
                 t1_us?: number | undefined;
@@ -1039,21 +1039,21 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 dynamic_connectivity: z.ZodDefault<z.ZodBoolean>;
                 noise_bias: z.ZodOptional<z.ZodString>;
             }, "strip", z.ZodTypeAny, {
-                reset: boolean;
                 mid_circuit_measurement: boolean;
                 feed_forward: boolean;
+                feed_forward_latency_ns?: number | undefined;
+                reset: boolean;
                 leakage_detection: boolean;
                 loss_detection: boolean;
                 erasure_conversion: boolean;
                 all_to_all_connectivity: boolean;
                 dynamic_connectivity: boolean;
-                feed_forward_latency_ns?: number | undefined;
                 noise_bias?: string | undefined;
             }, {
-                reset?: boolean | undefined;
                 mid_circuit_measurement?: boolean | undefined;
                 feed_forward?: boolean | undefined;
                 feed_forward_latency_ns?: number | undefined;
+                reset?: boolean | undefined;
                 leakage_detection?: boolean | undefined;
                 loss_detection?: boolean | undefined;
                 erasure_conversion?: boolean | undefined;
@@ -1067,20 +1067,11 @@ export declare const ExecutionJobSchema: z.ZodObject<{
             notes: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
             schema_version: string;
-            qubit_count: number;
-            source: string;
-            qubits: {
-                index: number;
-                operational: boolean;
-                t1_us?: number | undefined;
-                t2_us?: number | undefined;
-                readout_error?: number | undefined;
-                single_qubit_error?: number | undefined;
-            }[];
             provider: string;
             backend: string;
             snapshot_id: string;
-            modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+            modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+            qubit_count: number;
             native_gates: string[];
             basis_two_qubit_gate: string;
             couplings: {
@@ -1089,45 +1080,45 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 error_rate?: number | undefined;
                 duration_ns?: number | undefined;
             }[];
+            qubits: {
+                index: number;
+                t1_us?: number | undefined;
+                t2_us?: number | undefined;
+                readout_error?: number | undefined;
+                single_qubit_error?: number | undefined;
+                operational: boolean;
+            }[];
             capabilities: {
-                reset: boolean;
                 mid_circuit_measurement: boolean;
                 feed_forward: boolean;
+                feed_forward_latency_ns?: number | undefined;
+                reset: boolean;
                 leakage_detection: boolean;
                 loss_detection: boolean;
                 erasure_conversion: boolean;
                 all_to_all_connectivity: boolean;
                 dynamic_connectivity: boolean;
-                feed_forward_latency_ns?: number | undefined;
                 noise_bias?: string | undefined;
             };
-            retrieved_at: string;
-            notes?: string | undefined;
             calibration_timestamp?: string | undefined;
+            retrieved_at: string;
+            source: string;
+            notes?: string | undefined;
         }, {
             schema_version: string;
-            qubit_count: number;
-            source: string;
             provider: string;
             backend: string;
             snapshot_id: string;
-            modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+            modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+            qubit_count: number;
             native_gates: string[];
             basis_two_qubit_gate: string;
-            capabilities: {
-                reset?: boolean | undefined;
-                mid_circuit_measurement?: boolean | undefined;
-                feed_forward?: boolean | undefined;
-                feed_forward_latency_ns?: number | undefined;
-                leakage_detection?: boolean | undefined;
-                loss_detection?: boolean | undefined;
-                erasure_conversion?: boolean | undefined;
-                all_to_all_connectivity?: boolean | undefined;
-                dynamic_connectivity?: boolean | undefined;
-                noise_bias?: string | undefined;
-            };
-            retrieved_at: string;
-            notes?: string | undefined;
+            couplings?: {
+                control: number;
+                target: number;
+                error_rate?: number | undefined;
+                duration_ns?: number | undefined;
+            }[] | undefined;
             qubits?: {
                 index: number;
                 t1_us?: number | undefined;
@@ -1136,33 +1127,33 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 single_qubit_error?: number | undefined;
                 operational?: boolean | undefined;
             }[] | undefined;
-            couplings?: {
-                control: number;
-                target: number;
-                error_rate?: number | undefined;
-                duration_ns?: number | undefined;
-            }[] | undefined;
+            capabilities: {
+                mid_circuit_measurement?: boolean | undefined;
+                feed_forward?: boolean | undefined;
+                feed_forward_latency_ns?: number | undefined;
+                reset?: boolean | undefined;
+                leakage_detection?: boolean | undefined;
+                loss_detection?: boolean | undefined;
+                erasure_conversion?: boolean | undefined;
+                all_to_all_connectivity?: boolean | undefined;
+                dynamic_connectivity?: boolean | undefined;
+                noise_bias?: string | undefined;
+            };
             calibration_timestamp?: string | undefined;
+            retrieved_at: string;
+            source: string;
+            notes?: string | undefined;
         }>>;
     }, "strip", z.ZodTypeAny, {
         qasm: string;
         operation: "estimate_resources";
         hardware_profile?: {
             schema_version: string;
-            qubit_count: number;
-            source: string;
-            qubits: {
-                index: number;
-                operational: boolean;
-                t1_us?: number | undefined;
-                t2_us?: number | undefined;
-                readout_error?: number | undefined;
-                single_qubit_error?: number | undefined;
-            }[];
             provider: string;
             backend: string;
             snapshot_id: string;
-            modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+            modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+            qubit_count: number;
             native_gates: string[];
             basis_two_qubit_gate: string;
             couplings: {
@@ -1171,49 +1162,49 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 error_rate?: number | undefined;
                 duration_ns?: number | undefined;
             }[];
+            qubits: {
+                index: number;
+                t1_us?: number | undefined;
+                t2_us?: number | undefined;
+                readout_error?: number | undefined;
+                single_qubit_error?: number | undefined;
+                operational: boolean;
+            }[];
             capabilities: {
-                reset: boolean;
                 mid_circuit_measurement: boolean;
                 feed_forward: boolean;
+                feed_forward_latency_ns?: number | undefined;
+                reset: boolean;
                 leakage_detection: boolean;
                 loss_detection: boolean;
                 erasure_conversion: boolean;
                 all_to_all_connectivity: boolean;
                 dynamic_connectivity: boolean;
-                feed_forward_latency_ns?: number | undefined;
                 noise_bias?: string | undefined;
             };
-            retrieved_at: string;
-            notes?: string | undefined;
             calibration_timestamp?: string | undefined;
+            retrieved_at: string;
+            source: string;
+            notes?: string | undefined;
         } | undefined;
     }, {
         qasm: string;
         operation: "estimate_resources";
         hardware_profile?: {
             schema_version: string;
-            qubit_count: number;
-            source: string;
             provider: string;
             backend: string;
             snapshot_id: string;
-            modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+            modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+            qubit_count: number;
             native_gates: string[];
             basis_two_qubit_gate: string;
-            capabilities: {
-                reset?: boolean | undefined;
-                mid_circuit_measurement?: boolean | undefined;
-                feed_forward?: boolean | undefined;
-                feed_forward_latency_ns?: number | undefined;
-                leakage_detection?: boolean | undefined;
-                loss_detection?: boolean | undefined;
-                erasure_conversion?: boolean | undefined;
-                all_to_all_connectivity?: boolean | undefined;
-                dynamic_connectivity?: boolean | undefined;
-                noise_bias?: string | undefined;
-            };
-            retrieved_at: string;
-            notes?: string | undefined;
+            couplings?: {
+                control: number;
+                target: number;
+                error_rate?: number | undefined;
+                duration_ns?: number | undefined;
+            }[] | undefined;
             qubits?: {
                 index: number;
                 t1_us?: number | undefined;
@@ -1222,13 +1213,22 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 single_qubit_error?: number | undefined;
                 operational?: boolean | undefined;
             }[] | undefined;
-            couplings?: {
-                control: number;
-                target: number;
-                error_rate?: number | undefined;
-                duration_ns?: number | undefined;
-            }[] | undefined;
+            capabilities: {
+                mid_circuit_measurement?: boolean | undefined;
+                feed_forward?: boolean | undefined;
+                feed_forward_latency_ns?: number | undefined;
+                reset?: boolean | undefined;
+                leakage_detection?: boolean | undefined;
+                loss_detection?: boolean | undefined;
+                erasure_conversion?: boolean | undefined;
+                all_to_all_connectivity?: boolean | undefined;
+                dynamic_connectivity?: boolean | undefined;
+                noise_bias?: string | undefined;
+            };
             calibration_timestamp?: string | undefined;
+            retrieved_at: string;
+            source: string;
+            notes?: string | undefined;
         } | undefined;
     }>, z.ZodObject<{
         /** OpenQASM 3 source. Parsed by the declared subset; never evaluated. */
@@ -1268,37 +1268,37 @@ export declare const ExecutionJobSchema: z.ZodObject<{
             readout_error: z.ZodDefault<z.ZodNumber>;
         }, "strip", z.ZodTypeAny, {
             model: "depolarizing";
-            readout_error: number;
             one_qubit_error: number;
             two_qubit_error: number;
+            readout_error: number;
         }, {
             model: "depolarizing";
-            readout_error?: number | undefined;
             one_qubit_error?: number | undefined;
             two_qubit_error?: number | undefined;
+            readout_error?: number | undefined;
         }>;
         shots: z.ZodOptional<z.ZodNumber>;
         seed: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
-        noise: {
-            model: "depolarizing";
-            readout_error: number;
-            one_qubit_error: number;
-            two_qubit_error: number;
-        };
         qasm: string;
         operation: "mitigate_zne";
+        noise: {
+            model: "depolarizing";
+            one_qubit_error: number;
+            two_qubit_error: number;
+            readout_error: number;
+        };
         shots?: number | undefined;
         seed?: number | undefined;
     }, {
-        noise: {
-            model: "depolarizing";
-            readout_error?: number | undefined;
-            one_qubit_error?: number | undefined;
-            two_qubit_error?: number | undefined;
-        };
         qasm: string;
         operation: "mitigate_zne";
+        noise: {
+            model: "depolarizing";
+            one_qubit_error?: number | undefined;
+            two_qubit_error?: number | undefined;
+            readout_error?: number | undefined;
+        };
         shots?: number | undefined;
         seed?: number | undefined;
     }>]>;
@@ -1322,36 +1322,30 @@ export declare const ExecutionJobSchema: z.ZodObject<{
     }>>;
 }, "strip", z.ZodTypeAny, {
     schema_version: string;
+    job_id: string;
+    idempotency_key: string;
+    submitted_by: string;
     parameters: {
         qasm: string;
         operation: "simulate";
-        noise?: {
-            model: "depolarizing";
-            readout_error: number;
-            one_qubit_error: number;
-            two_qubit_error: number;
-        } | undefined;
         shots?: number | undefined;
         seed?: number | undefined;
+        noise?: {
+            model: "depolarizing";
+            one_qubit_error: number;
+            two_qubit_error: number;
+            readout_error: number;
+        } | undefined;
     } | {
         qasm: string;
         operation: "transpile";
         hardware_profile: {
             schema_version: string;
-            qubit_count: number;
-            source: string;
-            qubits: {
-                index: number;
-                operational: boolean;
-                t1_us?: number | undefined;
-                t2_us?: number | undefined;
-                readout_error?: number | undefined;
-                single_qubit_error?: number | undefined;
-            }[];
             provider: string;
             backend: string;
             snapshot_id: string;
-            modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+            modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+            qubit_count: number;
             native_gates: string[];
             basis_two_qubit_gate: string;
             couplings: {
@@ -1360,41 +1354,41 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 error_rate?: number | undefined;
                 duration_ns?: number | undefined;
             }[];
+            qubits: {
+                index: number;
+                t1_us?: number | undefined;
+                t2_us?: number | undefined;
+                readout_error?: number | undefined;
+                single_qubit_error?: number | undefined;
+                operational: boolean;
+            }[];
             capabilities: {
-                reset: boolean;
                 mid_circuit_measurement: boolean;
                 feed_forward: boolean;
+                feed_forward_latency_ns?: number | undefined;
+                reset: boolean;
                 leakage_detection: boolean;
                 loss_detection: boolean;
                 erasure_conversion: boolean;
                 all_to_all_connectivity: boolean;
                 dynamic_connectivity: boolean;
-                feed_forward_latency_ns?: number | undefined;
                 noise_bias?: string | undefined;
             };
-            retrieved_at: string;
-            notes?: string | undefined;
             calibration_timestamp?: string | undefined;
+            retrieved_at: string;
+            source: string;
+            notes?: string | undefined;
         };
     } | {
         qasm: string;
         operation: "estimate_resources";
         hardware_profile?: {
             schema_version: string;
-            qubit_count: number;
-            source: string;
-            qubits: {
-                index: number;
-                operational: boolean;
-                t1_us?: number | undefined;
-                t2_us?: number | undefined;
-                readout_error?: number | undefined;
-                single_qubit_error?: number | undefined;
-            }[];
             provider: string;
             backend: string;
             snapshot_id: string;
-            modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+            modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+            qubit_count: number;
             native_gates: string[];
             basis_two_qubit_gate: string;
             couplings: {
@@ -1403,21 +1397,30 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 error_rate?: number | undefined;
                 duration_ns?: number | undefined;
             }[];
+            qubits: {
+                index: number;
+                t1_us?: number | undefined;
+                t2_us?: number | undefined;
+                readout_error?: number | undefined;
+                single_qubit_error?: number | undefined;
+                operational: boolean;
+            }[];
             capabilities: {
-                reset: boolean;
                 mid_circuit_measurement: boolean;
                 feed_forward: boolean;
+                feed_forward_latency_ns?: number | undefined;
+                reset: boolean;
                 leakage_detection: boolean;
                 loss_detection: boolean;
                 erasure_conversion: boolean;
                 all_to_all_connectivity: boolean;
                 dynamic_connectivity: boolean;
-                feed_forward_latency_ns?: number | undefined;
                 noise_bias?: string | undefined;
             };
-            retrieved_at: string;
-            notes?: string | undefined;
             calibration_timestamp?: string | undefined;
+            retrieved_at: string;
+            source: string;
+            notes?: string | undefined;
         } | undefined;
     } | {
         qasm: string;
@@ -1428,20 +1431,17 @@ export declare const ExecutionJobSchema: z.ZodObject<{
         right_qasm: string;
         tolerance?: number | undefined;
     } | {
-        noise: {
-            model: "depolarizing";
-            readout_error: number;
-            one_qubit_error: number;
-            two_qubit_error: number;
-        };
         qasm: string;
         operation: "mitigate_zne";
+        noise: {
+            model: "depolarizing";
+            one_qubit_error: number;
+            two_qubit_error: number;
+            readout_error: number;
+        };
         shots?: number | undefined;
         seed?: number | undefined;
     };
-    job_id: string;
-    idempotency_key: string;
-    submitted_by: string;
     limits: {
         timeout_seconds: number;
         max_qubits: number;
@@ -1450,44 +1450,38 @@ export declare const ExecutionJobSchema: z.ZodObject<{
     };
 }, {
     schema_version: string;
+    job_id: string;
+    idempotency_key: string;
+    submitted_by: string;
     parameters: {
         qasm: string;
         operation: "simulate";
-        noise?: {
-            model: "depolarizing";
-            readout_error?: number | undefined;
-            one_qubit_error?: number | undefined;
-            two_qubit_error?: number | undefined;
-        } | undefined;
         shots?: number | undefined;
         seed?: number | undefined;
+        noise?: {
+            model: "depolarizing";
+            one_qubit_error?: number | undefined;
+            two_qubit_error?: number | undefined;
+            readout_error?: number | undefined;
+        } | undefined;
     } | {
         qasm: string;
         operation: "transpile";
         hardware_profile: {
             schema_version: string;
-            qubit_count: number;
-            source: string;
             provider: string;
             backend: string;
             snapshot_id: string;
-            modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+            modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+            qubit_count: number;
             native_gates: string[];
             basis_two_qubit_gate: string;
-            capabilities: {
-                reset?: boolean | undefined;
-                mid_circuit_measurement?: boolean | undefined;
-                feed_forward?: boolean | undefined;
-                feed_forward_latency_ns?: number | undefined;
-                leakage_detection?: boolean | undefined;
-                loss_detection?: boolean | undefined;
-                erasure_conversion?: boolean | undefined;
-                all_to_all_connectivity?: boolean | undefined;
-                dynamic_connectivity?: boolean | undefined;
-                noise_bias?: string | undefined;
-            };
-            retrieved_at: string;
-            notes?: string | undefined;
+            couplings?: {
+                control: number;
+                target: number;
+                error_rate?: number | undefined;
+                duration_ns?: number | undefined;
+            }[] | undefined;
             qubits?: {
                 index: number;
                 t1_us?: number | undefined;
@@ -1496,41 +1490,41 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 single_qubit_error?: number | undefined;
                 operational?: boolean | undefined;
             }[] | undefined;
-            couplings?: {
-                control: number;
-                target: number;
-                error_rate?: number | undefined;
-                duration_ns?: number | undefined;
-            }[] | undefined;
+            capabilities: {
+                mid_circuit_measurement?: boolean | undefined;
+                feed_forward?: boolean | undefined;
+                feed_forward_latency_ns?: number | undefined;
+                reset?: boolean | undefined;
+                leakage_detection?: boolean | undefined;
+                loss_detection?: boolean | undefined;
+                erasure_conversion?: boolean | undefined;
+                all_to_all_connectivity?: boolean | undefined;
+                dynamic_connectivity?: boolean | undefined;
+                noise_bias?: string | undefined;
+            };
             calibration_timestamp?: string | undefined;
+            retrieved_at: string;
+            source: string;
+            notes?: string | undefined;
         };
     } | {
         qasm: string;
         operation: "estimate_resources";
         hardware_profile?: {
             schema_version: string;
-            qubit_count: number;
-            source: string;
             provider: string;
             backend: string;
             snapshot_id: string;
-            modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+            modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+            qubit_count: number;
             native_gates: string[];
             basis_two_qubit_gate: string;
-            capabilities: {
-                reset?: boolean | undefined;
-                mid_circuit_measurement?: boolean | undefined;
-                feed_forward?: boolean | undefined;
-                feed_forward_latency_ns?: number | undefined;
-                leakage_detection?: boolean | undefined;
-                loss_detection?: boolean | undefined;
-                erasure_conversion?: boolean | undefined;
-                all_to_all_connectivity?: boolean | undefined;
-                dynamic_connectivity?: boolean | undefined;
-                noise_bias?: string | undefined;
-            };
-            retrieved_at: string;
-            notes?: string | undefined;
+            couplings?: {
+                control: number;
+                target: number;
+                error_rate?: number | undefined;
+                duration_ns?: number | undefined;
+            }[] | undefined;
             qubits?: {
                 index: number;
                 t1_us?: number | undefined;
@@ -1539,13 +1533,22 @@ export declare const ExecutionJobSchema: z.ZodObject<{
                 single_qubit_error?: number | undefined;
                 operational?: boolean | undefined;
             }[] | undefined;
-            couplings?: {
-                control: number;
-                target: number;
-                error_rate?: number | undefined;
-                duration_ns?: number | undefined;
-            }[] | undefined;
+            capabilities: {
+                mid_circuit_measurement?: boolean | undefined;
+                feed_forward?: boolean | undefined;
+                feed_forward_latency_ns?: number | undefined;
+                reset?: boolean | undefined;
+                leakage_detection?: boolean | undefined;
+                loss_detection?: boolean | undefined;
+                erasure_conversion?: boolean | undefined;
+                all_to_all_connectivity?: boolean | undefined;
+                dynamic_connectivity?: boolean | undefined;
+                noise_bias?: string | undefined;
+            };
             calibration_timestamp?: string | undefined;
+            retrieved_at: string;
+            source: string;
+            notes?: string | undefined;
         } | undefined;
     } | {
         qasm: string;
@@ -1556,20 +1559,17 @@ export declare const ExecutionJobSchema: z.ZodObject<{
         right_qasm: string;
         tolerance?: number | undefined;
     } | {
-        noise: {
-            model: "depolarizing";
-            readout_error?: number | undefined;
-            one_qubit_error?: number | undefined;
-            two_qubit_error?: number | undefined;
-        };
         qasm: string;
         operation: "mitigate_zne";
+        noise: {
+            model: "depolarizing";
+            one_qubit_error?: number | undefined;
+            two_qubit_error?: number | undefined;
+            readout_error?: number | undefined;
+        };
         shots?: number | undefined;
         seed?: number | undefined;
     };
-    job_id: string;
-    idempotency_key: string;
-    submitted_by: string;
     limits?: {
         timeout_seconds?: number | undefined;
         max_qubits?: number | undefined;
@@ -1596,29 +1596,29 @@ export declare const JobResultSchema: z.ZodObject<{
     execution_class: z.ZodLiteral<"SIMULATION">;
     worker_version: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    status: "FAILED" | "RUNNING" | "QUEUED" | "SUCCEEDED" | "CANCELLED" | "TIMED_OUT";
     schema_version: string;
-    started_at: string;
-    finished_at: string;
-    execution_class: "SIMULATION";
-    operation: "simulate" | "transpile" | "estimate_resources" | "optimize_zx" | "check_equivalence" | "mitigate_zne";
     job_id: string;
-    duration_ms: number;
-    worker_version: string;
+    status: "CANCELLED" | "FAILED" | "QUEUED" | "RUNNING" | "SUCCEEDED" | "TIMED_OUT";
+    operation: "check_equivalence" | "estimate_resources" | "mitigate_zne" | "optimize_zx" | "simulate" | "transpile";
     output?: Record<string, unknown> | undefined;
     error?: string | undefined;
+    started_at: string;
+    finished_at: string;
+    duration_ms: number;
+    execution_class: "SIMULATION";
+    worker_version: string;
 }, {
-    status: "FAILED" | "RUNNING" | "QUEUED" | "SUCCEEDED" | "CANCELLED" | "TIMED_OUT";
     schema_version: string;
-    started_at: string;
-    finished_at: string;
-    execution_class: "SIMULATION";
-    operation: "simulate" | "transpile" | "estimate_resources" | "optimize_zx" | "check_equivalence" | "mitigate_zne";
     job_id: string;
-    duration_ms: number;
-    worker_version: string;
+    status: "CANCELLED" | "FAILED" | "QUEUED" | "RUNNING" | "SUCCEEDED" | "TIMED_OUT";
+    operation: "check_equivalence" | "estimate_resources" | "mitigate_zne" | "optimize_zx" | "simulate" | "transpile";
     output?: Record<string, unknown> | undefined;
     error?: string | undefined;
+    started_at: string;
+    finished_at: string;
+    duration_ms: number;
+    execution_class: "SIMULATION";
+    worker_version: string;
 }>;
 export type JobResult = z.infer<typeof JobResultSchema>;
 /**

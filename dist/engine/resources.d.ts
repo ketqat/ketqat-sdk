@@ -33,11 +33,11 @@ export declare const NISQResourcesSchema: z.ZodObject<{
     /** Product of per-gate success probabilities; requires characterized errors. */
     estimated_success_probability: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
+    logical_qubits: number;
     circuit_depth: number;
     gate_count: number;
-    two_qubit_gate_count: number;
-    logical_qubits: number;
     one_qubit_gate_count: number;
+    two_qubit_gate_count: number;
     measurement_count: number;
     reset_count: number;
     swap_count: number;
@@ -46,11 +46,11 @@ export declare const NISQResourcesSchema: z.ZodObject<{
     estimated_duration_ns?: number | undefined;
     estimated_success_probability?: number | undefined;
 }, {
+    logical_qubits: number;
     circuit_depth: number;
     gate_count: number;
-    two_qubit_gate_count: number;
-    logical_qubits: number;
     one_qubit_gate_count: number;
+    two_qubit_gate_count: number;
     measurement_count: number;
     reset_count: number;
     swap_count: number;
@@ -86,15 +86,15 @@ export declare const ResourceAssumptionsSchema: z.ZodObject<{
     notes: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     hardware_snapshot: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
+    estimator: string;
+    estimator_version: string;
     gate_set: string[];
     notes: string[];
-    estimator: string;
-    estimator_version: string;
     hardware_snapshot?: string | undefined;
 }, {
-    gate_set: string[];
     estimator: string;
     estimator_version: string;
+    gate_set: string[];
     notes?: string[] | undefined;
     hardware_snapshot?: string | undefined;
 }>;
@@ -117,11 +117,11 @@ export declare const NormalizedResourceEstimateSchema: z.ZodObject<{
         /** Product of per-gate success probabilities; requires characterized errors. */
         estimated_success_probability: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
+        logical_qubits: number;
         circuit_depth: number;
         gate_count: number;
-        two_qubit_gate_count: number;
-        logical_qubits: number;
         one_qubit_gate_count: number;
+        two_qubit_gate_count: number;
         measurement_count: number;
         reset_count: number;
         swap_count: number;
@@ -130,11 +130,11 @@ export declare const NormalizedResourceEstimateSchema: z.ZodObject<{
         estimated_duration_ns?: number | undefined;
         estimated_success_probability?: number | undefined;
     }, {
+        logical_qubits: number;
         circuit_depth: number;
         gate_count: number;
-        two_qubit_gate_count: number;
-        logical_qubits: number;
         one_qubit_gate_count: number;
+        two_qubit_gate_count: number;
         measurement_count: number;
         reset_count: number;
         swap_count: number;
@@ -168,15 +168,15 @@ export declare const NormalizedResourceEstimateSchema: z.ZodObject<{
         notes: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         hardware_snapshot: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
+        estimator: string;
+        estimator_version: string;
         gate_set: string[];
         notes: string[];
-        estimator: string;
-        estimator_version: string;
         hardware_snapshot?: string | undefined;
     }, {
-        gate_set: string[];
         estimator: string;
         estimator_version: string;
+        gate_set: string[];
         notes?: string[] | undefined;
         hardware_snapshot?: string | undefined;
     }>;
@@ -188,19 +188,12 @@ export declare const NormalizedResourceEstimateSchema: z.ZodObject<{
     raw: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
 }, "strip", z.ZodTypeAny, {
     schema_version: string;
-    assumptions: {
-        gate_set: string[];
-        notes: string[];
-        estimator: string;
-        estimator_version: string;
-        hardware_snapshot?: string | undefined;
-    };
     nisq: {
+        logical_qubits: number;
         circuit_depth: number;
         gate_count: number;
-        two_qubit_gate_count: number;
-        logical_qubits: number;
         one_qubit_gate_count: number;
+        two_qubit_gate_count: number;
         measurement_count: number;
         reset_count: number;
         swap_count: number;
@@ -214,23 +207,23 @@ export declare const NormalizedResourceEstimateSchema: z.ZodObject<{
         clifford_count: number;
         toffoli_count: number;
         unsupported_for_ft_count: number;
+    };
+    assumptions: {
+        estimator: string;
+        estimator_version: string;
+        gate_set: string[];
+        notes: string[];
+        hardware_snapshot?: string | undefined;
     };
     raw?: Record<string, unknown> | undefined;
 }, {
     schema_version: string;
-    assumptions: {
-        gate_set: string[];
-        estimator: string;
-        estimator_version: string;
-        notes?: string[] | undefined;
-        hardware_snapshot?: string | undefined;
-    };
     nisq: {
+        logical_qubits: number;
         circuit_depth: number;
         gate_count: number;
-        two_qubit_gate_count: number;
-        logical_qubits: number;
         one_qubit_gate_count: number;
+        two_qubit_gate_count: number;
         measurement_count: number;
         reset_count: number;
         swap_count: number;
@@ -244,6 +237,13 @@ export declare const NormalizedResourceEstimateSchema: z.ZodObject<{
         clifford_count: number;
         toffoli_count: number;
         unsupported_for_ft_count: number;
+    };
+    assumptions: {
+        estimator: string;
+        estimator_version: string;
+        gate_set: string[];
+        notes?: string[] | undefined;
+        hardware_snapshot?: string | undefined;
     };
     raw?: Record<string, unknown> | undefined;
 }>;

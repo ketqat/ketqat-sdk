@@ -24,14 +24,14 @@ export declare const DepolarizingNoiseSchema: z.ZodObject<{
     readout_error: z.ZodDefault<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     model: "depolarizing";
-    readout_error: number;
     one_qubit_error: number;
     two_qubit_error: number;
+    readout_error: number;
 }, {
     model: "depolarizing";
-    readout_error?: number | undefined;
     one_qubit_error?: number | undefined;
     two_qubit_error?: number | undefined;
+    readout_error?: number | undefined;
 }>;
 export type DepolarizingNoise = z.infer<typeof DepolarizingNoiseSchema>;
 export declare const NoiseModelSchema: z.ZodObject<{
@@ -44,14 +44,14 @@ export declare const NoiseModelSchema: z.ZodObject<{
     readout_error: z.ZodDefault<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     model: "depolarizing";
-    readout_error: number;
     one_qubit_error: number;
     two_qubit_error: number;
+    readout_error: number;
 }, {
     model: "depolarizing";
-    readout_error?: number | undefined;
     one_qubit_error?: number | undefined;
     two_qubit_error?: number | undefined;
+    readout_error?: number | undefined;
 }>;
 export type NoiseModel = z.infer<typeof NoiseModelSchema>;
 /**

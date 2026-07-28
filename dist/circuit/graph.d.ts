@@ -55,21 +55,21 @@ export declare const GateOperationSchema: z.ZodObject<{
         index: number;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
-    name: string;
     kind: "gate";
+    name: string;
     parameters: (string | number)[];
     qubits: {
         register: string;
         index: number;
     }[];
 }, {
-    name: string;
     kind: "gate";
+    name: string;
+    parameters?: (string | number)[] | undefined;
     qubits: {
         register: string;
         index: number;
     }[];
-    parameters?: (string | number)[] | undefined;
 }>;
 export type GateOperation = z.infer<typeof GateOperationSchema>;
 export declare const MeasureOperationSchema: z.ZodObject<{
@@ -185,21 +185,21 @@ export declare const SimpleOperationSchema: z.ZodDiscriminatedUnion<"kind", [z.Z
         index: number;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
-    name: string;
     kind: "gate";
+    name: string;
     parameters: (string | number)[];
     qubits: {
         register: string;
         index: number;
     }[];
 }, {
-    name: string;
     kind: "gate";
+    name: string;
+    parameters?: (string | number)[] | undefined;
     qubits: {
         register: string;
         index: number;
     }[];
-    parameters?: (string | number)[] | undefined;
 }>, z.ZodObject<{
     kind: z.ZodLiteral<"measure">;
     qubit: z.ZodObject<{
@@ -325,21 +325,21 @@ export declare const ConditionalOperationSchema: z.ZodObject<{
             index: number;
         }>, "many">;
     }, "strip", z.ZodTypeAny, {
-        name: string;
         kind: "gate";
+        name: string;
         parameters: (string | number)[];
         qubits: {
             register: string;
             index: number;
         }[];
     }, {
-        name: string;
         kind: "gate";
+        name: string;
+        parameters?: (string | number)[] | undefined;
         qubits: {
             register: string;
             index: number;
         }[];
-        parameters?: (string | number)[] | undefined;
     }>, z.ZodObject<{
         kind: z.ZodLiteral<"measure">;
         qubit: z.ZodObject<{
@@ -437,8 +437,8 @@ export declare const ConditionalOperationSchema: z.ZodObject<{
     register: string;
     equals: number;
     body: {
-        name: string;
         kind: "gate";
+        name: string;
         parameters: (string | number)[];
         qubits: {
             register: string;
@@ -472,13 +472,13 @@ export declare const ConditionalOperationSchema: z.ZodObject<{
     register: string;
     equals: number;
     body: {
-        name: string;
         kind: "gate";
+        name: string;
+        parameters?: (string | number)[] | undefined;
         qubits: {
             register: string;
             index: number;
         }[];
-        parameters?: (string | number)[] | undefined;
     } | {
         kind: "measure";
         qubit: {
@@ -519,21 +519,21 @@ export declare const OperationSchema: z.ZodDiscriminatedUnion<"kind", [z.ZodObje
         index: number;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
-    name: string;
     kind: "gate";
+    name: string;
     parameters: (string | number)[];
     qubits: {
         register: string;
         index: number;
     }[];
 }, {
-    name: string;
     kind: "gate";
+    name: string;
+    parameters?: (string | number)[] | undefined;
     qubits: {
         register: string;
         index: number;
     }[];
-    parameters?: (string | number)[] | undefined;
 }>, z.ZodObject<{
     kind: z.ZodLiteral<"measure">;
     qubit: z.ZodObject<{
@@ -645,21 +645,21 @@ export declare const OperationSchema: z.ZodDiscriminatedUnion<"kind", [z.ZodObje
             index: number;
         }>, "many">;
     }, "strip", z.ZodTypeAny, {
-        name: string;
         kind: "gate";
+        name: string;
         parameters: (string | number)[];
         qubits: {
             register: string;
             index: number;
         }[];
     }, {
-        name: string;
         kind: "gate";
+        name: string;
+        parameters?: (string | number)[] | undefined;
         qubits: {
             register: string;
             index: number;
         }[];
-        parameters?: (string | number)[] | undefined;
     }>, z.ZodObject<{
         kind: z.ZodLiteral<"measure">;
         qubit: z.ZodObject<{
@@ -757,8 +757,8 @@ export declare const OperationSchema: z.ZodDiscriminatedUnion<"kind", [z.ZodObje
     register: string;
     equals: number;
     body: {
-        name: string;
         kind: "gate";
+        name: string;
         parameters: (string | number)[];
         qubits: {
             register: string;
@@ -792,13 +792,13 @@ export declare const OperationSchema: z.ZodDiscriminatedUnion<"kind", [z.ZodObje
     register: string;
     equals: number;
     body: {
-        name: string;
         kind: "gate";
+        name: string;
+        parameters?: (string | number)[] | undefined;
         qubits: {
             register: string;
             index: number;
         }[];
-        parameters?: (string | number)[] | undefined;
     } | {
         kind: "measure";
         qubit: {
@@ -861,21 +861,21 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
             index: number;
         }>, "many">;
     }, "strip", z.ZodTypeAny, {
-        name: string;
         kind: "gate";
+        name: string;
         parameters: (string | number)[];
         qubits: {
             register: string;
             index: number;
         }[];
     }, {
-        name: string;
         kind: "gate";
+        name: string;
+        parameters?: (string | number)[] | undefined;
         qubits: {
             register: string;
             index: number;
         }[];
-        parameters?: (string | number)[] | undefined;
     }>, z.ZodObject<{
         kind: z.ZodLiteral<"measure">;
         qubit: z.ZodObject<{
@@ -987,21 +987,21 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
                 index: number;
             }>, "many">;
         }, "strip", z.ZodTypeAny, {
-            name: string;
             kind: "gate";
+            name: string;
             parameters: (string | number)[];
             qubits: {
                 register: string;
                 index: number;
             }[];
         }, {
-            name: string;
             kind: "gate";
+            name: string;
+            parameters?: (string | number)[] | undefined;
             qubits: {
                 register: string;
                 index: number;
             }[];
-            parameters?: (string | number)[] | undefined;
         }>, z.ZodObject<{
             kind: z.ZodLiteral<"measure">;
             qubit: z.ZodObject<{
@@ -1099,8 +1099,8 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
         register: string;
         equals: number;
         body: {
-            name: string;
             kind: "gate";
+            name: string;
             parameters: (string | number)[];
             qubits: {
                 register: string;
@@ -1134,13 +1134,13 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
         register: string;
         equals: number;
         body: {
-            name: string;
             kind: "gate";
+            name: string;
+            parameters?: (string | number)[] | undefined;
             qubits: {
                 register: string;
                 index: number;
             }[];
-            parameters?: (string | number)[] | undefined;
         } | {
             kind: "measure";
             qubit: {
@@ -1166,6 +1166,7 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
         };
     }>]>, "many">>;
 }, "strip", z.ZodTypeAny, {
+    name?: string | undefined;
     qubit_registers: {
         name: string;
         size: number;
@@ -1175,8 +1176,8 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
         size: number;
     }[];
     operations: ({
-        name: string;
         kind: "gate";
+        name: string;
         parameters: (string | number)[];
         qubits: {
             register: string;
@@ -1209,8 +1210,8 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
         register: string;
         equals: number;
         body: {
-            name: string;
             kind: "gate";
+            name: string;
             parameters: (string | number)[];
             qubits: {
                 register: string;
@@ -1240,7 +1241,6 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
             }[];
         };
     })[];
-    name?: string | undefined;
 }, {
     name?: string | undefined;
     qubit_registers?: {
@@ -1252,13 +1252,13 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
         size: number;
     }[] | undefined;
     operations?: ({
-        name: string;
         kind: "gate";
+        name: string;
+        parameters?: (string | number)[] | undefined;
         qubits: {
             register: string;
             index: number;
         }[];
-        parameters?: (string | number)[] | undefined;
     } | {
         kind: "measure";
         qubit: {
@@ -1286,13 +1286,13 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
         register: string;
         equals: number;
         body: {
-            name: string;
             kind: "gate";
+            name: string;
+            parameters?: (string | number)[] | undefined;
             qubits: {
                 register: string;
                 index: number;
             }[];
-            parameters?: (string | number)[] | undefined;
         } | {
             kind: "measure";
             qubit: {

@@ -43,11 +43,10 @@ export declare const QecCodeSchema: z.ZodObject<{
     references: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     notes: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
-    name: string;
-    description: string;
     slug: string;
-    notes: string[];
-    families: ("STABILIZER" | "CSS" | "SUBSYSTEM" | "TOPOLOGICAL" | "SURFACE" | "TORIC" | "COLOR" | "QUANTUM_LDPC" | "HYPERGRAPH_PRODUCT" | "BIVARIATE_BICYCLE" | "CONCATENATED" | "BOSONIC" | "GKP" | "CAT" | "QUDIT" | "ERASURE_TOLERANT" | "APPROXIMATE" | "FLOQUET")[];
+    name: string;
+    families: ("APPROXIMATE" | "BIVARIATE_BICYCLE" | "BOSONIC" | "CAT" | "COLOR" | "CONCATENATED" | "CSS" | "ERASURE_TOLERANT" | "FLOQUET" | "GKP" | "HYPERGRAPH_PRODUCT" | "QUANTUM_LDPC" | "QUDIT" | "STABILIZER" | "SUBSYSTEM" | "SURFACE" | "TOPOLOGICAL" | "TORIC")[];
+    description: string;
     requires_mid_circuit_measurement: boolean;
     requires_feed_forward: boolean;
     requires_nonlocal_connectivity: boolean;
@@ -55,12 +54,12 @@ export declare const QecCodeSchema: z.ZodObject<{
     supported_distances: number[];
     stim_generator: string | null;
     references: string[];
+    notes: string[];
 }, {
-    name: string;
-    description: string;
     slug: string;
-    families: ("STABILIZER" | "CSS" | "SUBSYSTEM" | "TOPOLOGICAL" | "SURFACE" | "TORIC" | "COLOR" | "QUANTUM_LDPC" | "HYPERGRAPH_PRODUCT" | "BIVARIATE_BICYCLE" | "CONCATENATED" | "BOSONIC" | "GKP" | "CAT" | "QUDIT" | "ERASURE_TOLERANT" | "APPROXIMATE" | "FLOQUET")[];
-    notes?: string[] | undefined;
+    name: string;
+    families: ("APPROXIMATE" | "BIVARIATE_BICYCLE" | "BOSONIC" | "CAT" | "COLOR" | "CONCATENATED" | "CSS" | "ERASURE_TOLERANT" | "FLOQUET" | "GKP" | "HYPERGRAPH_PRODUCT" | "QUANTUM_LDPC" | "QUDIT" | "STABILIZER" | "SUBSYSTEM" | "SURFACE" | "TOPOLOGICAL" | "TORIC")[];
+    description: string;
     requires_mid_circuit_measurement?: boolean | undefined;
     requires_feed_forward?: boolean | undefined;
     requires_nonlocal_connectivity?: boolean | undefined;
@@ -68,6 +67,7 @@ export declare const QecCodeSchema: z.ZodObject<{
     supported_distances?: number[] | undefined;
     stim_generator?: string | null | undefined;
     references?: string[] | undefined;
+    notes?: string[] | undefined;
 }>;
 export type QecCode = z.infer<typeof QecCodeSchema>;
 export declare const QEC_CODE_CATALOG: QecCode[];
