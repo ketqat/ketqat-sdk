@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "parameters": {
+    "operation": "transpile",
+    "qasm": "OPENQASM 3;\ninclude \"stdgates.inc\";\nqubit[5] q;\nbit[5] c;\nh q[0];\ncx q[0], q[4];\ncx q[0], q[3];\nc[0] = measure q[0];\nc[4] = measure q[4];\n",
+    "hardware_profile": {
+      "schema_version": "0.1",
+      "provider": "simulator",
+      "backend": "line-5",
+      "snapshot_id": "line-5-synthetic",
+      "modality": "SIMULATED",
+      "qubit_count": 5,
+      "native_gates": [
+        "h",
+        "cx",
+        "x",
+        "z",
+        "rz",
+        "sx",
+        "measure"
+      ],
+      "basis_two_qubit_gate": "cx",
+      "couplings": [
+        {
+          "control": 0,
+          "target": 1
+        },
+        {
+          "control": 1,
+          "target": 2
+        },
+        {
+          "control": 2,
+          "target": 3
+        },
+        {
+          "control": 3,
+          "target": 4
+        }
+      ],
+      "qubits": [],
+      "capabilities": {
+        "mid_circuit_measurement": true,
+        "reset": true,
+        "conditional_gates": true
+      },
+      "characterized_at": "2026-01-01T00:00:00.000Z",
+      "retrieved_at": "2026-01-01T00:00:00.000Z",
+      "source": "synthetic"
+    }
+  }
+}

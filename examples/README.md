@@ -12,11 +12,10 @@ result does not mean, which is the part that matters.
 | [`mitigation/zero-noise-extrapolation.json`](mitigation/zero-noise-extrapolation.json) | `mitigate_zne` | execution plane, below |
 | [`equivalence/cx-decomposition.json`](equivalence/cx-decomposition.json) | `check_equivalence` | execution plane, below |
 | [`resources/t-count-with-toffoli.json`](resources/t-count-with-toffoli.json) | `estimate_resources` | execution plane, below |
+| [`transpile/routing-on-a-line.json`](transpile/routing-on-a-line.json) | `transpile` | execution plane, below |
+| [`optimization/cancelling-gates.json`](optimization/cancelling-gates.json) | `optimize_zx` | execution plane, below |
 
-`transpile` and `optimize_zx` have no example yet — see
-[ketqat-sdk#88](https://github.com/ketqat/ketqat-sdk/issues/88). One
-well-explained example is worth more than two thin ones, so they are left open
-rather than filled in quickly.
+All six operations now have a worked example.
 
 ---
 
@@ -253,3 +252,103 @@ Pass `hardware_profile` to get those estimates, and they will then be estimates
   increases it. The number moves in both directions.
 - **Not hardware-specific.** No connectivity, no native gate set, no calibration
   data entered into it.
+
+---
+
+## Routing a circuit onto real connectivity
+
+```bash
+ketqat-engine job submit examples/transpile/routing-on-a-line.json \
+  --registry https://ketqat.com --wait
+```
+
+The circuit entangles `q[0]` with `q[4]` and `q[3]`. The target is a five-qubit
+**line**, where `q[0]` and `q[4]` are four hops apart and cannot interact
+directly. Something has to move.
+
+### What it costs
+
+```
+before   3 gates, 2 two-qubit, depth 4
+after    6 gates, 2 two-qubit, depth 7,  swap_count 3
+```
+
+Three SWAPs, double the gates, and depth from 4 to 7 — for a circuit that was
+already only three gates long. **That is the price of connectivity**, and it is
+why a gate count taken before routing tells you very little about what a device
+will actually run.
+
+### The field you must not ignore
+
+```json
+"initial_layout": [0, 1, 2, 3, 4],
+"final_layout":   [3, 0, 1, 2, 4]
+```
+
+The qubits **moved**. Logical `q[0]` ends up on physical qubit 3. Reading the
+output bitstring as though bit 0 were still logical qubit 0 gives a wrong answer
+that looks entirely plausible — the histogram will be well-formed, the shot
+count correct, and the assignment scrambled.
+
+### Equivalence is asserted, not verified
+
+```json
+"equivalence": {
+  "level": "NOT_CHECKED",
+  "method": "SWAP routing preserves the circuit up to the recorded final_layout permutation."
+}
+```
+
+`NOT_CHECKED` is honest. The router did not simulate both circuits and compare
+them; it relies on the argument that SWAP insertion preserves semantics **up to
+the permutation it recorded**. That argument is sound and it is not a
+verification. If you want one, run `check_equivalence` — and remember it will
+disagree unless you account for the layout.
+
+---
+
+## Cancelling gates with ZX rewrites
+
+```bash
+ketqat-engine job submit examples/optimization/cancelling-gates.json \
+  --registry https://ketqat.com --wait
+```
+
+Three `h` gates on one qubit and two `z` gates on another. Two of each cancel.
+
+```json
+"before": { "gate_count": 6, "depth": 6 },
+"after":  { "gate_count": 2, "depth": 2 },
+"rewrites": [
+  { "rewrite": "hadamard_pair_cancellation", "count": 1 },
+  { "rewrite": "self_inverse_cancellation",  "count": 1 }
+]
+```
+
+Each rewrite is **named and counted** rather than reported as a single
+"optimized" flag, so the reduction can be audited rather than trusted.
+
+### The optimisation is checked, and here is when it is not
+
+```json
+"equivalence": { "level": "NUMERICALLY_CHECKED", "method": "statevector",
+                 "tolerance": 1e-9, "global_phase_ignored": true }
+```
+
+The same circuit **with measurements appended** produces the identical rewrites
+and a different verdict:
+
+```json
+"equivalence": {
+  "level": "INCONCLUSIVE",
+  "reason": "Could not simulate both circuits: A circuit with measurement requires a positive shot count."
+}
+```
+
+Same reduction, same gates removed — and no verification, because a circuit
+containing measurement cannot be compared as a statevector.
+
+That pairing is the lesson. **"Optimised" and "verified equivalent" are separate
+claims**, and the second is the one that fails quietly. An optimiser that
+reported only "6 gates → 2 gates" would look identical in both cases while being
+checked in one and unchecked in the other.
