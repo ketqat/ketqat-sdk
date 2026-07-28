@@ -106,7 +106,8 @@
     "verify:citation": "node scripts/verify-citation.mjs",
     "verify:workflows": "node scripts/verify-workflow-hardening.mjs",
     "verify:maintainers": "node scripts/verify-maintainers.mjs",
-    "metrics:oss": "node scripts/collect-oss-metrics.mjs"
+    "metrics:oss": "node scripts/collect-oss-metrics.mjs",
+    "validate:contribution": "node scripts/validate-contribution.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
