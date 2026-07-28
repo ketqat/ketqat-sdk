@@ -12,6 +12,10 @@ This repository contains everything you need to participate:
 
 ## Run your first benchmark in 3 minutes
 
+Measured from a clean virtual environment with a cold package cache: 21 seconds
+for the QEC path, 4 seconds for the algorithm-only path. Three minutes is the
+budget, not the target.
+
 After the first public release, the clone-free path is:
 
 ```bash
@@ -24,6 +28,11 @@ python -m pip install "ketqat[qec]"
 # 2. Run a real surface-code memory experiment (Stim sampling + MWPM decoding)
 ketqat examples list
 ketqat run surface-code-memory --output run.json
+
+# The run prints what it found. If it reports "logical error rate < 3.7e-02
+# (upper bound)", that is not a rate of zero -- it means no logical failure was
+# observed and the shot count could not resolve the rate any tighter. Raise
+# `shots` in the manifest to tighten the bound.
 
 # 3. Publish it later, if you choose (create a token after signing in)
 export KETQAT_API_TOKEN="kq_..."
