@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import fs from "node:fs"
+import { fileURLToPath } from "node:url"
 import {
   AlgorithmExperimentManifestSchema,
   ArtifactRelationSchema,
@@ -2446,4 +2447,69 @@ c[1] = measure q[1];
     Array.isArray(tsconfig.compilerOptions.types) && tsconfig.compilerOptions.types.includes("node"),
     'tsconfig must name "node" in compilerOptions.types, or TypeScript 7 cannot find process, Buffer, or node: imports',
   )
+}
+
+// ---------------------------------------------------------------------------
+// The outreach claim checker must actually reject claims.
+//
+// A checker that passes everything is worse than no checker, because it is
+// cited as evidence. This writes a template containing the six claims the rule
+// exists to stop, and requires each to be caught.
+//
+// An earlier version of the superlative rule rejected "the first published
+// release" and "be the only person there" -- both plain facts. A check that
+// cries wolf gets ignored, so the well-formed templates passing cleanly is
+// asserted here too.
+// ---------------------------------------------------------------------------
+{
+  const { execFileSync } = await import("node:child_process")
+  const outreachDir = new URL("../docs/outreach/", import.meta.url)
+  const probe = new URL("zz-claim-probe.md", outreachDir)
+
+  const run = () => {
+    try {
+      execFileSync("node", [fileURLToPath(new URL("../scripts/verify-outreach-claims.mjs", import.meta.url))], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      })
+      return { ok: true, output: "" }
+    } catch (error) {
+      return { ok: false, output: `${error.stdout ?? ""}${error.stderr ?? ""}` }
+    }
+  }
+
+  // The committed templates must pass, or every assertion below is vacuous.
+  assert.ok(run().ok, "the committed outreach templates must pass the claim checker")
+
+  const claims = [
+    ["KetQat is the leading platform for QEC benchmarking.", "market superlative"],
+    ["Trusted by researchers at MIT and Delft.", "claimed adoption"],
+    ["Join thousands of users already benchmarking with us.", "invented community size"],
+    ["We are excited to announce our partnership with a national lab.", "claimed partnership"],
+    ["It is production-ready and outperforms Stim for decoder comparison.", "claimed maturity"],
+    ["Backed by the Quantum Foundation.", "claimed sponsorship"],
+  ]
+
+  for (const [claim, description] of claims) {
+    fs.writeFileSync(probe, `> ${claim}\n`)
+    try {
+      const result = run()
+      assert.equal(result.ok, false, `the checker must reject ${description}: ${claim}`)
+    } finally {
+      fs.rmSync(probe, { force: true })
+    }
+  }
+
+  // Facts that read like superlatives must survive, or the rule gets ignored.
+  for (const fact of [
+    "This is the first published release.",
+    "If nobody comes I will use the hour to work on issues, so it costs nothing to be the only person there.",
+  ]) {
+    fs.writeFileSync(probe, `> ${fact}\n`)
+    try {
+      assert.ok(run().ok, `the checker must not reject a plain fact: ${fact}`)
+    } finally {
+      fs.rmSync(probe, { force: true })
+    }
+  }
 }
