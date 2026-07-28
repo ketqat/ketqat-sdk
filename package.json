@@ -104,7 +104,8 @@
     "verify:worker-image": "node scripts/verify-worker-image.mjs",
     "verify:license": "node scripts/verify-license-integrity.mjs",
     "verify:citation": "node scripts/verify-citation.mjs",
-    "verify:workflows": "node scripts/verify-workflow-hardening.mjs"
+    "verify:workflows": "node scripts/verify-workflow-hardening.mjs",
+    "verify:maintainers": "node scripts/verify-maintainers.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
