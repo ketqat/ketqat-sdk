@@ -1,5 +1,5 @@
 import { evaluateParameter } from "./parameters.js";
-import { applyPauliNoise, isNoiseless } from "./noise.js";
+import { applyPauliNoise, isNoiseless, NoiseModelSchema } from "./noise.js";
 /**
  * Exact statevector simulator for small circuits.
  *
@@ -408,6 +408,13 @@ export function simulateStatevector(circuit, options = {}) {
     const hasMeasurement = circuitHasMeasurement(circuit);
     const seed = options.seed ?? null;
     const shots = options.shots ?? 0;
+    // Validate the model before anything reads a field off it. TypeScript cannot
+    // help here: callers reach this through JSON, a manifest, or a job payload,
+    // and a misspelled rate arrives as a plain object that satisfies no check
+    // until something indexes it. Parsing names the offending key instead.
+    if (options.noise !== undefined) {
+        options = { ...options, noise: NoiseModelSchema.parse(options.noise) };
+    }
     if (options.noise && !isNoiseless(options.noise) && shots <= 0) {
         throw new SimulationError("A noise model requires a positive shot count. Trajectory sampling has no meaning for an " +
             "exact statevector, and returning the noiseless state would mislabel it as noisy.");

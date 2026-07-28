@@ -22,7 +22,7 @@ export declare const DepolarizingNoiseSchema: z.ZodObject<{
     two_qubit_error: z.ZodDefault<z.ZodNumber>;
     /** Probability a measurement outcome is flipped. */
     readout_error: z.ZodDefault<z.ZodNumber>;
-}, "strip", z.ZodTypeAny, {
+}, "strict", z.ZodTypeAny, {
     model: "depolarizing";
     one_qubit_error: number;
     two_qubit_error: number;
@@ -42,7 +42,7 @@ export declare const NoiseModelSchema: z.ZodObject<{
     two_qubit_error: z.ZodDefault<z.ZodNumber>;
     /** Probability a measurement outcome is flipped. */
     readout_error: z.ZodDefault<z.ZodNumber>;
-}, "strip", z.ZodTypeAny, {
+}, "strict", z.ZodTypeAny, {
     model: "depolarizing";
     one_qubit_error: number;
     two_qubit_error: number;
