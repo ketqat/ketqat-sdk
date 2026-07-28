@@ -113,6 +113,10 @@
                   "type": "string",
                   "minLength": 1
                 },
+                "reproducibility_hash_version": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
                 "started_at": {
                   "type": "string",
                   "format": "date-time"
@@ -476,6 +480,10 @@
                 "reproducibility_hash": {
                   "type": "string",
                   "minLength": 1
+                },
+                "reproducibility_hash_version": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
                 },
                 "started_at": {
                   "type": "string",

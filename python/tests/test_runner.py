@@ -169,25 +169,26 @@ def test_result_schema_validation_rejects_malformed_result() -> None:
         validate_result(result)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "ketqat-sdk#89: duration measurements are inside the hashed payload, so the same "
-        "experiment hashes differently on every run. Strict, so that fixing the defect fails "
-        "this test and forces it to be turned into a positive assertion."
-    ),
-)
 def test_the_same_experiment_run_twice_produces_the_same_hash() -> None:
-    """The property the whole platform rests on, and it does not currently hold.
+    """The property the whole platform rests on.
 
     A reproducibility hash exists so a second person can re-run an experiment and
     show they obtained the same thing. The verification contract requires exactly
     that: REPRODUCED evidence must carry a matching hash.
 
-    Today no honest reproduction can produce one. `runtime_seconds`,
-    `decoder_latency_ms`, and five other duration fields are hashed, and they
+    For a while no honest reproduction could produce one. `runtime_seconds`,
+    `decoder_latency_ms`, and five other duration fields were hashed, and they
     differ on every run -- on the same machine, seconds apart, let alone across
-    machines. The hash fingerprints machine speed rather than science.
+    machines. The hash fingerprinted machine speed rather than science
+    (ketqat-sdk#89).
+
+    Version 2 of the hashing rules excludes those fields, and the runner stamps
+    the version it used, so records written under the old rules still verify
+    against the old rules and nothing already published was invalidated.
+
+    This test was an xfail(strict=True) while the defect stood, so that fixing it
+    would fail the suite and force this docstring to be rewritten rather than
+    letting a passing xfail quietly outlive the bug.
 
     Nothing else in the suite covers this. The cross-language fixtures prove
     TypeScript and Python hash *the same input* identically, which they do; they

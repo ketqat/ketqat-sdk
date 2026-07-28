@@ -57,6 +57,7 @@ import {
   foldCircuit,
   mitigateReadout,
   zeroNoiseExtrapolation,
+  verifyReproducibilityHash,
   JobParametersSchema,
   callTool,
   listTools,
@@ -165,11 +166,49 @@ const qecResult = fixture("qec-result-before-hash.json")
 const qecResultNullMetadata = fixture("qec-result-null-metadata.json")
 const algorithmResult = fixture("algorithm-result-before-hash.json")
 
-assert.equal(calculateReproducibilityHash(qecManifest), expectedHashes.qec_manifest)
-assert.equal(calculateReproducibilityHash(qecResult), expectedHashes.qec_result)
-assert.equal(calculateReproducibilityHash(qecResultNullMetadata), expectedHashes.qec_result_null_metadata)
-assert.notEqual(expectedHashes.qec_result_null_metadata, expectedHashes.qec_result)
-assert.equal(calculateReproducibilityHash(algorithmResult), expectedHashes.algorithm_result)
+// Both hash versions, pinned. The v1 block is the load-bearing half: those are
+// the hashes published before ketqat-sdk#89 was fixed, and if any moved, records
+// already in the registry would stop verifying. Pinning them is what makes the
+// fix additive rather than a rewrite of history.
+for (const [versionKey, version] of [["v1", 1], ["v2", 2]]) {
+  assert.equal(calculateReproducibilityHash(qecManifest, version), expectedHashes[versionKey].qec_manifest)
+  assert.equal(calculateReproducibilityHash(qecResult, version), expectedHashes[versionKey].qec_result)
+  assert.equal(
+    calculateReproducibilityHash(qecResultNullMetadata, version),
+    expectedHashes[versionKey].qec_result_null_metadata,
+  )
+  assert.equal(calculateReproducibilityHash(algorithmResult, version), expectedHashes[versionKey].algorithm_result)
+}
+assert.notEqual(expectedHashes.v2.qec_result_null_metadata, expectedHashes.v2.qec_result)
+
+// The fix must change something, and must not touch a payload with no timing in it.
+assert.notEqual(expectedHashes.v1.qec_result, expectedHashes.v2.qec_result)
+assert.equal(expectedHashes.v1.qec_manifest, expectedHashes.v2.qec_manifest)
+
+// A duration is not science: changing one must not change the hash. That is the
+// entire content of ketqat-sdk#89, and under v1 it did change it.
+const slowerRun = {
+  ...qecResult,
+  metric_points: [{ ...qecResult.metric_points[0], runtime_seconds: 999.5 }],
+}
+assert.equal(calculateReproducibilityHash(slowerRun, 2), expectedHashes.v2.qec_result)
+assert.notEqual(calculateReproducibilityHash(slowerRun, 1), expectedHashes.v1.qec_result)
+
+// A record picks the rules it was written under, so an old record still verifies.
+const legacyRecord = { ...qecResult, reproducibility_hash: expectedHashes.v1.qec_result }
+assert.equal(verifyReproducibilityHash(legacyRecord).valid, true, "a pre-versioning record must still verify")
+assert.equal(verifyReproducibilityHash(legacyRecord).version, 1)
+
+const modernRecord = {
+  ...qecResult,
+  reproducibility_hash_version: 2,
+  reproducibility_hash: calculateReproducibilityHash({ ...qecResult, reproducibility_hash_version: 2 }, 2),
+}
+assert.equal(verifyReproducibilityHash(modernRecord).valid, true)
+assert.equal(verifyReproducibilityHash(modernRecord).version, 2)
+
+// An unknown version is refused rather than silently treated as current.
+assert.throws(() => calculateReproducibilityHash(qecResult, 99), /Unknown reproducibility hash version/)
 
 const reorderedQecResult = {
   ...qecResult,

@@ -47,6 +47,18 @@ const BaseBenchmarkResultSchema = z.object({
     environment: EnvironmentSchema.default({ packages: {}, hardware: {} }),
     summary_metrics: z.record(z.unknown()).default({}),
     reproducibility_hash: z.string().min(1),
+    /**
+     * Which hashing rules produced `reproducibility_hash`.
+     *
+     * Optional, because records written before ketqat-sdk#89 was fixed carry no
+     * marker and are version 1 by definition. A verifier reads this to choose the
+     * rules, so an older record still verifies against its own algorithm instead
+     * of being reported as a mismatch.
+     *
+     * Version 2 excludes duration measurements, which is what makes the same
+     * experiment hash the same twice.
+     */
+    reproducibility_hash_version: z.number().int().positive().optional(),
     started_at: IsoDateTimeSchema.optional(),
     finished_at: IsoDateTimeSchema.optional(),
     is_demo: z.boolean().default(false),

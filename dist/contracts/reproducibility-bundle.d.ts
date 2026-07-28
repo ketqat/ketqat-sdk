@@ -39,6 +39,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         }>>;
         summary_metrics: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
         reproducibility_hash: z.ZodString;
+        reproducibility_hash_version: z.ZodOptional<z.ZodNumber>;
         started_at: z.ZodOptional<z.ZodString>;
         finished_at: z.ZodOptional<z.ZodString>;
         is_demo: z.ZodDefault<z.ZodBoolean>;
@@ -233,6 +234,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         };
         summary_metrics: Record<string, unknown>;
         reproducibility_hash: string;
+        reproducibility_hash_version?: number | undefined;
         started_at?: string | undefined;
         finished_at?: string | undefined;
         is_demo: boolean;
@@ -305,6 +307,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         summary_metrics?: Record<string, unknown> | undefined;
         reproducibility_hash: string;
+        reproducibility_hash_version?: number | undefined;
         started_at?: string | undefined;
         finished_at?: string | undefined;
         is_demo?: boolean | undefined;
@@ -391,6 +394,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         }>>;
         summary_metrics: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
         reproducibility_hash: z.ZodString;
+        reproducibility_hash_version: z.ZodOptional<z.ZodNumber>;
         started_at: z.ZodOptional<z.ZodString>;
         finished_at: z.ZodOptional<z.ZodString>;
         is_demo: z.ZodDefault<z.ZodBoolean>;
@@ -594,6 +598,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         };
         summary_metrics: Record<string, unknown>;
         reproducibility_hash: string;
+        reproducibility_hash_version?: number | undefined;
         started_at?: string | undefined;
         finished_at?: string | undefined;
         is_demo: boolean;
@@ -669,6 +674,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         summary_metrics?: Record<string, unknown> | undefined;
         reproducibility_hash: string;
+        reproducibility_hash_version?: number | undefined;
         started_at?: string | undefined;
         finished_at?: string | undefined;
         is_demo?: boolean | undefined;
@@ -987,6 +993,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         };
         summary_metrics: Record<string, unknown>;
         reproducibility_hash: string;
+        reproducibility_hash_version?: number | undefined;
         started_at?: string | undefined;
         finished_at?: string | undefined;
         is_demo: boolean;
@@ -1059,6 +1066,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         };
         summary_metrics: Record<string, unknown>;
         reproducibility_hash: string;
+        reproducibility_hash_version?: number | undefined;
         started_at?: string | undefined;
         finished_at?: string | undefined;
         is_demo: boolean;
@@ -1191,6 +1199,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         summary_metrics?: Record<string, unknown> | undefined;
         reproducibility_hash: string;
+        reproducibility_hash_version?: number | undefined;
         started_at?: string | undefined;
         finished_at?: string | undefined;
         is_demo?: boolean | undefined;
@@ -1263,6 +1272,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         summary_metrics?: Record<string, unknown> | undefined;
         reproducibility_hash: string;
+        reproducibility_hash_version?: number | undefined;
         started_at?: string | undefined;
         finished_at?: string | undefined;
         is_demo?: boolean | undefined;
@@ -1395,6 +1405,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         };
         summary_metrics: Record<string, unknown>;
         reproducibility_hash: string;
+        reproducibility_hash_version?: number | undefined;
         started_at?: string | undefined;
         finished_at?: string | undefined;
         is_demo: boolean;
@@ -1467,6 +1478,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         };
         summary_metrics: Record<string, unknown>;
         reproducibility_hash: string;
+        reproducibility_hash_version?: number | undefined;
         started_at?: string | undefined;
         finished_at?: string | undefined;
         is_demo: boolean;
@@ -1599,6 +1611,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         summary_metrics?: Record<string, unknown> | undefined;
         reproducibility_hash: string;
+        reproducibility_hash_version?: number | undefined;
         started_at?: string | undefined;
         finished_at?: string | undefined;
         is_demo?: boolean | undefined;
@@ -1671,6 +1684,7 @@ export declare const ReproducibilityBundleSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
         summary_metrics?: Record<string, unknown> | undefined;
         reproducibility_hash: string;
+        reproducibility_hash_version?: number | undefined;
         started_at?: string | undefined;
         finished_at?: string | undefined;
         is_demo?: boolean | undefined;

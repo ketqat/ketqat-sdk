@@ -135,6 +135,7 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
     }>>;
     summary_metrics: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     reproducibility_hash: z.ZodString;
+    reproducibility_hash_version: z.ZodOptional<z.ZodNumber>;
     started_at: z.ZodOptional<z.ZodString>;
     finished_at: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodDefault<z.ZodBoolean>;
@@ -329,6 +330,7 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
     };
     summary_metrics: Record<string, unknown>;
     reproducibility_hash: string;
+    reproducibility_hash_version?: number | undefined;
     started_at?: string | undefined;
     finished_at?: string | undefined;
     is_demo: boolean;
@@ -401,6 +403,7 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
     } | undefined;
     summary_metrics?: Record<string, unknown> | undefined;
     reproducibility_hash: string;
+    reproducibility_hash_version?: number | undefined;
     started_at?: string | undefined;
     finished_at?: string | undefined;
     is_demo?: boolean | undefined;
@@ -489,6 +492,7 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
     }>>;
     summary_metrics: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     reproducibility_hash: z.ZodString;
+    reproducibility_hash_version: z.ZodOptional<z.ZodNumber>;
     started_at: z.ZodOptional<z.ZodString>;
     finished_at: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodDefault<z.ZodBoolean>;
@@ -692,6 +696,7 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
     };
     summary_metrics: Record<string, unknown>;
     reproducibility_hash: string;
+    reproducibility_hash_version?: number | undefined;
     started_at?: string | undefined;
     finished_at?: string | undefined;
     is_demo: boolean;
@@ -767,6 +772,7 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
     } | undefined;
     summary_metrics?: Record<string, unknown> | undefined;
     reproducibility_hash: string;
+    reproducibility_hash_version?: number | undefined;
     started_at?: string | undefined;
     finished_at?: string | undefined;
     is_demo?: boolean | undefined;
@@ -858,6 +864,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
     }>>;
     summary_metrics: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     reproducibility_hash: z.ZodString;
+    reproducibility_hash_version: z.ZodOptional<z.ZodNumber>;
     started_at: z.ZodOptional<z.ZodString>;
     finished_at: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodDefault<z.ZodBoolean>;
@@ -1052,6 +1059,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
     };
     summary_metrics: Record<string, unknown>;
     reproducibility_hash: string;
+    reproducibility_hash_version?: number | undefined;
     started_at?: string | undefined;
     finished_at?: string | undefined;
     is_demo: boolean;
@@ -1124,6 +1132,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
     } | undefined;
     summary_metrics?: Record<string, unknown> | undefined;
     reproducibility_hash: string;
+    reproducibility_hash_version?: number | undefined;
     started_at?: string | undefined;
     finished_at?: string | undefined;
     is_demo?: boolean | undefined;
@@ -1210,6 +1219,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
     }>>;
     summary_metrics: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     reproducibility_hash: z.ZodString;
+    reproducibility_hash_version: z.ZodOptional<z.ZodNumber>;
     started_at: z.ZodOptional<z.ZodString>;
     finished_at: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodDefault<z.ZodBoolean>;
@@ -1413,6 +1423,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
     };
     summary_metrics: Record<string, unknown>;
     reproducibility_hash: string;
+    reproducibility_hash_version?: number | undefined;
     started_at?: string | undefined;
     finished_at?: string | undefined;
     is_demo: boolean;
@@ -1488,6 +1499,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
     } | undefined;
     summary_metrics?: Record<string, unknown> | undefined;
     reproducibility_hash: string;
+    reproducibility_hash_version?: number | undefined;
     started_at?: string | undefined;
     finished_at?: string | undefined;
     is_demo?: boolean | undefined;
