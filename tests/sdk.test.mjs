@@ -2192,3 +2192,87 @@ c[1] = measure q[1];
     )
   }
 }
+
+// ---------------------------------------------------------------------------
+// OSS metrics must not flatter.
+//
+// Adoption numbers are read by people deciding whether to trust or fund a
+// project, and the pressure to round upward is strongest exactly where the
+// figures are weakest. These assert the shape that makes the output
+// trustworthy, against a real collection run.
+// ---------------------------------------------------------------------------
+{
+  const metricsPath = new URL("../.tmp-metrics.json", import.meta.url)
+  let metrics = null
+  try {
+    metrics = JSON.parse(fs.readFileSync(metricsPath, "utf8"))
+  } catch {
+    // Collection needs network and gh. Skipping is correct; claiming a pass is
+    // not, so the absence is announced.
+    console.log("# skip: OSS metrics were not collected, so their shape was NOT verified")
+  }
+
+  if (metrics) {
+    assert.equal(metrics.schema_version, "1.0")
+    assert.ok(metrics.generated_at, "a metric without a timestamp cannot be judged current")
+
+    /**
+     * Every leaf that looks like a metric entry.
+     *
+     * Keyed on `value` alone, deliberately. An earlier version required both
+     * `value` and `source`, which meant an entry missing its source was not
+     * recognised as a metric and so was never checked for having one -- the
+     * assertion below was vacuous for precisely the case it existed to catch.
+     */
+    const entries = []
+    const walk = (node) => {
+      if (!node || typeof node !== "object" || Array.isArray(node)) return
+      if ("value" in node && "estimated" in node) entries.push(node)
+      for (const child of Object.values(node)) walk(child)
+    }
+    walk(metrics)
+    assert.ok(entries.length > 8, `expected several metrics, found ${entries.length}`)
+
+    for (const entry of entries) {
+      // The rule the whole file exists for: unknown is null, and null carries a
+      // reason. Zero is a measurement; null is an admission, and they must not
+      // be confused in either direction.
+      if (entry.value === null) {
+        assert.ok(entry.why, `a null metric must say why it is unknown: ${JSON.stringify(entry)}`)
+      }
+      // Every number must be traceable to something a reader can open.
+      assert.ok(entry.source, `every metric must carry its source: ${JSON.stringify(entry)}`)
+      assert.match(entry.source, /^https:\/\//, `source must be a URL: ${entry.source}`)
+      // An estimate must say how it was arrived at, or it reads as measured.
+      if (entry.estimated) {
+        assert.ok(entry.how, `an estimate must explain its method: ${JSON.stringify(entry)}`)
+      }
+    }
+
+    // Unpublished packages must report unknown downloads, never zero. A reader
+    // shown "0 downloads" concludes the package was published and ignored.
+    if (metrics.distribution.npm.value === null) {
+      assert.equal(
+        metrics.downloads.npm_last_month.value,
+        null,
+        "downloads must be unknown when nothing is published, not zero",
+      )
+    }
+
+    // Bot activity must not be counted as adoption.
+    const source = fs.readFileSync(new URL("../scripts/collect-oss-metrics.mjs", import.meta.url), "utf8")
+    assert.match(source, /\[bot\]/, "the collector must exclude automation accounts")
+
+    // No personal data. Logins are public handles; names and emails are not.
+    const serialized = JSON.stringify(metrics)
+    assert.doesNotMatch(serialized, /"email"/, "metrics must not carry email addresses")
+    assert.doesNotMatch(serialized, /@[\w.-]+\.(com|org|net)/, "metrics must not carry email addresses")
+
+    // Demo and real scientific runs must never be summed.
+    assert.equal(
+      metrics.scientific_usage.public_non_demo_runs.value,
+      null,
+      "run counts must stay unknown until a source guarantees demo records are excluded",
+    )
+  }
+}

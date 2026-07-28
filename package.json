@@ -105,7 +105,8 @@
     "verify:license": "node scripts/verify-license-integrity.mjs",
     "verify:citation": "node scripts/verify-citation.mjs",
     "verify:workflows": "node scripts/verify-workflow-hardening.mjs",
-    "verify:maintainers": "node scripts/verify-maintainers.mjs"
+    "verify:maintainers": "node scripts/verify-maintainers.mjs",
+    "metrics:oss": "node scripts/collect-oss-metrics.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
