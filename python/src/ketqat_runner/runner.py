@@ -10,7 +10,7 @@ from typing import Any
 
 from .decoders import DecoderError, resolve_decoder
 from .environment import capture_environment
-from .hashing import calculate_reproducibility_hash
+from .hashing import CURRENT_HASH_VERSION, HASH_VERSION_KEY, calculate_reproducibility_hash
 from .qec_statistics import (
     COMPARABILITY_FIELDS,
     comparability_key,
@@ -317,6 +317,11 @@ def _finish_result(manifest: dict[str, Any], metric_points: list[dict[str, Any]]
     if manifest.get("source", {}).get("repository_url"):
         result["source_repository_url"] = manifest["source"]["repository_url"]
     result["summary_metrics"]["runtime_seconds"] = runtime
+    # Stamp which rules produced the hash before computing it. The marker is
+    # itself excluded from hashing, so recording it does not change the value --
+    # and without it a reader cannot tell whether a hash predates the ketqat-sdk#89
+    # fix, which is the whole point of versioning rather than rewriting.
+    result[HASH_VERSION_KEY] = CURRENT_HASH_VERSION
     result["reproducibility_hash"] = calculate_reproducibility_hash(result)
     result["slug"] = _slugify(f"{result['name']}-{result['reproducibility_hash'][:8]}")
     validate_result(result)

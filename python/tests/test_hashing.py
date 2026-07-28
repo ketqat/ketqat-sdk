@@ -14,13 +14,33 @@ def _fixture(name: str) -> dict:
 
 
 def test_python_hash_matches_shared_expected_fixtures() -> None:
-    expected = _fixture("expected-hashes.json")
+    """Both versions, against hashes the TypeScript implementation produced.
 
-    assert calculate_reproducibility_hash(_fixture("qec-manifest.json")) == expected["qec_manifest"]
-    assert calculate_reproducibility_hash(_fixture("qec-result-before-hash.json")) == expected["qec_result"]
-    assert calculate_reproducibility_hash(_fixture("qec-result-null-metadata.json")) == expected["qec_result_null_metadata"]
-    assert calculate_reproducibility_hash(_fixture("algorithm-result-before-hash.json")) == expected["algorithm_result"]
-    assert expected["qec_result_null_metadata"] != expected["qec_result"]
+    The v1 block is the load-bearing half. Those are the hashes that were
+    published before ketqat-sdk#89 was fixed, and if any of them moved, records
+    already in the registry would stop verifying. Pinning them is what makes the
+    fix additive rather than a rewrite of history.
+    """
+    expected = _fixture("expected-hashes.json")
+    inputs = {
+        "qec_manifest": "qec-manifest.json",
+        "qec_result": "qec-result-before-hash.json",
+        "qec_result_null_metadata": "qec-result-null-metadata.json",
+        "algorithm_result": "algorithm-result-before-hash.json",
+        "qec_result_float_edge_cases": "qec-result-float-edge-cases.json",
+    }
+    for version_key, version in (("v1", 1), ("v2", 2)):
+        for key, filename in inputs.items():
+            assert calculate_reproducibility_hash(_fixture(filename), version) == expected[version_key][key], (
+                f"{version_key} hash drifted for {key}"
+            )
+
+    assert expected["v2"]["qec_result_null_metadata"] != expected["v2"]["qec_result"]
+
+    # The fix must actually change something, or it did nothing.
+    assert expected["v1"]["qec_result"] != expected["v2"]["qec_result"]
+    # And it must not touch a payload with no timing fields in it.
+    assert expected["v1"]["qec_manifest"] == expected["v2"]["qec_manifest"]
 
 
 def test_volatile_fields_are_excluded_but_scientific_fields_are_not() -> None:
@@ -33,13 +53,22 @@ def test_volatile_fields_are_excluded_but_scientific_fields_are_not() -> None:
         "slug": "changed",
         "updated_at": "2026-02-01T00:00:00.000Z",
     }
-    assert calculate_reproducibility_hash(volatile_changed) == expected["qec_result"]
+    assert calculate_reproducibility_hash(volatile_changed) == expected["v2"]["qec_result"]
 
     scientific_changed = {
         **result,
         "metric_points": [{**result["metric_points"][0], "code_distance": 5}],
     }
-    assert calculate_reproducibility_hash(scientific_changed) != expected["qec_result"]
+    assert calculate_reproducibility_hash(scientific_changed) != expected["v2"]["qec_result"]
+
+    # A duration is not science. Changing one must not change the hash, which is
+    # the entire content of ketqat-sdk#89.
+    timing_changed = {
+        **result,
+        "metric_points": [{**result["metric_points"][0], "runtime_seconds": 999.5}],
+    }
+    assert calculate_reproducibility_hash(timing_changed) == expected["v2"]["qec_result"]
+    assert calculate_reproducibility_hash(timing_changed, 1) != expected["v1"]["qec_result"]
 
 
 def test_float_formatting_matches_javascript_across_notation_boundaries() -> None:
@@ -55,4 +84,4 @@ def test_float_formatting_matches_javascript_across_notation_boundaries() -> Non
     # implementation.
     expected = _fixture("expected-hashes.json")
     result = _fixture("qec-result-float-edge-cases.json")
-    assert calculate_reproducibility_hash(result) == expected["qec_result_float_edge_cases"]
+    assert calculate_reproducibility_hash(result) == expected["v2"]["qec_result_float_edge_cases"]
