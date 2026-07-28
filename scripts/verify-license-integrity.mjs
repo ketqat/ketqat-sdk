@@ -19,31 +19,49 @@
  * Comparison is against a vendored canonical copy rather than a network fetch,
  * so the check works offline and in CI, and so the reference cannot change
  * underneath it.
+ *
+ * Every shipped copy is checked, not just the root one. The Python package
+ * carries its own LICENSE, and CI previously compared the two copies to each
+ * other with `cmp` -- which passes when both are identically wrong, exactly the
+ * state the repository was in. Comparing each against canonical is the check
+ * that actually distinguishes those cases.
  */
 import { readFileSync } from "node:fs"
 
 const APPENDIX_PLACEHOLDER = "   Copyright [yyyy] [name of copyright owner]"
 
-const licence = readFileSync(new URL("../LICENSE", import.meta.url), "utf8")
-const canonical = readFileSync(new URL("../.licenses/apache-2.0.txt", import.meta.url), "utf8")
+const canonical = readFileSync(new URL("../.licenses/apache-2.0.txt", import.meta.url), "utf8").split("\n")
 
-const normalisedLicence = licence.split("\n")
-const normalisedCanonical = canonical.split("\n")
+/** Every copy that ships to a user. */
+const COPIES = ["../LICENSE", "../python/LICENSE"]
 
-const differences = []
-for (let index = 0; index < Math.max(normalisedLicence.length, normalisedCanonical.length); index += 1) {
-  const ours = normalisedLicence[index] ?? "<missing>"
-  const theirs = normalisedCanonical[index] ?? "<missing>"
-  if (ours === theirs) continue
-  // The one line the licence intends you to edit.
-  if (theirs === APPENDIX_PLACEHOLDER && /^ {3}Copyright \d{4} .+/.test(ours)) continue
-  differences.push(`  line ${index + 1}\n    canonical: ${theirs}\n    ours:      ${ours}`)
+const failures = []
+
+for (const relative of COPIES) {
+  let lines
+  try {
+    lines = readFileSync(new URL(relative, import.meta.url), "utf8").split("\n")
+  } catch {
+    failures.push(`${relative.replace("../", "")} is missing; every distributed package must carry the licence`)
+    continue
+  }
+
+  for (let index = 0; index < Math.max(lines.length, canonical.length); index += 1) {
+    const ours = lines[index] ?? "<missing>"
+    const theirs = canonical[index] ?? "<missing>"
+    if (ours === theirs) continue
+    // The one line the licence intends you to edit.
+    if (theirs === APPENDIX_PLACEHOLDER && /^ {3}Copyright \d{4} .+/.test(ours)) continue
+    failures.push(
+      `${relative.replace("../", "")} line ${index + 1}\n    canonical: ${theirs}\n    ours:      ${ours}`,
+    )
+  }
 }
 
-if (differences.length > 0) {
+if (failures.length > 0) {
   console.error(
-    `FAIL: LICENSE differs from canonical Apache-2.0 in ${differences.length} place(s).\n\n` +
-      differences.slice(0, 8).join("\n") +
+    `FAIL: a shipped licence differs from canonical Apache-2.0 in ${failures.length} place(s).\n\n` +
+      failures.slice(0, 8).map((entry) => `  ${entry}`).join("\n") +
       "\n\nOnly the appendix copyright line may be edited. A modified licence is not the licence it\n" +
       "claims to be: GitHub reports NOASSERTION, and a user who reads Apache-2.0 in the package\n" +
       "metadata receives different terms in the file.",
@@ -51,4 +69,4 @@ if (differences.length > 0) {
   process.exit(1)
 }
 
-console.log("Verified LICENSE is canonical Apache-2.0 with only the appendix copyright filled in.")
+console.log(`Verified ${COPIES.length} licence copies are canonical Apache-2.0 with only the appendix filled in.`)
