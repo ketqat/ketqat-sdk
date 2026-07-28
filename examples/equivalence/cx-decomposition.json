@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "parameters": {
+    "operation": "check_equivalence",
+    "left_qasm": "OPENQASM 3;\ninclude \"stdgates.inc\";\nqubit[2] q;\ncx q[0], q[1];\n",
+    "right_qasm": "OPENQASM 3;\ninclude \"stdgates.inc\";\nqubit[2] q;\nh q[1];\ncz q[0], q[1];\nh q[1];\n",
+    "tolerance": 1e-9
+  }
+}

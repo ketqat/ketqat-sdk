@@ -2669,3 +2669,63 @@ c[0] = measure q[0];
     `the README must quote the warning verbatim; expected to find: ${quotedWarning}`,
   )
 }
+
+// ---------------------------------------------------------------------------
+// The equivalence example must stay runnable and its four verdicts must stay
+// true.
+//
+// The prose is the deliverable here. NUMERICALLY_CHECKED is not PROVEN, and
+// INCONCLUSIVE is not "they differ" -- those two sentences are the whole reason
+// the example exists, and a stale one teaches the wrong lesson with the
+// project's own authority behind it.
+// ---------------------------------------------------------------------------
+{
+  const manifest = JSON.parse(
+    fs.readFileSync(new URL("../examples/equivalence/cx-decomposition.json", import.meta.url), "utf8"),
+  )
+  const readme = fs.readFileSync(new URL("../examples/README.md", import.meta.url), "utf8")
+
+  const parsed = JobParametersSchema.safeParse(manifest.parameters)
+  assert.ok(parsed.success, "the equivalence example must be submittable without editing")
+
+  const circuitOf = (qasm) => parseQasm3(qasm).circuit
+  const verdict = checkCircuitEquivalence(
+    circuitOf(manifest.parameters.left_qasm),
+    circuitOf(manifest.parameters.right_qasm),
+    { tolerance: manifest.parameters.tolerance },
+  )
+
+  // cx and h-cz-h are a standard identity, so the expected answer is known
+  // before the tool runs -- which is what lets the example demonstrate anything.
+  assert.equal(verdict.level, "NUMERICALLY_CHECKED", "the documented identity must still check out")
+  assert.equal(verdict.global_phase_ignored, true)
+  assert.match(readme, new RegExp(`"level": "${verdict.level}"`))
+
+  // The claim the README makes about that level.
+  assert.match(readme, /does not mean proven/i)
+  assert.match(readme, /[Gg]lobal phase was ignored/)
+
+  // A genuine difference must still fail, and must still name the discrepancy
+  // rather than only returning a verdict.
+  const differs = checkCircuitEquivalence(
+    circuitOf('OPENQASM 3;\ninclude "stdgates.inc";\nqubit[2] q;\nx q[0];\n'),
+    circuitOf('OPENQASM 3;\ninclude "stdgates.inc";\nqubit[2] q;\nz q[0];\n'),
+  )
+  assert.equal(differs.level, "FAILED")
+  assert.ok(differs.counterexample, "a FAILED verdict must name the discrepancy")
+
+  // The answer most likely to be misread. It must say, in the payload itself,
+  // that it is not evidence of a difference.
+  const tooBig = circuitOf('OPENQASM 3;\ninclude "stdgates.inc";\nqubit[26] q;\nh q[0];\n')
+  const inconclusive = checkCircuitEquivalence(tooBig, tooBig)
+  assert.equal(inconclusive.level, "INCONCLUSIVE")
+  assert.match(
+    inconclusive.reason,
+    /not evidence that the circuits differ/i,
+    "an unanswered question must say it was not answered",
+  )
+  assert.ok(
+    readme.includes(inconclusive.reason),
+    `the README must quote the inconclusive reason verbatim; expected: ${inconclusive.reason}`,
+  )
+}
