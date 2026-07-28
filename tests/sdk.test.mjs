@@ -2276,3 +2276,53 @@ c[1] = measure q[1];
     )
   }
 }
+
+// ---------------------------------------------------------------------------
+// Contribution validation
+//
+// This runs in CI on pull requests from accounts nobody vouches for, so the
+// properties that matter are what it refuses and what it never does: no eval,
+// no dynamic import, no network, no shelling out.
+// ---------------------------------------------------------------------------
+{
+  const { execFileSync } = await import("node:child_process")
+  const validator = new URL("../scripts/validate-contribution.mjs", import.meta.url).pathname
+
+  const run = (file) => {
+    try {
+      execFileSync("node", [validator, file], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] })
+      return { ok: true, out: "" }
+    } catch (error) {
+      return { ok: false, out: `${error.stdout ?? ""}${error.stderr ?? ""}` }
+    }
+  }
+
+  // The filled example must pass, so the templates cannot drift from what the
+  // validator accepts without CI noticing.
+  const filled = run(new URL("../contrib/examples/filled-benchmark-result.yaml", import.meta.url).pathname)
+  assert.ok(filled.ok, `the filled example must validate:\n${filled.out}`)
+
+  // Templates must NOT pass: a template is not a submission, and accepting one
+  // would mean placeholder provenance reaching the registry.
+  for (const template of ["benchmark-result", "reproduction-report"]) {
+    const result = run(new URL(`../contrib/templates/${template}.yaml`, import.meta.url).pathname)
+    assert.equal(result.ok, false, `${template} template must be rejected while it holds placeholders`)
+    assert.match(result.out, /placeholder/, `${template} rejection must name the placeholder`)
+  }
+
+  // Quoting means string. An earlier version stripped quotes before testing for
+  // digits, so a quoted all-zero SHA became the number 0 -- which failed the
+  // typeof check and skipped SHA validation entirely. A validator that silently
+  // stops validating is worse than none.
+  const source = fs.readFileSync(validator, "utf8")
+  assert.match(source, /quoted values are strings|Quoting is how YAML says/, "quote handling must stay deliberate")
+
+  // The submission channel must not execute anything.
+  for (const forbidden of [/\beval\s*\(/, /new Function\s*\(/, /child_process/, /\bfetch\s*\(/]) {
+    assert.doesNotMatch(source, forbidden, `the validator must not use ${forbidden}`)
+  }
+
+  // YAML features historically used to make parsers construct unintended
+  // objects must be refused rather than interpreted.
+  assert.match(source, /anchors, aliases, and tags are not accepted/)
+}

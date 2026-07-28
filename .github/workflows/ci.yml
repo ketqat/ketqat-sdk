@@ -31,6 +31,12 @@ jobs:
       - name: Build and test
         run: npm test
 
+      # Validates the shipped templates and example only. Contributed files are
+      # validated by the same command on the contributor's machine and in the
+      # pull-request job below, which parses data and never executes it.
+      - name: Validate contribution examples
+        run: npm run validate:contribution -- contrib/examples/filled-benchmark-result.yaml
+
   # The image shipped broken once: the entrypoint imports ../dist/index.js, the
   # Dockerfile flattened it to /app/entrypoint.mjs, and every container exited
   # with ERR_MODULE_NOT_FOUND. Nothing caught it -- `npm test` runs the

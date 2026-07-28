@@ -1,0 +1,65 @@
+# A report that you re-ran somebody else's result and what you got.
+#
+# This is the most valuable contribution in the pack. Anyone can report a
+# number; only a second person can corroborate one. A result stays UNVERIFIED
+# until a report like this exists.
+#
+# Do not submit this for your own result. REPRODUCED means somebody other than
+# the submitter obtained the same thing, and the contract rejects the status
+# without independent evidence.
+
+kind: reproduction-report
+schema_version: "0.1"
+
+subject:
+  type: RUN # ARTIFACT | BENCHMARK_SUITE | RUN
+  slug: surface-code-memory-d3-d7-a1b2c3d4
+
+# INDEPENDENT_REPRODUCTION when you re-ran the experiment.
+# HASH_VERIFICATION if you only checked the recorded hash matches the payload --
+# which proves the record is unaltered and says nothing about whether the
+# experiment ran, so it cannot reach REPRODUCED.
+evidence_kind: INDEPENDENT_REPRODUCTION
+
+# REPRODUCED requires an evidence URL, the verified hash, and a command or an
+# immutable commit. All three, because a claim of reproduction that cannot be
+# followed is not evidence.
+status: REPRODUCED
+
+summary: >-
+  Re-ran on independent hardware with the recorded seed and configuration.
+  Logical error rate agreed to within the reported standard error at every
+  distance.
+
+# The hash you obtained. It must equal the one on the record you reproduced;
+# if it does not, that is a finding worth reporting rather than a failure to
+# hide -- open an issue instead.
+reproducibility_hash: "0000000000000000000000000000000000000000000000000000000000000000"
+
+# Where someone can see your run. A durable location: a release asset, a
+# tagged repository, an archived record. Not a chat message.
+evidence_url: https://github.com/your-name/your-repro/releases/tag/v1
+
+source:
+  command: ketqat run surface-code-memory --seed 12345
+  commit_sha: "0000000000000000000000000000000000000000"
+
+# Your environment, which is the interesting part. A reproduction on the same
+# machine with the same versions says much less than one that differs.
+environment:
+  operating_system: darwin
+  architecture: arm64
+  python_version: 3.12.3
+  packages:
+    numpy: 2.0.0
+    stim: 1.13.0
+    pymatching: 2.2.0
+
+# false unless you reproduced a demo fixture, in which case this is a check
+# that the tooling works rather than corroboration of a scientific claim.
+is_demo_evidence: false
+
+checked_at: 2026-01-02T00:00:00.000Z
+
+# Who did it. A handle is enough; this is attribution, not identification.
+reviewer: your-github-handle

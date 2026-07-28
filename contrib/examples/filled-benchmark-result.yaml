@@ -1,0 +1,103 @@
+# A filled-in example. CI validates this, so the templates cannot drift from
+# what the validator accepts.
+# A benchmark result you ran yourself.
+#
+# Copy this, fill it in, and validate before opening a pull request:
+#   npm run validate:contribution -- contrib/my-result.yaml
+#
+# This is accepted as *reported*, not *verified*. It enters the registry as
+# UNVERIFIED until somebody else reproduces it. That is not a judgement about
+# you; it is what the word verified has to mean for it to be worth anything.
+
+kind: benchmark-result
+schema_version: "0.1"
+
+# What you ran. The suite must already exist in the registry, and its version
+# must match exactly -- a result against "the surface code benchmark" without a
+# version cannot be compared with anything later.
+benchmark_suite: surface-code-memory-mwpm
+benchmark_suite_version: 0.1.0
+
+name: Surface code memory, d=3..7, p=1e-3
+domain: QEC # QEC | ALGORITHM
+status: COMPLETED
+
+# --- provenance ----------------------------------------------------------
+# A commit SHA, not a branch. A branch moves; a result pointing at a moving
+# target cannot be reproduced later, including by you.
+source_repository_url: https://github.com/your-name/your-repo
+commit_sha: "4a7d1ed414474e4033ac29ccb8653d9b1ee6d37b"
+
+# The SDK version whose hashing and schema this result was produced under.
+# Reproducibility is version-specific.
+sdk_version: 0.2.0
+
+# --- is this a measurement or a demonstration? ---------------------------
+# true marks a record produced to show the tooling works. Demo records are
+# never ranked against measured ones. Marking a real result demo is harmless;
+# the reverse is not, so choose demo if you are unsure.
+is_demo: false
+
+# --- what actually ran ---------------------------------------------------
+configuration:
+  schema_version: "0.1"
+  domain: QEC
+  benchmark:
+    suite: surface-code-memory-mwpm
+    version: 0.1.0
+  qec:
+    code:
+      family: rotated-surface-code
+      distances: [3, 5, 7]
+      rounds: distance
+    decoder:
+      name: pymatching
+      version: "2.2.0"
+    noise:
+      model: circuit-level-depolarizing
+      physical_error_rates: [0.001]
+    experiment_type: memory
+  sampling:
+    shots: 100000
+    # Required for anything stochastic. Without it nobody can obtain your
+    # numbers again.
+    seed: 12345
+
+# --- the environment as it was -------------------------------------------
+# Captured by the runner, not typed in by hand. stim and pymatching change
+# decoder behaviour between versions; a result without them is a number
+# without a method.
+environment:
+  operating_system: linux
+  architecture: x86_64
+  python_version: 3.11.9
+  packages:
+    numpy: 1.26.4
+    stim: 1.13.0
+    pymatching: 2.2.0
+
+# --- results -------------------------------------------------------------
+# Every metric the suite declares, and no metric it does not. A missing
+# required metric and an undeclared extra are both rejected.
+summary_metrics:
+  logical_error_rate: 0.00142
+  runtime_seconds: 91.4
+
+metric_points:
+  - metric: logical_error_rate
+    code_distance: 3
+    physical_error_rate: 0.001
+    shots: 100000
+    logical_failures: 142
+    logical_error_rate: 0.00142
+    # Report uncertainty. A point estimate with no interval invites a
+    # comparison the data does not support.
+    standard_error: 0.000119
+
+# --- hash ----------------------------------------------------------------
+# Produced by the runner. Do not compute or edit it by hand: it is recomputed
+# on import and a mismatch is rejected, which is the point.
+reproducibility_hash: "9f2c4e1a8b7d3f5069a2c8e4b1d7f3a509c6e2b8d4f1a7c3e9b5d2f8a4c1e7b3d"
+
+started_at: 2026-01-01T00:00:00.000Z
+finished_at: 2026-01-01T00:01:31.400Z

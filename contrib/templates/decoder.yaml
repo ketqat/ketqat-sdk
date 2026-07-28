@@ -1,0 +1,39 @@
+# A decoder you want listed in the registry.
+#
+# An artifact entry describes what the decoder is and where it lives. It does
+# not contain the decoder. Nothing in this repository executes contributed
+# code -- see contrib/README.md.
+
+kind: artifact
+schema_version: "0.1"
+
+artifact_type: DECODER # DECODER | QEC_CODE | ALGORITHM | NOISE_MODEL | DATASET
+name: My matching decoder
+slug: my-matching-decoder
+
+summary: >-
+  One or two sentences on what it decodes and what makes it different. Claims
+  about speed or accuracy belong in a benchmark result, not here -- a summary
+  is not evidence.
+
+repository_url: https://github.com/your-name/your-decoder
+# Optional. A paper if there is one. Do not cite a preprint you have not read
+# or a DOI you have not resolved.
+paper_url: ""
+
+license: Apache-2.0 # Must be compatible with Apache-2.0
+language: Python
+
+tags:
+  - mwpm
+  - surface-code
+
+# What it does and does not handle. An honest limitation here is worth more
+# than a broad claim: it tells a reader whether the decoder applies to them,
+# and a benchmark will expose the truth anyway.
+capabilities:
+  codes: [rotated-surface-code]
+  noise_models: [circuit-level-depolarizing]
+  limitations: >-
+    Does not handle measurement errors on the final round. Untested above
+    distance 9.
