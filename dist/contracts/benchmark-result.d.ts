@@ -16,11 +16,11 @@ export declare const QecMetricPointSchema: z.ZodObject<{
     sampling_runtime_seconds: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     metric: string;
-    metadata: Record<string, unknown>;
     shots?: number | undefined;
-    seed?: number | undefined;
     runtime_seconds?: number | undefined;
     memory_bytes?: number | undefined;
+    seed?: number | undefined;
+    metadata: Record<string, unknown>;
     code_distance?: number | undefined;
     physical_error_rate?: number | undefined;
     logical_failures?: number | undefined;
@@ -31,9 +31,9 @@ export declare const QecMetricPointSchema: z.ZodObject<{
 }, {
     metric: string;
     shots?: number | undefined;
-    seed?: number | undefined;
     runtime_seconds?: number | undefined;
     memory_bytes?: number | undefined;
+    seed?: number | undefined;
     metadata?: Record<string, unknown> | undefined;
     code_distance?: number | undefined;
     physical_error_rate?: number | undefined;
@@ -64,12 +64,12 @@ export declare const AlgorithmMetricPointSchema: z.ZodObject<{
     simulation_runtime_seconds: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     metric: string;
-    metadata: Record<string, unknown>;
-    qubit_count?: number | undefined;
     shots?: number | undefined;
-    seed?: number | undefined;
     runtime_seconds?: number | undefined;
     memory_bytes?: number | undefined;
+    seed?: number | undefined;
+    metadata: Record<string, unknown>;
+    qubit_count?: number | undefined;
     circuit_depth?: number | undefined;
     gate_count?: number | undefined;
     two_qubit_gate_count?: number | undefined;
@@ -81,12 +81,12 @@ export declare const AlgorithmMetricPointSchema: z.ZodObject<{
     simulation_runtime_seconds?: number | undefined;
 }, {
     metric: string;
-    qubit_count?: number | undefined;
     shots?: number | undefined;
-    seed?: number | undefined;
     runtime_seconds?: number | undefined;
     memory_bytes?: number | undefined;
+    seed?: number | undefined;
     metadata?: Record<string, unknown> | undefined;
+    qubit_count?: number | undefined;
     circuit_depth?: number | undefined;
     gate_count?: number | undefined;
     two_qubit_gate_count?: number | undefined;
@@ -119,12 +119,12 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
         packages: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
         hardware: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     }, "strip", z.ZodTypeAny, {
-        packages: Record<string, string>;
-        hardware: Record<string, unknown>;
         operating_system?: string | undefined;
         architecture?: string | undefined;
         python_version?: string | undefined;
         node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
     }, {
         operating_system?: string | undefined;
         architecture?: string | undefined;
@@ -159,14 +159,14 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
             location: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }, {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }>, "many">>;
@@ -179,7 +179,7 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
             counterexample: z.ZodOptional<z.ZodString>;
             reason: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -187,7 +187,7 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
             counterexample?: string | undefined;
             reason?: string | undefined;
         }, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -195,7 +195,7 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
             counterexample?: string | undefined;
             reason?: string | undefined;
         }>, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -203,7 +203,7 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
             counterexample?: string | undefined;
             reason?: string | undefined;
         }, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -212,22 +212,22 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
             reason?: string | undefined;
         }>>;
     }, "strip", z.ZodTypeAny, {
-        options: Record<string, unknown>;
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
         adapter: string;
         adapter_version: string;
+        library_version?: string | undefined;
+        options: Record<string, unknown>;
+        input_circuit_hash?: string | undefined;
+        output_circuit_hash?: string | undefined;
         loss_report: {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }[];
-        library_version?: string | undefined;
-        input_circuit_hash?: string | undefined;
-        output_circuit_hash?: string | undefined;
         equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -236,22 +236,22 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
             reason?: string | undefined;
         } | undefined;
     }, {
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
         adapter: string;
         adapter_version: string;
-        options?: Record<string, unknown> | undefined;
         library_version?: string | undefined;
+        options?: Record<string, unknown> | undefined;
         input_circuit_hash?: string | undefined;
         output_circuit_hash?: string | undefined;
         loss_report?: {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }[] | undefined;
         equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -279,11 +279,11 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
         sampling_runtime_seconds: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
         metric: string;
-        metadata: Record<string, unknown>;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
+        metadata: Record<string, unknown>;
         code_distance?: number | undefined;
         physical_error_rate?: number | undefined;
         logical_failures?: number | undefined;
@@ -294,9 +294,9 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
     }, {
         metric: string;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
         metadata?: Record<string, unknown> | undefined;
         code_distance?: number | undefined;
         physical_error_rate?: number | undefined;
@@ -307,31 +307,69 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
         sampling_runtime_seconds?: number | undefined;
     }>, "many">>;
 }, "strip", z.ZodTypeAny, {
-    status: "FAILED" | "COMPLETED" | "RUNNING";
+    id?: string | undefined;
+    slug?: string | undefined;
     name: string;
+    status: "COMPLETED" | "FAILED" | "RUNNING";
+    artifact_slug?: string | undefined;
+    benchmark_suite: string;
+    benchmark_suite_version: string;
     schema_version: string;
-    domain: "QEC";
-    is_demo: boolean;
+    sdk_version?: string | undefined;
+    commit_sha?: string | undefined;
+    source_repository_url?: string | undefined;
+    configuration: Record<string, unknown>;
     environment: {
-        packages: Record<string, string>;
-        hardware: Record<string, unknown>;
         operating_system?: string | undefined;
         architecture?: string | undefined;
         python_version?: string | undefined;
         node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
     };
-    benchmark_suite: string;
-    benchmark_suite_version: string;
-    configuration: Record<string, unknown>;
     summary_metrics: Record<string, unknown>;
     reproducibility_hash: string;
+    started_at?: string | undefined;
+    finished_at?: string | undefined;
+    is_demo: boolean;
+    owner_username?: string | null | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    execution_class?: "ANALYTICAL" | "DEMO" | "HARDWARE" | "SIMULATION" | undefined;
+    transformation_chain?: {
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
+        adapter: string;
+        adapter_version: string;
+        library_version?: string | undefined;
+        options: Record<string, unknown>;
+        input_circuit_hash?: string | undefined;
+        output_circuit_hash?: string | undefined;
+        loss_report: {
+            feature: string;
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
+            detail: string;
+            location?: string | undefined;
+        }[];
+        equivalence?: {
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
+            method?: string | undefined;
+            tolerance?: number | undefined;
+            global_phase_ignored?: boolean | undefined;
+            qubit_count?: number | undefined;
+            counterexample?: string | undefined;
+            reason?: string | undefined;
+        } | undefined;
+    }[] | undefined;
+    domain: "QEC";
     metric_points: {
         metric: string;
-        metadata: Record<string, unknown>;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
+        metadata: Record<string, unknown>;
         code_distance?: number | undefined;
         physical_error_rate?: number | undefined;
         logical_failures?: number | undefined;
@@ -340,61 +378,19 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
         decoder_latency_ms?: number | undefined;
         sampling_runtime_seconds?: number | undefined;
     }[];
-    source_repository_url?: string | undefined;
-    commit_sha?: string | undefined;
-    slug?: string | undefined;
-    created_at?: string | undefined;
-    updated_at?: string | undefined;
-    id?: string | undefined;
-    owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
-    artifact_slug?: string | undefined;
-    sdk_version?: string | undefined;
-    started_at?: string | undefined;
-    finished_at?: string | undefined;
-    execution_class?: "DEMO" | "SIMULATION" | "HARDWARE" | "ANALYTICAL" | undefined;
-    transformation_chain?: {
-        options: Record<string, unknown>;
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
-        adapter: string;
-        adapter_version: string;
-        loss_report: {
-            feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
-            detail: string;
-            location?: string | undefined;
-        }[];
-        library_version?: string | undefined;
-        input_circuit_hash?: string | undefined;
-        output_circuit_hash?: string | undefined;
-        equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
-            method?: string | undefined;
-            tolerance?: number | undefined;
-            global_phase_ignored?: boolean | undefined;
-            qubit_count?: number | undefined;
-            counterexample?: string | undefined;
-            reason?: string | undefined;
-        } | undefined;
-    }[] | undefined;
 }, {
-    status: "FAILED" | "COMPLETED" | "RUNNING";
+    id?: string | undefined;
+    slug?: string | undefined;
     name: string;
-    schema_version: string;
-    domain: "QEC";
+    status: "COMPLETED" | "FAILED" | "RUNNING";
+    artifact_slug?: string | undefined;
     benchmark_suite: string;
     benchmark_suite_version: string;
-    reproducibility_hash: string;
-    source_repository_url?: string | undefined;
+    schema_version: string;
+    sdk_version?: string | undefined;
     commit_sha?: string | undefined;
-    slug?: string | undefined;
-    created_at?: string | undefined;
-    updated_at?: string | undefined;
-    id?: string | undefined;
-    is_demo?: boolean | undefined;
-    owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
+    source_repository_url?: string | undefined;
+    configuration?: Record<string, unknown> | undefined;
     environment?: {
         operating_system?: string | undefined;
         architecture?: string | undefined;
@@ -403,30 +399,33 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
         packages?: Record<string, string> | undefined;
         hardware?: Record<string, unknown> | undefined;
     } | undefined;
-    artifact_slug?: string | undefined;
-    sdk_version?: string | undefined;
-    configuration?: Record<string, unknown> | undefined;
     summary_metrics?: Record<string, unknown> | undefined;
+    reproducibility_hash: string;
     started_at?: string | undefined;
     finished_at?: string | undefined;
-    execution_class?: "DEMO" | "SIMULATION" | "HARDWARE" | "ANALYTICAL" | undefined;
+    is_demo?: boolean | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    execution_class?: "ANALYTICAL" | "DEMO" | "HARDWARE" | "SIMULATION" | undefined;
     transformation_chain?: {
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
         adapter: string;
         adapter_version: string;
-        options?: Record<string, unknown> | undefined;
         library_version?: string | undefined;
+        options?: Record<string, unknown> | undefined;
         input_circuit_hash?: string | undefined;
         output_circuit_hash?: string | undefined;
         loss_report?: {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }[] | undefined;
         equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -435,12 +434,13 @@ export declare const QecBenchmarkResultSchema: z.ZodObject<{
             reason?: string | undefined;
         } | undefined;
     }[] | undefined;
+    domain: "QEC";
     metric_points?: {
         metric: string;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
         metadata?: Record<string, unknown> | undefined;
         code_distance?: number | undefined;
         physical_error_rate?: number | undefined;
@@ -473,12 +473,12 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
         packages: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
         hardware: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     }, "strip", z.ZodTypeAny, {
-        packages: Record<string, string>;
-        hardware: Record<string, unknown>;
         operating_system?: string | undefined;
         architecture?: string | undefined;
         python_version?: string | undefined;
         node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
     }, {
         operating_system?: string | undefined;
         architecture?: string | undefined;
@@ -513,14 +513,14 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
             location: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }, {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }>, "many">>;
@@ -533,7 +533,7 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
             counterexample: z.ZodOptional<z.ZodString>;
             reason: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -541,7 +541,7 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
             counterexample?: string | undefined;
             reason?: string | undefined;
         }, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -549,7 +549,7 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
             counterexample?: string | undefined;
             reason?: string | undefined;
         }>, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -557,7 +557,7 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
             counterexample?: string | undefined;
             reason?: string | undefined;
         }, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -566,22 +566,22 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
             reason?: string | undefined;
         }>>;
     }, "strip", z.ZodTypeAny, {
-        options: Record<string, unknown>;
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
         adapter: string;
         adapter_version: string;
+        library_version?: string | undefined;
+        options: Record<string, unknown>;
+        input_circuit_hash?: string | undefined;
+        output_circuit_hash?: string | undefined;
         loss_report: {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }[];
-        library_version?: string | undefined;
-        input_circuit_hash?: string | undefined;
-        output_circuit_hash?: string | undefined;
         equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -590,22 +590,22 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
             reason?: string | undefined;
         } | undefined;
     }, {
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
         adapter: string;
         adapter_version: string;
-        options?: Record<string, unknown> | undefined;
         library_version?: string | undefined;
+        options?: Record<string, unknown> | undefined;
         input_circuit_hash?: string | undefined;
         output_circuit_hash?: string | undefined;
         loss_report?: {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }[] | undefined;
         equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -636,12 +636,12 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
         simulation_runtime_seconds: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
         metric: string;
-        metadata: Record<string, unknown>;
-        qubit_count?: number | undefined;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
+        metadata: Record<string, unknown>;
+        qubit_count?: number | undefined;
         circuit_depth?: number | undefined;
         gate_count?: number | undefined;
         two_qubit_gate_count?: number | undefined;
@@ -653,12 +653,12 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
         simulation_runtime_seconds?: number | undefined;
     }, {
         metric: string;
-        qubit_count?: number | undefined;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
         metadata?: Record<string, unknown> | undefined;
+        qubit_count?: number | undefined;
         circuit_depth?: number | undefined;
         gate_count?: number | undefined;
         two_qubit_gate_count?: number | undefined;
@@ -670,32 +670,70 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
         simulation_runtime_seconds?: number | undefined;
     }>, "many">>;
 }, "strip", z.ZodTypeAny, {
-    status: "FAILED" | "COMPLETED" | "RUNNING";
+    id?: string | undefined;
+    slug?: string | undefined;
     name: string;
+    status: "COMPLETED" | "FAILED" | "RUNNING";
+    artifact_slug?: string | undefined;
+    benchmark_suite: string;
+    benchmark_suite_version: string;
     schema_version: string;
-    domain: "ALGORITHM";
-    is_demo: boolean;
+    sdk_version?: string | undefined;
+    commit_sha?: string | undefined;
+    source_repository_url?: string | undefined;
+    configuration: Record<string, unknown>;
     environment: {
-        packages: Record<string, string>;
-        hardware: Record<string, unknown>;
         operating_system?: string | undefined;
         architecture?: string | undefined;
         python_version?: string | undefined;
         node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
     };
-    benchmark_suite: string;
-    benchmark_suite_version: string;
-    configuration: Record<string, unknown>;
     summary_metrics: Record<string, unknown>;
     reproducibility_hash: string;
+    started_at?: string | undefined;
+    finished_at?: string | undefined;
+    is_demo: boolean;
+    owner_username?: string | null | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    execution_class?: "ANALYTICAL" | "DEMO" | "HARDWARE" | "SIMULATION" | undefined;
+    transformation_chain?: {
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
+        adapter: string;
+        adapter_version: string;
+        library_version?: string | undefined;
+        options: Record<string, unknown>;
+        input_circuit_hash?: string | undefined;
+        output_circuit_hash?: string | undefined;
+        loss_report: {
+            feature: string;
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
+            detail: string;
+            location?: string | undefined;
+        }[];
+        equivalence?: {
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
+            method?: string | undefined;
+            tolerance?: number | undefined;
+            global_phase_ignored?: boolean | undefined;
+            qubit_count?: number | undefined;
+            counterexample?: string | undefined;
+            reason?: string | undefined;
+        } | undefined;
+    }[] | undefined;
+    domain: "ALGORITHM";
     metric_points: {
         metric: string;
-        metadata: Record<string, unknown>;
-        qubit_count?: number | undefined;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
+        metadata: Record<string, unknown>;
+        qubit_count?: number | undefined;
         circuit_depth?: number | undefined;
         gate_count?: number | undefined;
         two_qubit_gate_count?: number | undefined;
@@ -706,61 +744,19 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
         approximation_ratio?: number | undefined;
         simulation_runtime_seconds?: number | undefined;
     }[];
-    source_repository_url?: string | undefined;
-    commit_sha?: string | undefined;
-    slug?: string | undefined;
-    created_at?: string | undefined;
-    updated_at?: string | undefined;
-    id?: string | undefined;
-    owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
-    artifact_slug?: string | undefined;
-    sdk_version?: string | undefined;
-    started_at?: string | undefined;
-    finished_at?: string | undefined;
-    execution_class?: "DEMO" | "SIMULATION" | "HARDWARE" | "ANALYTICAL" | undefined;
-    transformation_chain?: {
-        options: Record<string, unknown>;
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
-        adapter: string;
-        adapter_version: string;
-        loss_report: {
-            feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
-            detail: string;
-            location?: string | undefined;
-        }[];
-        library_version?: string | undefined;
-        input_circuit_hash?: string | undefined;
-        output_circuit_hash?: string | undefined;
-        equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
-            method?: string | undefined;
-            tolerance?: number | undefined;
-            global_phase_ignored?: boolean | undefined;
-            qubit_count?: number | undefined;
-            counterexample?: string | undefined;
-            reason?: string | undefined;
-        } | undefined;
-    }[] | undefined;
 }, {
-    status: "FAILED" | "COMPLETED" | "RUNNING";
+    id?: string | undefined;
+    slug?: string | undefined;
     name: string;
-    schema_version: string;
-    domain: "ALGORITHM";
+    status: "COMPLETED" | "FAILED" | "RUNNING";
+    artifact_slug?: string | undefined;
     benchmark_suite: string;
     benchmark_suite_version: string;
-    reproducibility_hash: string;
-    source_repository_url?: string | undefined;
+    schema_version: string;
+    sdk_version?: string | undefined;
     commit_sha?: string | undefined;
-    slug?: string | undefined;
-    created_at?: string | undefined;
-    updated_at?: string | undefined;
-    id?: string | undefined;
-    is_demo?: boolean | undefined;
-    owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
+    source_repository_url?: string | undefined;
+    configuration?: Record<string, unknown> | undefined;
     environment?: {
         operating_system?: string | undefined;
         architecture?: string | undefined;
@@ -769,30 +765,33 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
         packages?: Record<string, string> | undefined;
         hardware?: Record<string, unknown> | undefined;
     } | undefined;
-    artifact_slug?: string | undefined;
-    sdk_version?: string | undefined;
-    configuration?: Record<string, unknown> | undefined;
     summary_metrics?: Record<string, unknown> | undefined;
+    reproducibility_hash: string;
     started_at?: string | undefined;
     finished_at?: string | undefined;
-    execution_class?: "DEMO" | "SIMULATION" | "HARDWARE" | "ANALYTICAL" | undefined;
+    is_demo?: boolean | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    execution_class?: "ANALYTICAL" | "DEMO" | "HARDWARE" | "SIMULATION" | undefined;
     transformation_chain?: {
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
         adapter: string;
         adapter_version: string;
-        options?: Record<string, unknown> | undefined;
         library_version?: string | undefined;
+        options?: Record<string, unknown> | undefined;
         input_circuit_hash?: string | undefined;
         output_circuit_hash?: string | undefined;
         loss_report?: {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }[] | undefined;
         equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -801,14 +800,15 @@ export declare const AlgorithmBenchmarkResultSchema: z.ZodObject<{
             reason?: string | undefined;
         } | undefined;
     }[] | undefined;
+    domain: "ALGORITHM";
     metric_points?: {
         metric: string;
-        qubit_count?: number | undefined;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
         metadata?: Record<string, unknown> | undefined;
+        qubit_count?: number | undefined;
         circuit_depth?: number | undefined;
         gate_count?: number | undefined;
         two_qubit_gate_count?: number | undefined;
@@ -842,12 +842,12 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
         packages: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
         hardware: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     }, "strip", z.ZodTypeAny, {
-        packages: Record<string, string>;
-        hardware: Record<string, unknown>;
         operating_system?: string | undefined;
         architecture?: string | undefined;
         python_version?: string | undefined;
         node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
     }, {
         operating_system?: string | undefined;
         architecture?: string | undefined;
@@ -882,14 +882,14 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             location: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }, {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }>, "many">>;
@@ -902,7 +902,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             counterexample: z.ZodOptional<z.ZodString>;
             reason: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -910,7 +910,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             counterexample?: string | undefined;
             reason?: string | undefined;
         }, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -918,7 +918,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             counterexample?: string | undefined;
             reason?: string | undefined;
         }>, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -926,7 +926,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             counterexample?: string | undefined;
             reason?: string | undefined;
         }, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -935,22 +935,22 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             reason?: string | undefined;
         }>>;
     }, "strip", z.ZodTypeAny, {
-        options: Record<string, unknown>;
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
         adapter: string;
         adapter_version: string;
+        library_version?: string | undefined;
+        options: Record<string, unknown>;
+        input_circuit_hash?: string | undefined;
+        output_circuit_hash?: string | undefined;
         loss_report: {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }[];
-        library_version?: string | undefined;
-        input_circuit_hash?: string | undefined;
-        output_circuit_hash?: string | undefined;
         equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -959,22 +959,22 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             reason?: string | undefined;
         } | undefined;
     }, {
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
         adapter: string;
         adapter_version: string;
-        options?: Record<string, unknown> | undefined;
         library_version?: string | undefined;
+        options?: Record<string, unknown> | undefined;
         input_circuit_hash?: string | undefined;
         output_circuit_hash?: string | undefined;
         loss_report?: {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }[] | undefined;
         equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -1002,11 +1002,11 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
         sampling_runtime_seconds: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
         metric: string;
-        metadata: Record<string, unknown>;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
+        metadata: Record<string, unknown>;
         code_distance?: number | undefined;
         physical_error_rate?: number | undefined;
         logical_failures?: number | undefined;
@@ -1017,9 +1017,9 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
     }, {
         metric: string;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
         metadata?: Record<string, unknown> | undefined;
         code_distance?: number | undefined;
         physical_error_rate?: number | undefined;
@@ -1030,31 +1030,69 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
         sampling_runtime_seconds?: number | undefined;
     }>, "many">>;
 }, "strip", z.ZodTypeAny, {
-    status: "FAILED" | "COMPLETED" | "RUNNING";
+    id?: string | undefined;
+    slug?: string | undefined;
     name: string;
+    status: "COMPLETED" | "FAILED" | "RUNNING";
+    artifact_slug?: string | undefined;
+    benchmark_suite: string;
+    benchmark_suite_version: string;
     schema_version: string;
-    domain: "QEC";
-    is_demo: boolean;
+    sdk_version?: string | undefined;
+    commit_sha?: string | undefined;
+    source_repository_url?: string | undefined;
+    configuration: Record<string, unknown>;
     environment: {
-        packages: Record<string, string>;
-        hardware: Record<string, unknown>;
         operating_system?: string | undefined;
         architecture?: string | undefined;
         python_version?: string | undefined;
         node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
     };
-    benchmark_suite: string;
-    benchmark_suite_version: string;
-    configuration: Record<string, unknown>;
     summary_metrics: Record<string, unknown>;
     reproducibility_hash: string;
+    started_at?: string | undefined;
+    finished_at?: string | undefined;
+    is_demo: boolean;
+    owner_username?: string | null | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    execution_class?: "ANALYTICAL" | "DEMO" | "HARDWARE" | "SIMULATION" | undefined;
+    transformation_chain?: {
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
+        adapter: string;
+        adapter_version: string;
+        library_version?: string | undefined;
+        options: Record<string, unknown>;
+        input_circuit_hash?: string | undefined;
+        output_circuit_hash?: string | undefined;
+        loss_report: {
+            feature: string;
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
+            detail: string;
+            location?: string | undefined;
+        }[];
+        equivalence?: {
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
+            method?: string | undefined;
+            tolerance?: number | undefined;
+            global_phase_ignored?: boolean | undefined;
+            qubit_count?: number | undefined;
+            counterexample?: string | undefined;
+            reason?: string | undefined;
+        } | undefined;
+    }[] | undefined;
+    domain: "QEC";
     metric_points: {
         metric: string;
-        metadata: Record<string, unknown>;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
+        metadata: Record<string, unknown>;
         code_distance?: number | undefined;
         physical_error_rate?: number | undefined;
         logical_failures?: number | undefined;
@@ -1063,61 +1101,19 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
         decoder_latency_ms?: number | undefined;
         sampling_runtime_seconds?: number | undefined;
     }[];
-    source_repository_url?: string | undefined;
-    commit_sha?: string | undefined;
-    slug?: string | undefined;
-    created_at?: string | undefined;
-    updated_at?: string | undefined;
-    id?: string | undefined;
-    owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
-    artifact_slug?: string | undefined;
-    sdk_version?: string | undefined;
-    started_at?: string | undefined;
-    finished_at?: string | undefined;
-    execution_class?: "DEMO" | "SIMULATION" | "HARDWARE" | "ANALYTICAL" | undefined;
-    transformation_chain?: {
-        options: Record<string, unknown>;
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
-        adapter: string;
-        adapter_version: string;
-        loss_report: {
-            feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
-            detail: string;
-            location?: string | undefined;
-        }[];
-        library_version?: string | undefined;
-        input_circuit_hash?: string | undefined;
-        output_circuit_hash?: string | undefined;
-        equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
-            method?: string | undefined;
-            tolerance?: number | undefined;
-            global_phase_ignored?: boolean | undefined;
-            qubit_count?: number | undefined;
-            counterexample?: string | undefined;
-            reason?: string | undefined;
-        } | undefined;
-    }[] | undefined;
 }, {
-    status: "FAILED" | "COMPLETED" | "RUNNING";
+    id?: string | undefined;
+    slug?: string | undefined;
     name: string;
-    schema_version: string;
-    domain: "QEC";
+    status: "COMPLETED" | "FAILED" | "RUNNING";
+    artifact_slug?: string | undefined;
     benchmark_suite: string;
     benchmark_suite_version: string;
-    reproducibility_hash: string;
-    source_repository_url?: string | undefined;
+    schema_version: string;
+    sdk_version?: string | undefined;
     commit_sha?: string | undefined;
-    slug?: string | undefined;
-    created_at?: string | undefined;
-    updated_at?: string | undefined;
-    id?: string | undefined;
-    is_demo?: boolean | undefined;
-    owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
+    source_repository_url?: string | undefined;
+    configuration?: Record<string, unknown> | undefined;
     environment?: {
         operating_system?: string | undefined;
         architecture?: string | undefined;
@@ -1126,30 +1122,33 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
         packages?: Record<string, string> | undefined;
         hardware?: Record<string, unknown> | undefined;
     } | undefined;
-    artifact_slug?: string | undefined;
-    sdk_version?: string | undefined;
-    configuration?: Record<string, unknown> | undefined;
     summary_metrics?: Record<string, unknown> | undefined;
+    reproducibility_hash: string;
     started_at?: string | undefined;
     finished_at?: string | undefined;
-    execution_class?: "DEMO" | "SIMULATION" | "HARDWARE" | "ANALYTICAL" | undefined;
+    is_demo?: boolean | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    execution_class?: "ANALYTICAL" | "DEMO" | "HARDWARE" | "SIMULATION" | undefined;
     transformation_chain?: {
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
         adapter: string;
         adapter_version: string;
-        options?: Record<string, unknown> | undefined;
         library_version?: string | undefined;
+        options?: Record<string, unknown> | undefined;
         input_circuit_hash?: string | undefined;
         output_circuit_hash?: string | undefined;
         loss_report?: {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }[] | undefined;
         equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -1158,12 +1157,13 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             reason?: string | undefined;
         } | undefined;
     }[] | undefined;
+    domain: "QEC";
     metric_points?: {
         metric: string;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
         metadata?: Record<string, unknown> | undefined;
         code_distance?: number | undefined;
         physical_error_rate?: number | undefined;
@@ -1194,12 +1194,12 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
         packages: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
         hardware: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     }, "strip", z.ZodTypeAny, {
-        packages: Record<string, string>;
-        hardware: Record<string, unknown>;
         operating_system?: string | undefined;
         architecture?: string | undefined;
         python_version?: string | undefined;
         node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
     }, {
         operating_system?: string | undefined;
         architecture?: string | undefined;
@@ -1234,14 +1234,14 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             location: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }, {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }>, "many">>;
@@ -1254,7 +1254,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             counterexample: z.ZodOptional<z.ZodString>;
             reason: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -1262,7 +1262,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             counterexample?: string | undefined;
             reason?: string | undefined;
         }, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -1270,7 +1270,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             counterexample?: string | undefined;
             reason?: string | undefined;
         }>, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -1278,7 +1278,7 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             counterexample?: string | undefined;
             reason?: string | undefined;
         }, {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -1287,22 +1287,22 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             reason?: string | undefined;
         }>>;
     }, "strip", z.ZodTypeAny, {
-        options: Record<string, unknown>;
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
         adapter: string;
         adapter_version: string;
+        library_version?: string | undefined;
+        options: Record<string, unknown>;
+        input_circuit_hash?: string | undefined;
+        output_circuit_hash?: string | undefined;
         loss_report: {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }[];
-        library_version?: string | undefined;
-        input_circuit_hash?: string | undefined;
-        output_circuit_hash?: string | undefined;
         equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -1311,22 +1311,22 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             reason?: string | undefined;
         } | undefined;
     }, {
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
         adapter: string;
         adapter_version: string;
-        options?: Record<string, unknown> | undefined;
         library_version?: string | undefined;
+        options?: Record<string, unknown> | undefined;
         input_circuit_hash?: string | undefined;
         output_circuit_hash?: string | undefined;
         loss_report?: {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }[] | undefined;
         equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -1357,12 +1357,12 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
         simulation_runtime_seconds: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
         metric: string;
-        metadata: Record<string, unknown>;
-        qubit_count?: number | undefined;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
+        metadata: Record<string, unknown>;
+        qubit_count?: number | undefined;
         circuit_depth?: number | undefined;
         gate_count?: number | undefined;
         two_qubit_gate_count?: number | undefined;
@@ -1374,12 +1374,12 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
         simulation_runtime_seconds?: number | undefined;
     }, {
         metric: string;
-        qubit_count?: number | undefined;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
         metadata?: Record<string, unknown> | undefined;
+        qubit_count?: number | undefined;
         circuit_depth?: number | undefined;
         gate_count?: number | undefined;
         two_qubit_gate_count?: number | undefined;
@@ -1391,32 +1391,70 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
         simulation_runtime_seconds?: number | undefined;
     }>, "many">>;
 }, "strip", z.ZodTypeAny, {
-    status: "FAILED" | "COMPLETED" | "RUNNING";
+    id?: string | undefined;
+    slug?: string | undefined;
     name: string;
+    status: "COMPLETED" | "FAILED" | "RUNNING";
+    artifact_slug?: string | undefined;
+    benchmark_suite: string;
+    benchmark_suite_version: string;
     schema_version: string;
-    domain: "ALGORITHM";
-    is_demo: boolean;
+    sdk_version?: string | undefined;
+    commit_sha?: string | undefined;
+    source_repository_url?: string | undefined;
+    configuration: Record<string, unknown>;
     environment: {
-        packages: Record<string, string>;
-        hardware: Record<string, unknown>;
         operating_system?: string | undefined;
         architecture?: string | undefined;
         python_version?: string | undefined;
         node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
     };
-    benchmark_suite: string;
-    benchmark_suite_version: string;
-    configuration: Record<string, unknown>;
     summary_metrics: Record<string, unknown>;
     reproducibility_hash: string;
+    started_at?: string | undefined;
+    finished_at?: string | undefined;
+    is_demo: boolean;
+    owner_username?: string | null | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    execution_class?: "ANALYTICAL" | "DEMO" | "HARDWARE" | "SIMULATION" | undefined;
+    transformation_chain?: {
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
+        adapter: string;
+        adapter_version: string;
+        library_version?: string | undefined;
+        options: Record<string, unknown>;
+        input_circuit_hash?: string | undefined;
+        output_circuit_hash?: string | undefined;
+        loss_report: {
+            feature: string;
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
+            detail: string;
+            location?: string | undefined;
+        }[];
+        equivalence?: {
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
+            method?: string | undefined;
+            tolerance?: number | undefined;
+            global_phase_ignored?: boolean | undefined;
+            qubit_count?: number | undefined;
+            counterexample?: string | undefined;
+            reason?: string | undefined;
+        } | undefined;
+    }[] | undefined;
+    domain: "ALGORITHM";
     metric_points: {
         metric: string;
-        metadata: Record<string, unknown>;
-        qubit_count?: number | undefined;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
+        metadata: Record<string, unknown>;
+        qubit_count?: number | undefined;
         circuit_depth?: number | undefined;
         gate_count?: number | undefined;
         two_qubit_gate_count?: number | undefined;
@@ -1427,61 +1465,19 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
         approximation_ratio?: number | undefined;
         simulation_runtime_seconds?: number | undefined;
     }[];
-    source_repository_url?: string | undefined;
-    commit_sha?: string | undefined;
-    slug?: string | undefined;
-    created_at?: string | undefined;
-    updated_at?: string | undefined;
-    id?: string | undefined;
-    owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
-    artifact_slug?: string | undefined;
-    sdk_version?: string | undefined;
-    started_at?: string | undefined;
-    finished_at?: string | undefined;
-    execution_class?: "DEMO" | "SIMULATION" | "HARDWARE" | "ANALYTICAL" | undefined;
-    transformation_chain?: {
-        options: Record<string, unknown>;
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
-        adapter: string;
-        adapter_version: string;
-        loss_report: {
-            feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
-            detail: string;
-            location?: string | undefined;
-        }[];
-        library_version?: string | undefined;
-        input_circuit_hash?: string | undefined;
-        output_circuit_hash?: string | undefined;
-        equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
-            method?: string | undefined;
-            tolerance?: number | undefined;
-            global_phase_ignored?: boolean | undefined;
-            qubit_count?: number | undefined;
-            counterexample?: string | undefined;
-            reason?: string | undefined;
-        } | undefined;
-    }[] | undefined;
 }, {
-    status: "FAILED" | "COMPLETED" | "RUNNING";
+    id?: string | undefined;
+    slug?: string | undefined;
     name: string;
-    schema_version: string;
-    domain: "ALGORITHM";
+    status: "COMPLETED" | "FAILED" | "RUNNING";
+    artifact_slug?: string | undefined;
     benchmark_suite: string;
     benchmark_suite_version: string;
-    reproducibility_hash: string;
-    source_repository_url?: string | undefined;
+    schema_version: string;
+    sdk_version?: string | undefined;
     commit_sha?: string | undefined;
-    slug?: string | undefined;
-    created_at?: string | undefined;
-    updated_at?: string | undefined;
-    id?: string | undefined;
-    is_demo?: boolean | undefined;
-    owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
+    source_repository_url?: string | undefined;
+    configuration?: Record<string, unknown> | undefined;
     environment?: {
         operating_system?: string | undefined;
         architecture?: string | undefined;
@@ -1490,30 +1486,33 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
         packages?: Record<string, string> | undefined;
         hardware?: Record<string, unknown> | undefined;
     } | undefined;
-    artifact_slug?: string | undefined;
-    sdk_version?: string | undefined;
-    configuration?: Record<string, unknown> | undefined;
     summary_metrics?: Record<string, unknown> | undefined;
+    reproducibility_hash: string;
     started_at?: string | undefined;
     finished_at?: string | undefined;
-    execution_class?: "DEMO" | "SIMULATION" | "HARDWARE" | "ANALYTICAL" | undefined;
+    is_demo?: boolean | undefined;
+    owner_username?: string | null | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    execution_class?: "ANALYTICAL" | "DEMO" | "HARDWARE" | "SIMULATION" | undefined;
     transformation_chain?: {
-        kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+        kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
         adapter: string;
         adapter_version: string;
-        options?: Record<string, unknown> | undefined;
         library_version?: string | undefined;
+        options?: Record<string, unknown> | undefined;
         input_circuit_hash?: string | undefined;
         output_circuit_hash?: string | undefined;
         loss_report?: {
             feature: string;
-            severity: "semantic" | "structural" | "cosmetic";
-            action: "rejected" | "dropped" | "approximated";
+            severity: "cosmetic" | "semantic" | "structural";
+            action: "approximated" | "dropped" | "rejected";
             detail: string;
             location?: string | undefined;
         }[] | undefined;
         equivalence?: {
-            level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+            level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
             method?: string | undefined;
             tolerance?: number | undefined;
             global_phase_ignored?: boolean | undefined;
@@ -1522,14 +1521,15 @@ export declare const BenchmarkResultSchema: z.ZodDiscriminatedUnion<"domain", [z
             reason?: string | undefined;
         } | undefined;
     }[] | undefined;
+    domain: "ALGORITHM";
     metric_points?: {
         metric: string;
-        qubit_count?: number | undefined;
         shots?: number | undefined;
-        seed?: number | undefined;
         runtime_seconds?: number | undefined;
         memory_bytes?: number | undefined;
+        seed?: number | undefined;
         metadata?: Record<string, unknown> | undefined;
+        qubit_count?: number | undefined;
         circuit_depth?: number | undefined;
         gate_count?: number | undefined;
         two_qubit_gate_count?: number | undefined;

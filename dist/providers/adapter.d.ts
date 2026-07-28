@@ -59,20 +59,20 @@ export declare const SubmissionEstimateSchema: z.ZodObject<{
     /** Anything the user should know before spending, e.g. a queue warning. */
     warnings: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
-    shots: number;
     provider: string;
     backend: string;
-    warnings: string[];
+    shots: number;
     estimated_cost: {
         amount: number;
         currency: string;
     } | null;
     remaining_quota: number | null;
     confirmation_prompt: string;
+    warnings: string[];
 }, {
-    shots: number;
     provider: string;
     backend: string;
+    shots: number;
     estimated_cost: {
         amount: number;
         currency: string;
@@ -101,18 +101,18 @@ export declare const NotRunRecordSchema: z.ZodObject<{
     counts: z.ZodOptional<z.ZodUndefined>;
 }, "strip", z.ZodTypeAny, {
     status: "NOT_RUN";
-    detail: string;
-    reason: "credentials_unavailable" | "confirmation_declined" | "provider_unsupported_feature" | "quota_exhausted";
+    reason: "confirmation_declined" | "credentials_unavailable" | "provider_unsupported_feature" | "quota_exhausted";
     provider: string;
     backend: string;
+    detail: string;
     recorded_at: string;
     counts?: undefined;
 }, {
     status: "NOT_RUN";
-    detail: string;
-    reason: "credentials_unavailable" | "confirmation_declined" | "provider_unsupported_feature" | "quota_exhausted";
+    reason: "confirmation_declined" | "credentials_unavailable" | "provider_unsupported_feature" | "quota_exhausted";
     provider: string;
     backend: string;
+    detail: string;
     recorded_at: string;
     counts?: undefined;
 }>;
@@ -130,52 +130,52 @@ export declare const ProviderSubmissionSchema: z.ZodObject<{
     hardware_snapshot_id: z.ZodOptional<z.ZodString>;
     loss_report: z.ZodDefault<z.ZodArray<z.ZodType<{
         feature: string;
-        severity: "semantic" | "structural" | "cosmetic";
-        action: "rejected" | "dropped" | "approximated";
+        severity: "cosmetic" | "semantic" | "structural";
+        action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
     }, z.ZodTypeDef, {
         feature: string;
-        severity: "semantic" | "structural" | "cosmetic";
-        action: "rejected" | "dropped" | "approximated";
+        severity: "cosmetic" | "semantic" | "structural";
+        action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
     }>, "many">>;
     submitted_at: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    status: "FAILED" | "COMPLETED" | "SUBMITTED";
+    status: "COMPLETED" | "FAILED" | "SUBMITTED";
+    provider: string;
+    backend: string;
+    provider_job_id: string;
+    shots: number;
+    execution_class: "HARDWARE" | "SIMULATION";
+    counts?: Record<string, number> | undefined;
+    hardware_snapshot_id?: string | undefined;
     loss_report: {
         feature: string;
-        severity: "semantic" | "structural" | "cosmetic";
-        action: "rejected" | "dropped" | "approximated";
+        severity: "cosmetic" | "semantic" | "structural";
+        action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
     }[];
-    shots: number;
-    execution_class: "SIMULATION" | "HARDWARE";
+    submitted_at: string;
+}, {
+    status: "COMPLETED" | "FAILED" | "SUBMITTED";
     provider: string;
     backend: string;
     provider_job_id: string;
-    submitted_at: string;
+    shots: number;
+    execution_class: "HARDWARE" | "SIMULATION";
     counts?: Record<string, number> | undefined;
     hardware_snapshot_id?: string | undefined;
-}, {
-    status: "FAILED" | "COMPLETED" | "SUBMITTED";
-    shots: number;
-    execution_class: "SIMULATION" | "HARDWARE";
-    provider: string;
-    backend: string;
-    provider_job_id: string;
-    submitted_at: string;
     loss_report?: {
         feature: string;
-        severity: "semantic" | "structural" | "cosmetic";
-        action: "rejected" | "dropped" | "approximated";
+        severity: "cosmetic" | "semantic" | "structural";
+        action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
     }[] | undefined;
-    counts?: Record<string, number> | undefined;
-    hardware_snapshot_id?: string | undefined;
+    submitted_at: string;
 }>;
 export type ProviderSubmission = z.infer<typeof ProviderSubmissionSchema>;
 export interface ProviderAdapter {

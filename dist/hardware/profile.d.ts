@@ -44,11 +44,11 @@ export declare const QubitPropertiesSchema: z.ZodObject<{
     operational: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
     index: number;
-    operational: boolean;
     t1_us?: number | undefined;
     t2_us?: number | undefined;
     readout_error?: number | undefined;
     single_qubit_error?: number | undefined;
+    operational: boolean;
 }, {
     index: number;
     t1_us?: number | undefined;
@@ -78,21 +78,21 @@ export declare const DeviceCapabilitiesSchema: z.ZodObject<{
     /** Whether the device applies a biased noise channel, e.g. dominant dephasing. */
     noise_bias: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    reset: boolean;
     mid_circuit_measurement: boolean;
     feed_forward: boolean;
+    feed_forward_latency_ns?: number | undefined;
+    reset: boolean;
     leakage_detection: boolean;
     loss_detection: boolean;
     erasure_conversion: boolean;
     all_to_all_connectivity: boolean;
     dynamic_connectivity: boolean;
-    feed_forward_latency_ns?: number | undefined;
     noise_bias?: string | undefined;
 }, {
-    reset?: boolean | undefined;
     mid_circuit_measurement?: boolean | undefined;
     feed_forward?: boolean | undefined;
     feed_forward_latency_ns?: number | undefined;
+    reset?: boolean | undefined;
     leakage_detection?: boolean | undefined;
     loss_detection?: boolean | undefined;
     erasure_conversion?: boolean | undefined;
@@ -140,11 +140,11 @@ export declare const HardwareProfileSchema: z.ZodObject<{
         operational: z.ZodDefault<z.ZodBoolean>;
     }, "strip", z.ZodTypeAny, {
         index: number;
-        operational: boolean;
         t1_us?: number | undefined;
         t2_us?: number | undefined;
         readout_error?: number | undefined;
         single_qubit_error?: number | undefined;
+        operational: boolean;
     }, {
         index: number;
         t1_us?: number | undefined;
@@ -167,21 +167,21 @@ export declare const HardwareProfileSchema: z.ZodObject<{
         /** Whether the device applies a biased noise channel, e.g. dominant dephasing. */
         noise_bias: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        reset: boolean;
         mid_circuit_measurement: boolean;
         feed_forward: boolean;
+        feed_forward_latency_ns?: number | undefined;
+        reset: boolean;
         leakage_detection: boolean;
         loss_detection: boolean;
         erasure_conversion: boolean;
         all_to_all_connectivity: boolean;
         dynamic_connectivity: boolean;
-        feed_forward_latency_ns?: number | undefined;
         noise_bias?: string | undefined;
     }, {
-        reset?: boolean | undefined;
         mid_circuit_measurement?: boolean | undefined;
         feed_forward?: boolean | undefined;
         feed_forward_latency_ns?: number | undefined;
+        reset?: boolean | undefined;
         leakage_detection?: boolean | undefined;
         loss_detection?: boolean | undefined;
         erasure_conversion?: boolean | undefined;
@@ -200,20 +200,11 @@ export declare const HardwareProfileSchema: z.ZodObject<{
     notes: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     schema_version: string;
-    qubit_count: number;
-    source: string;
-    qubits: {
-        index: number;
-        operational: boolean;
-        t1_us?: number | undefined;
-        t2_us?: number | undefined;
-        readout_error?: number | undefined;
-        single_qubit_error?: number | undefined;
-    }[];
     provider: string;
     backend: string;
     snapshot_id: string;
-    modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+    modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+    qubit_count: number;
     native_gates: string[];
     basis_two_qubit_gate: string;
     couplings: {
@@ -222,45 +213,45 @@ export declare const HardwareProfileSchema: z.ZodObject<{
         error_rate?: number | undefined;
         duration_ns?: number | undefined;
     }[];
+    qubits: {
+        index: number;
+        t1_us?: number | undefined;
+        t2_us?: number | undefined;
+        readout_error?: number | undefined;
+        single_qubit_error?: number | undefined;
+        operational: boolean;
+    }[];
     capabilities: {
-        reset: boolean;
         mid_circuit_measurement: boolean;
         feed_forward: boolean;
+        feed_forward_latency_ns?: number | undefined;
+        reset: boolean;
         leakage_detection: boolean;
         loss_detection: boolean;
         erasure_conversion: boolean;
         all_to_all_connectivity: boolean;
         dynamic_connectivity: boolean;
-        feed_forward_latency_ns?: number | undefined;
         noise_bias?: string | undefined;
     };
-    retrieved_at: string;
-    notes?: string | undefined;
     calibration_timestamp?: string | undefined;
+    retrieved_at: string;
+    source: string;
+    notes?: string | undefined;
 }, {
     schema_version: string;
-    qubit_count: number;
-    source: string;
     provider: string;
     backend: string;
     snapshot_id: string;
-    modality: "SIMULATED" | "SUPERCONDUCTING" | "TRAPPED_ION" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SEMICONDUCTOR" | "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "TOPOLOGICAL_CANDIDATE";
+    modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
+    qubit_count: number;
     native_gates: string[];
     basis_two_qubit_gate: string;
-    capabilities: {
-        reset?: boolean | undefined;
-        mid_circuit_measurement?: boolean | undefined;
-        feed_forward?: boolean | undefined;
-        feed_forward_latency_ns?: number | undefined;
-        leakage_detection?: boolean | undefined;
-        loss_detection?: boolean | undefined;
-        erasure_conversion?: boolean | undefined;
-        all_to_all_connectivity?: boolean | undefined;
-        dynamic_connectivity?: boolean | undefined;
-        noise_bias?: string | undefined;
-    };
-    retrieved_at: string;
-    notes?: string | undefined;
+    couplings?: {
+        control: number;
+        target: number;
+        error_rate?: number | undefined;
+        duration_ns?: number | undefined;
+    }[] | undefined;
     qubits?: {
         index: number;
         t1_us?: number | undefined;
@@ -269,13 +260,22 @@ export declare const HardwareProfileSchema: z.ZodObject<{
         single_qubit_error?: number | undefined;
         operational?: boolean | undefined;
     }[] | undefined;
-    couplings?: {
-        control: number;
-        target: number;
-        error_rate?: number | undefined;
-        duration_ns?: number | undefined;
-    }[] | undefined;
+    capabilities: {
+        mid_circuit_measurement?: boolean | undefined;
+        feed_forward?: boolean | undefined;
+        feed_forward_latency_ns?: number | undefined;
+        reset?: boolean | undefined;
+        leakage_detection?: boolean | undefined;
+        loss_detection?: boolean | undefined;
+        erasure_conversion?: boolean | undefined;
+        all_to_all_connectivity?: boolean | undefined;
+        dynamic_connectivity?: boolean | undefined;
+        noise_bias?: string | undefined;
+    };
     calibration_timestamp?: string | undefined;
+    retrieved_at: string;
+    source: string;
+    notes?: string | undefined;
 }>;
 export type HardwareProfile = z.infer<typeof HardwareProfileSchema>;
 /** Adjacency list over operational qubits, both directions per coupling. */

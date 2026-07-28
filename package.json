@@ -110,8 +110,8 @@
     "validate:contribution": "node scripts/validate-contribution.mjs"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.5.4",
+    "@types/node": "^26.1.2",
+    "typescript": "^7.0.2",
     "zod-to-json-schema": "^3.25.2"
   },
   "dependencies": {

@@ -8,16 +8,16 @@ export declare const QecArtifactMetadataSchema: z.ZodObject<{
     decoder_interface_version: z.ZodOptional<z.ZodString>;
     supported_experiment_types: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
-    supported_distances: number[];
     code_families: string[];
-    noise_models: string[];
-    supported_experiment_types: string[];
+    supported_distances: number[];
     decoder_family?: string | undefined;
+    noise_models: string[];
     syndrome_format?: string | undefined;
     decoder_interface_version?: string | undefined;
+    supported_experiment_types: string[];
 }, {
-    supported_distances?: number[] | undefined;
     code_families?: string[] | undefined;
+    supported_distances?: number[] | undefined;
     decoder_family?: string | undefined;
     noise_models?: string[] | undefined;
     syndrome_format?: string | undefined;
@@ -34,13 +34,13 @@ export declare const AlgorithmArtifactMetadataSchema: z.ZodObject<{
     simulator_requirements: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     frameworks: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
+    algorithm_family?: string | undefined;
     problem_domains: string[];
     supported_input_types: string[];
     supported_qubit_ranges: [number, number][];
     classical_reference_available: boolean;
     simulator_requirements: string[];
     frameworks: string[];
-    algorithm_family?: string | undefined;
 }, {
     algorithm_family?: string | undefined;
     problem_domains?: string[] | undefined;
@@ -134,12 +134,11 @@ export declare const QecArtifactSchema: z.ZodObject<{
             }>>;
             reference_papers: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
-            authors: string[];
-            license: string;
-            contributors: string[];
-            reference_papers: string[];
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
+            contributors: string[];
             citation?: {
                 title: string;
                 authors: string[];
@@ -148,11 +147,12 @@ export declare const QecArtifactSchema: z.ZodObject<{
                 url?: string | undefined;
                 bibtex?: string | undefined;
             } | undefined;
+            reference_papers: string[];
         }, {
-            authors: string[];
-            license: string;
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
             contributors?: string[] | undefined;
             citation?: {
                 title: string;
@@ -197,12 +197,12 @@ export declare const QecArtifactSchema: z.ZodObject<{
             gate_set: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
             classical_requirements: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
-            gate_set: string[];
-            classical_requirements: string[];
             qubit_range?: {
                 minimum: number;
                 maximum?: number | undefined;
             } | undefined;
+            gate_set: string[];
+            classical_requirements: string[];
         }, {
             qubit_range?: {
                 minimum: number;
@@ -217,14 +217,14 @@ export declare const QecArtifactSchema: z.ZodObject<{
             hardware: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
             other: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
-            hardware: string[];
             resource: string[];
             noise: string[];
+            hardware: string[];
             other: string[];
         }, {
-            hardware?: string[] | undefined;
             resource?: string[] | undefined;
             noise?: string[] | undefined;
+            hardware?: string[] | undefined;
             other?: string[] | undefined;
         }>;
         known_limitations: z.ZodArray<z.ZodString, "many">;
@@ -244,20 +244,20 @@ export declare const QecArtifactSchema: z.ZodObject<{
         created_at: z.ZodOptional<z.ZodString>;
         updated_at: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
-            contributors: string[];
-            reference_papers: string[];
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
+            contributors: string[];
             citation?: {
                 title: string;
                 authors: string[];
@@ -266,6 +266,7 @@ export declare const QecArtifactSchema: z.ZodObject<{
                 url?: string | undefined;
                 bibtex?: string | undefined;
             } | undefined;
+            reference_papers: string[];
         };
         interface: {
             supported_frameworks: string[];
@@ -273,43 +274,43 @@ export declare const QecArtifactSchema: z.ZodObject<{
             supported_output_formats: string[];
         };
         applicability: {
-            gate_set: string[];
-            classical_requirements: string[];
             qubit_range?: {
                 minimum: number;
                 maximum?: number | undefined;
             } | undefined;
+            gate_set: string[];
+            classical_requirements: string[];
         };
         assumptions: {
-            hardware: string[];
             resource: string[];
             noise: string[];
+            hardware: string[];
             other: string[];
         };
         known_limitations: string[];
-        verification_status: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED";
+        verification_status: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED";
         security_notes: string[];
         example_commands: {
             description: string;
             command: string;
         }[];
         benchmark_compatibility: string[];
-        category?: string | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
     }, {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
             contributors?: string[] | undefined;
             citation?: {
                 title: string;
@@ -321,14 +322,6 @@ export declare const QecArtifactSchema: z.ZodObject<{
             } | undefined;
             reference_papers?: string[] | undefined;
         };
-        assumptions: {
-            hardware?: string[] | undefined;
-            resource?: string[] | undefined;
-            noise?: string[] | undefined;
-            other?: string[] | undefined;
-        };
-        known_limitations: string[];
-        category?: string | undefined;
         interface?: {
             supported_frameworks?: string[] | undefined;
             supported_input_formats?: string[] | undefined;
@@ -342,7 +335,14 @@ export declare const QecArtifactSchema: z.ZodObject<{
             gate_set?: string[] | undefined;
             classical_requirements?: string[] | undefined;
         } | undefined;
-        verification_status?: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED" | undefined;
+        assumptions: {
+            resource?: string[] | undefined;
+            noise?: string[] | undefined;
+            hardware?: string[] | undefined;
+            other?: string[] | undefined;
+        };
+        known_limitations: string[];
+        verification_status?: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED" | undefined;
         security_notes?: string[] | undefined;
         example_commands?: {
             description: string;
@@ -364,16 +364,16 @@ export declare const QecArtifactSchema: z.ZodObject<{
         decoder_interface_version: z.ZodOptional<z.ZodString>;
         supported_experiment_types: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     }, "strip", z.ZodTypeAny, {
-        supported_distances: number[];
         code_families: string[];
-        noise_models: string[];
-        supported_experiment_types: string[];
+        supported_distances: number[];
         decoder_family?: string | undefined;
+        noise_models: string[];
         syndrome_format?: string | undefined;
         decoder_interface_version?: string | undefined;
+        supported_experiment_types: string[];
     }, {
-        supported_distances?: number[] | undefined;
         code_families?: string[] | undefined;
+        supported_distances?: number[] | undefined;
         decoder_family?: string | undefined;
         noise_models?: string[] | undefined;
         syndrome_format?: string | undefined;
@@ -381,29 +381,20 @@ export declare const QecArtifactSchema: z.ZodObject<{
         supported_experiment_types?: string[] | undefined;
     }>;
 }, "strip", z.ZodTypeAny, {
-    authors: string[];
+    id: string;
+    slug: string;
     name: string;
     description: string;
-    slug: string;
-    verification_status: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED";
-    created_at: string;
-    updated_at: string;
-    kind: "QEC_DECODER" | "QEC_CODE" | "NOISE_MODEL" | "SYNDROME_DATASET" | "BENCHMARK_SUITE" | "SIMULATION_TOOL" | "RESOURCE_ANALYSIS_TOOL";
-    id: string;
-    domain: "QEC";
+    repository_url?: string | undefined;
+    repository_owner?: string | undefined;
+    repository_name?: string | undefined;
     default_branch: string;
-    tags: string[];
-    is_demo: boolean;
-    qec: {
-        supported_distances: number[];
-        code_families: string[];
-        noise_models: string[];
-        supported_experiment_types: string[];
-        decoder_family?: string | undefined;
-        syndrome_format?: string | undefined;
-        decoder_interface_version?: string | undefined;
-    };
     license?: string | undefined;
+    language?: string | undefined;
+    tags: string[];
+    authors: string[];
+    latest_commit_sha?: string | undefined;
+    reference_paper_url?: string | undefined;
     citation?: {
         title: string;
         authors: string[];
@@ -412,30 +403,28 @@ export declare const QecArtifactSchema: z.ZodObject<{
         url?: string | undefined;
         bibtex?: string | undefined;
     } | undefined;
-    artifact_type?: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE" | undefined;
-    repository_url?: string | undefined;
-    repository_owner?: string | undefined;
-    repository_name?: string | undefined;
-    language?: string | undefined;
-    latest_commit_sha?: string | undefined;
-    reference_paper_url?: string | undefined;
+    is_demo: boolean;
+    verification_status: "REPRODUCED" | "UNVERIFIED" | "VALIDATED_SCHEMA";
     owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at: string;
+    updated_at: string;
+    artifact_type?: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL" | undefined;
     quantum_card?: {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
-            contributors: string[];
-            reference_papers: string[];
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
+            contributors: string[];
             citation?: {
                 title: string;
                 authors: string[];
@@ -444,6 +433,7 @@ export declare const QecArtifactSchema: z.ZodObject<{
                 url?: string | undefined;
                 bibtex?: string | undefined;
             } | undefined;
+            reference_papers: string[];
         };
         interface: {
             supported_frameworks: string[];
@@ -451,52 +441,56 @@ export declare const QecArtifactSchema: z.ZodObject<{
             supported_output_formats: string[];
         };
         applicability: {
-            gate_set: string[];
-            classical_requirements: string[];
             qubit_range?: {
                 minimum: number;
                 maximum?: number | undefined;
             } | undefined;
+            gate_set: string[];
+            classical_requirements: string[];
         };
         assumptions: {
-            hardware: string[];
             resource: string[];
             noise: string[];
+            hardware: string[];
             other: string[];
         };
         known_limitations: string[];
-        verification_status: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED";
+        verification_status: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED";
         security_notes: string[];
         example_commands: {
             description: string;
             command: string;
         }[];
         benchmark_compatibility: string[];
-        category?: string | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
     } | undefined;
-}, {
-    name: string;
-    description: string;
-    slug: string;
-    created_at: string;
-    updated_at: string;
-    kind: "QEC_DECODER" | "QEC_CODE" | "NOISE_MODEL" | "SYNDROME_DATASET" | "BENCHMARK_SUITE" | "SIMULATION_TOOL" | "RESOURCE_ANALYSIS_TOOL";
-    id: string;
     domain: "QEC";
-    is_demo: boolean;
+    kind: "BENCHMARK_SUITE" | "NOISE_MODEL" | "QEC_CODE" | "QEC_DECODER" | "RESOURCE_ANALYSIS_TOOL" | "SIMULATION_TOOL" | "SYNDROME_DATASET";
     qec: {
-        supported_distances?: number[] | undefined;
-        code_families?: string[] | undefined;
+        code_families: string[];
+        supported_distances: number[];
         decoder_family?: string | undefined;
-        noise_models?: string[] | undefined;
+        noise_models: string[];
         syndrome_format?: string | undefined;
         decoder_interface_version?: string | undefined;
-        supported_experiment_types?: string[] | undefined;
+        supported_experiment_types: string[];
     };
-    authors?: string[] | undefined;
+}, {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    repository_url?: string | undefined;
+    repository_owner?: string | undefined;
+    repository_name?: string | undefined;
+    default_branch?: string | undefined;
     license?: string | undefined;
+    language?: string | undefined;
+    tags?: string[] | undefined;
+    authors?: string[] | undefined;
+    latest_commit_sha?: string | undefined;
+    reference_paper_url?: string | undefined;
     citation?: {
         title: string;
         authors?: string[] | undefined;
@@ -505,31 +499,27 @@ export declare const QecArtifactSchema: z.ZodObject<{
         url?: string | undefined;
         bibtex?: string | undefined;
     } | undefined;
-    artifact_type?: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE" | undefined;
-    verification_status?: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED" | undefined;
-    repository_url?: string | undefined;
-    repository_owner?: string | undefined;
-    repository_name?: string | undefined;
-    default_branch?: string | undefined;
-    language?: string | undefined;
-    tags?: string[] | undefined;
-    latest_commit_sha?: string | undefined;
-    reference_paper_url?: string | undefined;
+    is_demo: boolean;
+    verification_status?: "REPRODUCED" | "UNVERIFIED" | "VALIDATED_SCHEMA" | undefined;
     owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at: string;
+    updated_at: string;
+    artifact_type?: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL" | undefined;
     quantum_card?: {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
             contributors?: string[] | undefined;
             citation?: {
                 title: string;
@@ -541,14 +531,6 @@ export declare const QecArtifactSchema: z.ZodObject<{
             } | undefined;
             reference_papers?: string[] | undefined;
         };
-        assumptions: {
-            hardware?: string[] | undefined;
-            resource?: string[] | undefined;
-            noise?: string[] | undefined;
-            other?: string[] | undefined;
-        };
-        known_limitations: string[];
-        category?: string | undefined;
         interface?: {
             supported_frameworks?: string[] | undefined;
             supported_input_formats?: string[] | undefined;
@@ -562,7 +544,14 @@ export declare const QecArtifactSchema: z.ZodObject<{
             gate_set?: string[] | undefined;
             classical_requirements?: string[] | undefined;
         } | undefined;
-        verification_status?: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED" | undefined;
+        assumptions: {
+            resource?: string[] | undefined;
+            noise?: string[] | undefined;
+            hardware?: string[] | undefined;
+            other?: string[] | undefined;
+        };
+        known_limitations: string[];
+        verification_status?: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED" | undefined;
         security_notes?: string[] | undefined;
         example_commands?: {
             description: string;
@@ -572,6 +561,17 @@ export declare const QecArtifactSchema: z.ZodObject<{
         created_at?: string | undefined;
         updated_at?: string | undefined;
     } | undefined;
+    domain: "QEC";
+    kind: "BENCHMARK_SUITE" | "NOISE_MODEL" | "QEC_CODE" | "QEC_DECODER" | "RESOURCE_ANALYSIS_TOOL" | "SIMULATION_TOOL" | "SYNDROME_DATASET";
+    qec: {
+        code_families?: string[] | undefined;
+        supported_distances?: number[] | undefined;
+        decoder_family?: string | undefined;
+        noise_models?: string[] | undefined;
+        syndrome_format?: string | undefined;
+        decoder_interface_version?: string | undefined;
+        supported_experiment_types?: string[] | undefined;
+    };
 }>;
 export type QecArtifact = z.infer<typeof QecArtifactSchema>;
 export declare const AlgorithmArtifactSchema: z.ZodObject<{
@@ -657,12 +657,11 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
             }>>;
             reference_papers: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
-            authors: string[];
-            license: string;
-            contributors: string[];
-            reference_papers: string[];
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
+            contributors: string[];
             citation?: {
                 title: string;
                 authors: string[];
@@ -671,11 +670,12 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
                 url?: string | undefined;
                 bibtex?: string | undefined;
             } | undefined;
+            reference_papers: string[];
         }, {
-            authors: string[];
-            license: string;
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
             contributors?: string[] | undefined;
             citation?: {
                 title: string;
@@ -720,12 +720,12 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
             gate_set: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
             classical_requirements: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
-            gate_set: string[];
-            classical_requirements: string[];
             qubit_range?: {
                 minimum: number;
                 maximum?: number | undefined;
             } | undefined;
+            gate_set: string[];
+            classical_requirements: string[];
         }, {
             qubit_range?: {
                 minimum: number;
@@ -740,14 +740,14 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
             hardware: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
             other: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
-            hardware: string[];
             resource: string[];
             noise: string[];
+            hardware: string[];
             other: string[];
         }, {
-            hardware?: string[] | undefined;
             resource?: string[] | undefined;
             noise?: string[] | undefined;
+            hardware?: string[] | undefined;
             other?: string[] | undefined;
         }>;
         known_limitations: z.ZodArray<z.ZodString, "many">;
@@ -767,20 +767,20 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
         created_at: z.ZodOptional<z.ZodString>;
         updated_at: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
-            contributors: string[];
-            reference_papers: string[];
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
+            contributors: string[];
             citation?: {
                 title: string;
                 authors: string[];
@@ -789,6 +789,7 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
                 url?: string | undefined;
                 bibtex?: string | undefined;
             } | undefined;
+            reference_papers: string[];
         };
         interface: {
             supported_frameworks: string[];
@@ -796,43 +797,43 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
             supported_output_formats: string[];
         };
         applicability: {
-            gate_set: string[];
-            classical_requirements: string[];
             qubit_range?: {
                 minimum: number;
                 maximum?: number | undefined;
             } | undefined;
+            gate_set: string[];
+            classical_requirements: string[];
         };
         assumptions: {
-            hardware: string[];
             resource: string[];
             noise: string[];
+            hardware: string[];
             other: string[];
         };
         known_limitations: string[];
-        verification_status: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED";
+        verification_status: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED";
         security_notes: string[];
         example_commands: {
             description: string;
             command: string;
         }[];
         benchmark_compatibility: string[];
-        category?: string | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
     }, {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
             contributors?: string[] | undefined;
             citation?: {
                 title: string;
@@ -844,14 +845,6 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
             } | undefined;
             reference_papers?: string[] | undefined;
         };
-        assumptions: {
-            hardware?: string[] | undefined;
-            resource?: string[] | undefined;
-            noise?: string[] | undefined;
-            other?: string[] | undefined;
-        };
-        known_limitations: string[];
-        category?: string | undefined;
         interface?: {
             supported_frameworks?: string[] | undefined;
             supported_input_formats?: string[] | undefined;
@@ -865,7 +858,14 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
             gate_set?: string[] | undefined;
             classical_requirements?: string[] | undefined;
         } | undefined;
-        verification_status?: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED" | undefined;
+        assumptions: {
+            resource?: string[] | undefined;
+            noise?: string[] | undefined;
+            hardware?: string[] | undefined;
+            other?: string[] | undefined;
+        };
+        known_limitations: string[];
+        verification_status?: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED" | undefined;
         security_notes?: string[] | undefined;
         example_commands?: {
             description: string;
@@ -887,13 +887,13 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
         simulator_requirements: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         frameworks: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     }, "strip", z.ZodTypeAny, {
+        algorithm_family?: string | undefined;
         problem_domains: string[];
         supported_input_types: string[];
         supported_qubit_ranges: [number, number][];
         classical_reference_available: boolean;
         simulator_requirements: string[];
         frameworks: string[];
-        algorithm_family?: string | undefined;
     }, {
         algorithm_family?: string | undefined;
         problem_domains?: string[] | undefined;
@@ -904,29 +904,20 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
         frameworks?: string[] | undefined;
     }>;
 }, "strip", z.ZodTypeAny, {
-    authors: string[];
+    id: string;
+    slug: string;
     name: string;
     description: string;
-    slug: string;
-    verification_status: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED";
-    created_at: string;
-    updated_at: string;
-    kind: "QUANTUM_ALGORITHM" | "PROBLEM_INSTANCE" | "CLASSICAL_REFERENCE" | "BENCHMARK_SUITE" | "SIMULATION_TOOL" | "RESOURCE_ANALYSIS_TOOL";
-    id: string;
-    domain: "ALGORITHM";
+    repository_url?: string | undefined;
+    repository_owner?: string | undefined;
+    repository_name?: string | undefined;
     default_branch: string;
-    tags: string[];
-    is_demo: boolean;
-    algorithm: {
-        problem_domains: string[];
-        supported_input_types: string[];
-        supported_qubit_ranges: [number, number][];
-        classical_reference_available: boolean;
-        simulator_requirements: string[];
-        frameworks: string[];
-        algorithm_family?: string | undefined;
-    };
     license?: string | undefined;
+    language?: string | undefined;
+    tags: string[];
+    authors: string[];
+    latest_commit_sha?: string | undefined;
+    reference_paper_url?: string | undefined;
     citation?: {
         title: string;
         authors: string[];
@@ -935,30 +926,28 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
         url?: string | undefined;
         bibtex?: string | undefined;
     } | undefined;
-    artifact_type?: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE" | undefined;
-    repository_url?: string | undefined;
-    repository_owner?: string | undefined;
-    repository_name?: string | undefined;
-    language?: string | undefined;
-    latest_commit_sha?: string | undefined;
-    reference_paper_url?: string | undefined;
+    is_demo: boolean;
+    verification_status: "REPRODUCED" | "UNVERIFIED" | "VALIDATED_SCHEMA";
     owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at: string;
+    updated_at: string;
+    artifact_type?: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL" | undefined;
     quantum_card?: {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
-            contributors: string[];
-            reference_papers: string[];
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
+            contributors: string[];
             citation?: {
                 title: string;
                 authors: string[];
@@ -967,6 +956,7 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
                 url?: string | undefined;
                 bibtex?: string | undefined;
             } | undefined;
+            reference_papers: string[];
         };
         interface: {
             supported_frameworks: string[];
@@ -974,52 +964,56 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
             supported_output_formats: string[];
         };
         applicability: {
-            gate_set: string[];
-            classical_requirements: string[];
             qubit_range?: {
                 minimum: number;
                 maximum?: number | undefined;
             } | undefined;
+            gate_set: string[];
+            classical_requirements: string[];
         };
         assumptions: {
-            hardware: string[];
             resource: string[];
             noise: string[];
+            hardware: string[];
             other: string[];
         };
         known_limitations: string[];
-        verification_status: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED";
+        verification_status: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED";
         security_notes: string[];
         example_commands: {
             description: string;
             command: string;
         }[];
         benchmark_compatibility: string[];
-        category?: string | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
     } | undefined;
-}, {
-    name: string;
-    description: string;
-    slug: string;
-    created_at: string;
-    updated_at: string;
-    kind: "QUANTUM_ALGORITHM" | "PROBLEM_INSTANCE" | "CLASSICAL_REFERENCE" | "BENCHMARK_SUITE" | "SIMULATION_TOOL" | "RESOURCE_ANALYSIS_TOOL";
-    id: string;
     domain: "ALGORITHM";
-    is_demo: boolean;
+    kind: "BENCHMARK_SUITE" | "CLASSICAL_REFERENCE" | "PROBLEM_INSTANCE" | "QUANTUM_ALGORITHM" | "RESOURCE_ANALYSIS_TOOL" | "SIMULATION_TOOL";
     algorithm: {
         algorithm_family?: string | undefined;
-        problem_domains?: string[] | undefined;
-        supported_input_types?: string[] | undefined;
-        supported_qubit_ranges?: [number, number][] | undefined;
-        classical_reference_available?: boolean | undefined;
-        simulator_requirements?: string[] | undefined;
-        frameworks?: string[] | undefined;
+        problem_domains: string[];
+        supported_input_types: string[];
+        supported_qubit_ranges: [number, number][];
+        classical_reference_available: boolean;
+        simulator_requirements: string[];
+        frameworks: string[];
     };
-    authors?: string[] | undefined;
+}, {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    repository_url?: string | undefined;
+    repository_owner?: string | undefined;
+    repository_name?: string | undefined;
+    default_branch?: string | undefined;
     license?: string | undefined;
+    language?: string | undefined;
+    tags?: string[] | undefined;
+    authors?: string[] | undefined;
+    latest_commit_sha?: string | undefined;
+    reference_paper_url?: string | undefined;
     citation?: {
         title: string;
         authors?: string[] | undefined;
@@ -1028,31 +1022,27 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
         url?: string | undefined;
         bibtex?: string | undefined;
     } | undefined;
-    artifact_type?: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE" | undefined;
-    verification_status?: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED" | undefined;
-    repository_url?: string | undefined;
-    repository_owner?: string | undefined;
-    repository_name?: string | undefined;
-    default_branch?: string | undefined;
-    language?: string | undefined;
-    tags?: string[] | undefined;
-    latest_commit_sha?: string | undefined;
-    reference_paper_url?: string | undefined;
+    is_demo: boolean;
+    verification_status?: "REPRODUCED" | "UNVERIFIED" | "VALIDATED_SCHEMA" | undefined;
     owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at: string;
+    updated_at: string;
+    artifact_type?: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL" | undefined;
     quantum_card?: {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
             contributors?: string[] | undefined;
             citation?: {
                 title: string;
@@ -1064,14 +1054,6 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
             } | undefined;
             reference_papers?: string[] | undefined;
         };
-        assumptions: {
-            hardware?: string[] | undefined;
-            resource?: string[] | undefined;
-            noise?: string[] | undefined;
-            other?: string[] | undefined;
-        };
-        known_limitations: string[];
-        category?: string | undefined;
         interface?: {
             supported_frameworks?: string[] | undefined;
             supported_input_formats?: string[] | undefined;
@@ -1085,7 +1067,14 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
             gate_set?: string[] | undefined;
             classical_requirements?: string[] | undefined;
         } | undefined;
-        verification_status?: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED" | undefined;
+        assumptions: {
+            resource?: string[] | undefined;
+            noise?: string[] | undefined;
+            hardware?: string[] | undefined;
+            other?: string[] | undefined;
+        };
+        known_limitations: string[];
+        verification_status?: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED" | undefined;
         security_notes?: string[] | undefined;
         example_commands?: {
             description: string;
@@ -1095,6 +1084,17 @@ export declare const AlgorithmArtifactSchema: z.ZodObject<{
         created_at?: string | undefined;
         updated_at?: string | undefined;
     } | undefined;
+    domain: "ALGORITHM";
+    kind: "BENCHMARK_SUITE" | "CLASSICAL_REFERENCE" | "PROBLEM_INSTANCE" | "QUANTUM_ALGORITHM" | "RESOURCE_ANALYSIS_TOOL" | "SIMULATION_TOOL";
+    algorithm: {
+        algorithm_family?: string | undefined;
+        problem_domains?: string[] | undefined;
+        supported_input_types?: string[] | undefined;
+        supported_qubit_ranges?: [number, number][] | undefined;
+        classical_reference_available?: boolean | undefined;
+        simulator_requirements?: string[] | undefined;
+        frameworks?: string[] | undefined;
+    };
 }>;
 export type AlgorithmArtifact = z.infer<typeof AlgorithmArtifactSchema>;
 export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObject<{
@@ -1180,12 +1180,11 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             }>>;
             reference_papers: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
-            authors: string[];
-            license: string;
-            contributors: string[];
-            reference_papers: string[];
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
+            contributors: string[];
             citation?: {
                 title: string;
                 authors: string[];
@@ -1194,11 +1193,12 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
                 url?: string | undefined;
                 bibtex?: string | undefined;
             } | undefined;
+            reference_papers: string[];
         }, {
-            authors: string[];
-            license: string;
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
             contributors?: string[] | undefined;
             citation?: {
                 title: string;
@@ -1243,12 +1243,12 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             gate_set: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
             classical_requirements: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
-            gate_set: string[];
-            classical_requirements: string[];
             qubit_range?: {
                 minimum: number;
                 maximum?: number | undefined;
             } | undefined;
+            gate_set: string[];
+            classical_requirements: string[];
         }, {
             qubit_range?: {
                 minimum: number;
@@ -1263,14 +1263,14 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             hardware: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
             other: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
-            hardware: string[];
             resource: string[];
             noise: string[];
+            hardware: string[];
             other: string[];
         }, {
-            hardware?: string[] | undefined;
             resource?: string[] | undefined;
             noise?: string[] | undefined;
+            hardware?: string[] | undefined;
             other?: string[] | undefined;
         }>;
         known_limitations: z.ZodArray<z.ZodString, "many">;
@@ -1290,20 +1290,20 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         created_at: z.ZodOptional<z.ZodString>;
         updated_at: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
-            contributors: string[];
-            reference_papers: string[];
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
+            contributors: string[];
             citation?: {
                 title: string;
                 authors: string[];
@@ -1312,6 +1312,7 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
                 url?: string | undefined;
                 bibtex?: string | undefined;
             } | undefined;
+            reference_papers: string[];
         };
         interface: {
             supported_frameworks: string[];
@@ -1319,43 +1320,43 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             supported_output_formats: string[];
         };
         applicability: {
-            gate_set: string[];
-            classical_requirements: string[];
             qubit_range?: {
                 minimum: number;
                 maximum?: number | undefined;
             } | undefined;
+            gate_set: string[];
+            classical_requirements: string[];
         };
         assumptions: {
-            hardware: string[];
             resource: string[];
             noise: string[];
+            hardware: string[];
             other: string[];
         };
         known_limitations: string[];
-        verification_status: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED";
+        verification_status: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED";
         security_notes: string[];
         example_commands: {
             description: string;
             command: string;
         }[];
         benchmark_compatibility: string[];
-        category?: string | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
     }, {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
             contributors?: string[] | undefined;
             citation?: {
                 title: string;
@@ -1367,14 +1368,6 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             } | undefined;
             reference_papers?: string[] | undefined;
         };
-        assumptions: {
-            hardware?: string[] | undefined;
-            resource?: string[] | undefined;
-            noise?: string[] | undefined;
-            other?: string[] | undefined;
-        };
-        known_limitations: string[];
-        category?: string | undefined;
         interface?: {
             supported_frameworks?: string[] | undefined;
             supported_input_formats?: string[] | undefined;
@@ -1388,7 +1381,14 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             gate_set?: string[] | undefined;
             classical_requirements?: string[] | undefined;
         } | undefined;
-        verification_status?: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED" | undefined;
+        assumptions: {
+            resource?: string[] | undefined;
+            noise?: string[] | undefined;
+            hardware?: string[] | undefined;
+            other?: string[] | undefined;
+        };
+        known_limitations: string[];
+        verification_status?: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED" | undefined;
         security_notes?: string[] | undefined;
         example_commands?: {
             description: string;
@@ -1410,16 +1410,16 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         decoder_interface_version: z.ZodOptional<z.ZodString>;
         supported_experiment_types: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     }, "strip", z.ZodTypeAny, {
-        supported_distances: number[];
         code_families: string[];
-        noise_models: string[];
-        supported_experiment_types: string[];
+        supported_distances: number[];
         decoder_family?: string | undefined;
+        noise_models: string[];
         syndrome_format?: string | undefined;
         decoder_interface_version?: string | undefined;
+        supported_experiment_types: string[];
     }, {
-        supported_distances?: number[] | undefined;
         code_families?: string[] | undefined;
+        supported_distances?: number[] | undefined;
         decoder_family?: string | undefined;
         noise_models?: string[] | undefined;
         syndrome_format?: string | undefined;
@@ -1427,29 +1427,20 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         supported_experiment_types?: string[] | undefined;
     }>;
 }, "strip", z.ZodTypeAny, {
-    authors: string[];
+    id: string;
+    slug: string;
     name: string;
     description: string;
-    slug: string;
-    verification_status: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED";
-    created_at: string;
-    updated_at: string;
-    kind: "QEC_DECODER" | "QEC_CODE" | "NOISE_MODEL" | "SYNDROME_DATASET" | "BENCHMARK_SUITE" | "SIMULATION_TOOL" | "RESOURCE_ANALYSIS_TOOL";
-    id: string;
-    domain: "QEC";
+    repository_url?: string | undefined;
+    repository_owner?: string | undefined;
+    repository_name?: string | undefined;
     default_branch: string;
-    tags: string[];
-    is_demo: boolean;
-    qec: {
-        supported_distances: number[];
-        code_families: string[];
-        noise_models: string[];
-        supported_experiment_types: string[];
-        decoder_family?: string | undefined;
-        syndrome_format?: string | undefined;
-        decoder_interface_version?: string | undefined;
-    };
     license?: string | undefined;
+    language?: string | undefined;
+    tags: string[];
+    authors: string[];
+    latest_commit_sha?: string | undefined;
+    reference_paper_url?: string | undefined;
     citation?: {
         title: string;
         authors: string[];
@@ -1458,30 +1449,28 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         url?: string | undefined;
         bibtex?: string | undefined;
     } | undefined;
-    artifact_type?: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE" | undefined;
-    repository_url?: string | undefined;
-    repository_owner?: string | undefined;
-    repository_name?: string | undefined;
-    language?: string | undefined;
-    latest_commit_sha?: string | undefined;
-    reference_paper_url?: string | undefined;
+    is_demo: boolean;
+    verification_status: "REPRODUCED" | "UNVERIFIED" | "VALIDATED_SCHEMA";
     owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at: string;
+    updated_at: string;
+    artifact_type?: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL" | undefined;
     quantum_card?: {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
-            contributors: string[];
-            reference_papers: string[];
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
+            contributors: string[];
             citation?: {
                 title: string;
                 authors: string[];
@@ -1490,6 +1479,7 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
                 url?: string | undefined;
                 bibtex?: string | undefined;
             } | undefined;
+            reference_papers: string[];
         };
         interface: {
             supported_frameworks: string[];
@@ -1497,52 +1487,56 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             supported_output_formats: string[];
         };
         applicability: {
-            gate_set: string[];
-            classical_requirements: string[];
             qubit_range?: {
                 minimum: number;
                 maximum?: number | undefined;
             } | undefined;
+            gate_set: string[];
+            classical_requirements: string[];
         };
         assumptions: {
-            hardware: string[];
             resource: string[];
             noise: string[];
+            hardware: string[];
             other: string[];
         };
         known_limitations: string[];
-        verification_status: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED";
+        verification_status: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED";
         security_notes: string[];
         example_commands: {
             description: string;
             command: string;
         }[];
         benchmark_compatibility: string[];
-        category?: string | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
     } | undefined;
-}, {
-    name: string;
-    description: string;
-    slug: string;
-    created_at: string;
-    updated_at: string;
-    kind: "QEC_DECODER" | "QEC_CODE" | "NOISE_MODEL" | "SYNDROME_DATASET" | "BENCHMARK_SUITE" | "SIMULATION_TOOL" | "RESOURCE_ANALYSIS_TOOL";
-    id: string;
     domain: "QEC";
-    is_demo: boolean;
+    kind: "BENCHMARK_SUITE" | "NOISE_MODEL" | "QEC_CODE" | "QEC_DECODER" | "RESOURCE_ANALYSIS_TOOL" | "SIMULATION_TOOL" | "SYNDROME_DATASET";
     qec: {
-        supported_distances?: number[] | undefined;
-        code_families?: string[] | undefined;
+        code_families: string[];
+        supported_distances: number[];
         decoder_family?: string | undefined;
-        noise_models?: string[] | undefined;
+        noise_models: string[];
         syndrome_format?: string | undefined;
         decoder_interface_version?: string | undefined;
-        supported_experiment_types?: string[] | undefined;
+        supported_experiment_types: string[];
     };
-    authors?: string[] | undefined;
+}, {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    repository_url?: string | undefined;
+    repository_owner?: string | undefined;
+    repository_name?: string | undefined;
+    default_branch?: string | undefined;
     license?: string | undefined;
+    language?: string | undefined;
+    tags?: string[] | undefined;
+    authors?: string[] | undefined;
+    latest_commit_sha?: string | undefined;
+    reference_paper_url?: string | undefined;
     citation?: {
         title: string;
         authors?: string[] | undefined;
@@ -1551,31 +1545,27 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         url?: string | undefined;
         bibtex?: string | undefined;
     } | undefined;
-    artifact_type?: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE" | undefined;
-    verification_status?: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED" | undefined;
-    repository_url?: string | undefined;
-    repository_owner?: string | undefined;
-    repository_name?: string | undefined;
-    default_branch?: string | undefined;
-    language?: string | undefined;
-    tags?: string[] | undefined;
-    latest_commit_sha?: string | undefined;
-    reference_paper_url?: string | undefined;
+    is_demo: boolean;
+    verification_status?: "REPRODUCED" | "UNVERIFIED" | "VALIDATED_SCHEMA" | undefined;
     owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at: string;
+    updated_at: string;
+    artifact_type?: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL" | undefined;
     quantum_card?: {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
             contributors?: string[] | undefined;
             citation?: {
                 title: string;
@@ -1587,14 +1577,6 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             } | undefined;
             reference_papers?: string[] | undefined;
         };
-        assumptions: {
-            hardware?: string[] | undefined;
-            resource?: string[] | undefined;
-            noise?: string[] | undefined;
-            other?: string[] | undefined;
-        };
-        known_limitations: string[];
-        category?: string | undefined;
         interface?: {
             supported_frameworks?: string[] | undefined;
             supported_input_formats?: string[] | undefined;
@@ -1608,7 +1590,14 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             gate_set?: string[] | undefined;
             classical_requirements?: string[] | undefined;
         } | undefined;
-        verification_status?: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED" | undefined;
+        assumptions: {
+            resource?: string[] | undefined;
+            noise?: string[] | undefined;
+            hardware?: string[] | undefined;
+            other?: string[] | undefined;
+        };
+        known_limitations: string[];
+        verification_status?: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED" | undefined;
         security_notes?: string[] | undefined;
         example_commands?: {
             description: string;
@@ -1618,6 +1607,17 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         created_at?: string | undefined;
         updated_at?: string | undefined;
     } | undefined;
+    domain: "QEC";
+    kind: "BENCHMARK_SUITE" | "NOISE_MODEL" | "QEC_CODE" | "QEC_DECODER" | "RESOURCE_ANALYSIS_TOOL" | "SIMULATION_TOOL" | "SYNDROME_DATASET";
+    qec: {
+        code_families?: string[] | undefined;
+        supported_distances?: number[] | undefined;
+        decoder_family?: string | undefined;
+        noise_models?: string[] | undefined;
+        syndrome_format?: string | undefined;
+        decoder_interface_version?: string | undefined;
+        supported_experiment_types?: string[] | undefined;
+    };
 }>, z.ZodObject<{
     id: z.ZodString;
     slug: z.ZodString;
@@ -1701,12 +1701,11 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             }>>;
             reference_papers: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
-            authors: string[];
-            license: string;
-            contributors: string[];
-            reference_papers: string[];
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
+            contributors: string[];
             citation?: {
                 title: string;
                 authors: string[];
@@ -1715,11 +1714,12 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
                 url?: string | undefined;
                 bibtex?: string | undefined;
             } | undefined;
+            reference_papers: string[];
         }, {
-            authors: string[];
-            license: string;
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
             contributors?: string[] | undefined;
             citation?: {
                 title: string;
@@ -1764,12 +1764,12 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             gate_set: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
             classical_requirements: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
-            gate_set: string[];
-            classical_requirements: string[];
             qubit_range?: {
                 minimum: number;
                 maximum?: number | undefined;
             } | undefined;
+            gate_set: string[];
+            classical_requirements: string[];
         }, {
             qubit_range?: {
                 minimum: number;
@@ -1784,14 +1784,14 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             hardware: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
             other: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         }, "strip", z.ZodTypeAny, {
-            hardware: string[];
             resource: string[];
             noise: string[];
+            hardware: string[];
             other: string[];
         }, {
-            hardware?: string[] | undefined;
             resource?: string[] | undefined;
             noise?: string[] | undefined;
+            hardware?: string[] | undefined;
             other?: string[] | undefined;
         }>;
         known_limitations: z.ZodArray<z.ZodString, "many">;
@@ -1811,20 +1811,20 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         created_at: z.ZodOptional<z.ZodString>;
         updated_at: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
-            contributors: string[];
-            reference_papers: string[];
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
+            contributors: string[];
             citation?: {
                 title: string;
                 authors: string[];
@@ -1833,6 +1833,7 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
                 url?: string | undefined;
                 bibtex?: string | undefined;
             } | undefined;
+            reference_papers: string[];
         };
         interface: {
             supported_frameworks: string[];
@@ -1840,43 +1841,43 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             supported_output_formats: string[];
         };
         applicability: {
-            gate_set: string[];
-            classical_requirements: string[];
             qubit_range?: {
                 minimum: number;
                 maximum?: number | undefined;
             } | undefined;
+            gate_set: string[];
+            classical_requirements: string[];
         };
         assumptions: {
-            hardware: string[];
             resource: string[];
             noise: string[];
+            hardware: string[];
             other: string[];
         };
         known_limitations: string[];
-        verification_status: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED";
+        verification_status: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED";
         security_notes: string[];
         example_commands: {
             description: string;
             command: string;
         }[];
         benchmark_compatibility: string[];
-        category?: string | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
     }, {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
             contributors?: string[] | undefined;
             citation?: {
                 title: string;
@@ -1888,14 +1889,6 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             } | undefined;
             reference_papers?: string[] | undefined;
         };
-        assumptions: {
-            hardware?: string[] | undefined;
-            resource?: string[] | undefined;
-            noise?: string[] | undefined;
-            other?: string[] | undefined;
-        };
-        known_limitations: string[];
-        category?: string | undefined;
         interface?: {
             supported_frameworks?: string[] | undefined;
             supported_input_formats?: string[] | undefined;
@@ -1909,7 +1902,14 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             gate_set?: string[] | undefined;
             classical_requirements?: string[] | undefined;
         } | undefined;
-        verification_status?: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED" | undefined;
+        assumptions: {
+            resource?: string[] | undefined;
+            noise?: string[] | undefined;
+            hardware?: string[] | undefined;
+            other?: string[] | undefined;
+        };
+        known_limitations: string[];
+        verification_status?: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED" | undefined;
         security_notes?: string[] | undefined;
         example_commands?: {
             description: string;
@@ -1931,13 +1931,13 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         simulator_requirements: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         frameworks: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     }, "strip", z.ZodTypeAny, {
+        algorithm_family?: string | undefined;
         problem_domains: string[];
         supported_input_types: string[];
         supported_qubit_ranges: [number, number][];
         classical_reference_available: boolean;
         simulator_requirements: string[];
         frameworks: string[];
-        algorithm_family?: string | undefined;
     }, {
         algorithm_family?: string | undefined;
         problem_domains?: string[] | undefined;
@@ -1948,29 +1948,20 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         frameworks?: string[] | undefined;
     }>;
 }, "strip", z.ZodTypeAny, {
-    authors: string[];
+    id: string;
+    slug: string;
     name: string;
     description: string;
-    slug: string;
-    verification_status: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED";
-    created_at: string;
-    updated_at: string;
-    kind: "QUANTUM_ALGORITHM" | "PROBLEM_INSTANCE" | "CLASSICAL_REFERENCE" | "BENCHMARK_SUITE" | "SIMULATION_TOOL" | "RESOURCE_ANALYSIS_TOOL";
-    id: string;
-    domain: "ALGORITHM";
+    repository_url?: string | undefined;
+    repository_owner?: string | undefined;
+    repository_name?: string | undefined;
     default_branch: string;
-    tags: string[];
-    is_demo: boolean;
-    algorithm: {
-        problem_domains: string[];
-        supported_input_types: string[];
-        supported_qubit_ranges: [number, number][];
-        classical_reference_available: boolean;
-        simulator_requirements: string[];
-        frameworks: string[];
-        algorithm_family?: string | undefined;
-    };
     license?: string | undefined;
+    language?: string | undefined;
+    tags: string[];
+    authors: string[];
+    latest_commit_sha?: string | undefined;
+    reference_paper_url?: string | undefined;
     citation?: {
         title: string;
         authors: string[];
@@ -1979,30 +1970,28 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         url?: string | undefined;
         bibtex?: string | undefined;
     } | undefined;
-    artifact_type?: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE" | undefined;
-    repository_url?: string | undefined;
-    repository_owner?: string | undefined;
-    repository_name?: string | undefined;
-    language?: string | undefined;
-    latest_commit_sha?: string | undefined;
-    reference_paper_url?: string | undefined;
+    is_demo: boolean;
+    verification_status: "REPRODUCED" | "UNVERIFIED" | "VALIDATED_SCHEMA";
     owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at: string;
+    updated_at: string;
+    artifact_type?: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL" | undefined;
     quantum_card?: {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
-            contributors: string[];
-            reference_papers: string[];
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
+            contributors: string[];
             citation?: {
                 title: string;
                 authors: string[];
@@ -2011,6 +2000,7 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
                 url?: string | undefined;
                 bibtex?: string | undefined;
             } | undefined;
+            reference_papers: string[];
         };
         interface: {
             supported_frameworks: string[];
@@ -2018,52 +2008,56 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             supported_output_formats: string[];
         };
         applicability: {
-            gate_set: string[];
-            classical_requirements: string[];
             qubit_range?: {
                 minimum: number;
                 maximum?: number | undefined;
             } | undefined;
+            gate_set: string[];
+            classical_requirements: string[];
         };
         assumptions: {
-            hardware: string[];
             resource: string[];
             noise: string[];
+            hardware: string[];
             other: string[];
         };
         known_limitations: string[];
-        verification_status: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED";
+        verification_status: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED";
         security_notes: string[];
         example_commands: {
             description: string;
             command: string;
         }[];
         benchmark_compatibility: string[];
-        category?: string | undefined;
         created_at?: string | undefined;
         updated_at?: string | undefined;
     } | undefined;
-}, {
-    name: string;
-    description: string;
-    slug: string;
-    created_at: string;
-    updated_at: string;
-    kind: "QUANTUM_ALGORITHM" | "PROBLEM_INSTANCE" | "CLASSICAL_REFERENCE" | "BENCHMARK_SUITE" | "SIMULATION_TOOL" | "RESOURCE_ANALYSIS_TOOL";
-    id: string;
     domain: "ALGORITHM";
-    is_demo: boolean;
+    kind: "BENCHMARK_SUITE" | "CLASSICAL_REFERENCE" | "PROBLEM_INSTANCE" | "QUANTUM_ALGORITHM" | "RESOURCE_ANALYSIS_TOOL" | "SIMULATION_TOOL";
     algorithm: {
         algorithm_family?: string | undefined;
-        problem_domains?: string[] | undefined;
-        supported_input_types?: string[] | undefined;
-        supported_qubit_ranges?: [number, number][] | undefined;
-        classical_reference_available?: boolean | undefined;
-        simulator_requirements?: string[] | undefined;
-        frameworks?: string[] | undefined;
+        problem_domains: string[];
+        supported_input_types: string[];
+        supported_qubit_ranges: [number, number][];
+        classical_reference_available: boolean;
+        simulator_requirements: string[];
+        frameworks: string[];
     };
-    authors?: string[] | undefined;
+}, {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    repository_url?: string | undefined;
+    repository_owner?: string | undefined;
+    repository_name?: string | undefined;
+    default_branch?: string | undefined;
     license?: string | undefined;
+    language?: string | undefined;
+    tags?: string[] | undefined;
+    authors?: string[] | undefined;
+    latest_commit_sha?: string | undefined;
+    reference_paper_url?: string | undefined;
     citation?: {
         title: string;
         authors?: string[] | undefined;
@@ -2072,31 +2066,27 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         url?: string | undefined;
         bibtex?: string | undefined;
     } | undefined;
-    artifact_type?: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE" | undefined;
-    verification_status?: "UNVERIFIED" | "VALIDATED_SCHEMA" | "REPRODUCED" | undefined;
-    repository_url?: string | undefined;
-    repository_owner?: string | undefined;
-    repository_name?: string | undefined;
-    default_branch?: string | undefined;
-    language?: string | undefined;
-    tags?: string[] | undefined;
-    latest_commit_sha?: string | undefined;
-    reference_paper_url?: string | undefined;
+    is_demo: boolean;
+    verification_status?: "REPRODUCED" | "UNVERIFIED" | "VALIDATED_SCHEMA" | undefined;
     owner_username?: string | null | undefined;
-    visibility?: "PUBLIC" | "PRIVATE" | undefined;
+    visibility?: "PRIVATE" | "PUBLIC" | undefined;
+    created_at: string;
+    updated_at: string;
+    artifact_type?: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL" | undefined;
     quantum_card?: {
-        name: string;
-        description: string;
         schema_version: string;
+        name: string;
         slug: string;
         version: string;
-        artifact_type: "ALGORITHM" | "QEC_CODE" | "NOISE_MODEL" | "BENCHMARK_SUITE" | "CIRCUIT" | "DECODER" | "HARDWARE_PROFILE" | "DATASET" | "MITIGATION_PIPELINE" | "RESOURCE_MODEL" | "COMPILER_OR_TRANSPILER" | "EXPERIMENT_TEMPLATE";
+        artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
+        description: string;
         problem_definition: string;
+        category?: string | undefined;
         provenance: {
-            authors: string[];
-            license: string;
             source_repository_url?: string | undefined;
             commit_sha?: string | undefined;
+            license: string;
+            authors: string[];
             contributors?: string[] | undefined;
             citation?: {
                 title: string;
@@ -2108,14 +2098,6 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             } | undefined;
             reference_papers?: string[] | undefined;
         };
-        assumptions: {
-            hardware?: string[] | undefined;
-            resource?: string[] | undefined;
-            noise?: string[] | undefined;
-            other?: string[] | undefined;
-        };
-        known_limitations: string[];
-        category?: string | undefined;
         interface?: {
             supported_frameworks?: string[] | undefined;
             supported_input_formats?: string[] | undefined;
@@ -2129,7 +2111,14 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
             gate_set?: string[] | undefined;
             classical_requirements?: string[] | undefined;
         } | undefined;
-        verification_status?: "UNVERIFIED" | "REPRODUCED" | "SCHEMA_VALIDATED" | "HASH_VERIFIED" | "SOURCE_VERIFIED" | "ENVIRONMENT_RECORDED" | "INDEPENDENTLY_REPRODUCED" | "REVIEWED" | undefined;
+        assumptions: {
+            resource?: string[] | undefined;
+            noise?: string[] | undefined;
+            hardware?: string[] | undefined;
+            other?: string[] | undefined;
+        };
+        known_limitations: string[];
+        verification_status?: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED" | undefined;
         security_notes?: string[] | undefined;
         example_commands?: {
             description: string;
@@ -2139,6 +2128,17 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
         created_at?: string | undefined;
         updated_at?: string | undefined;
     } | undefined;
+    domain: "ALGORITHM";
+    kind: "BENCHMARK_SUITE" | "CLASSICAL_REFERENCE" | "PROBLEM_INSTANCE" | "QUANTUM_ALGORITHM" | "RESOURCE_ANALYSIS_TOOL" | "SIMULATION_TOOL";
+    algorithm: {
+        algorithm_family?: string | undefined;
+        problem_domains?: string[] | undefined;
+        supported_input_types?: string[] | undefined;
+        supported_qubit_ranges?: [number, number][] | undefined;
+        classical_reference_available?: boolean | undefined;
+        simulator_requirements?: string[] | undefined;
+        frameworks?: string[] | undefined;
+    };
 }>]>;
 export type Artifact = z.infer<typeof ArtifactSchema>;
 export declare const ArtifactListQuerySchema: z.ZodObject<{
@@ -2147,15 +2147,15 @@ export declare const ArtifactListQuerySchema: z.ZodObject<{
     tag: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
-    kind?: "QEC_DECODER" | "QEC_CODE" | "NOISE_MODEL" | "SYNDROME_DATASET" | "QUANTUM_ALGORITHM" | "PROBLEM_INSTANCE" | "CLASSICAL_REFERENCE" | "BENCHMARK_SUITE" | "SIMULATION_TOOL" | "RESOURCE_ANALYSIS_TOOL" | undefined;
-    domain?: "QEC" | "ALGORITHM" | undefined;
-    is_demo?: boolean | undefined;
+    domain?: "ALGORITHM" | "QEC" | undefined;
+    kind?: "BENCHMARK_SUITE" | "CLASSICAL_REFERENCE" | "NOISE_MODEL" | "PROBLEM_INSTANCE" | "QEC_CODE" | "QEC_DECODER" | "QUANTUM_ALGORITHM" | "RESOURCE_ANALYSIS_TOOL" | "SIMULATION_TOOL" | "SYNDROME_DATASET" | undefined;
     tag?: string | undefined;
+    is_demo?: boolean | undefined;
 }, {
-    kind?: "QEC_DECODER" | "QEC_CODE" | "NOISE_MODEL" | "SYNDROME_DATASET" | "QUANTUM_ALGORITHM" | "PROBLEM_INSTANCE" | "CLASSICAL_REFERENCE" | "BENCHMARK_SUITE" | "SIMULATION_TOOL" | "RESOURCE_ANALYSIS_TOOL" | undefined;
-    domain?: "QEC" | "ALGORITHM" | undefined;
-    is_demo?: boolean | undefined;
+    domain?: "ALGORITHM" | "QEC" | undefined;
+    kind?: "BENCHMARK_SUITE" | "CLASSICAL_REFERENCE" | "NOISE_MODEL" | "PROBLEM_INSTANCE" | "QEC_CODE" | "QEC_DECODER" | "QUANTUM_ALGORITHM" | "RESOURCE_ANALYSIS_TOOL" | "SIMULATION_TOOL" | "SYNDROME_DATASET" | undefined;
     tag?: string | undefined;
+    is_demo?: boolean | undefined;
 }>;
 export type ArtifactListQuery = z.infer<typeof ArtifactListQuerySchema>;
 //# sourceMappingURL=artifact.d.ts.map

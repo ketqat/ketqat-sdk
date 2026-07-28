@@ -30,7 +30,7 @@ export declare const EquivalenceEvidenceSchema: z.ZodEffects<z.ZodObject<{
     /** Required for INCONCLUSIVE: why the check did not decide. */
     reason: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+    level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
     method?: string | undefined;
     tolerance?: number | undefined;
     global_phase_ignored?: boolean | undefined;
@@ -38,7 +38,7 @@ export declare const EquivalenceEvidenceSchema: z.ZodEffects<z.ZodObject<{
     counterexample?: string | undefined;
     reason?: string | undefined;
 }, {
-    level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+    level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
     method?: string | undefined;
     tolerance?: number | undefined;
     global_phase_ignored?: boolean | undefined;
@@ -46,7 +46,7 @@ export declare const EquivalenceEvidenceSchema: z.ZodEffects<z.ZodObject<{
     counterexample?: string | undefined;
     reason?: string | undefined;
 }>, {
-    level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+    level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
     method?: string | undefined;
     tolerance?: number | undefined;
     global_phase_ignored?: boolean | undefined;
@@ -54,7 +54,7 @@ export declare const EquivalenceEvidenceSchema: z.ZodEffects<z.ZodObject<{
     counterexample?: string | undefined;
     reason?: string | undefined;
 }, {
-    level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+    level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
     method?: string | undefined;
     tolerance?: number | undefined;
     global_phase_ignored?: boolean | undefined;
@@ -81,14 +81,14 @@ export declare const CircuitTransformationSchema: z.ZodObject<{
         location: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         feature: string;
-        severity: "semantic" | "structural" | "cosmetic";
-        action: "rejected" | "dropped" | "approximated";
+        severity: "cosmetic" | "semantic" | "structural";
+        action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
     }, {
         feature: string;
-        severity: "semantic" | "structural" | "cosmetic";
-        action: "rejected" | "dropped" | "approximated";
+        severity: "cosmetic" | "semantic" | "structural";
+        action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
     }>, "many">>;
@@ -103,7 +103,7 @@ export declare const CircuitTransformationSchema: z.ZodObject<{
         /** Required for INCONCLUSIVE: why the check did not decide. */
         reason: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
         method?: string | undefined;
         tolerance?: number | undefined;
         global_phase_ignored?: boolean | undefined;
@@ -111,7 +111,7 @@ export declare const CircuitTransformationSchema: z.ZodObject<{
         counterexample?: string | undefined;
         reason?: string | undefined;
     }, {
-        level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
         method?: string | undefined;
         tolerance?: number | undefined;
         global_phase_ignored?: boolean | undefined;
@@ -119,7 +119,7 @@ export declare const CircuitTransformationSchema: z.ZodObject<{
         counterexample?: string | undefined;
         reason?: string | undefined;
     }>, {
-        level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
         method?: string | undefined;
         tolerance?: number | undefined;
         global_phase_ignored?: boolean | undefined;
@@ -127,7 +127,7 @@ export declare const CircuitTransformationSchema: z.ZodObject<{
         counterexample?: string | undefined;
         reason?: string | undefined;
     }, {
-        level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
         method?: string | undefined;
         tolerance?: number | undefined;
         global_phase_ignored?: boolean | undefined;
@@ -136,22 +136,22 @@ export declare const CircuitTransformationSchema: z.ZodObject<{
         reason?: string | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
-    options: Record<string, unknown>;
-    kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+    kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
     adapter: string;
     adapter_version: string;
+    library_version?: string | undefined;
+    options: Record<string, unknown>;
+    input_circuit_hash?: string | undefined;
+    output_circuit_hash?: string | undefined;
     loss_report: {
         feature: string;
-        severity: "semantic" | "structural" | "cosmetic";
-        action: "rejected" | "dropped" | "approximated";
+        severity: "cosmetic" | "semantic" | "structural";
+        action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
     }[];
-    library_version?: string | undefined;
-    input_circuit_hash?: string | undefined;
-    output_circuit_hash?: string | undefined;
     equivalence?: {
-        level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
         method?: string | undefined;
         tolerance?: number | undefined;
         global_phase_ignored?: boolean | undefined;
@@ -160,22 +160,22 @@ export declare const CircuitTransformationSchema: z.ZodObject<{
         reason?: string | undefined;
     } | undefined;
 }, {
-    kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+    kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
     adapter: string;
     adapter_version: string;
-    options?: Record<string, unknown> | undefined;
     library_version?: string | undefined;
+    options?: Record<string, unknown> | undefined;
     input_circuit_hash?: string | undefined;
     output_circuit_hash?: string | undefined;
     loss_report?: {
         feature: string;
-        severity: "semantic" | "structural" | "cosmetic";
-        action: "rejected" | "dropped" | "approximated";
+        severity: "cosmetic" | "semantic" | "structural";
+        action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
     }[] | undefined;
     equivalence?: {
-        level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
         method?: string | undefined;
         tolerance?: number | undefined;
         global_phase_ignored?: boolean | undefined;
@@ -204,14 +204,14 @@ export declare const TransformationChainSchema: z.ZodArray<z.ZodObject<{
         location: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         feature: string;
-        severity: "semantic" | "structural" | "cosmetic";
-        action: "rejected" | "dropped" | "approximated";
+        severity: "cosmetic" | "semantic" | "structural";
+        action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
     }, {
         feature: string;
-        severity: "semantic" | "structural" | "cosmetic";
-        action: "rejected" | "dropped" | "approximated";
+        severity: "cosmetic" | "semantic" | "structural";
+        action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
     }>, "many">>;
@@ -226,7 +226,7 @@ export declare const TransformationChainSchema: z.ZodArray<z.ZodObject<{
         /** Required for INCONCLUSIVE: why the check did not decide. */
         reason: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
         method?: string | undefined;
         tolerance?: number | undefined;
         global_phase_ignored?: boolean | undefined;
@@ -234,7 +234,7 @@ export declare const TransformationChainSchema: z.ZodArray<z.ZodObject<{
         counterexample?: string | undefined;
         reason?: string | undefined;
     }, {
-        level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
         method?: string | undefined;
         tolerance?: number | undefined;
         global_phase_ignored?: boolean | undefined;
@@ -242,7 +242,7 @@ export declare const TransformationChainSchema: z.ZodArray<z.ZodObject<{
         counterexample?: string | undefined;
         reason?: string | undefined;
     }>, {
-        level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
         method?: string | undefined;
         tolerance?: number | undefined;
         global_phase_ignored?: boolean | undefined;
@@ -250,7 +250,7 @@ export declare const TransformationChainSchema: z.ZodArray<z.ZodObject<{
         counterexample?: string | undefined;
         reason?: string | undefined;
     }, {
-        level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
         method?: string | undefined;
         tolerance?: number | undefined;
         global_phase_ignored?: boolean | undefined;
@@ -259,22 +259,22 @@ export declare const TransformationChainSchema: z.ZodArray<z.ZodObject<{
         reason?: string | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
-    options: Record<string, unknown>;
-    kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+    kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
     adapter: string;
     adapter_version: string;
+    library_version?: string | undefined;
+    options: Record<string, unknown>;
+    input_circuit_hash?: string | undefined;
+    output_circuit_hash?: string | undefined;
     loss_report: {
         feature: string;
-        severity: "semantic" | "structural" | "cosmetic";
-        action: "rejected" | "dropped" | "approximated";
+        severity: "cosmetic" | "semantic" | "structural";
+        action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
     }[];
-    library_version?: string | undefined;
-    input_circuit_hash?: string | undefined;
-    output_circuit_hash?: string | undefined;
     equivalence?: {
-        level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
         method?: string | undefined;
         tolerance?: number | undefined;
         global_phase_ignored?: boolean | undefined;
@@ -283,22 +283,22 @@ export declare const TransformationChainSchema: z.ZodArray<z.ZodObject<{
         reason?: string | undefined;
     } | undefined;
 }, {
-    kind: "IMPORT" | "EXPORT" | "CONVERSION" | "TRANSPILATION" | "OPTIMIZATION" | "ZX_REWRITE" | "MITIGATION" | "LAYOUT" | "ROUTING";
+    kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
     adapter: string;
     adapter_version: string;
-    options?: Record<string, unknown> | undefined;
     library_version?: string | undefined;
+    options?: Record<string, unknown> | undefined;
     input_circuit_hash?: string | undefined;
     output_circuit_hash?: string | undefined;
     loss_report?: {
         feature: string;
-        severity: "semantic" | "structural" | "cosmetic";
-        action: "rejected" | "dropped" | "approximated";
+        severity: "cosmetic" | "semantic" | "structural";
+        action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
     }[] | undefined;
     equivalence?: {
-        level: "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "SYMBOLICALLY_REDUCED" | "PROVED_BY_SUPPORTED_REWRITE" | "FAILED" | "INCONCLUSIVE";
+        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
         method?: string | undefined;
         tolerance?: number | undefined;
         global_phase_ignored?: boolean | undefined;

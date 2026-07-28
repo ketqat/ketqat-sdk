@@ -51,11 +51,11 @@ export declare const ArtifactRelationSchema: z.ZodObject<{
     notes: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     schema_version: string;
-    relation: "derived_from" | "forks" | "implements" | "supersedes" | "benchmarked_by" | "compatible_with" | "requires" | "cites" | "decodes" | "targets" | "contradicts";
+    relation: "benchmarked_by" | "cites" | "compatible_with" | "contradicts" | "decodes" | "derived_from" | "forks" | "implements" | "requires" | "supersedes" | "targets";
     from_artifact_slug: string;
     to_artifact_slug: string;
-    asserted_by: string;
     to_artifact_version?: string | undefined;
+    asserted_by: string;
     asserted_at?: string | undefined;
     evidence?: {
         summary: string;
@@ -65,11 +65,11 @@ export declare const ArtifactRelationSchema: z.ZodObject<{
     notes?: string | undefined;
 }, {
     schema_version: string;
-    relation: "derived_from" | "forks" | "implements" | "supersedes" | "benchmarked_by" | "compatible_with" | "requires" | "cites" | "decodes" | "targets" | "contradicts";
+    relation: "benchmarked_by" | "cites" | "compatible_with" | "contradicts" | "decodes" | "derived_from" | "forks" | "implements" | "requires" | "supersedes" | "targets";
     from_artifact_slug: string;
     to_artifact_slug: string;
-    asserted_by: string;
     to_artifact_version?: string | undefined;
+    asserted_by: string;
     asserted_at?: string | undefined;
     evidence?: {
         summary: string;
