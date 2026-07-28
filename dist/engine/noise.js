@@ -13,7 +13,8 @@ import { z } from "zod";
  * expectation value from N shots carries roughly 1/sqrt(N) statistical error on
  * top of the physical noise being modelled.
  */
-export const DepolarizingNoiseSchema = z.object({
+export const DepolarizingNoiseSchema = z
+    .object({
     model: z.literal("depolarizing"),
     /** Probability a one-qubit gate is followed by a random non-identity Pauli. */
     one_qubit_error: z.number().min(0).max(1).default(0),
@@ -21,7 +22,16 @@ export const DepolarizingNoiseSchema = z.object({
     two_qubit_error: z.number().min(0).max(1).default(0),
     /** Probability a measurement outcome is flipped. */
     readout_error: z.number().min(0).max(1).default(0),
-});
+})
+    // Strict, because a misspelled rate is worse than a rejected one.
+    //
+    // `{ one_qubit_error_rate: 0.02 }` -- a plausible guess at the field name --
+    // used to be accepted, leave `one_qubit_error` undefined, and then produce a
+    // maximally noisy circuit rather than a 2% one. Under a permissive schema the
+    // same typo would silently give a *noiseless* run reported as noisy, which is
+    // quieter and no better. Naming the unknown key is the only outcome that
+    // tells the user what happened.
+    .strict();
 export const NoiseModelSchema = DepolarizingNoiseSchema;
 const PAULIS = ["x", "y", "z"];
 /**
@@ -42,6 +52,18 @@ export function applyPauliNoise(circuit, noise, random) {
             : operation.qubits.length === 2
                 ? noise.two_qubit_error
                 : 0;
+        // A non-finite probability must never reach the comparisons below.
+        //
+        // `undefined <= 0` is false, so an absent rate skipped the early return;
+        // then `random() >= undefined` is also false, so the error was applied to
+        // every qubit of every gate. Both guards fail open, and they fail open in
+        // the same direction, which turned a missing field into maximal noise
+        // reported as the requested noise. Refusing is the only safe reading:
+        // there is no defensible default for "how noisy did you mean".
+        if (!Number.isFinite(probability)) {
+            throw new Error(`Noise probability for a ${operation.qubits.length}-qubit gate is ${String(probability)}. ` +
+                "A noise model must give a finite probability for every arity it is applied to.");
+        }
         if (probability <= 0)
             return;
         for (const qubit of operation.qubits) {

@@ -2513,3 +2513,69 @@ c[1] = measure q[1];
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// A malformed noise model must be refused, not silently maximised.
+//
+// `{ model: "depolarizing", one_qubit_error_rate: 0.02 }` -- a plausible guess
+// at the field name, which is actually `one_qubit_error` -- used to be accepted
+// and produce a *maximally noisy* circuit:
+//
+//   malformed   counts {"0":2215,"1":1785}   <Z> = 0.1075
+//   correct     counts {"0":3893,"1":107}    <Z> = 0.9465
+//
+// Two guards failed open in the same direction. `undefined <= 0` is false, so
+// the "no noise" early return was skipped; then `random() >= undefined` is also
+// false, so a Pauli was inserted after every gate on every qubit. A typo asking
+// for 2% error produced near-total decoherence, reported as the requested run.
+//
+// This is the worst available failure for a scientific tool: not a crash, not a
+// wrong-looking number, but a plausible one from an experiment nobody ran.
+// ---------------------------------------------------------------------------
+{
+  const identityCircuit = parseQasm3(`OPENQASM 3;
+include "stdgates.inc";
+qubit[1] q;
+bit[1] c;
+h q[0];
+h q[0];
+c[0] = measure q[0];
+`).circuit
+
+  const run = (noise) => simulateStatevector(identityCircuit, { shots: 4000, seed: 42, noise })
+
+  // The circuit is h;h -- the identity -- so a noiseless run must give |0> every
+  // time. This anchors everything below: any deviation is the noise model.
+  assert.deepEqual(run(undefined).counts, { 0: 4000 }, "h;h is the identity and must measure 0 every shot")
+
+  // A misspelled rate names the offending key rather than guessing an intent.
+  assert.throws(
+    () => run({ model: "depolarizing", one_qubit_error_rate: 0.02, two_qubit_error_rate: 0.02 }),
+    (error) => /one_qubit_error_rate/.test(String(error)),
+    "a misspelled noise rate must be rejected by name",
+  )
+
+  // Refusal must not have been achieved by refusing everything.
+  const correct = run({ model: "depolarizing", one_qubit_error: 0.02 })
+  const zero = Number(correct.counts?.["0"] ?? 0)
+  assert.ok(
+    zero > 3500 && zero < 4000,
+    `2% depolarizing on two gates should leave most shots at |0>, got ${zero}/4000`,
+  )
+
+  // An omitted rate is genuinely zero, which the schema defaults allow and which
+  // must stay noiseless rather than becoming "unspecified, therefore maximal".
+  assert.deepEqual(
+    run({ model: "depolarizing" }).counts,
+    { 0: 4000 },
+    "a model that specifies no rates is noiseless, not maximally noisy",
+  )
+
+  // Rates outside [0,1] are not probabilities.
+  for (const bad of [{ one_qubit_error: 1.5 }, { one_qubit_error: -0.1 }]) {
+    assert.throws(
+      () => run({ model: "depolarizing", ...bad }),
+      `a rate outside [0,1] must be refused: ${JSON.stringify(bad)}`,
+    )
+  }
+}

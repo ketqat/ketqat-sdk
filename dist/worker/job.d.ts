@@ -49,7 +49,7 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
         one_qubit_error: z.ZodDefault<z.ZodNumber>;
         two_qubit_error: z.ZodDefault<z.ZodNumber>;
         readout_error: z.ZodDefault<z.ZodNumber>;
-    }, "strip", z.ZodTypeAny, {
+    }, "strict", z.ZodTypeAny, {
         model: "depolarizing";
         one_qubit_error: number;
         two_qubit_error: number;
@@ -628,7 +628,7 @@ export declare const JobParametersSchema: z.ZodDiscriminatedUnion<"operation", [
         one_qubit_error: z.ZodDefault<z.ZodNumber>;
         two_qubit_error: z.ZodDefault<z.ZodNumber>;
         readout_error: z.ZodDefault<z.ZodNumber>;
-    }, "strip", z.ZodTypeAny, {
+    }, "strict", z.ZodTypeAny, {
         model: "depolarizing";
         one_qubit_error: number;
         two_qubit_error: number;
@@ -687,7 +687,7 @@ export declare const ExecutionJobSchema: z.ZodObject<{
             one_qubit_error: z.ZodDefault<z.ZodNumber>;
             two_qubit_error: z.ZodDefault<z.ZodNumber>;
             readout_error: z.ZodDefault<z.ZodNumber>;
-        }, "strip", z.ZodTypeAny, {
+        }, "strict", z.ZodTypeAny, {
             model: "depolarizing";
             one_qubit_error: number;
             two_qubit_error: number;
@@ -1266,7 +1266,7 @@ export declare const ExecutionJobSchema: z.ZodObject<{
             one_qubit_error: z.ZodDefault<z.ZodNumber>;
             two_qubit_error: z.ZodDefault<z.ZodNumber>;
             readout_error: z.ZodDefault<z.ZodNumber>;
-        }, "strip", z.ZodTypeAny, {
+        }, "strict", z.ZodTypeAny, {
             model: "depolarizing";
             one_qubit_error: number;
             two_qubit_error: number;
