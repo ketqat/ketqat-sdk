@@ -2768,3 +2768,57 @@ c[0] = measure q[0];
     `the README must quote the inconclusive reason verbatim; expected: ${inconclusive.reason}`,
   )
 }
+
+// ---------------------------------------------------------------------------
+// The resource example must stay runnable, and its warning must stay true.
+//
+// The whole point of that example is that `t_count` is the field a reader lifts
+// into a slide, and that on this circuit it undercounts by more than 3x because
+// a Toffoli has not been decomposed. If the estimator ever starts decomposing,
+// the README's warning becomes false and this fails.
+// ---------------------------------------------------------------------------
+{
+  const manifest = JSON.parse(
+    fs.readFileSync(new URL("../examples/resources/t-count-with-toffoli.json", import.meta.url), "utf8"),
+  )
+  const readme = fs.readFileSync(new URL("../examples/README.md", import.meta.url), "utf8")
+
+  assert.ok(
+    JobParametersSchema.safeParse(manifest.parameters).success,
+    "the resource example must be submittable without editing",
+  )
+
+  const estimate = estimateResources(parseQasm3(manifest.parameters.qasm).circuit)
+
+  // Every figure the README prints.
+  assert.equal(estimate.fault_tolerant.t_count, 3, "README documents t_count 3")
+  assert.equal(estimate.fault_tolerant.toffoli_count, 1, "README documents toffoli_count 1")
+  assert.match(readme, new RegExp(`"t_count": ${estimate.fault_tolerant.t_count}`))
+  assert.match(readme, new RegExp(`"toffoli_count": ${estimate.fault_tolerant.toffoli_count}`))
+
+  // The claim that makes the example worth reading: the circuit contains a
+  // Toffoli that has NOT been decomposed, so t_count understates the real cost.
+  // If the estimator starts decomposing, toffoli_count goes to zero and t_count
+  // rises -- and the README's warning would be wrong.
+  assert.ok(
+    estimate.fault_tolerant.toffoli_count > 0,
+    "the example depends on an undecomposed Toffoli being reported separately",
+  )
+  assert.match(readme, /is not this circuit's T-count/)
+  assert.match(readme, /seven T gates/)
+
+  // The estimator must keep saying what it did not do.
+  const notes = estimate.assumptions.notes.join(" ")
+  assert.match(notes, /No synthesis, decomposition, or optimization is applied/)
+  assert.ok(
+    readme.includes("Static count over the circuit as written. No synthesis, decomposition, or optimization is applied."),
+    "the README quotes the estimator's own note verbatim",
+  )
+
+  // Duration and success probability must be absent, not defaulted, with no
+  // hardware profile supplied. A plausible number from nothing is worse than
+  // none, because it is indistinguishable from a measurement.
+  assert.equal(estimate.nisq.duration_seconds, undefined)
+  assert.equal(estimate.nisq.success_probability, undefined)
+  assert.match(notes, /not estimated/)
+}
