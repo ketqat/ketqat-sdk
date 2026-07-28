@@ -2822,3 +2822,75 @@ c[0] = measure q[0];
   assert.equal(estimate.nisq.success_probability, undefined)
   assert.match(notes, /not estimated/)
 }
+
+// ---------------------------------------------------------------------------
+// `job watch` follows a job without spamming, and never calls a timeout a
+// failure.
+//
+// The distinction in the last clause is the point of the command. A job that is
+// still running is not a job that failed, and a watch that reports the two the
+// same way tells someone their experiment died when it is mid-flight.
+// ---------------------------------------------------------------------------
+{
+  const { runCli } = await import("../dist/index.js")
+  const originalFetch = globalThis.fetch
+  const originalToken = process.env.KETQAT_TOKEN
+  process.env.KETQAT_TOKEN = "kq_test"
+
+  const stubStatuses = (statuses) => {
+    let call = 0
+    globalThis.fetch = async () => {
+      const status = statuses[Math.min(call, statuses.length - 1)]
+      call += 1
+      return new Response(JSON.stringify({ job: { id: "watched", status } }), { status: 200 })
+    }
+    return () => call
+  }
+
+  try {
+    // A job that progresses QUEUED -> RUNNING -> SUCCEEDED. Each transition is
+    // recorded once, even though QUEUED and RUNNING are each polled twice.
+    stubStatuses(["QUEUED", "QUEUED", "RUNNING", "RUNNING", "SUCCEEDED"])
+    const succeeded = await runCli(["job", "watch", "watched", "--registry", "https://example.test"])
+    assert.equal(succeeded.exitCode, 0, "a succeeded job exits 0, so the command is usable in a script")
+    const transitions = succeeded.stdout.transitions.map((entry) => entry.status)
+    assert.deepEqual(
+      transitions,
+      ["QUEUED", "RUNNING", "SUCCEEDED"],
+      "each status is reported once, not once per poll",
+    )
+
+    // A failure exits non-zero, matching `job submit --wait`.
+    stubStatuses(["FAILED"])
+    const failed = await runCli(["job", "watch", "watched", "--registry", "https://example.test"])
+    assert.equal(failed.exitCode, 1)
+    assert.ok(!failed.stdout.timed_out, "a failure is not a timeout")
+
+    // The one that matters: a job still running when watching stops. It must
+    // not be reported as failed, and the payload must say the job is probably
+    // still going.
+    stubStatuses(["RUNNING"])
+    const timedOut = await runCli([
+      "job", "watch", "watched", "--registry", "https://example.test", "--timeout", "0",
+    ])
+    assert.equal(timedOut.stdout.timed_out, true)
+    assert.notEqual(timedOut.exitCode, 1, "a timeout must not use the same exit code as a failed job")
+    assert.match(timedOut.stdout.note, /has not\s+failed|not failed/i)
+    assert.match(timedOut.stdout.note, /still running/i)
+
+    // A missing id is a usage error, not a crash.
+    const noId = await runCli(["job", "watch", "--registry", "https://example.test"])
+    assert.equal(noId.exitCode, 2)
+    assert.match(noId.stderr, /requires a job id/)
+
+    // Every job subcommand needs a token, and it is never read from a flag.
+    delete process.env.KETQAT_TOKEN
+    const noToken = await runCli(["job", "watch", "watched", "--registry", "https://example.test"])
+    assert.equal(noToken.exitCode, 2)
+    assert.match(noToken.stderr, /KETQAT_TOKEN/)
+  } finally {
+    globalThis.fetch = originalFetch
+    if (originalToken === undefined) delete process.env.KETQAT_TOKEN
+    else process.env.KETQAT_TOKEN = originalToken
+  }
+}

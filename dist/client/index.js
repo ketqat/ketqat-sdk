@@ -5,7 +5,7 @@ import { validateJob } from "../worker/job.js";
  * which lives in the private control plane; the client must know when to stop
  * polling without depending on it.
  */
-const TERMINAL_JOB_STATUSES = ["SUCCEEDED", "FAILED", "CANCELLED", "TIMED_OUT"];
+export const TERMINAL_JOB_STATUSES = ["SUCCEEDED", "FAILED", "CANCELLED", "TIMED_OUT"];
 function queryString(params) {
     const search = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
@@ -166,9 +166,14 @@ export class KetQatClient {
                 const intervalMs = options.intervalMs ?? 2000;
                 const sleep = options.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
                 const deadline = Date.now() + timeoutMs;
+                let lastStatus;
                 for (;;) {
                     const payload = await this.execution.get(jobId);
                     const job = (payload.job ?? payload);
+                    if (job.status && job.status !== lastStatus) {
+                        lastStatus = job.status;
+                        options.onStatusChange?.(job.status, payload);
+                    }
                     if (job.status && TERMINAL_JOB_STATUSES.includes(job.status))
                         return payload;
                     if (Date.now() + intervalMs > deadline)
