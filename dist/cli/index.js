@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { KetQatClient } from "../client/index.js";
+import { KetQatClient, TERMINAL_JOB_STATUSES } from "../client/index.js";
 import { HardwareProfileSchema } from "../hardware/profile.js";
 import { emitQasm3, parseQasm3, Qasm3ParseError } from "../circuit/qasm3.js";
 import { gateCount, totalClbits, totalQubits, twoQubitGateCount, usesClassicalControl, usesMidCircuitMeasurement, usesReset, } from "../circuit/graph.js";
@@ -30,6 +30,7 @@ Registry commands (need --registry <url> or KETQAT_URL):
 Execution commands (need --registry <url> or KETQAT_URL, and a token):
   job submit <file.qasm>                 Queue a simulation; --shots, --seed, --wait
   job status <id>                        Status and audit trail for one job
+  job watch <id>                         Follow a job until it finishes; --timeout
   job list                               Your queued and finished jobs; --status, --limit
   job cancel <id>                        Request cancellation
   job bundle <id>                        Download the result bundle as JSON
@@ -324,6 +325,42 @@ export async function runCli(argv) {
                             return { exitCode: 2, stderr: "job status requires a job id." };
                         return { exitCode: 0, stdout: { command: "job status", ...(await client.execution.get(jobId)) } };
                     }
+                    case "watch": {
+                        const jobId = positional[2];
+                        if (!jobId)
+                            return { exitCode: 2, stderr: "job watch requires a job id." };
+                        // Each transition once, in order, so the output is a history rather
+                        // than a repeated line.
+                        const transitions = [];
+                        const finished = await client.execution.waitFor(jobId, {
+                            timeoutMs: (numberFlag(flags, "timeout") ?? 180) * 1000,
+                            onStatusChange: (status) => transitions.push({ status, at: new Date().toISOString() }),
+                        });
+                        const job = (finished.job ?? finished);
+                        const terminal = Boolean(job.status && TERMINAL_JOB_STATUSES.includes(job.status));
+                        // A timeout is not a failure. The job did not fail; the watching
+                        // stopped, and it is very likely still running. Reporting those the
+                        // same way tells the user something untrue about their experiment.
+                        if (!terminal) {
+                            return {
+                                exitCode: 2,
+                                stdout: {
+                                    command: "job watch",
+                                    job,
+                                    transitions,
+                                    timed_out: true,
+                                    note: "Stopped watching before the job reached a terminal state. The job has not " +
+                                        "failed and is probably still running; re-run `job watch` or raise --timeout.",
+                                },
+                            };
+                        }
+                        return {
+                            // Matches `job submit --wait`, so either is usable in a script
+                            // without parsing the JSON to find out what happened.
+                            exitCode: job.status === "SUCCEEDED" ? 0 : 1,
+                            stdout: { command: "job watch", job, transitions },
+                        };
+                    }
                     case "list": {
                         const jobs = await client.execution.list({
                             ...(flags.get("status") ? { status: flags.get("status") } : {}),
@@ -346,7 +383,7 @@ export async function runCli(argv) {
                     default:
                         return {
                             exitCode: 2,
-                            stderr: "usage: job <submit|status|list|cancel|bundle> [...]\n\n" + USAGE,
+                            stderr: "usage: job <submit|status|watch|list|cancel|bundle> [...]\n\n" + USAGE,
                         };
                 }
             }

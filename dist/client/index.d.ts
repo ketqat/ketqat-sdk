@@ -1,4 +1,10 @@
 import { type Artifact, type ArtifactListQuery, type BenchmarkResult, type BenchmarkSuite, type ReproducibilityBundle, type Visibility } from "../contracts/index.js";
+/**
+ * States a job never leaves. Kept here rather than imported from the queue,
+ * which lives in the private control plane; the client must know when to stop
+ * polling without depending on it.
+ */
+export declare const TERMINAL_JOB_STATUSES: string[];
 export interface KetQatClientOptions {
     baseUrl: string;
     fetch?: typeof fetch;
@@ -91,6 +97,14 @@ export declare class KetQatClient {
             timeoutMs?: number;
             intervalMs?: number;
             sleep?: (ms: number) => Promise<void>;
+            /**
+             * Called once per *change* of status, never per poll.
+             *
+             * A watch command that reprints the same line every two seconds is one
+             * people stop running, so the de-duplication lives here rather than
+             * being left to each caller to remember.
+             */
+            onStatusChange?: (status: string, payload: Record<string, unknown>) => void;
         }) => Promise<Record<string, unknown>>;
     };
     readonly search: {

@@ -18,7 +18,7 @@ import { validateJob } from "../worker/job.js"
  * which lives in the private control plane; the client must know when to stop
  * polling without depending on it.
  */
-const TERMINAL_JOB_STATUSES = ["SUCCEEDED", "FAILED", "CANCELLED", "TIMED_OUT"]
+export const TERMINAL_JOB_STATUSES = ["SUCCEEDED", "FAILED", "CANCELLED", "TIMED_OUT"]
 
 export interface KetQatClientOptions {
   baseUrl: string
@@ -215,16 +215,33 @@ export class KetQatClient {
      */
     waitFor: async (
       jobId: string,
-      options: { timeoutMs?: number; intervalMs?: number; sleep?: (ms: number) => Promise<void> } = {},
+      options: {
+        timeoutMs?: number
+        intervalMs?: number
+        sleep?: (ms: number) => Promise<void>
+        /**
+         * Called once per *change* of status, never per poll.
+         *
+         * A watch command that reprints the same line every two seconds is one
+         * people stop running, so the de-duplication lives here rather than
+         * being left to each caller to remember.
+         */
+        onStatusChange?: (status: string, payload: Record<string, unknown>) => void
+      } = {},
     ): Promise<Record<string, unknown>> => {
       const timeoutMs = options.timeoutMs ?? 180_000
       const intervalMs = options.intervalMs ?? 2_000
       const sleep = options.sleep ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)))
       const deadline = Date.now() + timeoutMs
+      let lastStatus: string | undefined
 
       for (;;) {
         const payload = await this.execution.get(jobId)
         const job = (payload.job ?? payload) as { status?: string }
+        if (job.status && job.status !== lastStatus) {
+          lastStatus = job.status
+          options.onStatusChange?.(job.status, payload)
+        }
         if (job.status && TERMINAL_JOB_STATUSES.includes(job.status)) return payload
         if (Date.now() + intervalMs > deadline) return payload
         await sleep(intervalMs)
