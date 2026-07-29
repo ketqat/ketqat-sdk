@@ -1,4 +1,3 @@
-import type { Readable, Writable } from "node:stream";
 /**
  * MCP stdio transport (ketqat-sdk#163).
  *
@@ -77,9 +76,26 @@ export declare function toolManifest(): Array<{
  * layer has no branching in it.
  */
 export declare function handleRequest(request: JsonRpcRequest): JsonRpcResponse | null;
+/**
+ * The parts of a readable stream this transport uses, declared structurally.
+ *
+ * Not `node:stream`'s `Readable`. Naming that type in an exported signature puts
+ * `node:stream` into the published .d.ts, which makes `@types/node` a
+ * requirement for every consumer of this package -- and the clean-install check
+ * caught exactly that. A structural shape keeps the published types
+ * self-contained while `process.stdin` still satisfies it.
+ */
+export interface FrameInput {
+    on(event: string, listener: (...args: never[]) => void): unknown;
+    setEncoding?(encoding: string): unknown;
+}
+/** The one method this transport needs to emit frames. */
+export interface FrameOutput {
+    write(chunk: string): unknown;
+}
 export interface ServeOptions {
-    input?: Readable;
-    output?: Writable;
+    input?: FrameInput;
+    output?: FrameOutput;
     /** Diagnostics sink. Never stdout, which carries protocol frames only. */
     log?: (message: string) => void;
 }

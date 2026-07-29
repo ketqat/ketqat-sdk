@@ -168,7 +168,7 @@ export function serveStdio(options = {}) {
         const write = (response) => {
             output.write(`${JSON.stringify(response)}\n`);
         };
-        input.setEncoding("utf8");
+        input.setEncoding?.("utf8");
         input.on("data", (chunk) => {
             buffer += typeof chunk === "string" ? chunk : chunk.toString("utf8");
             // Frames are newline-delimited. A partial frame stays buffered rather than
