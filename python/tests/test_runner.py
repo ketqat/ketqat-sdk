@@ -150,7 +150,11 @@ def test_cli_runs_packaged_algorithm_example_by_name(tmp_path: Path) -> None:
 def test_packaged_examples_are_readable_resources() -> None:
     names = {example.name for example in list_example_manifests()}
 
-    assert names == {"surface-code-memory", "grover-search"}
+    # The set is pinned rather than counted, so adding an example is a deliberate
+    # act that updates this line -- which is how the decoder comparison being
+    # absent from `examples list` for so long finally surfaced.
+    assert names == {"surface-code-memory", "decoder-comparison", "grover-search"}
+    assert yaml.safe_load(read_example_manifest("qec/decoder-comparison"))["domain"] == "QEC"
     assert yaml.safe_load(read_example_manifest("qec/surface-code-memory"))["domain"] == "QEC"
     assert yaml.safe_load(read_example_manifest("examples/algorithms/grover-search.yaml"))["domain"] == "ALGORITHM"
 

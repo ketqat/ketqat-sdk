@@ -250,7 +250,10 @@ def test_single_decoder_manifests_still_work_unchanged() -> None:
 def test_packaged_and_repository_examples_stay_in_sync() -> None:
     from importlib import resources
 
-    packaged = resources.files("ketqat_runner").joinpath("examples", "decoder-comparison.yaml")
+    # Packaged under qec/ to match the repository layout and the domain
+    # grouping; it sat at the examples root while its repository copy was in
+    # qec/, which is the kind of drift this test exists to catch.
+    packaged = resources.files("ketqat_runner").joinpath("examples", "qec", "decoder-comparison.yaml")
     assert packaged.is_file()
     assert packaged.read_text() == (REPOSITORY_ROOT / "examples" / "qec" / "decoder-comparison.yaml").read_text()
 

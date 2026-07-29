@@ -4,23 +4,41 @@ Every figure here was read from the code, not from memory. Where a number is
 small, it is stated rather than rounded up.
 
 The reason this file exists: the site presents a **decoder leaderboard**, and
-the project ships **one decoder**. Someone evaluating whether to trust a
-comparison should learn that here rather than by counting rows.
+until someone publishes a second decoder's results it shows one entrant.
+Someone evaluating whether to trust a comparison should learn where the limits
+are here, rather than by counting rows.
 
 ## Decoders
 
-| | |
-|---|---|
-| Implemented | **1** — PyMatching, minimum-weight perfect matching |
-| On the public leaderboard | `pymatching`, plus one demo record labelled `unknown decoder` |
+Two, and they are different in kind rather than two settings of one thing:
 
-A leaderboard with one entrant is a record, not a comparison. The comparison
-machinery is real — runs that differ in code distance, rounds, physical error
-rate, noise model, stopping rule, or decoder version are refused a shared
-ranking, and the refusal names the fields — but it has not yet had two real
-decoders to exercise it.
+| Decoder | Method | Defining limit |
+|---|---|---|
+| `pymatching` | minimum-weight perfect matching | the standard matching decoder; assumes a matchable error model |
+| `ketqat-lookup` | exact maximum likelihood, truncated | enumerates fault combinations up to `max_fault_weight`; a syndrome needing more is an **abstention**, counted separately from a wrong answer |
 
-Adding a second is the single most useful contribution available, and
+That second distinction matters. "Did not decode" and "decoded incorrectly" are
+different failures, and merging them flatters or penalises a decoder depending
+on which way you squint.
+
+`ketqat run decoder-comparison` benchmarks both **on identical samples** — the
+same shots at the same coordinate seed, because re-sampling per decoder would
+compare luck as much as decoders. A real run, d=3 at p=0.01 over 2000 shots:
+
+```
+pymatching       51/2000   0.0255   95% CI [0.0194, 0.0334]
+ketqat-lookup    56/2000   0.0280   95% CI [0.0216, 0.0362]
+```
+
+Those intervals overlap substantially, so the honest reading is that **this data
+does not distinguish the two decoders** — which is what the comparison reports
+rather than ranking them.
+
+The public leaderboard currently shows one decoder because only the
+single-decoder baselines have been published to it. That is a publishing gap,
+not a capability gap.
+
+More decoders are still the most useful contribution available, and
 [`contrib/templates/decoder.yaml`](../contrib/templates/decoder.yaml) exists for
 exactly that.
 
