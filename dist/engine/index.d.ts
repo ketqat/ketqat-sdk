@@ -9,4 +9,5 @@ export * from "./mitigation.js";
 export * from "./fault-tolerant.js";
 export * from "./decoupling.js";
 export * from "./clifford-regression.js";
+export * from "./virtual-distillation.js";
 //# sourceMappingURL=index.d.ts.map

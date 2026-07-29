@@ -32,6 +32,10 @@ import {
   emitQasm3,
   gateCount,
   parseQasm3,
+  virtualDistillation,
+  depolarize,
+  densityFromAmplitudes,
+  VirtualDistillationError,
   PHYSICAL_QUBIT_REGISTER,
   cliffordDataRegression,
   exactExpectation,
@@ -4245,4 +4249,113 @@ measure q[1] -> m[1];
   const emitted = emitQasm3(legacy.circuit)
   assert.match(emitted, /OPENQASM 3/)
   assert.deepEqual(parseQasm3(emitted).circuit.operations, legacy.circuit.operations)
+}
+
+
+// ---------------------------------------------------------------------------
+// Virtual distillation (ketqat-sdk#180)
+// ---------------------------------------------------------------------------
+{
+  const Z = { real: [[1, 0], [0, -1]], imaginary: [[0, 0], [0, 0]] }
+  const ideal = densityFromAmplitudes([1, 0], [0, 0]) // |0>, <Z> = +1
+
+  // Stochastic noise: the ideal state IS the dominant eigenvector of the noisy
+  // state, so VD converges to the exact noiseless value. Error must fall
+  // monotonically with copies, and reach the ideal to high precision.
+  const depolarized = depolarize(ideal, 0.3)
+  const errors = [1, 2, 3, 4, 6, 8].map(
+    (copies) => virtualDistillation(Z, depolarized, { copies, ideal }).mitigated_error,
+  )
+  for (const [index, error] of errors.entries()) {
+    if (index === 0) continue
+    assert.ok(error < errors[index - 1], `error should fall with copies: ${errors.join(", ")}`)
+  }
+  assert.ok(errors[0] > 0.29, "M=1 must reproduce the raw error, about 0.3 here")
+  assert.ok(errors[errors.length - 1] < 1e-5, `M=8 should be nearly exact, got ${errors[errors.length - 1]}`)
+
+  // The virtual state becomes pure as copies grow, which is why the error falls.
+  //
+  // Purity is bounded above by 1 -- a value over 1 describes nothing -- and that
+  // bound is asserted because a mutation using the wrong matrix power survived a
+  // test that only checked purity was large. The wrong power gives 1/Tr[rho^M],
+  // which is greater than 1 and so passed a one-sided check.
+  const purities = [1, 2, 4, 8].map(
+    (copies) => virtualDistillation(Z, depolarized, { copies, ideal }).virtual_purity,
+  )
+  for (const purity of purities) {
+    assert.ok(purity <= 1 + 1e-9, `purity cannot exceed 1, got ${purity}`)
+    assert.ok(purity > 0, `purity must be positive, got ${purity}`)
+  }
+  for (const [index, purity] of purities.entries()) {
+    if (index === 0) continue
+    assert.ok(purity > purities[index - 1], `purity should rise with copies: ${purities.join(", ")}`)
+  }
+  assert.ok(purities[purities.length - 1] > 0.9999)
+
+  // Coherent error: the dominant eigenvector is the ROTATED state, so VD
+  // converges to the wrong answer and more copies cannot help.
+  //
+  // The floor is not an empirical number: converging to the rotated state means
+  // the residual error is exactly |1 - cos(theta)|. Checking against that closed
+  // form is what makes this a verification of the method rather than a
+  // description of one run.
+  const theta = 0.3
+  const rotated = densityFromAmplitudes([Math.cos(theta / 2), Math.sin(theta / 2)], [0, 0])
+  const coherent = depolarize(rotated, 0.1)
+  const analyticFloor = Math.abs(1 - Math.cos(theta))
+
+  const atEight = virtualDistillation(Z, coherent, { copies: 8, ideal })
+  const atSixteen = virtualDistillation(Z, coherent, { copies: 16, ideal })
+  assert.ok(
+    Math.abs(atEight.mitigated_error - analyticFloor) < 1e-6,
+    `floor should be |1 - cos(theta)| = ${analyticFloor}, got ${atEight.mitigated_error}`,
+  )
+  // Stalled: doubling the copies changes nothing.
+  assert.ok(
+    Math.abs(atSixteen.mitigated_error - atEight.mitigated_error) < 1e-9,
+    "more copies must not reduce a coherent error",
+  )
+
+  // And the stall is announced rather than left to be inferred from a flat curve.
+  assert.ok(
+    atEight.warnings.some((entry) => /More copies will not help/.test(entry)),
+    "a coherent floor must be reported",
+  )
+  assert.ok(atEight.estimated_error_floor > 1e-6)
+
+  // Under purely stochastic noise there is no floor to warn about.
+  assert.ok(
+    virtualDistillation(Z, depolarized, { copies: 4, ideal }).warnings.length === 0,
+    "no floor warning when the error does vanish with copies",
+  )
+
+  // Cost is reported: M copies of the register, and the 1/Tr[rho^M] overhead that
+  // VD descriptions often omit by saying it needs "only" M copies.
+  const costed = virtualDistillation(Z, depolarized, { copies: 4, ideal, qubitsPerCopy: 1 })
+  assert.equal(costed.physical_qubits, 4)
+  assert.ok(costed.sampling_overhead > 1)
+  assert.ok(costed.assumptions.some((entry) => /coherent error is not/.test(entry)))
+
+  // M=1 is the unmitigated estimator, so it must equal the raw value exactly.
+  const single = virtualDistillation(Z, depolarized, { copies: 1, ideal })
+  assert.ok(Math.abs(single.mitigated_value - single.raw_value) < 1e-12)
+
+  // An unnormalised state is refused rather than rescaled: silently rescaling
+  // would make every expectation wrong by that factor.
+  assert.throws(
+    () => virtualDistillation(Z, { real: [[2, 0], [0, 0]], imaginary: [[0, 0], [0, 0]] }, { copies: 2 }),
+    /trace 2\.000000, not 1/,
+  )
+  assert.throws(() => virtualDistillation(Z, depolarized, { copies: 0 }), /positive integer/)
+  assert.throws(
+    () => virtualDistillation({ real: [[1]], imaginary: [[0]] }, depolarized, { copies: 2 }),
+    /different dimensions/,
+  )
+  assert.throws(() => depolarize(ideal, 1.5), /must be in \[0, 1\]/)
+
+  // The maximally mixed state has no dominant eigenvector, so VD has nothing to
+  // distil toward -- the expectation stays put rather than improving.
+  const maximallyMixed = depolarize(ideal, 1.0)
+  const mixedResult = virtualDistillation(Z, maximallyMixed, { copies: 4, ideal })
+  assert.ok(Math.abs(mixedResult.mitigated_value) < 1e-12, "no preferred direction to distil toward")
 }
