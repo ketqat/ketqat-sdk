@@ -118,6 +118,7 @@ COMPARABILITY_FIELDS = (
     "reset_error_rate",
     "idle_error_rate",
     "crosstalk_error_rate",
+    "drift_per_round",
     "stopping_rule",
     "decoder_version",
 )

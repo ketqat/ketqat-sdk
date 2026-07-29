@@ -84,6 +84,23 @@ export const QecExperimentManifestSchema = BaseExperimentManifestSchema.extend({
          * argument; the generated circuit is rewritten to carry it.
          */
         crosstalk_error_rate: z.number().min(0).max(1).optional(),
+        /**
+         * Fractional change in every noise rate per stabilizer round.
+         *
+         * `rate_r = rate * (1 + drift * r)`, with `r` counting from zero, so
+         * 0.1 means the error rate grows ten percent of its initial value each
+         * round and round zero is unchanged.
+         *
+         * Negative values are allowed and model a device improving. Calibration
+         * drift is not always downhill, and silently clamping to zero would
+         * make one direction unrepresentable.
+         *
+         * Stim can carry per-round rates; the generated circuits use one
+         * `REPEAT` block with fixed ones, so this rewrites the flattened
+         * circuit. Not bounded to [0,1]: it is a rate of change, not a
+         * probability, though the rates it produces are clamped.
+         */
+        drift_per_round: z.number().optional(),
       })
       // Strict: a misspelled rate must be refused rather than silently ignored,
       // which would report a run as modelling readout error when it did not.

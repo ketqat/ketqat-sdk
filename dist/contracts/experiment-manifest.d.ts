@@ -123,6 +123,23 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
              * argument; the generated circuit is rewritten to carry it.
              */
             crosstalk_error_rate: z.ZodOptional<z.ZodNumber>;
+            /**
+             * Fractional change in every noise rate per stabilizer round.
+             *
+             * `rate_r = rate * (1 + drift * r)`, with `r` counting from zero, so
+             * 0.1 means the error rate grows ten percent of its initial value each
+             * round and round zero is unchanged.
+             *
+             * Negative values are allowed and model a device improving. Calibration
+             * drift is not always downhill, and silently clamping to zero would
+             * make one direction unrepresentable.
+             *
+             * Stim can carry per-round rates; the generated circuits use one
+             * `REPEAT` block with fixed ones, so this rewrites the flattened
+             * circuit. Not bounded to [0,1]: it is a rate of change, not a
+             * probability, though the rates it produces are clamped.
+             */
+            drift_per_round: z.ZodOptional<z.ZodNumber>;
         }, "strict", z.ZodTypeAny, {
             model: string;
             physical_error_rates: number[];
@@ -130,6 +147,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
+            drift_per_round?: number | undefined;
         }, {
             model: string;
             physical_error_rates: number[];
@@ -137,6 +155,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
+            drift_per_round?: number | undefined;
         }>;
         decoder: z.ZodObject<{
             name: z.ZodString;
@@ -191,6 +210,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
+            drift_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -216,6 +236,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
+            drift_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -270,6 +291,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
+            drift_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -324,6 +346,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
+            drift_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -873,6 +896,23 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
              * argument; the generated circuit is rewritten to carry it.
              */
             crosstalk_error_rate: z.ZodOptional<z.ZodNumber>;
+            /**
+             * Fractional change in every noise rate per stabilizer round.
+             *
+             * `rate_r = rate * (1 + drift * r)`, with `r` counting from zero, so
+             * 0.1 means the error rate grows ten percent of its initial value each
+             * round and round zero is unchanged.
+             *
+             * Negative values are allowed and model a device improving. Calibration
+             * drift is not always downhill, and silently clamping to zero would
+             * make one direction unrepresentable.
+             *
+             * Stim can carry per-round rates; the generated circuits use one
+             * `REPEAT` block with fixed ones, so this rewrites the flattened
+             * circuit. Not bounded to [0,1]: it is a rate of change, not a
+             * probability, though the rates it produces are clamped.
+             */
+            drift_per_round: z.ZodOptional<z.ZodNumber>;
         }, "strict", z.ZodTypeAny, {
             model: string;
             physical_error_rates: number[];
@@ -880,6 +920,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
+            drift_per_round?: number | undefined;
         }, {
             model: string;
             physical_error_rates: number[];
@@ -887,6 +928,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
+            drift_per_round?: number | undefined;
         }>;
         decoder: z.ZodObject<{
             name: z.ZodString;
@@ -941,6 +983,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
+            drift_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -966,6 +1009,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
+            drift_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -1020,6 +1064,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
+            drift_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -1074,6 +1119,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
+            drift_per_round?: number | undefined;
         };
         decoder: {
             name: string;

@@ -193,6 +193,9 @@
                   "type": "number",
                   "minimum": 0,
                   "maximum": 1
+                },
+                "drift_per_round": {
+                  "type": "number"
                 }
               },
               "required": [

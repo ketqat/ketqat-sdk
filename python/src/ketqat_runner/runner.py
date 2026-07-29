@@ -251,6 +251,7 @@ def _sample_surface_code_memory(
 
     extra_noise = extra_noise or {}
     crosstalk_rate = extra_noise.get("crosstalk_error_rate")
+    drift_per_round = extra_noise.get("drift_per_round")
     # The seed must depend on every noise channel, not only the swept rate.
     # Otherwise two runs differing solely in readout error would share a
     # coordinate seed, and the shot-to-shot noise would be correlated between
@@ -281,6 +282,8 @@ def _sample_surface_code_memory(
     )
     if crosstalk_rate is not None:
         circuit = _inject_crosstalk(circuit, crosstalk_rate)
+    if drift_per_round:
+        circuit = _apply_drift(circuit, drift_per_round)
     sampler = circuit.compile_detector_sampler(seed=coordinate_seed)
     circuit_generation_seconds = (time.perf_counter_ns() - circuit_start) / 1_000_000_000
 
@@ -356,7 +359,7 @@ _STIM_NOISE_CHANNELS: dict[str, str] = {
 #: Measured at d=3, 20,000 shots, p=0.02: correlated ZZ gives 2 failures in
 #: memory-Z against a baseline of 4, and 4739 in memory-X. `DEPOLARIZE2` gives
 #: ~2610 in both.
-_POST_NOISE_CHANNELS: tuple[str, ...] = ("crosstalk_error_rate",)
+_POST_NOISE_CHANNELS: tuple[str, ...] = ("crosstalk_error_rate", "drift_per_round")
 
 #: Every optional noise channel, however it is applied. Seeding, comparability
 #: and the result record must all iterate this rather than either half: a
@@ -401,6 +404,59 @@ def _data_qubit_pairs(circuit: "Any") -> list[tuple[int, int]]:
         )
         == [0, 2]
     ]
+
+
+def _apply_drift(circuit: "Any", drift_per_round: float) -> "Any":
+    """Scale every noise probability by round, modelling a device that degrades.
+
+    Stim can carry a different error rate per round; the generated circuits use
+    one `REPEAT` block with fixed rates, so every round was identical and drift
+    was a limit of this runner rather than of the simulator (ketqat-sdk#125).
+
+    The circuit is flattened first, because a repeated block is by definition
+    the same block every time -- there is nowhere in it to put a per-round rate.
+    Flattening preserves the detector structure exactly, which is checked.
+
+    The model is `rate_r = rate * (1 + drift * r)` with `r` counting from zero,
+    so `drift_per_round = 0.1` means the error rate grows ten percent of its
+    initial value each round, and round zero is unchanged. A negative value
+    models a device improving, which is the same arithmetic and is allowed
+    rather than silently clamped -- calibration drift is not always downhill.
+
+    Rates are clamped into [0, 1] at the end, because a probability outside it
+    is not a probability. Clamping is reported by the caller rather than hidden.
+    """
+    import stim
+
+    flattened = circuit.flattened()
+    rewritten = stim.Circuit()
+    round_index = 0
+
+    for instruction in flattened:
+        name = instruction.name
+        if name in _DRIFTING_CHANNELS:
+            scale = 1.0 + drift_per_round * round_index
+            targets = instruction.targets_copy()
+            scaled = [min(1.0, max(0.0, argument * scale)) for argument in instruction.gate_args_copy()]
+            rewritten.append(name, targets, scaled)
+            continue
+
+        rewritten.append(instruction)
+        # A measure-reset ends a stabilizer round. Counting rounds this way
+        # rather than by TICK is deliberate: TICKs also separate the layers
+        # *within* a round, so counting them would ramp the rate mid-round.
+        if name in ("MR", "MRZ", "MRX"):
+            round_index += 1
+
+    return rewritten
+
+
+#: Noise channels whose probability drifts. Measurement and reset flips drift
+#: with the same physics as gate error, so they are included; a channel added
+#: later must be added here too or it will silently stay flat.
+_DRIFTING_CHANNELS = frozenset(
+    {"DEPOLARIZE1", "DEPOLARIZE2", "X_ERROR", "Z_ERROR", "Y_ERROR"}
+)
 
 
 def _inject_crosstalk(circuit: "Any", probability: float) -> "Any":
