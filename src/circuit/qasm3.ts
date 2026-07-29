@@ -690,9 +690,29 @@ export function parseQasm3(source: string): Qasm3ParseResult {
 
     if (keyword === "openqasm") {
       const version = /^openqasm\s+([0-9.]+)$/i.exec(text)?.[1]
+      // OpenQASM 2 is accepted through the compatibility path that already
+      // existed for `qreg`/`creg` and `measure a -> b`. Those shims were
+      // unreachable for a real OpenQASM 2 file, because this gate rejected it at
+      // the version line -- so Cirq's output, which is OpenQASM 2, failed on
+      // line 3 of every circuit (ketqat-sdk#174).
+      if (version !== undefined && version.startsWith("2")) {
+        context.loss.push({
+          feature: "openqasm2_source",
+          severity: "cosmetic",
+          action: "approximated",
+          detail:
+            `Read as OpenQASM ${version} through this adapter's OpenQASM 2 compatibility path. ` +
+            "Emitted output is OpenQASM 3, so a round trip changes the declared version. Constructs " +
+            "with no OpenQASM 3 equivalent are still rejected individually rather than assumed.",
+          location: `line ${statement.line}`,
+        })
+        sawVersion = true
+        continue
+      }
       if (version === undefined || !version.startsWith("3")) {
         throw new Qasm3ParseError(
-          `This adapter reads OpenQASM 3. Found version '${version ?? "unknown"}'.`,
+          `This adapter reads OpenQASM 3, and OpenQASM 2 through a compatibility path. ` +
+            `Found version '${version ?? "unknown"}'.`,
           { feature: "version_declaration", line: statement.line },
         )
       }
@@ -702,6 +722,12 @@ export function parseQasm3(source: string): Qasm3ParseResult {
 
     if (keyword === "include") {
       const included = /include\s+"([^"]+)"/.exec(text)?.[1]
+      // qelib1.inc is OpenQASM 2's standard library, the direct counterpart of
+      // stdgates.inc. Rejecting it would make the version acceptance above
+      // useless, since every Cirq and Qiskit OpenQASM 2 file includes it.
+      if (included === "qelib1.inc") {
+        continue
+      }
       if (included !== undefined && included !== "stdgates.inc") {
         throw new Qasm3ParseError(
           `Only 'stdgates.inc' is supported; cannot resolve include '${included}'.`,

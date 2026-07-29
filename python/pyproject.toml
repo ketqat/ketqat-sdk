@@ -15,7 +15,7 @@ dependencies = [
 [project.optional-dependencies]
 qec = ["numpy>=1.26", "stim>=1.13", "pymatching>=2.2"]
 algorithms = ["numpy>=1.26"]
-benchmarks = ["mqt.bench>=2.2", "qiskit>=1.0"]
+benchmarks = ["mqt.bench>=2.2", "qiskit>=1.0", "supermarq>=0.5", "cirq-core>=1.4"]
 # Provider adapters are extras so the base install stays small and a machine
 # without a vendor SDK gets a clear message instead of an ImportError deep in a
 # call stack. qiskit-aer is required, not optional: IBM's fake backends need it
@@ -24,7 +24,7 @@ benchmarks = ["mqt.bench>=2.2", "qiskit>=1.0"]
 # device.
 ibm = ["qiskit>=1.2", "qiskit-ibm-runtime>=0.30", "qiskit-aer>=0.15"]
 braket = ["amazon-braket-sdk>=1.80"]
-all = ["numpy>=1.26", "stim>=1.13", "pymatching>=2.2", "mqt.bench>=2.2", "qiskit>=1.0"]
+all = ["numpy>=1.26", "stim>=1.13", "pymatching>=2.2", "mqt.bench>=2.2", "qiskit>=1.0", "supermarq>=0.5", "cirq-core>=1.4"]
 
 [project.scripts]
 ketqat = "ketqat_runner.cli:main"
