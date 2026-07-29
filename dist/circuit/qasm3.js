@@ -416,6 +416,47 @@ function buildMeasure(qubits, clbits, line) {
     }
     return { kind: "measure", qubit: qubits[0], clbit: clbits[0] };
 }
+/**
+ * Parse the supported `if (...)` forms.
+ *
+ * Separated from the statement loop so each form is visible at once, and so an
+ * unsupported boolean expression returns undefined rather than being partially
+ * matched by a permissive regex.
+ */
+function parseCondition(text) {
+    // if (creg[i] == N | true | false)
+    const indexedCompare = /^if\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\[\s*(\d+)\s*\]\s*==\s*(\d+|true|false)\s*\)\s*(.*)$/i.exec(text);
+    if (indexedCompare) {
+        const literal = indexedCompare[3].toLowerCase();
+        const equals = literal === "true" ? 1 : literal === "false" ? 0 : Number(literal);
+        return {
+            register: indexedCompare[1],
+            bit: Number(indexedCompare[2]),
+            equals,
+            remainder: indexedCompare[4] ?? "",
+        };
+    }
+    // if (creg[i]) -- truthiness of one bit, i.e. equals 1
+    const indexedTruthy = /^if\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\[\s*(\d+)\s*\]\s*\)\s*(.*)$/.exec(text);
+    if (indexedTruthy) {
+        return {
+            register: indexedTruthy[1],
+            bit: Number(indexedTruthy[2]),
+            equals: 1,
+            remainder: indexedTruthy[3] ?? "",
+        };
+    }
+    // if (creg == N) -- the whole-register form, unchanged.
+    const wholeRegister = /^if\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*==\s*(\d+)\s*\)\s*(.*)$/.exec(text);
+    if (wholeRegister) {
+        return {
+            register: wholeRegister[1],
+            equals: Number(wholeRegister[2]),
+            remainder: wholeRegister[3] ?? "",
+        };
+    }
+    return undefined;
+}
 export function parseQasm3(source) {
     const statements = splitStatements(source);
     const context = { qubitRegisters: [], clbitRegisters: [], loss: [], definitions: new Map() };
@@ -542,16 +583,33 @@ export function parseQasm3(source) {
                 "It is rejected rather than ignored, because dropping it would silently change the program.", { feature: unsupported, line: statement.line });
         }
         if (keyword === "if") {
-            const condition = /^if\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*==\s*(\d+)\s*\)\s*(.*)$/.exec(text);
-            if (!condition) {
-                throw new Qasm3ParseError("Only equality conditions of the form 'if (creg == N)' are supported by this subset.", { feature: "classical_condition_general", line: statement.line });
+            // Four forms, all of which Qiskit emits for dynamic circuits:
+            //   if (creg == N)        whole register equals N
+            //   if (creg[i])          bit i is set
+            //   if (creg[i] == true)  the same, written out
+            //   if (creg[i] == 0)     bit i has that value
+            //
+            // The single-bit forms are not expressible as a whole-register comparison,
+            // which is why they were rejected before rather than translated.
+            const parsed = parseCondition(text);
+            if (!parsed) {
+                throw new Qasm3ParseError("Supported conditions are 'if (creg == N)', 'if (creg[i])', and 'if (creg[i] == N|true|false)'. " +
+                    "Other boolean expressions are rejected rather than approximated, because guessing at a " +
+                    "condition would silently change the program.", { feature: "classical_condition_general", line: statement.line });
             }
-            const register = condition[1];
-            if (!findRegister(context.clbitRegisters, register)) {
+            const register = parsed.register;
+            const clbitRegister = findRegister(context.clbitRegisters, register);
+            if (!clbitRegister) {
                 throw new Qasm3ParseError(`Unknown classical register '${register}'.`, { line: statement.line });
             }
-            pendingCondition = { register, equals: Number(condition[2]) };
-            const body = (condition[3] ?? "").trim();
+            if (parsed.bit !== undefined && parsed.bit >= clbitRegister.size) {
+                throw new Qasm3ParseError(`Index ${parsed.bit} is out of range for classical register '${register}' of size ${clbitRegister.size}.`, { line: statement.line });
+            }
+            pendingCondition =
+                parsed.bit === undefined
+                    ? { register, equals: parsed.equals }
+                    : { register, bit: parsed.bit, equals: parsed.equals };
+            const body = parsed.remainder.trim();
             if (body.length > 0) {
                 applyStatement(body, statement, context, emit);
                 pendingCondition = undefined;
@@ -664,6 +722,14 @@ function formatParameter(parameter) {
     return typeof parameter === "number" ? String(parameter) : parameter;
 }
 function formatBit(bit) {
+    // Hardware qubits go back out as `$n`. The synthetic register name is an
+    // internal placeholder, and emitting `$physical[3]` produced output this
+    // parser could not read back -- a round-trip failure introduced when `$n`
+    // support landed (ketqat-sdk#168) and caught by round-tripping the real MQT
+    // Bench suite rather than by a hand-written fixture.
+    if (bit.register === PHYSICAL_QUBIT_REGISTER) {
+        return `$${bit.index}`;
+    }
     return `${bit.register}[${bit.index}]`;
 }
 function formatOperation(operation) {
@@ -681,7 +747,11 @@ function formatOperation(operation) {
                 ? "barrier;"
                 : `barrier ${operation.qubits.map(formatBit).join(", ")};`;
         case "conditional":
-            return `if (${operation.register} == ${operation.equals}) ${formatOperation(operation.body)}`;
+            // Emitted in the same shape it was read, so a parse/emit round trip does
+            // not silently widen a single-bit test into a whole-register one.
+            return operation.bit === undefined
+                ? `if (${operation.register} == ${operation.equals}) ${formatOperation(operation.body)}`
+                : `if (${operation.register}[${operation.bit}] == ${operation.equals}) ${formatOperation(operation.body)}`;
     }
 }
 export function emitQasm3(circuit, options = {}) {
@@ -691,6 +761,10 @@ export function emitQasm3(circuit, options = {}) {
     }
     lines.push("");
     for (const register of circuit.qubit_registers) {
+        // Hardware qubits are never declared: they exist on the device, and `qubit[n]
+        // $physical;` is not valid OpenQASM.
+        if (register.name === PHYSICAL_QUBIT_REGISTER)
+            continue;
         lines.push(`qubit[${register.size}] ${register.name};`);
     }
     for (const register of circuit.clbit_registers) {

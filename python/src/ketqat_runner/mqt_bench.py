@@ -273,25 +273,21 @@ def compare_levels(benchmark: str, size: int, levels: Sequence[str] = ("ALG", "I
 #: OpenQASM 3 constructs Qiskit emits that KetQat's parser does not accept.
 #:
 #: Measured, not guessed. Of 23 MQT Bench benchmarks that generate at INDEP size
-#: 3 (mqt.bench 2.2.3), KetQat's parser accepts 20. Only one group remains, and
-#: the pattern below was derived from the parser's own error rather than from
-#: reading a specification:
+#: Measured, not guessed. All 23 MQT Bench benchmarks that generate at INDEP
+#: size 3 (mqt.bench 2.2.3) now parse, so this tuple is empty.
 #:
-#:     3 fail on conditional forms the adapter does not support
+#: It is kept rather than deleted because the mechanism is still wanted: MQT Bench
+#: adds benchmarks, and the next construct KetQat cannot read should be recorded
+#: here at import rather than discovered downstream.
 #:
-#: Two groups have been closed since this was first measured: hardware qubit
-#: syntax ($n) in ketqat-sdk#168, and custom `gate` definitions in #170. Their
-#: patterns were removed rather than left to predict failures that no longer
-#: happen -- a stale pessimistic predictor is as wrong as an optimistic one.
+#: Three groups were closed as they were measured -- hardware qubit syntax ($n) in
+#: ketqat-sdk#168, custom `gate` definitions in #170, single-bit classical
+#: conditions in #172. Each pattern was removed when its construct became
+#: supported, because a stale pessimistic predictor is as wrong as an optimistic
+#: one. Coverage went 10 -> 14 -> 20 -> 23 of 23.
 #: Detected at import so a record carries its own importability, instead of the
 #: suite claiming to work and failing later on two thirds of its contents.
 DIALECT_RISKS: tuple[tuple[str, str, str], ...] = (
-    (
-        "classical_condition",
-        "if (",
-        "Contains a classical condition. KetQat accepts only equality conditions on a whole "
-        "classical register, so some forms are rejected.",
-    ),
 )
 
 

@@ -4034,3 +4034,159 @@ P q[0];
     /declares no qubit arguments|Could not read/,
   )
 }
+
+
+// ---------------------------------------------------------------------------
+// Single-bit classical conditions (ketqat-sdk#172)
+// ---------------------------------------------------------------------------
+{
+  // Qiskit emits these for dynamic circuits. A single-bit test cannot be written
+  // as a whole-register comparison -- c[1] == 1 is true for many register values
+  // -- which is why it needed its own field rather than a clever `equals`.
+  const truthy = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+h q[0];
+c[0] = measure q[0];
+if (c[0]) { x q[1]; }
+c[1] = measure q[1];
+`)
+  const conditionals = truthy.circuit.operations.filter((operation) => operation.kind === "conditional")
+  assert.equal(conditionals.length, 1)
+  assert.equal(conditionals[0].register, "c")
+  assert.equal(conditionals[0].bit, 0)
+  assert.equal(conditionals[0].equals, 1)
+
+  // `== true` and `== false` are the written-out forms of the same thing.
+  const explicitTrue = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[1] q;
+bit[1] c;
+if (c[0] == true) { x q[0]; }
+`).circuit.operations[0]
+  assert.equal(explicitTrue.bit, 0)
+  assert.equal(explicitTrue.equals, 1)
+
+  const explicitFalse = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[1] q;
+bit[1] c;
+if (c[0] == false) { x q[0]; }
+`).circuit.operations[0]
+  assert.equal(explicitFalse.equals, 0)
+
+  // The whole-register form is untouched: `bit` is absent, not zero, so circuits
+  // written before this field existed keep their exact meaning.
+  const wholeRegister = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[1] q;
+bit[2] c;
+if (c == 3) { x q[0]; }
+`).circuit.operations[0]
+  assert.equal(wholeRegister.bit, undefined)
+  assert.equal(wholeRegister.equals, 3)
+
+  // Out-of-range bit indices are refused rather than silently reading a bit that
+  // does not exist.
+  assert.throws(
+    () =>
+      parseQasm3(`OPENQASM 3.0;\ninclude "stdgates.inc";\nqubit[1] q;\nbit[2] c;\nif (c[5]) { x q[0]; }\n`),
+    /out of range for classical register/,
+  )
+
+  // An unsupported boolean expression is still rejected, not approximated:
+  // guessing at a condition would silently change the program.
+  assert.throws(
+    () =>
+      parseQasm3(
+        `OPENQASM 3.0;\ninclude "stdgates.inc";\nqubit[1] q;\nbit[2] c;\nif (c[0] && c[1]) { x q[0]; }\n`,
+      ),
+    /Supported conditions are/,
+  )
+
+  // The condition is evaluated on the right bit. With q[0] forced to 1, the
+  // conditional body must fire; forced to 0, it must not. Deterministic, so this
+  // is an exact check rather than a statistical one.
+  const fires = simulateStatevector(
+    parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+x q[0];
+c[0] = measure q[0];
+if (c[0]) { x q[1]; }
+c[1] = measure q[1];
+`).circuit,
+    { shots: 64, seed: 1 },
+  )
+  assert.deepEqual(Object.keys(fires.counts ?? {}), ["11"])
+
+  const doesNotFire = simulateStatevector(
+    parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+c[0] = measure q[0];
+if (c[0]) { x q[1]; }
+c[1] = measure q[1];
+`).circuit,
+    { shots: 64, seed: 1 },
+  )
+  assert.deepEqual(Object.keys(doesNotFire.counts ?? {}), ["00"])
+
+  // The single-bit read must genuinely read one bit, not the register value.
+  //
+  // Added because a mutation replacing the bit read with registerValue survived:
+  // with only bit 0 set in a two-bit register, the register value equals the bit
+  // value, so both give the same answer. Here bits 0 and 1 are both set, so the
+  // register reads 3 while bit 1 reads 1 -- a fallback to registerValue would
+  // compare 3 against 1 and fail to fire.
+  const distinguishes = simulateStatevector(
+    parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[3] q;
+bit[3] c;
+x q[0];
+x q[1];
+c[0] = measure q[0];
+c[1] = measure q[1];
+if (c[1]) { x q[2]; }
+c[2] = measure q[2];
+`).circuit,
+    { shots: 64, seed: 1 },
+  )
+  assert.deepEqual(
+    Object.keys(distinguishes.counts ?? {}),
+    ["111"],
+    "the condition must read bit 1 (value 1), not the register (value 3)",
+  )
+
+  // A single-bit condition must survive a parse/emit round trip rather than being
+  // widened into a whole-register comparison.
+  const source = `OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+c[0] = measure q[0];
+if (c[1] == 0) { x q[1]; }
+`
+  const first = parseQasm3(source).circuit
+  const second = parseQasm3(emitQasm3(first)).circuit
+  assert.deepEqual(second.operations, first.operations)
+
+  // Hardware qubits must round-trip too. They are emitted as $n and never
+  // declared: `qubit[n] $physical;` is not valid OpenQASM, and emitting the
+  // internal placeholder produced output this parser could not read back.
+  const hardware = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+bit[1] c;
+h $0;
+cx $0, $2;
+c[0] = measure $0;
+`).circuit
+  const emitted = emitQasm3(hardware)
+  assert.match(emitted, /\$0/)
+  assert.ok(!emitted.includes("$physical"), "the internal register name must not be emitted")
+  assert.deepEqual(parseQasm3(emitted).circuit.operations, hardware.operations)
+}

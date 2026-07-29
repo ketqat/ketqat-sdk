@@ -308,7 +308,19 @@ export type SimpleOperation = z.infer<typeof SimpleOperationSchema>;
 export declare const ConditionalOperationSchema: z.ZodObject<{
     kind: z.ZodLiteral<"conditional">;
     register: z.ZodString;
-    /** Comparison is equality against this value; the only form the subset accepts. */
+    /**
+     * Index of a single classical bit to test, when the condition is on one bit
+     * rather than the whole register.
+     *
+     * Optional and additive: absent means the existing whole-register comparison,
+     * so every circuit written before this field existed keeps its meaning.
+     *
+     * A single-bit test cannot be expressed as a whole-register comparison --
+     * `c[1] == 1` is true for many register values -- so it needs its own field
+     * rather than a cleverly chosen `equals` (ketqat-sdk#172).
+     */
+    bit: z.ZodOptional<z.ZodNumber>;
+    /** Value the register, or the single bit when `bit` is set, must equal. */
     equals: z.ZodNumber;
     body: z.ZodDiscriminatedUnion<"kind", [z.ZodObject<{
         kind: z.ZodLiteral<"gate">;
@@ -435,6 +447,7 @@ export declare const ConditionalOperationSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     kind: "conditional";
     register: string;
+    bit?: number | undefined;
     equals: number;
     body: {
         kind: "gate";
@@ -470,6 +483,7 @@ export declare const ConditionalOperationSchema: z.ZodObject<{
 }, {
     kind: "conditional";
     register: string;
+    bit?: number | undefined;
     equals: number;
     body: {
         kind: "gate";
@@ -628,7 +642,19 @@ export declare const OperationSchema: z.ZodDiscriminatedUnion<"kind", [z.ZodObje
 }>, z.ZodObject<{
     kind: z.ZodLiteral<"conditional">;
     register: z.ZodString;
-    /** Comparison is equality against this value; the only form the subset accepts. */
+    /**
+     * Index of a single classical bit to test, when the condition is on one bit
+     * rather than the whole register.
+     *
+     * Optional and additive: absent means the existing whole-register comparison,
+     * so every circuit written before this field existed keeps its meaning.
+     *
+     * A single-bit test cannot be expressed as a whole-register comparison --
+     * `c[1] == 1` is true for many register values -- so it needs its own field
+     * rather than a cleverly chosen `equals` (ketqat-sdk#172).
+     */
+    bit: z.ZodOptional<z.ZodNumber>;
+    /** Value the register, or the single bit when `bit` is set, must equal. */
     equals: z.ZodNumber;
     body: z.ZodDiscriminatedUnion<"kind", [z.ZodObject<{
         kind: z.ZodLiteral<"gate">;
@@ -755,6 +781,7 @@ export declare const OperationSchema: z.ZodDiscriminatedUnion<"kind", [z.ZodObje
 }, "strip", z.ZodTypeAny, {
     kind: "conditional";
     register: string;
+    bit?: number | undefined;
     equals: number;
     body: {
         kind: "gate";
@@ -790,6 +817,7 @@ export declare const OperationSchema: z.ZodDiscriminatedUnion<"kind", [z.ZodObje
 }, {
     kind: "conditional";
     register: string;
+    bit?: number | undefined;
     equals: number;
     body: {
         kind: "gate";
@@ -970,7 +998,19 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
     }>, z.ZodObject<{
         kind: z.ZodLiteral<"conditional">;
         register: z.ZodString;
-        /** Comparison is equality against this value; the only form the subset accepts. */
+        /**
+         * Index of a single classical bit to test, when the condition is on one bit
+         * rather than the whole register.
+         *
+         * Optional and additive: absent means the existing whole-register comparison,
+         * so every circuit written before this field existed keeps its meaning.
+         *
+         * A single-bit test cannot be expressed as a whole-register comparison --
+         * `c[1] == 1` is true for many register values -- so it needs its own field
+         * rather than a cleverly chosen `equals` (ketqat-sdk#172).
+         */
+        bit: z.ZodOptional<z.ZodNumber>;
+        /** Value the register, or the single bit when `bit` is set, must equal. */
         equals: z.ZodNumber;
         body: z.ZodDiscriminatedUnion<"kind", [z.ZodObject<{
             kind: z.ZodLiteral<"gate">;
@@ -1097,6 +1137,7 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         kind: "conditional";
         register: string;
+        bit?: number | undefined;
         equals: number;
         body: {
             kind: "gate";
@@ -1132,6 +1173,7 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
     }, {
         kind: "conditional";
         register: string;
+        bit?: number | undefined;
         equals: number;
         body: {
             kind: "gate";
@@ -1208,6 +1250,7 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
     } | {
         kind: "conditional";
         register: string;
+        bit?: number | undefined;
         equals: number;
         body: {
             kind: "gate";
@@ -1284,6 +1327,7 @@ export declare const QuantumCircuitSchema: z.ZodObject<{
     } | {
         kind: "conditional";
         register: string;
+        bit?: number | undefined;
         equals: number;
         body: {
             kind: "gate";
