@@ -3028,6 +3028,20 @@ c[0] = measure q[0];
   assert.ok(channelBlock, "the QEC noise channel map should be findable")
   const channels = [...channelBlock.matchAll(/"([a-z_]+)":\s*"([a-z_]+)"/g)]
   assert.ok(channels.length >= 3, `expected the channel map to parse, got ${channels.length}`)
+
+  // Channels applied by rewriting the circuit rather than by a generator
+  // argument must be documented too. They are the easiest to forget precisely
+  // because they are not in the map above.
+  const postBlock = runnerSource.match(/_POST_NOISE_CHANNELS: tuple\[str, \.\.\.\] = \(([^)]*)\)/)?.[1]
+  assert.ok(postBlock, "the post-injected channel tuple should be findable")
+  const postChannels = [...postBlock.matchAll(/"([a-z_]+)"/g)].map((m) => m[1])
+  assert.ok(postChannels.length >= 1, "expected at least one post-injected channel")
+  for (const field of postChannels) {
+    assert.ok(
+      limits.includes(`\`${field}\``),
+      `docs/scope-and-limits.md does not mention the ${field} channel`,
+    )
+  }
   for (const [, manifestField, stimParameter] of channels) {
     assert.ok(
       limits.includes(`\`${manifestField}\``),
@@ -3048,7 +3062,7 @@ c[0] = measure q[0];
   )
   const comparability = statsSource.match(/COMPARABILITY_FIELDS = \(([\s\S]*?)\)/)?.[1]
   assert.ok(comparability, "COMPARABILITY_FIELDS should be findable")
-  for (const [, manifestField] of channels) {
+  for (const manifestField of [...channels.map((c) => c[1]), ...postChannels]) {
     assert.ok(
       comparability.includes(`"${manifestField}"`),
       `${manifestField} changes the result but is not a comparability field`,

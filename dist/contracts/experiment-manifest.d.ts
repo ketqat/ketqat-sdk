@@ -107,18 +107,36 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
              * a qubit waiting is not a qubit being operated on.
              */
             idle_error_rate: z.ZodOptional<z.ZodNumber>;
+            /**
+             * Correlated two-qubit depolarization between *neighbouring data
+             * qubits*, applied once per round. This is crosstalk: qubits that are
+             * not interacting picking up correlated error while they idle.
+             *
+             * It is `DEPOLARIZE2` rather than a fixed Pauli pair on purpose. A
+             * correlated `ZZ` commutes with the memory-Z observable, so a
+             * fixed-Pauli crosstalk model reports no effect at all for the default
+             * experiment while dominating memory-X. Measured at d=3, 20,000 shots,
+             * p=0.02: correlated ZZ gives 2 failures in memory-Z against a baseline
+             * of 4, and 4739 in memory-X.
+             *
+             * Unlike the other rates this one has no `stim.Circuit.generated`
+             * argument; the generated circuit is rewritten to carry it.
+             */
+            crosstalk_error_rate: z.ZodOptional<z.ZodNumber>;
         }, "strict", z.ZodTypeAny, {
             model: string;
             physical_error_rates: number[];
             readout_error_rate?: number | undefined;
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
+            crosstalk_error_rate?: number | undefined;
         }, {
             model: string;
             physical_error_rates: number[];
             readout_error_rate?: number | undefined;
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
+            crosstalk_error_rate?: number | undefined;
         }>;
         decoder: z.ZodObject<{
             name: z.ZodString;
@@ -172,6 +190,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             readout_error_rate?: number | undefined;
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
+            crosstalk_error_rate?: number | undefined;
         };
         decoder: {
             name: string;
@@ -196,6 +215,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             readout_error_rate?: number | undefined;
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
+            crosstalk_error_rate?: number | undefined;
         };
         decoder: {
             name: string;
@@ -249,6 +269,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             readout_error_rate?: number | undefined;
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
+            crosstalk_error_rate?: number | undefined;
         };
         decoder: {
             name: string;
@@ -302,6 +323,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             readout_error_rate?: number | undefined;
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
+            crosstalk_error_rate?: number | undefined;
         };
         decoder: {
             name: string;
@@ -621,18 +643,36 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
              * a qubit waiting is not a qubit being operated on.
              */
             idle_error_rate: z.ZodOptional<z.ZodNumber>;
+            /**
+             * Correlated two-qubit depolarization between *neighbouring data
+             * qubits*, applied once per round. This is crosstalk: qubits that are
+             * not interacting picking up correlated error while they idle.
+             *
+             * It is `DEPOLARIZE2` rather than a fixed Pauli pair on purpose. A
+             * correlated `ZZ` commutes with the memory-Z observable, so a
+             * fixed-Pauli crosstalk model reports no effect at all for the default
+             * experiment while dominating memory-X. Measured at d=3, 20,000 shots,
+             * p=0.02: correlated ZZ gives 2 failures in memory-Z against a baseline
+             * of 4, and 4739 in memory-X.
+             *
+             * Unlike the other rates this one has no `stim.Circuit.generated`
+             * argument; the generated circuit is rewritten to carry it.
+             */
+            crosstalk_error_rate: z.ZodOptional<z.ZodNumber>;
         }, "strict", z.ZodTypeAny, {
             model: string;
             physical_error_rates: number[];
             readout_error_rate?: number | undefined;
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
+            crosstalk_error_rate?: number | undefined;
         }, {
             model: string;
             physical_error_rates: number[];
             readout_error_rate?: number | undefined;
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
+            crosstalk_error_rate?: number | undefined;
         }>;
         decoder: z.ZodObject<{
             name: z.ZodString;
@@ -686,6 +726,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             readout_error_rate?: number | undefined;
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
+            crosstalk_error_rate?: number | undefined;
         };
         decoder: {
             name: string;
@@ -710,6 +751,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             readout_error_rate?: number | undefined;
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
+            crosstalk_error_rate?: number | undefined;
         };
         decoder: {
             name: string;
@@ -763,6 +805,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             readout_error_rate?: number | undefined;
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
+            crosstalk_error_rate?: number | undefined;
         };
         decoder: {
             name: string;
@@ -816,6 +859,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             readout_error_rate?: number | undefined;
             reset_error_rate?: number | undefined;
             idle_error_rate?: number | undefined;
+            crosstalk_error_rate?: number | undefined;
         };
         decoder: {
             name: string;

@@ -188,6 +188,11 @@
                   "type": "number",
                   "minimum": 0,
                   "maximum": 1
+                },
+                "crosstalk_error_rate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
                 }
               },
               "required": [
