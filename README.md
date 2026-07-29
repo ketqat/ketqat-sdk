@@ -10,6 +10,11 @@ This repository contains everything you need to participate:
 - **`ketqat` (Python)** -- the local runner: executes benchmark manifests against real dependencies (Stim + PyMatching for QEC) and produces results with canonical reproducibility hashes. A PyPI release is being prepared; install from source today or use the package command after publication.
 - **`ketqat-sdk` (TypeScript)** -- the contract layer: typed schemas, validators, hashing, scientific-compatibility helpers, and a REST client for [ketqat.com](https://ketqat.com). An npm release is being prepared alongside.
 
+**Before you rely on any number from this project**, read
+[what it covers and what it does not](docs/scope-and-limits.md). The short
+version: one decoder, one noise model, no hardware, and a leaderboard that is
+currently a record rather than a comparison.
+
 ## Run your first benchmark in 3 minutes
 
 Measured from a clean virtual environment with a cold package cache: 21 seconds
