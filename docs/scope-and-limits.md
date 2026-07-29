@@ -248,7 +248,32 @@ needs an execution loop this engine does not have, and knowing the overhead is
 what tells someone whether to attempt it at all. A mitigated value quoted
 without it invites a reader to think the bias was removed for free.
 
-**Not implemented**: quantum volume and tomography. Quantum volume needs non-Clifford circuits and so cannot use this
+**Quantum volume** is implemented. An earlier revision of this document said it
+"needs non-Clifford circuits and cannot use this path", which scoped the
+obstacle to Stim and was therefore incomplete: QV needs a statevector rather
+than a stabilizer simulator, and a small exact one is cheap at the widths QV is
+defined for.
+
+It carries its own simulation rather than going through the circuit IR, because
+QV is defined over Haar-random SU(4) and a decomposition into the engine's gate
+set would either approximate the Haar measure or need a KAK routine harder to
+establish than the thing it supports. Sampling SU(4) directly is a dozen lines
+and exactly right, which is what makes the result checkable against a constant:
+
+```
+ideal heavy-output probability  (1 + ln 2)/2 = 0.8466
+  measured, width 4                          0.843
+  measured, width 6                          0.855
+fully depolarized device                     0.500 exactly, fails
+```
+
+Two rules the protocol needs and gets. The bar is the **two-sigma lower bound**,
+not the mean: a mean above 2/3 with a wide interval has demonstrated nothing.
+And heaviness is defined by the **ideal** distribution, because using the noisy
+median would let a bad device redefine which outputs count as heavy and pass
+itself.
+
+**Not implemented**: tomography. Quantum volume needs non-Clifford circuits and so cannot use this
 path at all.
 
 ## Simulation

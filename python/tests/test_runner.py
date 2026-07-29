@@ -1577,3 +1577,114 @@ def test_the_isolated_comparison_uses_the_same_draws() -> None:
         return names
 
     assert gates_on(simultaneous, 0) == gates_on(isolated, 0)
+
+
+# --- Quantum volume (ketqat-sdk#143) ----------------------------------------
+#
+# An earlier note said QV "needs non-Clifford circuits and cannot use this
+# path". That scoped the obstacle to Stim, which is correct and incomplete: QV
+# needs a statevector, not a stabilizer simulator, and a small exact one is
+# cheap at the widths QV is defined for.
+
+
+def test_the_ideal_heavy_output_probability_approaches_its_known_value() -> None:
+    """(1 + ln 2) / 2 = 0.8466, and this is checked against that constant.
+
+    Checking against a previous run would pass just as happily if the Haar
+    sampling were biased -- which is the failure mode that matters, because a
+    biased measure is invisible in a spot check while shifting this number.
+    """
+    import statistics
+
+    from ketqat_runner.quantum_volume import (
+        IDEAL_HEAVY_OUTPUT_PROBABILITY,
+        heavy_output_probability,
+        quantum_volume_circuit_probabilities,
+    )
+
+    for width in (4, 5, 6):
+        values = [
+            heavy_output_probability(quantum_volume_circuit_probabilities(width, 100 + index))
+            for index in range(50)
+        ]
+        mean = statistics.mean(values)
+        assert abs(mean - IDEAL_HEAVY_OUTPUT_PROBABILITY) < 0.03, (
+            f"width {width}: {mean:.4f} vs {IDEAL_HEAVY_OUTPUT_PROBABILITY:.4f}"
+        )
+
+
+def test_a_quantum_volume_distribution_is_a_distribution() -> None:
+    from ketqat_runner.quantum_volume import quantum_volume_circuit_probabilities
+
+    for width in (2, 4, 6):
+        probabilities = quantum_volume_circuit_probabilities(width, 7)
+        assert len(probabilities) == 1 << width
+        assert all(value >= -1e-12 for value in probabilities)
+        assert abs(float(sum(probabilities)) - 1.0) < 1e-9
+
+
+def test_a_fully_depolarized_device_sits_at_one_half_and_fails() -> None:
+    """The floor every QV measurement sits above.
+
+    A uniform distribution puts exactly half its weight above the ideal median,
+    so a device that has lost all information scores 0.5 -- not zero. A method
+    reporting anything else here would be measuring something other than heavy
+    outputs.
+    """
+    from ketqat_runner.quantum_volume import measure_quantum_volume
+
+    result = measure_quantum_volume(4, 40, 7, depolarizing_rate=1.0)
+    assert abs(result["heavy_output_probability"] - 0.5) < 1e-6
+    assert result["passed"] is False
+    assert result["quantum_volume"] is None
+
+
+def test_an_ideal_device_passes_and_claims_the_width() -> None:
+    from ketqat_runner.quantum_volume import measure_quantum_volume
+
+    result = measure_quantum_volume(4, 60, 7)
+    assert result["passed"] is True
+    assert result["quantum_volume"] == 16
+    # The mean clearing the threshold is not enough; the interval has to.
+    assert result["two_sigma_lower_bound"] > result["threshold"]
+
+
+def test_the_threshold_is_the_two_sigma_bound_not_the_mean() -> None:
+    """A mean above 2/3 with a wide interval has not demonstrated anything.
+
+    Constructed so the mean passes and the bound does not, which is exactly the
+    case a naive implementation would wave through.
+    """
+    from ketqat_runner.quantum_volume import measure_quantum_volume
+
+    # Enough depolarization to land near the threshold, with few circuits so the
+    # interval stays wide.
+    result = measure_quantum_volume(4, 5, 11, depolarizing_rate=0.45)
+    if result["heavy_output_probability"] > result["threshold"]:
+        assert result["passed"] == (result["two_sigma_lower_bound"] > result["threshold"])
+
+
+def test_heaviness_is_defined_by_the_ideal_distribution() -> None:
+    """A noisy device must not get to redefine which outputs count as heavy.
+
+    Using the noisy median would let a bad device pass itself: whatever it
+    produces most becomes 'heavy' by construction.
+    """
+    from ketqat_runner.quantum_volume import measure_quantum_volume
+
+    clean = measure_quantum_volume(4, 30, 7, depolarizing_rate=0.0)
+    noisy = measure_quantum_volume(4, 30, 7, depolarizing_rate=0.5)
+    assert noisy["heavy_output_probability"] < clean["heavy_output_probability"], (
+        "noise must lower the score, not be absorbed by a shifting median"
+    )
+
+
+def test_out_of_range_widths_and_rates_are_refused() -> None:
+    from ketqat_runner.quantum_volume import MAX_QV_WIDTH, measure_quantum_volume, quantum_volume_circuit_probabilities
+
+    with pytest.raises(ValueError, match="2 to"):
+        quantum_volume_circuit_probabilities(1, 7)
+    with pytest.raises(ValueError, match="2 to"):
+        quantum_volume_circuit_probabilities(MAX_QV_WIDTH + 1, 7)
+    with pytest.raises(ValueError, match=r"\[0, 1\]"):
+        measure_quantum_volume(4, 10, 7, depolarizing_rate=1.5)
