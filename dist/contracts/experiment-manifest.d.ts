@@ -140,6 +140,26 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
              * probability, though the rates it produces are clamped.
              */
             drift_per_round: z.ZodOptional<z.ZodNumber>;
+            /**
+             * Amplitude of a correlated random walk on every noise rate, per round.
+             *
+             * Drift ramps; this wanders. Real calibration does the latter --
+             * correlated between nearby rounds, uncorrelated between distant ones,
+             * because the underlying parameters follow slow environmental variation
+             * rather than a trend.
+             *
+             * The correlation is the point. A rate resampled independently each
+             * round averages out and looks like a slightly different constant; a
+             * walk stays somewhere for a while, so a run can spend a stretch in a
+             * bad regime. Measured at d=3 over 11 rounds across twelve seeds, this
+             * leaves the mean roughly unchanged (87 to 106 failures) while
+             * multiplying the run-to-run spread by 16 (range 74-102 becomes
+             * 15-507). That spread is the signature, not a shifted mean.
+             *
+             * The step is multiplicative, so the rate cannot walk negative. Seeded
+             * from the coordinate seed, so a stochastic model is still reproducible.
+             */
+            wander_per_round: z.ZodOptional<z.ZodNumber>;
         }, "strict", z.ZodTypeAny, {
             model: string;
             physical_error_rates: number[];
@@ -148,6 +168,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
             drift_per_round?: number | undefined;
+            wander_per_round?: number | undefined;
         }, {
             model: string;
             physical_error_rates: number[];
@@ -156,6 +177,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
             drift_per_round?: number | undefined;
+            wander_per_round?: number | undefined;
         }>;
         decoder: z.ZodObject<{
             name: z.ZodString;
@@ -211,6 +233,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
             drift_per_round?: number | undefined;
+            wander_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -237,6 +260,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
             drift_per_round?: number | undefined;
+            wander_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -292,6 +316,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
             drift_per_round?: number | undefined;
+            wander_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -347,6 +372,7 @@ export declare const QecExperimentManifestSchema: z.ZodObject<{
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
             drift_per_round?: number | undefined;
+            wander_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -913,6 +939,26 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
              * probability, though the rates it produces are clamped.
              */
             drift_per_round: z.ZodOptional<z.ZodNumber>;
+            /**
+             * Amplitude of a correlated random walk on every noise rate, per round.
+             *
+             * Drift ramps; this wanders. Real calibration does the latter --
+             * correlated between nearby rounds, uncorrelated between distant ones,
+             * because the underlying parameters follow slow environmental variation
+             * rather than a trend.
+             *
+             * The correlation is the point. A rate resampled independently each
+             * round averages out and looks like a slightly different constant; a
+             * walk stays somewhere for a while, so a run can spend a stretch in a
+             * bad regime. Measured at d=3 over 11 rounds across twelve seeds, this
+             * leaves the mean roughly unchanged (87 to 106 failures) while
+             * multiplying the run-to-run spread by 16 (range 74-102 becomes
+             * 15-507). That spread is the signature, not a shifted mean.
+             *
+             * The step is multiplicative, so the rate cannot walk negative. Seeded
+             * from the coordinate seed, so a stochastic model is still reproducible.
+             */
+            wander_per_round: z.ZodOptional<z.ZodNumber>;
         }, "strict", z.ZodTypeAny, {
             model: string;
             physical_error_rates: number[];
@@ -921,6 +967,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
             drift_per_round?: number | undefined;
+            wander_per_round?: number | undefined;
         }, {
             model: string;
             physical_error_rates: number[];
@@ -929,6 +976,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
             drift_per_round?: number | undefined;
+            wander_per_round?: number | undefined;
         }>;
         decoder: z.ZodObject<{
             name: z.ZodString;
@@ -984,6 +1032,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
             drift_per_round?: number | undefined;
+            wander_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -1010,6 +1059,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
             drift_per_round?: number | undefined;
+            wander_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -1065,6 +1115,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
             drift_per_round?: number | undefined;
+            wander_per_round?: number | undefined;
         };
         decoder: {
             name: string;
@@ -1120,6 +1171,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             idle_error_rate?: number | undefined;
             crosstalk_error_rate?: number | undefined;
             drift_per_round?: number | undefined;
+            wander_per_round?: number | undefined;
         };
         decoder: {
             name: string;

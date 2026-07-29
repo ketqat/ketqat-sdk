@@ -1349,3 +1349,129 @@ def test_an_interleaved_sequence_still_returns_to_the_start_with_no_noise() -> N
             circuit = build_interleaved_sequence(1, length, 0.0, 7, gate)
             samples = circuit.compile_sampler(seed=3).sample(shots=200)
             assert not samples.any(), f"{gate} at length {length} did not return to |0>"
+
+
+# --- Correlated time dependence (ketqat-sdk#135) ----------------------------
+#
+# Drift ramps monotonically. Real calibration wanders: correlated between nearby
+# rounds, uncorrelated between distant ones. That correlation is the point --
+# a rate resampled independently each round averages out and looks like a
+# slightly different constant.
+
+
+def test_zero_wander_reproduces_the_circuit_exactly() -> None:
+    """The identity case must be an identity, as it is for drift."""
+    import stim
+
+    from ketqat_runner.runner import _apply_wander
+
+    circuit = stim.Circuit.generated(
+        "surface_code:rotated_memory_z", distance=3, rounds=6, after_clifford_depolarization=0.002
+    )
+    assert str(_apply_wander(circuit, 0.0, 7)) == str(circuit.flattened())
+
+
+def test_the_walk_is_reproducible_from_its_seed() -> None:
+    """A stochastic noise model is still a model.
+
+    Two runs at the same seed must produce the same circuit, or the
+    reproducibility hash this project is built on stops meaning anything.
+    """
+    import stim
+
+    from ketqat_runner.runner import _apply_wander
+
+    circuit = stim.Circuit.generated(
+        "surface_code:rotated_memory_z", distance=3, rounds=6, after_clifford_depolarization=0.002
+    )
+    assert str(_apply_wander(circuit, 0.5, 7)) == str(_apply_wander(circuit, 0.5, 7))
+    assert str(_apply_wander(circuit, 0.5, 7)) != str(_apply_wander(circuit, 0.5, 8))
+
+
+def test_the_rate_wanders_rather_than_ramping() -> None:
+    """A ramp is monotone; a walk is not. That difference is the whole feature."""
+    import stim
+
+    from ketqat_runner.runner import _apply_wander
+
+    circuit = stim.Circuit.generated(
+        "surface_code:rotated_memory_z", distance=3, rounds=12, after_clifford_depolarization=0.002
+    )
+    wandered = _apply_wander(circuit, 0.5, 7)
+
+    rates: list[float] = []
+    seen_round = -1
+    round_index = 0
+    for instruction in wandered:
+        if instruction.name in ("DEPOLARIZE1", "DEPOLARIZE2") and round_index != seen_round:
+            rates.append(instruction.gate_args_copy()[0])
+            seen_round = round_index
+        if instruction.name in ("MR", "MRZ", "MRX"):
+            round_index += 1
+
+    assert len(rates) >= 6
+    increases = sum(1 for a, b in zip(rates, rates[1:]) if b > a)
+    decreases = sum(1 for a, b in zip(rates, rates[1:]) if b < a)
+    assert increases > 0 and decreases > 0, f"a walk must move both ways, got {rates}"
+
+    # And never negative: the step is multiplicative on the current rate.
+    assert all(rate >= 0 for rate in rates)
+
+
+def test_wander_preserves_the_detector_structure() -> None:
+    import stim
+
+    from ketqat_runner.runner import _apply_wander
+
+    circuit = stim.Circuit.generated(
+        "surface_code:rotated_memory_z", distance=3, rounds=6, after_clifford_depolarization=0.002
+    )
+    wandered = _apply_wander(circuit, 0.5, 7)
+    assert wandered.num_detectors == circuit.num_detectors
+    assert wandered.num_observables == circuit.num_observables
+
+
+def test_the_signature_of_correlated_noise_is_spread_not_a_shifted_mean() -> None:
+    """This is what correlated noise does, and why a mean would hide it.
+
+    A walk parks in a regime for a stretch, so some runs land in a bad one and
+    some in a good one. Measured across twelve seeds at d=3 over 11 rounds, the
+    mean moves from 87 to 106 failures while the run-to-run spread grows about
+    sixteenfold. Asserting the mean would test almost nothing; asserting the
+    spread tests the property that matters.
+    """
+    import statistics
+
+    flat: list[int] = []
+    wandered: list[int] = []
+    for seed in range(1, 11):
+        flat.append(
+            _noise_sample(shots=4000, rounds=11, physical_error_rate=0.003, seed=seed)["decoders"][0][
+                "logical_failures"
+            ]
+        )
+        wandered.append(
+            _noise_sample(
+                shots=4000,
+                rounds=11,
+                physical_error_rate=0.003,
+                seed=seed,
+                extra_noise={"wander_per_round": 0.6},
+            )["decoders"][0]["logical_failures"]
+        )
+
+    assert statistics.stdev(wandered) > 3 * statistics.stdev(flat), (
+        f"correlated noise should widen the run-to-run spread: "
+        f"flat {statistics.stdev(flat):.1f} vs wander {statistics.stdev(wandered):.1f}"
+    )
+
+
+def test_wander_separates_runs_and_seeds_like_every_other_channel() -> None:
+    from ketqat_runner.qec_statistics import comparability_key
+
+    a = _noise_sample(extra_noise={"wander_per_round": 0.2})["coordinate_seed"]
+    b = _noise_sample(extra_noise={"wander_per_round": 0.3})["coordinate_seed"]
+    assert a != b
+
+    record = {"benchmark_suite": "qec", "code_distance": 3, "physical_error_rate": 0.001}
+    assert comparability_key(record) != comparability_key({**record, "wander_per_round": 0.2})

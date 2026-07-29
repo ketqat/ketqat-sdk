@@ -252,6 +252,7 @@ def _sample_surface_code_memory(
     extra_noise = extra_noise or {}
     crosstalk_rate = extra_noise.get("crosstalk_error_rate")
     drift_per_round = extra_noise.get("drift_per_round")
+    wander_per_round = extra_noise.get("wander_per_round")
     # The seed must depend on every noise channel, not only the swept rate.
     # Otherwise two runs differing solely in readout error would share a
     # coordinate seed, and the shot-to-shot noise would be correlated between
@@ -284,6 +285,12 @@ def _sample_surface_code_memory(
         circuit = _inject_crosstalk(circuit, crosstalk_rate)
     if drift_per_round:
         circuit = _apply_drift(circuit, drift_per_round)
+    if wander_per_round:
+        # Seeded from the coordinate seed so the walk is part of the run's
+        # identity: two runs at the same seed take the same walk, and the
+        # reproducibility guarantee holds for a stochastic model as much as a
+        # deterministic one.
+        circuit = _apply_wander(circuit, wander_per_round, coordinate_seed)
     sampler = circuit.compile_detector_sampler(seed=coordinate_seed)
     circuit_generation_seconds = (time.perf_counter_ns() - circuit_start) / 1_000_000_000
 
@@ -359,7 +366,11 @@ _STIM_NOISE_CHANNELS: dict[str, str] = {
 #: Measured at d=3, 20,000 shots, p=0.02: correlated ZZ gives 2 failures in
 #: memory-Z against a baseline of 4, and 4739 in memory-X. `DEPOLARIZE2` gives
 #: ~2610 in both.
-_POST_NOISE_CHANNELS: tuple[str, ...] = ("crosstalk_error_rate", "drift_per_round")
+_POST_NOISE_CHANNELS: tuple[str, ...] = (
+    "crosstalk_error_rate",
+    "drift_per_round",
+    "wander_per_round",
+)
 
 #: Every optional noise channel, however it is applied. Seeding, comparability
 #: and the result record must all iterate this rather than either half: a
@@ -404,6 +415,60 @@ def _data_qubit_pairs(circuit: "Any") -> list[tuple[int, int]]:
         )
         == [0, 2]
     ]
+
+
+def _apply_wander(circuit: "Any", wander_per_round: float, seed: int) -> "Any":
+    """Let every noise probability random-walk across rounds.
+
+    Drift ramps monotonically, which is a device degrading. Real calibration
+    does something else: it wanders, correlated between nearby rounds and
+    uncorrelated between distant ones, because the underlying parameters follow
+    slow environmental variation rather than a trend (ketqat-sdk#135).
+
+    That correlation is the whole point and is what distinguishes this from
+    simply raising the rate. A rate resampled independently each round averages
+    out over a long run and looks like a slightly different constant. A walk
+    stays somewhere for a while, so a run can spend a stretch of rounds in a bad
+    regime -- which is what actually breaks a decoder, and what a constant rate
+    cannot express.
+
+    The step is multiplicative on the current rate, so the walk cannot cross
+    zero into a negative probability. Rates are clamped into [0, 1] as well,
+    because a probability outside it is not a probability.
+
+    Seeded, so this is reproducible. A stochastic noise model is still a model:
+    two runs at the same seed must produce the same circuit, or the hash this
+    project is built on stops meaning anything.
+    """
+    import random as _random
+
+    import stim
+
+    flattened = circuit.flattened()
+    rewritten = stim.Circuit()
+    rng = _random.Random(seed)
+    # One factor per round, drawn as the walk proceeds rather than up front, so
+    # the sequence depends only on the seed and the round count.
+    factor = 1.0
+    round_index = 0
+
+    for instruction in flattened:
+        name = instruction.name
+        if name in _DRIFTING_CHANNELS:
+            scaled = [
+                min(1.0, max(0.0, argument * factor)) for argument in instruction.gate_args_copy()
+            ]
+            rewritten.append(name, instruction.targets_copy(), scaled)
+            continue
+
+        rewritten.append(instruction)
+        if name in ("MR", "MRZ", "MRX"):
+            round_index += 1
+            # Multiplicative step keeps the rate positive by construction.
+            factor *= 1.0 + rng.uniform(-wander_per_round, wander_per_round)
+            factor = max(0.0, factor)
+
+    return rewritten
 
 
 def _apply_drift(circuit: "Any", drift_per_round: float) -> "Any":

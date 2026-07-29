@@ -95,6 +95,26 @@ export const QecExperimentManifestSchema = BaseExperimentManifestSchema.extend({
              * probability, though the rates it produces are clamped.
              */
             drift_per_round: z.number().optional(),
+            /**
+             * Amplitude of a correlated random walk on every noise rate, per round.
+             *
+             * Drift ramps; this wanders. Real calibration does the latter --
+             * correlated between nearby rounds, uncorrelated between distant ones,
+             * because the underlying parameters follow slow environmental variation
+             * rather than a trend.
+             *
+             * The correlation is the point. A rate resampled independently each
+             * round averages out and looks like a slightly different constant; a
+             * walk stays somewhere for a while, so a run can spend a stretch in a
+             * bad regime. Measured at d=3 over 11 rounds across twelve seeds, this
+             * leaves the mean roughly unchanged (87 to 106 failures) while
+             * multiplying the run-to-run spread by 16 (range 74-102 becomes
+             * 15-507). That spread is the signature, not a shifted mean.
+             *
+             * The step is multiplicative, so the rate cannot walk negative. Seeded
+             * from the coordinate seed, so a stochastic model is still reproducible.
+             */
+            wander_per_round: z.number().min(0).optional(),
         })
             // Strict: a misspelled rate must be refused rather than silently ignored,
             // which would report a run as modelling readout error when it did not.

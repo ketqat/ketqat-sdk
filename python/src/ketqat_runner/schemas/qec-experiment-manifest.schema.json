@@ -196,6 +196,10 @@
                 },
                 "drift_per_round": {
                   "type": "number"
+                },
+                "wander_per_round": {
+                  "type": "number",
+                  "minimum": 0
                 }
               },
               "required": [
