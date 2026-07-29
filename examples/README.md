@@ -42,13 +42,23 @@ scale 5:  0.492
 
 raw         0.8715
 mitigated   0.9925      (ideal 1.0)
-uncertainty 0.0078
+uncertainty 0.0214      (raw shot noise 0.0078, amplified 2.8x)
 ```
 
 The noise is scaled by unitary folding — replacing each gate `G` with `G G† G`,
 which is mathematically the identity substitution but physically three times the
 exposure. Fitting those three points back to zero noise recovers 0.9925 against
 a true value of 1.0.
+
+Note what mitigation cost. The raw point carries shot noise of 0.0078; the
+extrapolated value carries **0.0214**, because the weights that cancel the noise
+term also combine the input variances with coefficients larger than one. The
+mitigated estimate is closer to the truth *and* less precisely resolved, and
+both halves of that are worth knowing before quoting it.
+
+That uncertainty is still statistical only. It does not include the error from
+the extrapolation model being wrong, which is usually the larger term and which
+no amount of shots reduces.
 
 ### What this does not mean
 

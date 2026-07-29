@@ -3359,3 +3359,85 @@ c[0] = measure q[0];
   assert.equal(wrong.level, "FAILED")
   assert.ok(wrong.counterexample, "FAILED must carry the counterexample that proved it")
 }
+
+// ---------------------------------------------------------------------------
+// ZNE uncertainty is propagated, not copied from the raw point
+// (ketqat-sdk#121).
+//
+// `uncertainty` was shot noise on the unmitigated value, reported as the
+// uncertainty of the *mitigated* estimate. Extrapolation amplifies variance --
+// the weights that cancel the noise term also add the input variances in
+// quadrature with coefficients larger than one -- so the reported figure was
+// too small, by up to 5x in the cases below.
+// ---------------------------------------------------------------------------
+{
+  const { parseQasm3, zeroNoiseExtrapolation } = await import("../dist/index.js")
+  const circuit = parseQasm3(
+    `OPENQASM 3;\ninclude "stdgates.inc";\nqubit[1] q;\nbit[1] c;\nx q[0];\nc[0] = measure q[0];\n`,
+  ).circuit
+  const noise = {
+    model: "depolarizing",
+    one_qubit_error: 0.01,
+    two_qubit_error: 0.02,
+    readout_error: 0,
+  }
+
+  const run = (scaleFactors, extrapolation) =>
+    zeroNoiseExtrapolation(circuit, noise, {
+      scaleFactors,
+      shots: 4000,
+      seed: 7,
+      extrapolation,
+    })
+
+  // Linear extrapolation from scales {1, 3} is y(0) = 1.5 y1 - 0.5 y3, so the
+  // variance carries weights 1.5^2 and 0.5^2. With comparable per-point
+  // variance that is about 1.58x the raw sigma -- checked as a floor rather
+  // than an equality, because the folded point genuinely has larger variance.
+  const twoPoint = run([1, 3], "linear")
+  assert.ok(twoPoint.uncertainty > twoPoint.raw_uncertainty, "extrapolation cannot reduce variance")
+  assert.ok(
+    twoPoint.uncertainty_amplification > 1.5,
+    `expected at least the analytic 1.58x, got ${twoPoint.uncertainty_amplification}`,
+  )
+
+  // More scale factors means a higher-order fit and more amplification. An
+  // implementation that copied raw shot noise would report the same figure for
+  // all three of these.
+  const three = run([1, 3, 5], "richardson")
+  const four = run([1, 3, 5, 7], "richardson")
+  assert.ok(
+    three.uncertainty_amplification > twoPoint.uncertainty_amplification,
+    "a higher-order extrapolation must amplify more",
+  )
+  assert.ok(
+    four.uncertainty_amplification > three.uncertainty_amplification,
+    "a higher-order extrapolation must amplify more",
+  )
+  assert.ok(
+    new Set([
+      twoPoint.uncertainty.toFixed(6),
+      three.uncertainty.toFixed(6),
+      four.uncertainty.toFixed(6),
+    ]).size === 3,
+    "the three configurations must not all report the same uncertainty",
+  )
+
+  // The raw figure is retained for comparison, so a reader can see the price.
+  assert.ok(three.raw_uncertainty > 0)
+  assert.ok(
+    Math.abs(three.raw_uncertainty - Math.sqrt((1 - three.raw_value ** 2) / 4000)) < 1e-9,
+    "raw_uncertainty should still be the plain shot noise on the unmitigated point",
+  )
+
+  // Heavy amplification is warned about, because a mitigated number looks more
+  // authoritative than the raw one while being less well resolved.
+  assert.ok(
+    four.warnings.some((warning) => /multiplied the statistical uncertainty/.test(warning)),
+    "a large amplification must be stated, not left in a field",
+  )
+  assert.ok(
+    four.warnings.some((warning) => /does not measure/.test(warning)),
+    "the warning must say the number does not measure model error",
+  )
+}

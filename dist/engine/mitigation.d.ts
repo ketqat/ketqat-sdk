@@ -28,8 +28,26 @@ export interface MitigationResult {
     /** The unmitigated estimate, always retained. */
     raw_value: number;
     mitigated_value: number;
-    /** Statistical uncertainty on the mitigated estimate, where derivable. */
+    /**
+     * Statistical uncertainty on the *mitigated* estimate, propagated through the
+     * extrapolation rather than copied from the raw point.
+     *
+     * Extrapolation amplifies variance: it is an extrapolation, so the weights
+     * that cancel the noise term also add the input variances in quadrature with
+     * coefficients larger than one. Reporting raw shot noise here understated the
+     * real figure, sometimes several-fold (ketqat-sdk#121).
+     */
     uncertainty?: number;
+    /** Shot noise on the unmitigated point, for comparison. */
+    raw_uncertainty?: number;
+    /**
+     * How much the extrapolation multiplied the statistical uncertainty.
+     *
+     * This is the statistical price of mitigation, and it is the number that
+     * tells a reader whether the mitigated estimate is actually better resolved
+     * than the raw one.
+     */
+    uncertainty_amplification?: number;
     /** Total shots consumed across every scaled circuit. */
     total_shots: number;
     seed: number | null;

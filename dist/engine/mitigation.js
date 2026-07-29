@@ -139,7 +139,36 @@ export function zeroNoiseExtrapolation(circuit, noise, options = {}) {
     if (dataPoints.length < 2) {
         warnings.push("Fewer than two scale factors: no extrapolation was possible.");
     }
-    const uncertainty = Math.sqrt((1 - raw * raw) / Math.max(1, shots));
+    // Propagate each point's shot noise through the extrapolation.
+    //
+    // Both extrapolators are linear in the measured values, so the weight on
+    // point i is exactly the change in the result when that point moves by one.
+    // Deriving the weights this way rather than hard-coding them means they can
+    // never drift from the extrapolator actually used.
+    const extrapolate = (points) => extrapolation === "linear" ? linearExtrapolateToZero(points) : richardsonExtrapolateToZero(points);
+    const baseline = extrapolate(dataPoints);
+    const weights = dataPoints.map((_point, index) => {
+        const bumped = dataPoints.map((entry, other) => other === index ? { ...entry, value: entry.value + 1 } : entry);
+        return extrapolate(bumped) - baseline;
+    });
+    const variance = dataPoints.reduce((total, point, index) => {
+        const weight = weights[index] ?? 0;
+        // Variance of a +/-1 valued expectation from `shots` samples.
+        const pointVariance = (1 - point.value * point.value) / Math.max(1, point.shots);
+        return total + weight * weight * pointVariance;
+    }, 0);
+    const rawUncertainty = Math.sqrt((1 - raw * raw) / Math.max(1, shots));
+    const uncertainty = Math.sqrt(Math.max(variance, 0));
+    const amplification = rawUncertainty > 0 ? uncertainty / rawUncertainty : 1;
+    // Mitigation that costs more precision than it removes bias is worth
+    // flagging, because the mitigated number looks more authoritative than the
+    // raw one while being less well resolved.
+    if (amplification > 3) {
+        warnings.push(`Extrapolation multiplied the statistical uncertainty by ${amplification.toFixed(1)}x ` +
+            `(${rawUncertainty.toFixed(4)} to ${uncertainty.toFixed(4)}). The mitigated estimate is ` +
+            "less precisely resolved than the raw one; whether it is closer to the truth depends on " +
+            "the extrapolation model being right, which this number does not measure.");
+    }
     const loss = [];
     return {
         method: "zero_noise_extrapolation",
@@ -147,6 +176,8 @@ export function zeroNoiseExtrapolation(circuit, noise, options = {}) {
         raw_value: raw,
         mitigated_value: mitigated,
         uncertainty,
+        raw_uncertainty: rawUncertainty,
+        uncertainty_amplification: amplification,
         total_shots: shots * scaleFactors.length,
         seed,
         assumptions: [
