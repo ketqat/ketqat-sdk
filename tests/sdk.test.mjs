@@ -32,6 +32,8 @@ import {
   emitQasm3,
   gateCount,
   parseQasm3,
+  emitQasm2,
+  Qasm2EmitError,
   virtualDistillation,
   depolarize,
   densityFromAmplitudes,
@@ -4358,4 +4360,119 @@ measure q[1] -> m[1];
   const maximallyMixed = depolarize(ideal, 1.0)
   const mixedResult = virtualDistillation(Z, maximallyMixed, { copies: 4, ideal })
   assert.ok(Math.abs(mixedResult.mitigated_value) < 1e-12, "no preferred direction to distil toward")
+}
+
+
+// ---------------------------------------------------------------------------
+// OpenQASM 2 emission (ketqat-sdk#182)
+// ---------------------------------------------------------------------------
+{
+  // KetQat could read OpenQASM 2 but only write OpenQASM 3, so interop with the
+  // two toolchains that speak OpenQASM 2 was a one-way door -- pytket rejects
+  // OpenQASM 3 outright, so there was no route back out at all.
+  const source = `OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+h q[0];
+cx q[0], q[1];
+c[0] = measure q[0];
+c[1] = measure q[1];
+`
+  const { circuit } = parseQasm3(source)
+  const emitted = emitQasm2(circuit)
+
+  assert.match(emitted.qasm, /^OPENQASM 2\.0;/)
+  assert.match(emitted.qasm, /include "qelib1\.inc";/)
+  // qreg/creg, not qubit/bit.
+  assert.match(emitted.qasm, /qreg q\[2\];/)
+  assert.match(emitted.qasm, /creg c\[2\];/)
+  // OpenQASM 2 has only the arrow measure form.
+  assert.match(emitted.qasm, /measure q\[0\] -> c\[0\];/)
+  assert.ok(!emitted.qasm.includes("= measure"), "the assignment form is OpenQASM 3 only")
+
+  // The loss report is returned on success, not only on failure: a caller sending
+  // this to another tool needs to know what changed even when it worked.
+  assert.ok(emitted.lossReport.some((entry) => entry.feature === "openqasm2_register_syntax"))
+  assert.ok(emitted.lossReport.some((entry) => entry.feature === "openqasm2_target"))
+  assert.ok(emitted.lossReport.every((entry) => entry.action === "approximated"))
+
+  // Round trip back through KetQat's own reader.
+  const reread = parseQasm3(emitted.qasm)
+  assert.deepEqual(reread.circuit.operations, circuit.operations)
+
+  // A single-bit condition is REFUSED, not widened. This is the case that matters:
+  // `c[1] == 1` is true for many register values that `c == 1` is false for, so
+  // widening would emit a different program rather than a degraded one.
+  const singleBit = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+c[0] = measure q[0];
+if (c[0]) { x q[1]; }
+`).circuit
+  assert.throws(
+    () => emitQasm2(singleBit),
+    (error) => {
+      assert.ok(error instanceof Qasm2EmitError)
+      assert.equal(error.feature, "single_bit_condition")
+      assert.match(error.message, /different program, not a\s+degraded one|different program/)
+      return true
+    },
+  )
+
+  // The whole-register form does have an OpenQASM 2 equivalent, so it is emitted.
+  const wholeRegister = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+c[0] = measure q[0];
+if (c == 1) { x q[1]; }
+`).circuit
+  assert.match(emitQasm2(wholeRegister).qasm, /if \(c == 1\) x q\[1\];/)
+
+  // Hardware qubits are refused: OpenQASM 2 has no physical-qubit syntax, and
+  // declaring them as a virtual register would assert a layout the circuit lacks.
+  const hardware = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+bit[1] c;
+h $0;
+c[0] = measure $0;
+`).circuit
+  assert.throws(
+    () => emitQasm2(hardware),
+    (error) => {
+      assert.equal(error.feature, "hardware_qubit_syntax")
+      return true
+    },
+  )
+
+  // A gate outside qelib1 is refused rather than emitted into a file that parses
+  // for some readers and not others.
+  assert.throws(
+    () =>
+      emitQasm2({
+        ...circuit,
+        operations: [
+          { kind: "gate", name: "mystery_gate", parameters: [], qubits: [{ register: "q", index: 0 }] },
+        ],
+      }),
+    (error) => {
+      assert.equal(error.feature, "gate_outside_qelib1")
+      return true
+    },
+  )
+
+  // Parameters and reset survive, since qelib1 covers them.
+  const parameterised = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[1] q;
+bit[1] c;
+ry(0.7) q[0];
+reset q[0];
+c[0] = measure q[0];
+`).circuit
+  const parameterisedQasm = emitQasm2(parameterised).qasm
+  assert.match(parameterisedQasm, /ry\(0\.7\) q\[0\];/)
+  assert.match(parameterisedQasm, /reset q\[0\];/)
 }
