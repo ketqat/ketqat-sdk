@@ -98,7 +98,7 @@ depolarization after each Clifford. A manifest could name a readout error rate
 and the run would ignore it, then publish a result labelled as though readout
 error had been modelled.
 
-Six channels are now applied:
+Seven channels are now applied:
 
 | Manifest field | Stim parameter | What it models |
 |---|---|---|
@@ -108,6 +108,7 @@ Six channels are now applied:
 | `idle_error_rate` | `before_round_data_depolarization` | idling on data qubits |
 | `crosstalk_error_rate` | injected `DEPOLARIZE2` | correlated error between idling neighbours |
 | `drift_per_round` | per-round rate rewrite | a device that degrades (or improves) over a run |
+| `wander_per_round` | seeded random walk on the rate | calibration that wanders rather than ramps |
 
 Readout error matters more than its position in that list suggests: on real
 superconducting devices it is frequently the *dominant* error, and it separates
@@ -141,8 +142,17 @@ rate. At d=3 over 9 rounds, p=0.003: 170 failures in 20,000 shots flat, 1417
 with drift +0.5 per round, 64 with drift −0.1. Negative drift models a device
 improving, which is allowed rather than clamped.
 
-What remains genuinely unimplemented in this direction is *correlated* time
-dependence — a rate that wanders rather than ramps monotonically.
+**Correlated time dependence is now implemented too.** `wander_per_round`
+random-walks every rate across rounds, correlated between nearby rounds and
+uncorrelated between distant ones, which is what real calibration does.
+
+The correlation is the point, and the measurement shows why. At d=3 over 11
+rounds across twelve seeds, wandering leaves the mean roughly unchanged — 87
+failures becomes 106 — while multiplying the run-to-run spread by **16**: a
+range of 74 to 102 becomes 15 to 507. A rate resampled independently each round
+would average out and look like a slightly different constant. A walk parks in a
+regime for a stretch, so a run can spend many rounds in a bad one, and that is
+what breaks a decoder. Reporting only a mean would hide the entire effect.
 
 The distinction matters because the two get fixed by completely different work,
 and calling the second kind impossible is how a tractable gap stays open.
