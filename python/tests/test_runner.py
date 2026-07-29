@@ -871,3 +871,105 @@ def test_an_unknown_algorithm_family_is_refused_by_name() -> None:
     manifest["algorithm"]["family"] = "shor-factoring"
     with pytest.raises(ValueError, match="grover-search and phase-estimation"):
         run_experiment(manifest)
+
+
+# --- Drift (ketqat-sdk#125) -------------------------------------------------
+#
+# Listed in scope-and-limits as expressible-but-unimplemented: Stim carries
+# per-round rates, and the generated circuits use one REPEAT block with fixed
+# ones, so every round was identical. That was a limit of this runner, not of
+# the simulator.
+
+
+def test_zero_drift_reproduces_the_circuit_exactly() -> None:
+    """The identity case has to be an identity.
+
+    A drift implementation that perturbed the circuit at drift=0 would change
+    every existing result the moment the field was added, whether or not anyone
+    set it.
+    """
+    import stim
+
+    from ketqat_runner.runner import _apply_drift
+
+    circuit = stim.Circuit.generated(
+        "surface_code:rotated_memory_z", distance=3, rounds=5, after_clifford_depolarization=0.001
+    )
+    assert str(_apply_drift(circuit, 0.0)) == str(circuit.flattened())
+
+
+def test_rates_ramp_once_per_round_not_once_per_layer() -> None:
+    """Rounds are counted by measure-reset, not by TICK.
+
+    TICKs also separate the layers *within* a round, so counting them would ramp
+    the rate several times per round and report a drift far steeper than asked
+    for.
+    """
+    import stim
+
+    from ketqat_runner.runner import _apply_drift
+
+    base = 0.001
+    circuit = stim.Circuit.generated(
+        "surface_code:rotated_memory_z", distance=3, rounds=5, after_clifford_depolarization=base
+    )
+    drifted = _apply_drift(circuit, 0.5)
+
+    seen: dict[int, set[float]] = {}
+    round_index = 0
+    for instruction in drifted:
+        if instruction.name in ("DEPOLARIZE1", "DEPOLARIZE2"):
+            seen.setdefault(round_index, set()).add(round(instruction.gate_args_copy()[0], 10))
+        if instruction.name in ("MR", "MRZ", "MRX"):
+            round_index += 1
+
+    for index in sorted(seen)[:5]:
+        expected = round(base * (1 + 0.5 * index), 10)
+        assert seen[index] == {expected}, f"round {index}: {seen[index]} != {expected}"
+
+
+def test_drift_preserves_the_detector_structure() -> None:
+    """Flattening and rewriting must not change what the decoder sees."""
+    import stim
+
+    from ketqat_runner.runner import _apply_drift
+
+    circuit = stim.Circuit.generated(
+        "surface_code:rotated_memory_z", distance=3, rounds=5, after_clifford_depolarization=0.001
+    )
+    drifted = _apply_drift(circuit, 0.5)
+    assert drifted.num_detectors == circuit.num_detectors
+    assert drifted.num_observables == circuit.num_observables
+
+
+@pytest.mark.parametrize("drift,direction", [(0.5, "worse"), (-0.1, "better")])
+def test_drift_measurably_moves_the_result_in_both_directions(drift: float, direction: str) -> None:
+    """Negative drift models a device improving, and is allowed rather than
+    clamped -- calibration drift is not always downhill."""
+    flat = _noise_sample(shots=20000, rounds=9, physical_error_rate=0.003)
+    drifted = _noise_sample(
+        shots=20000, rounds=9, physical_error_rate=0.003, extra_noise={"drift_per_round": drift}
+    )
+
+    baseline = flat["decoders"][0]["logical_failures"]
+    moved = drifted["decoders"][0]["logical_failures"]
+    if direction == "worse":
+        assert moved > baseline * 3, f"positive drift should degrade: {baseline} -> {moved}"
+    else:
+        assert moved < baseline, f"negative drift should improve: {baseline} -> {moved}"
+
+
+def test_drift_separates_runs_and_seeds_like_every_other_channel() -> None:
+    from ketqat_runner.qec_statistics import comparability_key
+
+    a = _noise_sample(extra_noise={"drift_per_round": 0.2})["coordinate_seed"]
+    b = _noise_sample(extra_noise={"drift_per_round": 0.3})["coordinate_seed"]
+    assert a != b
+
+    record = {
+        "benchmark_suite": "qec",
+        "code_distance": 3,
+        "physical_error_rate": 0.001,
+        "noise_model": "circuit-level-depolarizing",
+    }
+    assert comparability_key(record) != comparability_key({**record, "drift_per_round": 0.2})

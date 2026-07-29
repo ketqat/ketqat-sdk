@@ -98,7 +98,7 @@ depolarization after each Clifford. A manifest could name a readout error rate
 and the run would ignore it, then publish a result labelled as though readout
 error had been modelled.
 
-Five channels are now applied:
+Six channels are now applied:
 
 | Manifest field | Stim parameter | What it models |
 |---|---|---|
@@ -107,6 +107,7 @@ Five channels are now applied:
 | `reset_error_rate` | `after_reset_flip_probability` | imperfect reset |
 | `idle_error_rate` | `before_round_data_depolarization` | idling on data qubits |
 | `crosstalk_error_rate` | injected `DEPOLARIZE2` | correlated error between idling neighbours |
+| `drift_per_round` | per-round rate rewrite | a device that degrades (or improves) over a run |
 
 Readout error matters more than its position in that list suggests: on real
 superconducting devices it is frequently the *dominant* error, and it separates
@@ -132,10 +133,16 @@ simulator, not a further parameter, and no work on this path will produce them.
 Approximating a damping channel by a Pauli twirl and running it under the
 original name would be a different experiment reported as the requested one.
 
-**Expressible but not implemented**: time-dependent noise and drift. Stim can
-carry a different error rate per round; the generated circuits here use one
-`REPEAT` block with fixed rates, so every round is identical. That is a limit of
-this runner, not of the simulator, and it is tracked rather than dismissed.
+**Drift is now implemented.** It was listed here as expressible-but-unimplemented,
+which was accurate and is no longer: `drift_per_round` scales every noise rate by
+`(1 + drift * round)`, rewriting the flattened circuit because a `REPEAT` block
+is by definition the same block every time and has nowhere to put a per-round
+rate. At d=3 over 9 rounds, p=0.003: 170 failures in 20,000 shots flat, 1417
+with drift +0.5 per round, 64 with drift −0.1. Negative drift models a device
+improving, which is allowed rather than clamped.
+
+What remains genuinely unimplemented in this direction is *correlated* time
+dependence — a rate that wanders rather than ramps monotonically.
 
 The distinction matters because the two get fixed by completely different work,
 and calling the second kind impossible is how a tractable gap stays open.
