@@ -1475,3 +1475,105 @@ def test_wander_separates_runs_and_seeds_like_every_other_channel() -> None:
 
     record = {"benchmark_suite": "qec", "code_distance": 3, "physical_error_rate": 0.001}
     assert comparability_key(record) != comparability_key({**record, "wander_per_round": 0.2})
+
+
+# --- Simultaneous RB (ketqat-sdk#137) ---------------------------------------
+#
+# Interleaved RB could not distinguish gates here, because this engine gives
+# every gate the same error. Simultaneous RB can show a real difference: it
+# measures addressability, which is a property of running two qubits together,
+# and the crosstalk channel creates exactly that.
+
+
+def _addressability(crosstalk: float, rate: float = 0.004) -> dict:
+    from ketqat_runner.randomized_benchmarking import (
+        addressability_error,
+        fit_decay,
+        isolated_survival,
+        simultaneous_survival,
+    )
+
+    spans = [1, 2, 4, 8, 16, 32]
+    isolated = fit_decay(
+        [
+            isolated_survival(length=m, depolarizing_rate=rate, sequences=25, shots=200, seed=11, qubit=0)
+            for m in spans
+        ],
+        1,
+    )
+    together = fit_decay(
+        [
+            simultaneous_survival(
+                length=m, depolarizing_rate=rate, sequences=25, shots=200, seed=11, crosstalk_rate=crosstalk
+            )
+            for m in spans
+        ],
+        1,
+    )
+    assert not isolated["inconclusive"] and not together["inconclusive"]
+    return addressability_error(isolated["decay_parameter"], together["decay_parameter"])
+
+
+@pytest.mark.parametrize("length", [1, 3, 8, 15])
+def test_a_noiseless_simultaneous_sequence_returns_both_qubits_to_the_start(length: int) -> None:
+    """Both sequences must invert, independently.
+
+    `to_circuit` fuses repeated gates -- `S` with three targets means S applied
+    three times -- so copying a sequence onto another qubit once per instruction
+    rather than once per target silently drops the repeats. The sequence then
+    fails to invert while still producing a plausible decay, which is how this
+    was caught: zero crosstalk reported 0.058 added error instead of zero.
+    """
+    from ketqat_runner.randomized_benchmarking import build_simultaneous_sequence
+
+    samples = build_simultaneous_sequence(length, 0.0, 7, 0.0).compile_sampler(seed=1).sample(shots=400)
+    assert not samples.any(), f"length {length} did not return both qubits to |0>"
+
+
+def test_independent_qubits_show_no_addressability_error() -> None:
+    """The property that makes a non-zero value mean anything.
+
+    With no crosstalk the two qubits are genuinely independent, so running them
+    together must cost nothing. A method that reported an effect here would
+    report one everywhere.
+    """
+    measured = _addressability(0.0)
+    assert abs(measured["addressability_error"]) < 5e-4, measured["interpretation"]
+
+
+@pytest.mark.parametrize("crosstalk,floor", [(0.01, 0.002), (0.03, 0.008)])
+def test_crosstalk_shows_up_as_addressability_error(crosstalk: float, floor: float) -> None:
+    """Unlike interleaved RB, this can show a real difference in this engine."""
+    measured = _addressability(crosstalk)
+    assert measured["addressability_error"] > floor, measured["interpretation"]
+
+
+def test_addressability_error_grows_with_crosstalk() -> None:
+    quiet = _addressability(0.01)["addressability_error"]
+    loud = _addressability(0.03)["addressability_error"]
+    assert loud > quiet, f"more crosstalk should cost more: {quiet:.6f} then {loud:.6f}"
+
+
+def test_the_isolated_comparison_uses_the_same_draws() -> None:
+    """Comparing against a freshly drawn sequence would fold sequence variation
+    into the addressability estimate."""
+    from ketqat_runner.randomized_benchmarking import (
+        build_isolated_sequence,
+        build_simultaneous_sequence,
+    )
+
+    # Qubit 0's gates in the simultaneous circuit must match its isolated run.
+    simultaneous = build_simultaneous_sequence(6, 0.0, 99, 0.0)
+    isolated = build_isolated_sequence(6, 0.0, 99, 0)
+
+    def gates_on(circuit, qubit: int) -> list[str]:
+        names: list[str] = []
+        for instruction in circuit:
+            if instruction.name in ("M", "DEPOLARIZE1", "DEPOLARIZE2"):
+                continue
+            for target in instruction.targets_copy():
+                if target.qubit_value == qubit:
+                    names.append(instruction.name)
+        return names
+
+    assert gates_on(simultaneous, 0) == gates_on(isolated, 0)
