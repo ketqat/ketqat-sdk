@@ -3157,3 +3157,127 @@ c[0] = measure q[0];
   const repoCopy = fs.readFileSync(new URL("../examples/qec/decoder-comparison.yaml", import.meta.url), "utf8")
   assert.equal(manifest, repoCopy, "the packaged and repository copies of the example have drifted")
 }
+
+// ---------------------------------------------------------------------------
+// Fault-tolerant physical resource estimation (ketqat-sdk#117).
+//
+// The estimator stopped at logical gate counts. Those are the input to a
+// physical estimate, not the estimate: nothing reported physical qubits, code
+// distance, magic states, runtime or an error budget.
+// ---------------------------------------------------------------------------
+{
+  const {
+    DEFAULT_FT_ASSUMPTIONS,
+    SURFACE_CODE_THRESHOLD,
+    estimateFaultTolerantResources,
+    logicalErrorPerCycle,
+    requiredCodeDistance,
+  } = await import("../dist/engine/fault-tolerant.js")
+
+  // Above threshold the surface code does not suppress error. Adding distance
+  // makes it worse, so no distance satisfies any budget. Reporting a very large
+  // number would read as "expensive but possible", the opposite of true.
+  const above = estimateFaultTolerantResources(
+    { logical_qubits: 10, t_count: 100, toffoli_count: 0, logical_depth: 100 },
+    { physical_error_rate: 0.02 },
+  )
+  assert.equal(above.feasible, false, "above threshold must be infeasible")
+  assert.equal(above.code_distance, null, "no distance may be reported above threshold")
+  assert.equal(above.physical_qubits, null)
+  assert.match(above.reason, /impossible one on this device/)
+  assert.equal(
+    requiredCodeDistance(10, 100, { ...DEFAULT_FT_ASSUMPTIONS, physical_error_rate: 0.02 }),
+    null,
+  )
+  // Exactly at threshold is also infeasible: the suppression factor is 1.
+  assert.equal(
+    requiredCodeDistance(10, 100, {
+      ...DEFAULT_FT_ASSUMPTIONS,
+      physical_error_rate: SURFACE_CODE_THRESHOLD,
+    }),
+    null,
+    "at threshold the suppression factor is 1 and no distance helps",
+  )
+
+  // Each distance step must suppress the logical error rate, or the code is
+  // not doing the one thing it exists to do.
+  let previous = Infinity
+  for (const distance of [3, 5, 7, 9, 11]) {
+    const rate = logicalErrorPerCycle(distance, DEFAULT_FT_ASSUMPTIONS)
+    assert.ok(rate < previous, `distance ${distance} must suppress further than ${distance - 2}`)
+    previous = rate
+  }
+
+  // A better device must never require more qubits. A non-monotonic estimator
+  // would be reporting noise from its own search.
+  let lastQubits = Infinity
+  let lastDistance = Infinity
+  for (const rate of [1e-4, 3e-4, 1e-3, 3e-3]) {
+    const estimate = estimateFaultTolerantResources(
+      { logical_qubits: 100, t_count: 0, toffoli_count: 0, logical_depth: 1e6 },
+      { physical_error_rate: rate },
+    )
+    assert.equal(estimate.feasible, true, `p=${rate} should be feasible`)
+    assert.ok(
+      estimate.physical_qubits >= lastQubits || lastQubits === Infinity,
+      "a worse device must not need fewer qubits",
+    )
+    assert.ok(estimate.code_distance >= lastDistance || lastDistance === Infinity)
+    lastQubits = estimate.physical_qubits
+    lastDistance = estimate.code_distance
+  }
+
+  // The chosen distance must actually meet the budget it was chosen for, and
+  // one step lower must not.
+  const sized = estimateFaultTolerantResources({
+    logical_qubits: 100,
+    t_count: 1e6,
+    toffoli_count: 0,
+    logical_depth: 1e6,
+  })
+  assert.equal(sized.feasible, true)
+  assert.ok(
+    sized.logical_error_probability <= sized.assumptions.error_budget,
+    "the reported distance must meet the budget",
+  )
+  const oneLower =
+    logicalErrorPerCycle(sized.code_distance - 2, sized.assumptions) * 100 * 1e6
+  assert.ok(oneLower > sized.assumptions.error_budget, "the distance must be the smallest that works")
+  assert.equal(sized.code_distance % 2, 1, "surface-code distances are odd")
+
+  // A Toffoli costs 4 T gates, and magic states are counted rather than a
+  // factory footprint invented.
+  const magic = estimateFaultTolerantResources({
+    logical_qubits: 4,
+    t_count: 7,
+    toffoli_count: 3,
+    logical_depth: 10,
+  })
+  assert.equal(magic.magic_state_count, 7 + 4 * 3)
+  assert.ok(magic.notes.some((note) => /factory footprint is not modelled/.test(note)))
+
+  // Sensitivity, because the qubit count moves substantially with device
+  // quality and a lone point estimate gets quoted as though it were measured.
+  assert.ok(sized.sensitivity.length >= 3, "an estimate must carry a sensitivity curve")
+  const feasiblePoints = sized.sensitivity.filter((point) => point.feasible)
+  assert.ok(feasiblePoints.length >= 2)
+  for (let index = 1; index < feasiblePoints.length; index += 1) {
+    assert.ok(
+      feasiblePoints[index].physical_qubits >= feasiblePoints[index - 1].physical_qubits,
+      "sensitivity must be monotonic in the physical error rate",
+    )
+  }
+  // A sensitivity point above threshold is reported infeasible, not omitted.
+  const nearThreshold = estimateFaultTolerantResources(
+    { logical_qubits: 10, t_count: 0, toffoli_count: 0, logical_depth: 100 },
+    { physical_error_rate: 4e-3 },
+  )
+  assert.ok(
+    nearThreshold.sensitivity.some((point) => !point.feasible),
+    "a sensitivity point past threshold must be shown as infeasible",
+  )
+
+  // Runtime is cycles x distance rounds x cycle time, stated in seconds.
+  const expectedSeconds = (1e6 * sized.code_distance * sized.assumptions.cycle_time_ns) / 1e9
+  assert.ok(Math.abs(sized.runtime_seconds - expectedSeconds) < 1e-6)
+}
