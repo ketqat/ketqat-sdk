@@ -755,6 +755,34 @@ def _summarize(metric_points: list[dict[str, Any]]) -> dict[str, Any]:
             # No bound recorded means there is nothing honest to summarise.
             continue
         summary[metric] = point[metric]
+
+    # A threshold estimate, when the sweep actually contains a crossing.
+    #
+    # Reported under its own key with the estimate and the spread together,
+    # never the estimate alone: a threshold is the headline figure of a QEC
+    # result, and a bare number invites being quoted as a measurement of the
+    # code rather than of this sweep. When the data cannot support one, the
+    # reason is recorded instead of the key being silently absent -- a missing
+    # key reads as "not attempted" (ketqat-sdk#127).
+    from .threshold import MIN_DISTANCES, estimate_threshold
+
+    # Attempted only when the run swept enough distances that a threshold was
+    # plausibly the point of it. A single-distance run cannot have a crossing,
+    # and saying so on every such run would be noise rather than a finding: it
+    # reports the shape of the run back to the person who chose it.
+    swept_distances = {
+        point.get("code_distance")
+        for point in metric_points
+        if point.get("metric") == "logical_error_rate" and point.get("code_distance") is not None
+    }
+    if len(swept_distances) >= MIN_DISTANCES:
+        threshold = estimate_threshold(metric_points)
+        if threshold["inconclusive"]:
+            summary["threshold_estimate_inconclusive_reason"] = threshold["reason"]
+        else:
+            summary["threshold_estimate"] = threshold["threshold_estimate"]
+            summary["threshold_crossing_spread"] = threshold["crossing_spread"]
+
     return summary
 
 
