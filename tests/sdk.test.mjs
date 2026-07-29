@@ -752,8 +752,11 @@ assert.deepEqual(
 // Unsupported constructs are rejected by name, never silently dropped. This is
 // the invariant RFC 0002 exists to enforce: a parser that ignores what it does
 // not understand is how the circuit that ran stops being the circuit written.
+// `gate` definitions used to belong in this table. They are now supported by
+// inlining (ketqat-sdk#170), which is neither rejection nor the silent dropping
+// this table guards against -- the expansion is exact and the lost abstraction
+// boundary is recorded in the loss report. Covered in its own section below.
 const rejections = [
-  ["gate mygate a, b { cx a, b; }", "custom_gate_definition"],
   ["def helper(int n) { }", "subroutine_definition"],
   ["for int i in [0:3] { h q[i]; }", "control_flow_loop"],
   ["while (c == 0) { h q[0]; }", "control_flow_loop"],
@@ -3900,5 +3903,134 @@ c[0] = measure q[0];
   assert.throws(
     () => parseQasm3(`OPENQASM 3.0;\ninclude "stdgates.inc";\nqubit[1] q;\n$0 = measure q[0];\n`),
     /hardware qubit|Could not parse/,
+  )
+}
+
+
+// ---------------------------------------------------------------------------
+// Custom gate definitions, inlined (ketqat-sdk#170)
+// ---------------------------------------------------------------------------
+{
+  // Plain definition: body is expanded in order, with formal qubits substituted.
+  const plain = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+gate Oracle a, b { x a; cx a, b; }
+qubit[2] q;
+Oracle q[0], q[1];
+`)
+  assert.deepEqual(
+    plain.circuit.operations.map((operation) => operation.name),
+    ["x", "cx"],
+  )
+  // The definition itself must not appear as an operation, and the body must not
+  // execute at top level.
+  assert.equal(plain.circuit.operations.length, 2)
+
+  // Inlining loses the abstraction boundary, so it is recorded. `approximated`
+  // rather than `dropped`: the operations survive exactly, the grouping does not.
+  const inlineLoss = plain.loss_report.filter((entry) => entry.feature === "custom_gate_definition")
+  assert.equal(inlineLoss.length, 1)
+  assert.equal(inlineLoss[0].severity, "structural")
+  assert.equal(inlineLoss[0].action, "approximated")
+  assert.match(inlineLoss[0].detail, /Oracle/)
+
+  // Case sensitivity. OpenQASM identifiers are case-sensitive, and looking up a
+  // lowercased name meant definitions were collected and never expanded -- the
+  // call passed through as an unknown primitive and failed later in the simulator.
+  const mixedCase = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+gate MyGate a { h a; }
+qubit[1] q;
+MyGate q[0];
+`)
+  assert.deepEqual(
+    mixedCase.circuit.operations.map((operation) => operation.name),
+    ["h"],
+  )
+
+  // Parameterised definitions. The substituted expression is parenthesised: a
+  // body of rz(p0 / 2) called with p0 = pi would otherwise become rz(pi / 2)
+  // only by luck, and rz(a + b / 2) for a compound argument -- silently the
+  // wrong angle rather than an error.
+  const parameterised = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+gate myrz(theta) a { rz(theta / 2) a; }
+qubit[1] q;
+myrz(pi) q[0];
+`)
+  assert.equal(parameterised.circuit.operations.length, 1)
+  // Parameters stay symbolic at parse time -- stored as the expression text, not
+  // a number -- so the substituted string is evaluated to check the value rather
+  // than compared as text.
+  const angle = parameterised.circuit.operations[0].parameters[0]
+  assert.ok(
+    Math.abs(evaluateParameter(String(angle)) - Math.PI / 2) < 1e-9,
+    `expected pi/2 after substitution, got ${angle}`,
+  )
+
+  // Precedence is the point: a compound argument must be wrapped, not spliced.
+  const compound = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+gate half(theta) a { rz(theta / 2) a; }
+qubit[1] q;
+half(pi + pi) q[0];
+`)
+  assert.ok(
+    Math.abs(evaluateParameter(String(compound.circuit.operations[0].parameters[0])) - Math.PI) < 1e-9,
+    "(pi + pi) / 2 should be pi; an unwrapped splice would give pi + pi/2 = 4.71",
+  )
+
+  // Nested definitions: a custom gate calling another.
+  const nested = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+gate Inner a { h a; }
+gate Outer a, b { Inner a; cx a, b; }
+qubit[2] q;
+Outer q[0], q[1];
+`)
+  assert.deepEqual(
+    nested.circuit.operations.map((operation) => operation.name),
+    ["h", "cx"],
+  )
+
+  // Nested parentheses in an argument list. This was rejected before -- the
+  // pattern used \(([^)]*)\), which stops at the first close paren -- and it is
+  // valid OpenQASM independent of custom gates.
+  for (const argument of ["(0.5)", "((0.5))", "(pi)/2", "(pi/2)*(1+1)"]) {
+    parseQasm3(`OPENQASM 3.0;\ninclude "stdgates.inc";\nqubit[1] q;\nrz(${argument}) q[0];\n`)
+  }
+
+  // Arity is checked, so a miscall is an error rather than a silently short body.
+  assert.throws(
+    () =>
+      parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+gate Two a, b { cx a, b; }
+qubit[2] q;
+Two q[0];
+`),
+    /takes 2 qubit\(s\) but was called with 1/,
+  )
+  assert.throws(
+    () =>
+      parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+gate P(t) a { rz(t) a; }
+qubit[1] q;
+P q[0];
+`),
+    /takes 1 parameter\(s\) but was called with 0/,
+  )
+
+  // A definition with no closing brace is refused rather than silently truncated.
+  assert.throws(
+    () => parseQasm3(`OPENQASM 3.0;\ninclude "stdgates.inc";\ngate Bad a { h a;\n`),
+    /no closing brace/,
+  )
+
+  // A gate with no qubit arguments cannot be applied to anything.
+  assert.throws(
+    () => parseQasm3(`OPENQASM 3.0;\ninclude "stdgates.inc";\ngate Empty { }\n`),
+    /declares no qubit arguments|Could not read/,
   )
 }
