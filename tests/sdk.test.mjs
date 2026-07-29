@@ -2985,17 +2985,26 @@ c[0] = measure q[0];
   )
   const noiseSource = fs.readFileSync(new URL("../src/engine/noise.ts", import.meta.url), "utf8")
 
-  // The headline claim. If a second decoder is added, this fails and the
-  // document has to be rewritten -- which is the point.
+  // Every decoder in the registry must appear in the document, and the document
+  // must not list one that no longer exists.
+  //
+  // Derived from the registry rather than pinned to a literal count, because the
+  // first version of this asserted "1" -- and there were already two. A decoder
+  // named `ketqat-lookup` had been in the registry the whole time, implementing
+  // truncated maximum-likelihood decoding with explicit abstention accounting.
+  // A test that pins a number I typed only proves I typed it twice.
   const decoderSource = fs.readFileSync(
     new URL("../python/src/ketqat_runner/decoders.py", import.meta.url),
     "utf8",
   )
-  assert.match(limits, /Implemented \| \*\*1\*\*/, "the decoder count is the claim most worth pinning")
-  assert.ok(
-    !/union[_-]?find|fusion[_-]?blossom|belief[_-]?propagation/i.test(decoderSource),
-    "a second decoder exists; docs/scope-and-limits.md still says one",
-  )
+  const registered = [...decoderSource.matchAll(/^\s+name = "([a-z0-9-]+)"$/gm)].map((m) => m[1])
+  assert.ok(registered.length >= 2, `expected the decoder registry to be findable, got ${registered.length}`)
+  for (const decoder of registered) {
+    assert.ok(
+      limits.includes(`\`${decoder}\``),
+      `docs/scope-and-limits.md does not mention the ${decoder} decoder`,
+    )
+  }
 
   // Exactly one noise model.
   assert.equal(
@@ -3054,4 +3063,42 @@ c[0] = measure q[0];
     }
   }
   assert.match(limits, /\*\*None\.\*\* No result in this project has touched a quantum device/)
+}
+
+// ---------------------------------------------------------------------------
+// The two-decoder comparison must stay discoverable and stay a fair comparison.
+//
+// The manifest existed and `ketqat examples list` did not show it, so the one
+// artifact that demonstrates the comparison machinery was invisible to anyone
+// who did not read the source tree. A capability nobody can find is close to a
+// capability that is not there.
+// ---------------------------------------------------------------------------
+{
+  const examplesSource = fs.readFileSync(
+    new URL("../python/src/ketqat_runner/examples.py", import.meta.url),
+    "utf8",
+  )
+  assert.match(
+    examplesSource,
+    /name="decoder-comparison"/,
+    "the decoder comparison must be listed by `ketqat examples list`",
+  )
+
+  const manifest = fs.readFileSync(
+    new URL("../python/src/ketqat_runner/examples/qec/decoder-comparison.yaml", import.meta.url),
+    "utf8",
+  )
+  // Two decoders, or it is not a comparison.
+  const decoders = [...manifest.matchAll(/^\s+- name:\s*([a-z0-9-]+)/gm)].map((m) => m[1])
+  assert.ok(decoders.length >= 2, `a comparison needs at least two decoders, found ${decoders.join(", ")}`)
+  assert.ok(new Set(decoders).size === decoders.length, "the same decoder twice is not a comparison")
+
+  // And the property that makes the comparison mean anything: both decoders see
+  // the same shots. Re-sampling per decoder would compare luck as much as
+  // decoders, and the manifest says so where someone editing it will read it.
+  assert.match(manifest, /identical set of syndrome samples|same shots at the same coordinate seed/i)
+
+  // The packaged copy and the repository copy must not drift.
+  const repoCopy = fs.readFileSync(new URL("../examples/qec/decoder-comparison.yaml", import.meta.url), "utf8")
+  assert.equal(manifest, repoCopy, "the packaged and repository copies of the example have drifted")
 }

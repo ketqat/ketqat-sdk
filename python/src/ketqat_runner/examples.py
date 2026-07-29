@@ -21,6 +21,12 @@ EXAMPLE_MANIFESTS: tuple[ExampleManifest, ...] = (
         description="Rotated surface-code memory with Stim sampling and PyMatching decoding.",
     ),
     ExampleManifest(
+        name="decoder-comparison",
+        domain="QEC",
+        package_path="examples/qec/decoder-comparison.yaml",
+        description="Two decoders, MWPM and truncated maximum-likelihood, on identical samples.",
+    ),
+    ExampleManifest(
         name="grover-search",
         domain="ALGORITHM",
         package_path="examples/algorithms/grover-search.yaml",
