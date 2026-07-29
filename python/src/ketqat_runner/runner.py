@@ -506,8 +506,13 @@ def _derive_coordinate_seed(
 
 def _run_algorithm(manifest: dict[str, Any]) -> dict[str, Any]:
     algorithm = manifest["algorithm"]
+    if algorithm["family"] == "phase-estimation":
+        return _run_phase_estimation(manifest)
     if algorithm["family"] != "grover-search":
-        raise ValueError("Only the grover-search algorithm family is supported by the MVP runner.")
+        raise ValueError(
+            "Supported algorithm families are grover-search and phase-estimation. "
+            f"Got {algorithm['family']!r}."
+        )
 
     shots = int(manifest["sampling"]["shots"])
     seed = int(manifest["sampling"]["seed"])
@@ -540,6 +545,78 @@ def _run_algorithm(manifest: dict[str, Any]) -> dict[str, Any]:
                     "runner": "ketqat-runner",
                     "marked_state": marked_state,
                     "grover_iterations": iterations,
+                },
+            }
+        )
+
+    return _finish_result(manifest, metric_points, time.perf_counter() - start)
+
+
+def _run_phase_estimation(manifest: dict[str, Any]) -> dict[str, Any]:
+    """Quantum phase estimation, executed rather than modelled.
+
+    Unlike the Grover path, which draws shots from the analytic success
+    probability, this applies the gate sequence to a state vector and reads the
+    Born-rule distribution off the result (ketqat-sdk#123).
+    """
+    from .phase_estimation import estimate_phase
+
+    algorithm = manifest["algorithm"]
+    problem = algorithm["problem"]
+    shots = int(manifest["sampling"]["shots"])
+    seed = int(manifest["sampling"]["seed"])
+    rng = random.Random(seed)
+    metric_points: list[dict[str, Any]] = []
+    start = time.perf_counter()
+
+    phase = float(problem["phase"])
+    for qubit_count in problem["qubit_counts"]:
+        counting = int(qubit_count)
+        estimate = estimate_phase(phase, counting)
+
+        # Sample the exact distribution rather than reporting it directly: a
+        # published result should carry the shot noise a real run would have,
+        # not a probability nobody could have measured.
+        distribution = estimate["distribution"]
+        successes = 0
+        target = estimate["measured_integer"]
+        for _ in range(shots):
+            draw = rng.random()
+            cumulative = 0.0
+            for index, probability in enumerate(distribution):
+                cumulative += probability
+                if draw <= cumulative:
+                    if index == target:
+                        successes += 1
+                    break
+
+        metric_points.append(
+            {
+                "metric": "success_probability",
+                "qubit_count": counting,
+                "success_probability": successes / shots,
+                # One H per counting qubit, the controlled-phase ladder, and the
+                # inverse QFT's O(n^2) rotations.
+                "circuit_depth": 2 * counting + 1,
+                "gate_count": counting + counting * (counting + 1) // 2,
+                "two_qubit_gate_count": counting * (counting - 1) // 2,
+                "simulation_runtime_seconds": 0.0,
+                "runtime_seconds": 0.0,
+                "shots": shots,
+                "seed": seed,
+                "metadata": {
+                    "runner": "ketqat-runner",
+                    "backend": "ketqat-statevector-python",
+                    "true_phase": estimate["true_phase"],
+                    "estimated_phase": estimate["estimated_phase"],
+                    "measured_integer": target,
+                    "phase_error": estimate["phase_error"],
+                    "resolution": estimate["resolution"],
+                    "phase_is_representable": estimate["phase_is_representable"],
+                    "exact_success_probability": estimate["success_probability"],
+                    # Named because the Grover family in this same runner does
+                    # not do this, and the two must not be read as alike.
+                    "execution": "statevector simulation of the gate sequence",
                 },
             }
         )

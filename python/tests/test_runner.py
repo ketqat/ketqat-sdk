@@ -158,6 +158,7 @@ def test_packaged_examples_are_readable_resources() -> None:
         "decoder-comparison",
         "readout-limited-memory",
         "randomized-benchmarking",
+        "phase-estimation",
         "grover-search",
     }
     assert yaml.safe_load(read_example_manifest("qec/decoder-comparison"))["domain"] == "QEC"
@@ -749,3 +750,124 @@ def test_rb_sequences_are_reproducible_from_the_seed() -> None:
 
     different = build_sequence(1, 12, 0.01, seed=100)
     assert str(different) != str(first)
+
+
+# --- Phase estimation (ketqat-sdk#123) --------------------------------------
+#
+# The runner's only algorithm family was grover-search, and that path does not
+# execute a circuit: it draws shots from Grover's analytic success probability.
+# This one applies the gate sequence to a state vector, which is what makes it
+# checkable against theory rather than against its own output.
+
+
+@pytest.mark.parametrize(
+    "counting,integer",
+    [(3, 1), (3, 5), (4, 4), (4, 11), (5, 17), (6, 45)],
+)
+def test_a_dyadic_phase_is_recovered_exactly(counting: int, integer: int) -> None:
+    """phi = k/2^n returns k with probability 1.
+
+    Not 0.999 -- exactly 1. Every gate in the sequence, including the inverse
+    QFT's bit reversal and its full ladder of controlled rotations, has to be
+    right for this to hold. A model that computed the textbook distribution
+    would agree with the textbook by construction and prove nothing.
+    """
+    from ketqat_runner.phase_estimation import estimate_phase
+
+    phase = integer / (1 << counting)
+    result = estimate_phase(phase, counting)
+
+    assert result["measured_integer"] == integer
+    assert abs(result["success_probability"] - 1.0) < 1e-9
+    assert result["phase_is_representable"] is True
+    assert result["phase_error"] < 1e-12
+
+
+def test_a_distribution_is_a_distribution() -> None:
+    from ketqat_runner.phase_estimation import phase_estimation_distribution
+
+    for counting in (3, 5, 8):
+        for phase in (0.0, 1 / 3, 0.75, 0.9999):
+            distribution = phase_estimation_distribution(phase, counting)
+            assert len(distribution) == 1 << counting
+            assert all(probability >= -1e-12 for probability in distribution)
+            assert abs(sum(distribution) - 1.0) < 1e-9
+
+
+def test_a_phase_the_register_cannot_represent_is_reported_as_such() -> None:
+    """The failure mode worth guarding is a confident answer in the wrong bin.
+
+    A run must say whether the phase was representable, so a probability below
+    one reads as "this register cannot express that phase" rather than as noise.
+    """
+    from ketqat_runner.phase_estimation import estimate_phase
+
+    result = estimate_phase(1 / 3, 5)
+    assert result["phase_is_representable"] is False
+    assert result["success_probability"] < 1.0
+    # The best bin must still be the nearest one the register can express.
+    assert result["phase_error"] <= result["resolution"]
+
+
+def test_more_counting_qubits_never_estimate_worse() -> None:
+    from ketqat_runner.phase_estimation import estimate_phase
+
+    previous = 1.0
+    for counting in range(3, 11):
+        error = estimate_phase(1 / 3, counting)["phase_error"]
+        assert error <= previous + 1e-12, f"error grew at {counting} counting qubits"
+        previous = error
+    assert previous < 1e-3
+
+
+def test_phase_error_is_measured_on_the_circle() -> None:
+    """Phase 0.99 estimated as 0.0 is close, not far.
+
+    A linear difference would report an error of 0.99 for an estimate that is
+    actually within one hundredth of the truth.
+    """
+    from ketqat_runner.phase_estimation import estimate_phase
+
+    result = estimate_phase(0.999, 3)
+    assert result["phase_error"] < 0.2
+
+
+def test_out_of_range_inputs_are_refused() -> None:
+    from ketqat_runner.phase_estimation import MAX_COUNTING_QUBITS, estimate_phase
+
+    with pytest.raises(ValueError, match="Phase must lie"):
+        estimate_phase(1.5, 4)
+    with pytest.raises(ValueError, match="at least one counting qubit"):
+        estimate_phase(0.25, 0)
+    with pytest.raises(ValueError, match="refuses rather than approximating"):
+        estimate_phase(0.25, MAX_COUNTING_QUBITS + 1)
+
+
+def test_phase_estimation_runs_end_to_end_and_validates() -> None:
+    manifest = yaml.safe_load(
+        (REPO_ROOT / "examples" / "algorithms" / "phase-estimation.yaml").read_text()
+    )
+    manifest["sampling"]["shots"] = 500
+    validate_manifest(manifest)
+    result = run_experiment(manifest)
+    validate_result(result)
+
+    assert len(result["metric_points"]) == 3
+    for point in result["metric_points"]:
+        metadata = point["metadata"]
+        # 0.375 is dyadic, so every width recovers it exactly and every shot
+        # lands in the same bin.
+        assert metadata["phase_is_representable"] is True
+        assert abs(metadata["exact_success_probability"] - 1.0) < 1e-9
+        assert point["success_probability"] == 1.0
+        assert metadata["estimated_phase"] == 0.375
+        assert "statevector simulation" in metadata["execution"]
+
+
+def test_an_unknown_algorithm_family_is_refused_by_name() -> None:
+    manifest = yaml.safe_load(
+        (REPO_ROOT / "examples" / "algorithms" / "phase-estimation.yaml").read_text()
+    )
+    manifest["algorithm"]["family"] = "shor-factoring"
+    with pytest.raises(ValueError, match="grover-search and phase-estimation"):
+        run_experiment(manifest)

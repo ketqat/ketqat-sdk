@@ -411,14 +411,25 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
             type: z.ZodString;
             qubit_counts: z.ZodArray<z.ZodNumber, "many">;
             marked_state: z.ZodOptional<z.ZodString>;
+            /**
+             * Eigenphase to estimate, in [0, 1). Required by `phase-estimation`.
+             *
+             * A phase that is a dyadic rational -- k/2^n for the register width -- is
+             * recovered exactly. Anything else is recovered to the nearest
+             * representable bin, and the run records which case it was rather than
+             * leaving a reader to infer it from the probability.
+             */
+            phase: z.ZodOptional<z.ZodNumber>;
         }, "strip", z.ZodTypeAny, {
             type: string;
             qubit_counts: number[];
             marked_state?: string | undefined;
+            phase?: number | undefined;
         }, {
             type: string;
             qubit_counts: number[];
             marked_state?: string | undefined;
+            phase?: number | undefined;
         }>;
         execution: z.ZodObject<{
             engine: z.ZodString;
@@ -436,6 +447,7 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
             type: string;
             qubit_counts: number[];
             marked_state?: string | undefined;
+            phase?: number | undefined;
         };
         execution: {
             engine: string;
@@ -447,6 +459,7 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
             type: string;
             qubit_counts: number[];
             marked_state?: string | undefined;
+            phase?: number | undefined;
         };
         execution: {
             engine: string;
@@ -487,6 +500,7 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
             type: string;
             qubit_counts: number[];
             marked_state?: string | undefined;
+            phase?: number | undefined;
         };
         execution: {
             engine: string;
@@ -527,6 +541,7 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
             type: string;
             qubit_counts: number[];
             marked_state?: string | undefined;
+            phase?: number | undefined;
         };
         execution: {
             engine: string;
@@ -1144,14 +1159,25 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             type: z.ZodString;
             qubit_counts: z.ZodArray<z.ZodNumber, "many">;
             marked_state: z.ZodOptional<z.ZodString>;
+            /**
+             * Eigenphase to estimate, in [0, 1). Required by `phase-estimation`.
+             *
+             * A phase that is a dyadic rational -- k/2^n for the register width -- is
+             * recovered exactly. Anything else is recovered to the nearest
+             * representable bin, and the run records which case it was rather than
+             * leaving a reader to infer it from the probability.
+             */
+            phase: z.ZodOptional<z.ZodNumber>;
         }, "strip", z.ZodTypeAny, {
             type: string;
             qubit_counts: number[];
             marked_state?: string | undefined;
+            phase?: number | undefined;
         }, {
             type: string;
             qubit_counts: number[];
             marked_state?: string | undefined;
+            phase?: number | undefined;
         }>;
         execution: z.ZodObject<{
             engine: z.ZodString;
@@ -1169,6 +1195,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             type: string;
             qubit_counts: number[];
             marked_state?: string | undefined;
+            phase?: number | undefined;
         };
         execution: {
             engine: string;
@@ -1180,6 +1207,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             type: string;
             qubit_counts: number[];
             marked_state?: string | undefined;
+            phase?: number | undefined;
         };
         execution: {
             engine: string;
@@ -1220,6 +1248,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             type: string;
             qubit_counts: number[];
             marked_state?: string | undefined;
+            phase?: number | undefined;
         };
         execution: {
             engine: string;
@@ -1260,6 +1289,7 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
             type: string;
             qubit_counts: number[];
             marked_state?: string | undefined;
+            phase?: number | undefined;
         };
         execution: {
             engine: string;

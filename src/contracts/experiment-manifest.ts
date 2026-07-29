@@ -129,6 +129,15 @@ export const AlgorithmExperimentManifestSchema = BaseExperimentManifestSchema.ex
       type: z.string().min(1),
       qubit_counts: z.array(z.number().int().positive()).min(1),
       marked_state: z.string().optional(),
+      /**
+       * Eigenphase to estimate, in [0, 1). Required by `phase-estimation`.
+       *
+       * A phase that is a dyadic rational -- k/2^n for the register width -- is
+       * recovered exactly. Anything else is recovered to the nearest
+       * representable bin, and the run records which case it was rather than
+       * leaving a reader to infer it from the probability.
+       */
+      phase: z.number().min(0).max(1).optional(),
     }),
     execution: z.object({
       engine: z.string().min(1),
