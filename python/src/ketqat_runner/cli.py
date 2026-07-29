@@ -9,6 +9,14 @@ import yaml
 
 from .examples import get_example_manifest, list_example_manifests, read_example_manifest
 from .runner import run_experiment
+from .publish import (
+    DEFAULT_BASE_URL,
+    PublishError,
+    check_publishable,
+    describe_intent,
+    load_result,
+    publish_result,
+)
 from .summary import format_run_summary
 from .validation import KetQatValidationError
 
@@ -31,6 +39,32 @@ def main() -> int:
     copy_parser = examples_subcommands.add_parser("copy", help="Copy a packaged example manifest to a local file.")
     copy_parser.add_argument("name", help="Example name from `ketqat examples list`.")
     copy_parser.add_argument("--output", type=Path, help="Destination YAML path. Defaults to <example>.yaml.")
+
+    publish_parser = subcommands.add_parser(
+        "publish",
+        help="Publish a local result file to a KetQat registry.",
+        description=(
+            "Publish a result produced by `ketqat run`. The API token is read from the "
+            "KETQAT_API_TOKEN environment variable and is deliberately not a command-line "
+            "option: arguments are visible in shell history, in `ps` output to other users, "
+            "and in CI logs."
+        ),
+    )
+    publish_parser.add_argument("result", type=Path, help="Result JSON written by `ketqat run`.")
+    publish_parser.add_argument(
+        "--base-url", default=DEFAULT_BASE_URL, help=f"Registry base URL. Defaults to {DEFAULT_BASE_URL}."
+    )
+    publish_parser.add_argument(
+        "--visibility",
+        choices=["PUBLIC", "PRIVATE"],
+        help="Requested visibility. The registry decides its own default when omitted.",
+    )
+    publish_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Check the result and print what would be sent, without publishing.",
+    )
+
     args = parser.parse_args()
 
     if args.command == "run":
@@ -54,6 +88,46 @@ def main() -> int:
         args.output.write_text(json.dumps(result, indent=2) + "\n")
         if not args.quiet:
             print(format_run_summary(result, str(args.output)))
+        return 0
+
+    if args.command == "publish":
+        try:
+            result = load_result(args.result)
+            # Everything checkable is checked before the network is touched, so
+            # a failure names what happened rather than arriving as a 400.
+            check_publishable(result)
+        except PublishError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+
+        print("Publishing this run:")
+        print(describe_intent(result, args.base_url, args.visibility))
+
+        if args.dry_run:
+            print("\nDry run: nothing was sent.")
+            return 0
+
+        # stdout is block-buffered when redirected while stderr is not, so an
+        # error would otherwise appear above the intent it refers to.
+        sys.stdout.flush()
+        try:
+            response = publish_result(result, base_url=args.base_url, visibility=args.visibility)
+        except PublishError as exc:
+            print(f"\n{exc}", file=sys.stderr)
+            return 1
+
+        url = response.get("run_url")
+        if url:
+            print(f"\nPublished: {args.base_url.rstrip('/')}{url}")
+        else:
+            print("\nPublished.")
+        if response.get("existing"):
+            print("An identical result was already imported; this did not create a second run.")
+        quota = response.get("quota")
+        if quota:
+            remaining = quota.get("X-Quota-Remaining")
+            if remaining is not None:
+                print(f"Quota remaining today: {remaining}")
         return 0
 
     if args.command == "examples":

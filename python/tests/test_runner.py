@@ -3,6 +3,7 @@ from __future__ import annotations
 import builtins
 import math
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -1090,3 +1091,160 @@ def test_a_threshold_estimate_carries_the_limits_of_its_method() -> None:
     assert "not a confidence interval" in result["uncertainty_scope"]
     assert "finite-size" in result["uncertainty_scope"]
     assert "crossing" in result["method"]
+
+
+# --- CLI publish (ketqat-sdk#131) -------------------------------------------
+#
+# The runner wrote a result file and the registry accepted one, with nothing
+# connecting them: the documented path was a hand-written curl with the token
+# pasted into the command line.
+
+
+def _ketqat_cli() -> str:
+    """Path to the installed console script, which is what a user runs."""
+    from shutil import which
+
+    resolved = which("ketqat", path=str(Path(sys.executable).parent))
+    return resolved or "ketqat"
+
+
+def _publishable_result() -> dict:
+    manifest = _manifest()
+    manifest["sampling"]["shots"] = 50
+    return run_experiment(manifest)
+
+
+def test_a_token_is_never_a_command_line_argument() -> None:
+    """argv is visible in shell history, in `ps` to other users, and in CI logs.
+
+    Asserted against the parser itself rather than the docs, so adding such an
+    option later fails here.
+    """
+    from ketqat_runner.publish import TOKEN_ENVIRONMENT_VARIABLE
+
+    completed = subprocess.run(
+        [_ketqat_cli(), "publish", "--help"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    combined = completed.stdout + completed.stderr
+    assert "--token" not in combined
+    assert "--api-key" not in combined
+    assert TOKEN_ENVIRONMENT_VARIABLE in combined, "the help must say where the token comes from"
+
+
+def test_a_result_edited_after_the_run_is_refused_before_the_network(tmp_path: Path) -> None:
+    """The registry would refuse this too, as a 400 describing a hash.
+
+    Checking locally means the message can say the file was edited, which no
+    server-side message can know.
+    """
+    from ketqat_runner.publish import PublishError, check_publishable
+
+    result = _publishable_result()
+    check_publishable(result)  # the unedited result is fine
+
+    tampered = {**result, "name": "edited-after-the-run"}
+    with pytest.raises(PublishError, match="edited since the run"):
+        check_publishable(tampered)
+
+
+def test_a_demo_record_is_not_publishable() -> None:
+    from ketqat_runner.publish import PublishError, check_publishable
+
+    from ketqat_runner.hashing import calculate_reproducibility_hash
+
+    # A real demo record is hashed *with* the flag, so the hash check passes and
+    # the demo check is the one that fires. Flipping the flag on a non-demo
+    # result would trip the hash check instead and test the wrong thing.
+    demo = {**_publishable_result(), "is_demo": True}
+    demo["reproducibility_hash"] = calculate_reproducibility_hash(demo)
+    with pytest.raises(PublishError, match="synthetic"):
+        check_publishable(demo)
+
+
+def test_a_missing_or_blank_hash_is_refused_by_the_contract() -> None:
+    from ketqat_runner.publish import PublishError, check_publishable
+
+    # Two layers, and they catch different things. The contract requires the
+    # key, so a result missing it entirely is refused by schema validation
+    # before the publish-specific check runs -- which is the better error.
+    missing = _publishable_result()
+    del missing["reproducibility_hash"]
+    with pytest.raises(PublishError, match="does not satisfy the result contract"):
+        check_publishable(missing)
+
+    # A blank hash is refused by the same layer, so the publish module carries
+    # no separate guard for it. Asserted here because a later schema change
+    # that relaxed this would silently remove the protection.
+    blank = {**_publishable_result(), "reproducibility_hash": ""}
+    with pytest.raises(PublishError, match="should be non-empty"):
+        check_publishable(blank)
+
+
+def test_publishing_without_a_token_says_where_to_put_one() -> None:
+    from ketqat_runner.publish import PublishError, publish_result
+
+    previous = os.environ.pop("KETQAT_API_TOKEN", None)
+    try:
+        with pytest.raises(PublishError, match="shell history"):
+            publish_result(_publishable_result(), base_url="http://127.0.0.1:9")
+    finally:
+        if previous is not None:
+            os.environ["KETQAT_API_TOKEN"] = previous
+
+
+def test_the_request_carries_an_explicit_user_agent() -> None:
+    """ketqat.com sits behind Cloudflare.
+
+    Its browser-integrity check rejects the default `Python-urllib/3.x` agent
+    with a 403 before the request reaches the application -- verified against
+    production, where the default agent got 403 with Cloudflare error 1010 and
+    an explicit agent got the application's own 401. Without this, publishing
+    would fail for every user with an error naming neither cause nor fix.
+    """
+    from ketqat_runner.publish import USER_AGENT
+
+    assert USER_AGENT.startswith("ketqat-runner/")
+    assert "urllib" not in USER_AGENT.lower()
+
+
+def test_the_dry_run_prints_the_destination_and_sends_nothing(tmp_path: Path) -> None:
+    """A run pushed to a public registry gets a URL other people may cite."""
+    from ketqat_runner.publish import describe_intent
+
+    result = _publishable_result()
+    output = tmp_path / "result.json"
+    output.write_text(json.dumps(result))
+
+    described = describe_intent(result, "https://example.test", "PRIVATE")
+    assert "https://example.test/api/runs/import" in described
+    assert "PRIVATE" in described
+    assert result["reproducibility_hash"] in described
+
+    completed = subprocess.run(
+        [_ketqat_cli(), "publish", str(output), "--dry-run", "--base-url", "https://example.test"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "nothing was sent" in completed.stdout
+    assert "https://example.test/api/runs/import" in completed.stdout
+
+
+def test_publishing_a_tampered_file_exits_non_zero(tmp_path: Path) -> None:
+    result = _publishable_result()
+    result["name"] = "tampered"
+    output = tmp_path / "tampered.json"
+    output.write_text(json.dumps(result))
+
+    completed = subprocess.run(
+        [_ketqat_cli(), "publish", str(output), "--dry-run"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 1
+    assert "edited since the run" in completed.stderr

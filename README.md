@@ -41,10 +41,8 @@ ketqat run surface-code-memory --output run.json
 
 # 3. Publish it later, if you choose (create a token after signing in)
 export KETQAT_API_TOKEN="kq_..."
-curl -X POST https://ketqat.com/api/runs/import \
-  -H "Authorization: Bearer $KETQAT_API_TOKEN" \
-  -H "content-type: application/json" \
-  -d @run.json
+ketqat publish run.json --dry-run   # shows exactly what would be sent
+ketqat publish run.json
 ```
 
 The server independently recalculates the reproducibility hash and rejects the import if it doesn't match -- a published run can't silently drift from what you actually ran. Your run appears on your [dashboard](https://ketqat.com/dashboard), gets its own page with a downloadable reproducibility bundle, and -- if it targets a standard QEC suite -- lands on the [leaderboard](https://ketqat.com/leaderboard) next to every other run on the exact same suite and version.
