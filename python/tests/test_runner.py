@@ -1248,3 +1248,104 @@ def test_publishing_a_tampered_file_exits_non_zero(tmp_path: Path) -> None:
     )
     assert completed.returncode == 1
     assert "edited since the run" in completed.stderr
+
+
+# --- Interleaved RB (ketqat-sdk#133) ----------------------------------------
+
+
+def _irb(gate: str, rate: float, lengths: list[int] | None = None) -> dict:
+    from ketqat_runner.randomized_benchmarking import (
+        fit_decay,
+        interleaved_gate_error,
+        interleaved_survival,
+        survival_probability,
+    )
+
+    spans = lengths or [1, 2, 4, 8, 16, 32]
+    reference = fit_decay(
+        [
+            survival_probability(qubits=1, length=m, depolarizing_rate=rate, sequences=30, shots=200, seed=11)
+            for m in spans
+        ],
+        1,
+    )
+    interleaved = fit_decay(
+        [
+            interleaved_survival(
+                qubits=1, length=m, depolarizing_rate=rate, sequences=30, shots=200, seed=11, gate=gate
+            )
+            for m in spans
+        ],
+        1,
+    )
+    assert not reference["inconclusive"] and not interleaved["inconclusive"]
+    return interleaved_gate_error(reference["decay_parameter"], interleaved["decay_parameter"], 1)
+
+
+@pytest.mark.parametrize("rate", [0.005, 0.01])
+def test_the_isolated_gate_error_matches_the_analytic_value(rate: float) -> None:
+    """The interleaved gate costs exactly one depolarizing application here.
+
+    Analytic: r = (d-1)/d * (1 - lambda) with lambda = 1 - 4p/3. Checking
+    against that rather than against previous output is what makes this a test
+    of the protocol rather than a regression pin.
+    """
+    analytic = 0.5 * (4 * rate / 3)
+    measured = _irb("x", rate)
+    assert not measured["inconclusive"]
+    assert abs(measured["gate_error"] - analytic) < analytic * 0.25, (
+        f"measured {measured['gate_error']:.6f} vs analytic {analytic:.6f}"
+    )
+
+
+def test_every_gate_reports_the_same_error_because_the_noise_model_says_so() -> None:
+    """Not a weakness to hide -- the reason interleaved RB is not diagnostic here.
+
+    This engine applies the same depolarizing channel to every gate, so every
+    gate has identical error by construction. A result that singled one gate out
+    would mean the implementation had invented a difference the noise model does
+    not contain.
+    """
+    errors = [_irb(gate, 0.005)["gate_error"] for gate in ("i", "x", "y", "z")]
+    spread = max(errors) - min(errors)
+    assert spread < 0.001, f"gates should agree in this noise model, spread was {spread:.6f}"
+
+
+def test_the_systematic_bound_is_reported_alongside_the_estimate() -> None:
+    """Interleaved RB assumes gate-independent noise, and never exactly has it.
+
+    The bound is frequently comparable to the estimate, which is the fact that
+    stops the number being quoted as a measurement of one gate.
+    """
+    measured = _irb("h", 0.005)
+    assert measured["systematic_bound"] > 0
+    assert "bounded it" in measured["interpretation"]
+    assert "systematic bound" in measured["interpretation"]
+
+
+def test_a_non_clifford_gate_is_refused() -> None:
+    """The sequence inverts only if the interleaved gate is in the group.
+
+    A non-Clifford would leave the composition uninvertible and the protocol
+    would measure nothing, so it is refused by name rather than attempted.
+    """
+    from ketqat_runner.randomized_benchmarking import build_interleaved_sequence
+
+    with pytest.raises(ValueError, match="not interleavable"):
+        build_interleaved_sequence(1, 4, 0.0, 1, "t")
+
+
+def test_an_interleaved_sequence_still_returns_to_the_start_with_no_noise() -> None:
+    """The inverse must account for the interleaved gates too.
+
+    Inverting only the random Cliffords would leave them uncancelled, and the
+    decay would measure that residue rather than the gate's error -- while still
+    producing a plausible-looking number.
+    """
+    from ketqat_runner.randomized_benchmarking import build_interleaved_sequence
+
+    for gate in ("i", "x", "h", "s"):
+        for length in (1, 5, 12):
+            circuit = build_interleaved_sequence(1, length, 0.0, 7, gate)
+            samples = circuit.compile_sampler(seed=3).sample(shots=200)
+            assert not samples.any(), f"{gate} at length {length} did not return to |0>"

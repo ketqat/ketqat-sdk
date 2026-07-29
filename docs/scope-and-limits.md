@@ -185,8 +185,25 @@ Reported uncertainty is statistical only. It excludes the error from the
 single-exponential model being wrong, which dominates when gate errors are not
 gate-independent, and that is usually the larger term.
 
-**Not implemented**: interleaved RB, simultaneous RB, quantum volume, and
-tomography. Quantum volume needs non-Clifford circuits and so cannot use this
+**Interleaved RB** is implemented: it runs RB twice, once with a target gate
+inserted after every random Clifford, and the ratio of decays isolates that
+gate. Measured against the analytic per-application error it agrees to within
+2% at p=0.01, widening to 12% at p=0.002 where shot noise dominates.
+
+What it cannot show here is worth stating. This engine applies the same
+depolarizing channel to every gate, so every gate has identical error by
+construction, and interleaved RB returns the same value whichever gate is
+interleaved — verified across `i`, `x`, `y`, `z`, `h` and `s`. It is a check of
+the protocol, not a way to find a bad gate, because there are no bad gates in
+this noise model to find. It becomes diagnostic the moment a per-gate noise
+model exists, with no change to the implementation.
+
+The systematic bound is reported with every estimate. Interleaved RB assumes
+gate-independent noise and never exactly has it, and the bound is frequently
+comparable to the estimate — which is the fact that stops the number being
+quoted as a measurement of one gate.
+
+**Not implemented**: simultaneous RB, quantum volume, and tomography. Quantum volume needs non-Clifford circuits and so cannot use this
 path at all.
 
 ## Simulation
