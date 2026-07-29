@@ -140,6 +140,11 @@
                 },
                 "marked_state": {
                   "type": "string"
+                },
+                "phase": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
                 }
               },
               "required": [

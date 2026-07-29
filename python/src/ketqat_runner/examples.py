@@ -39,6 +39,12 @@ EXAMPLE_MANIFESTS: tuple[ExampleManifest, ...] = (
         description="Single-qubit Clifford RB, executed exactly and fitted against theory.",
     ),
     ExampleManifest(
+        name="phase-estimation",
+        domain="ALGORITHM",
+        package_path="examples/algorithms/phase-estimation.yaml",
+        description="Phase estimation of a dyadic eigenphase, simulated and exact by construction.",
+    ),
+    ExampleManifest(
         name="grover-search",
         domain="ALGORITHM",
         package_path="examples/algorithms/grover-search.yaml",

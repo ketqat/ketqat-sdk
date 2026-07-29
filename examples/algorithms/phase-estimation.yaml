@@ -1,0 +1,37 @@
+# Quantum phase estimation, executed as a real statevector simulation.
+#
+# Unlike the grover-search example in this directory, which draws shots from
+# Grover's analytic success probability, this applies the gate sequence --
+# Hadamards, the controlled-phase ladder, and an inverse QFT -- to a state
+# vector and reads the Born-rule distribution off the result.
+#
+# The phase below is 0.375 = 3/8, a dyadic rational. With 3 or more counting
+# qubits it is exactly representable, so the algorithm returns it with
+# probability 1.000000 -- which is what makes this checkable against theory
+# rather than against its own previous output.
+#
+# Change `phase` to 0.3333 to see the other regime: the register cannot
+# represent it, the run reports the nearest bin, and `phase_is_representable`
+# records that it was not exact.
+schema_version: "0.1"
+domain: ALGORITHM
+benchmark:
+  suite: phase-estimation-textbook
+  version: "0.1.0"
+experiment:
+  name: phase-estimation-dyadic
+  description: Phase estimation of a dyadic eigenphase, exact by construction
+algorithm:
+  family: phase-estimation
+  problem:
+    type: eigenphase
+    qubit_counts: [3, 4, 5]
+    phase: 0.375
+  execution:
+    engine: ketqat-statevector-python
+    method: statevector
+sampling:
+  shots: 2000
+  seed: 11
+metrics:
+  - success_probability
