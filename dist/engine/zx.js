@@ -26,6 +26,7 @@ export const SUPPORTED_REWRITES = [
     "hadamard_pair_cancellation",
     "zero_phase_removal",
     "hadamard_conjugation",
+    "spider_fusion",
 ];
 /** Gates that are their own inverse, so two in a row cancel. */
 const SELF_INVERSE = new Set(["x", "y", "z", "h", "cx", "cnot", "cz", "cy", "swap", "id", "i"]);
@@ -45,6 +46,59 @@ const CONJUGABLE = new Map([
     ["rx", "rz"],
     ["s", "sx"],
 ]);
+/**
+ * Whether `gate` leaves a Z-axis rotation on `qubit` unchanged when commuted
+ * past it, so two such rotations can fuse across it.
+ *
+ * This is spider fusion: in ZX terms the intervening operations are edges, and
+ * two same-colour spiders joined through them merge. Expressed on the circuit
+ * it means a phase can slide past anything diagonal in its own basis.
+ *
+ * The control of a CX is the Z-basis end and commutes with Z rotations; the
+ * target is the X-basis end and does not. Getting that backwards produces a
+ * rewrite that passes casual inspection and changes the circuit, which is why
+ * the tests below check both ends of a CX rather than one.
+ */
+function commutesWithZOn(operation, qubitKey) {
+    if (!isGate(operation))
+        return false;
+    const name = operation.name.toLowerCase();
+    const keys = operation.qubits.map(bitKey);
+    const position = keys.indexOf(qubitKey);
+    if (position === -1)
+        return true; // does not touch this qubit at all
+    // Diagonal in the Z basis on every qubit it touches.
+    if (["z", "s", "sdg", "t", "tdg", "rz", "p", "cz"].includes(name))
+        return true;
+    // A CX commutes with Z on its control only.
+    if (["cx", "cnot"].includes(name))
+        return position === 0;
+    return false;
+}
+/** Same question for an X-axis rotation. */
+function commutesWithXOn(operation, qubitKey) {
+    if (!isGate(operation))
+        return false;
+    const name = operation.name.toLowerCase();
+    const keys = operation.qubits.map(bitKey);
+    const position = keys.indexOf(qubitKey);
+    if (position === -1)
+        return true;
+    if (["x", "rx", "sx"].includes(name))
+        return true;
+    // A CX commutes with X on its target only -- the mirror of the Z case.
+    if (["cx", "cnot"].includes(name))
+        return position === 1;
+    return false;
+}
+/** Axis a single-qubit rotation turns about, or null if it is not one. */
+function rotationAxis(name) {
+    if (["rz", "z", "s", "sdg", "t", "tdg", "p"].includes(name))
+        return "z";
+    if (["rx", "x", "sx"].includes(name))
+        return "x";
+    return null;
+}
 /** Single-qubit gates whose phases add when composed. */
 const PHASE_FAMILIES = new Set(["rz", "rx", "ry", "p", "u1"]);
 const T_GATES = new Set(["t", "tdg"]);
@@ -120,6 +174,56 @@ function sweep(pass) {
                 operations.splice(index, 1);
                 record(pass, "zero_phase_removal", "Removed a rotation of angle zero.");
                 return true;
+            }
+        }
+        // Spider fusion: two rotations about the same axis fuse even when other
+        // operations sit between them, provided every one of those commutes with
+        // that axis on that qubit.
+        //
+        // `phase_fusion` handles the adjacent case, so this requires at least one
+        // gate in between. Letting it take adjacency too would leave that rule
+        // never firing while reporting the less specific reason -- a reader should
+        // be able to tell "these were next to each other" from "these were
+        // separated by gates that commute with them".
+        //
+        // This is the first rule here that reasons about what lies *between* two
+        // gates rather than only about a neighbouring pair.
+        if (current.qubits.length === 1 && current.parameters.length === 1) {
+            const axis = rotationAxis(name);
+            const qubitKey = bitKey(current.qubits[0]);
+            if (axis !== null) {
+                const commutes = axis === "z" ? commutesWithZOn : commutesWithXOn;
+                for (let scan = index + 1; scan < operations.length; scan += 1) {
+                    const between = operations[scan];
+                    if (!isGate(between))
+                        break;
+                    const betweenName = between.name.toLowerCase();
+                    const isSameRotation = betweenName === name &&
+                        between.qubits.length === 1 &&
+                        bitKey(between.qubits[0]) === qubitKey &&
+                        between.parameters.length === 1;
+                    // Only fuse across something. Adjacency belongs to `phase_fusion`.
+                    if (isSameRotation && scan > index + 1) {
+                        const a = safeAngle(current.parameters[0]);
+                        const b = safeAngle(between.parameters[0]);
+                        if (a === null || b === null)
+                            break;
+                        const total = normalizeAngle(a + b);
+                        operations.splice(scan, 1);
+                        if (Math.abs(total) < 1e-12) {
+                            operations.splice(index, 1);
+                            record(pass, "spider_fusion", `Fused two ${current.name} rotations across commuting gates; they summed to zero.`);
+                        }
+                        else {
+                            operations[index] = { ...current, parameters: [total] };
+                            record(pass, "spider_fusion", `Fused two ${current.name} rotations separated by gates that commute with them.`);
+                        }
+                        return true;
+                    }
+                    // Anything that does not commute with this axis closes the window.
+                    if (!commutes(between, qubitKey))
+                        break;
+                }
             }
         }
         // Find the next operation acting on any of the same qubits.

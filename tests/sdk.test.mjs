@@ -3526,3 +3526,65 @@ c[0] = measure q[0];
   assert.ok(warned.assumptions.some((entry) => /multiplies to the identity/.test(entry)))
   assert.ok(warned.assumptions.some((entry) => /collapsed state/.test(entry)))
 }
+
+// ---------------------------------------------------------------------------
+// Spider fusion (ketqat-sdk#139).
+//
+// `phase_fusion` requires adjacency, so `rz(a); cx q0,q1; rz(b)` sat at two
+// rotations even though the CX control is diagonal in Z and the phases are free
+// to meet. This is the first rule here that reasons about what lies *between*
+// two gates rather than only about a neighbouring pair.
+// ---------------------------------------------------------------------------
+{
+  const { SUPPORTED_REWRITES, checkCircuitEquivalence, gateCount, optimizeWithZx, parseQasm3 } =
+    await import("../dist/index.js")
+  const build = (body) =>
+    parseQasm3(`OPENQASM 3;\ninclude "stdgates.inc";\nqubit[2] q;\n${body}\n`).circuit
+
+  assert.ok(SUPPORTED_REWRITES.includes("spider_fusion"))
+
+  // Both ends of a CX are checked, in both bases. A control/target mix-up
+  // produces a rewrite that passes casual inspection and changes the circuit,
+  // and checking only one end would miss it in exactly half the cases.
+  const cases = [
+    ["rz(0.3) q[0];\ncx q[0], q[1];\nrz(0.4) q[0];", true, "Z commutes with a CX control"],
+    ["rz(0.3) q[1];\ncx q[0], q[1];\nrz(0.4) q[1];", false, "Z does not commute with a CX target"],
+    ["rx(0.3) q[1];\ncx q[0], q[1];\nrx(0.4) q[1];", true, "X commutes with a CX target"],
+    ["rx(0.3) q[0];\ncx q[0], q[1];\nrx(0.4) q[0];", false, "X does not commute with a CX control"],
+    ["rz(0.3) q[0];\ncz q[0], q[1];\nrz(0.4) q[0];", true, "CZ is diagonal in Z on both ends"],
+    ["rz(0.3) q[0];\nh q[0];\nrz(0.4) q[0];", false, "H changes basis, so the window closes"],
+  ]
+
+  for (const [body, shouldFuse, why] of cases) {
+    const before = build(body)
+    const result = optimizeWithZx(before)
+    const fused = result.rewrites.some((entry) => entry.rewrite === "spider_fusion")
+    assert.equal(fused, shouldFuse, `${why}: ${body.replaceAll("\n", " ")}`)
+
+    // Whatever it decided, the circuit must still mean the same thing. This is
+    // the check that would catch a wrong commutation rule.
+    assert.equal(
+      checkCircuitEquivalence(before, result.circuit).level,
+      "NUMERICALLY_CHECKED",
+      `${why} changed the circuit`,
+    )
+    if (shouldFuse) assert.ok(gateCount(result.circuit) < gateCount(before))
+  }
+
+  // Adjacency stays with phase_fusion, so both rules keep firing and a reader
+  // can tell "these were next to each other" from "these were separated by
+  // gates that commute". Letting spider fusion take adjacency would leave
+  // phase_fusion dead while reporting the less specific reason.
+  const adjacent = optimizeWithZx(build(`rz(0.3) q[0];\nrz(0.4) q[0];`))
+  assert.ok(adjacent.rewrites.some((entry) => entry.rewrite === "phase_fusion"))
+  assert.ok(!adjacent.rewrites.some((entry) => entry.rewrite === "spider_fusion"))
+
+  // Rotations that sum to zero vanish entirely, even across a commuting gate.
+  const cancelled = optimizeWithZx(build("rz(0.5) q[0];\ncx q[0], q[1];\nrz(-0.5) q[0];"))
+  assert.equal(gateCount(cancelled.circuit), 1, "only the CX should remain")
+  assert.equal(
+    checkCircuitEquivalence(build("rz(0.5) q[0];\ncx q[0], q[1];\nrz(-0.5) q[0];"), cancelled.circuit)
+      .level,
+    "NUMERICALLY_CHECKED",
+  )
+}
