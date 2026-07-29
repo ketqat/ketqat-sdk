@@ -13,6 +13,7 @@ from .environment import capture_environment
 from .hashing import CURRENT_HASH_VERSION, HASH_VERSION_KEY, calculate_reproducibility_hash
 from .qec_statistics import (
     COMPARABILITY_FIELDS,
+    PROTOCOL_COMPARABILITY_FIELDS,
     comparability_key,
     logical_error_rate_summary,
 )
@@ -34,7 +35,84 @@ def run_experiment(manifest: dict[str, Any]) -> dict[str, Any]:
         return _run_qec(manifest)
     if domain == "ALGORITHM":
         return _run_algorithm(manifest)
+    if domain == "PROTOCOL":
+        return _run_protocol(manifest)
     raise ValueError(f"Unsupported KetQat domain: {domain!r}")
+
+
+def _run_protocol(manifest: dict[str, Any]) -> dict[str, Any]:
+    from .randomized_benchmarking import fit_decay, survival_probability
+
+    protocol = manifest["protocol"]
+    qubits = int(protocol["qubits"])
+    rate = float(protocol["noise"]["depolarizing_rate"])
+    shots = int(manifest["sampling"]["shots"])
+    seed = int(manifest["sampling"]["seed"])
+    sequences = int(protocol["sequences_per_length"])
+    start = time.perf_counter_ns()
+
+    lengths = sorted(set(int(m) for m in protocol["sequence_lengths"]))
+    if len(lengths) != len(protocol["sequence_lengths"]):
+        raise KetQatValidationError("Sequence lengths must be distinct.")
+
+    samples = [
+        survival_probability(
+            qubits=qubits,
+            length=length,
+            depolarizing_rate=rate,
+            sequences=sequences,
+            shots=shots,
+            seed=seed,
+        )
+        for length in lengths
+    ]
+    fit = fit_decay(samples, qubits)
+
+    comparability = list(
+        comparability_key(
+            {
+                "benchmark_suite": manifest["benchmark"]["suite"],
+                "benchmark_suite_version": manifest["benchmark"]["version"],
+                "protocol": protocol["name"],
+                "qubits": qubits,
+                "noise_model": protocol["noise"]["model"],
+                "depolarizing_rate": rate,
+                "sequence_lengths": ",".join(str(m) for m in lengths),
+                "sequences_per_length": sequences,
+                "stopping_rule": f"fixed_shots={shots}",
+            },
+            fields=PROTOCOL_COMPARABILITY_FIELDS,
+        )
+    )
+
+    metric_points = [
+        {
+            "metric": "survival_probability",
+            "sequence_length": sample["sequence_length"],
+            "survival_probability": sample["survival_probability"],
+            "standard_error": (
+                None if sample["standard_error"] != sample["standard_error"] else sample["standard_error"]
+            ),
+            "sequences": sample["sequences"],
+            "shots": shots,
+            "seed": seed,
+            "metadata": {
+                "runner": "ketqat-runner",
+                "backend": "stim-clifford",
+                "protocol": protocol["name"],
+                "qubits": qubits,
+                # The fit is attached to every point rather than to one, so a
+                # point read on its own still carries what it belongs to.
+                "decay_fit": fit,
+                "comparability_key_fields": list(PROTOCOL_COMPARABILITY_FIELDS),
+                "comparability_key": comparability,
+                "sequence_seed_derivation": "sha256(global_seed,sequence_length,sequence_index)",
+            },
+        }
+        for sample in samples
+    ]
+
+    return _finish_result(manifest, metric_points, (time.perf_counter_ns() - start) / 1_000_000_000)
 
 
 def _run_qec(manifest: dict[str, Any]) -> dict[str, Any]:

@@ -79,6 +79,14 @@ const BaseBenchmarkResultSchema = z.object({
     execution_class: ExecutionClassSchema.optional(),
     transformation_chain: TransformationChainSchema.optional(),
 });
+export const ProtocolMetricPointSchema = BaseMetricPointSchema.extend({
+    /** Clifford sequence length this point was measured at. */
+    sequence_length: z.number().int().nonnegative().optional(),
+    /** Fraction of shots returning to the initial state. */
+    survival_probability: z.number().min(0).max(1).optional(),
+    standard_error: z.number().nonnegative().optional(),
+    sequences: z.number().int().positive().optional(),
+});
 export const QecBenchmarkResultSchema = BaseBenchmarkResultSchema.extend({
     domain: z.literal("QEC"),
     metric_points: z.array(QecMetricPointSchema).default([]),
@@ -87,8 +95,13 @@ export const AlgorithmBenchmarkResultSchema = BaseBenchmarkResultSchema.extend({
     domain: z.literal("ALGORITHM"),
     metric_points: z.array(AlgorithmMetricPointSchema).default([]),
 });
+export const ProtocolBenchmarkResultSchema = BaseBenchmarkResultSchema.extend({
+    domain: z.literal("PROTOCOL"),
+    metric_points: z.array(ProtocolMetricPointSchema).default([]),
+});
 export const BenchmarkResultSchema = z.discriminatedUnion("domain", [
     QecBenchmarkResultSchema,
     AlgorithmBenchmarkResultSchema,
+    ProtocolBenchmarkResultSchema,
 ]);
 //# sourceMappingURL=benchmark-result.js.map

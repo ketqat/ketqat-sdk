@@ -138,8 +138,48 @@ export const AlgorithmExperimentManifestSchema = BaseExperimentManifestSchema.ex
 })
 export type AlgorithmExperimentManifest = z.infer<typeof AlgorithmExperimentManifestSchema>
 
+/**
+ * Characterisation protocols: randomized benchmarking today, with room for
+ * interleaved RB and quantum volume.
+ *
+ * A separate domain rather than an `ALGORITHM` family, because the output is
+ * not a success probability on a problem instance. RB reports a decay parameter
+ * fitted across sequence lengths, and a contract that called it an algorithm
+ * would have no place to put the fit or its uncertainty.
+ */
+export const ProtocolExperimentManifestSchema = BaseExperimentManifestSchema.extend({
+  domain: z.literal("PROTOCOL"),
+  protocol: z
+    .object({
+      name: z.literal("randomized-benchmarking"),
+      /** 1 or 2. Standard Clifford RB is defined per qubit count. */
+      qubits: z.union([z.literal(1), z.literal(2)]),
+      /**
+       * Clifford sequence lengths to sample. Must span enough decay to fit:
+       * a set clustered at short lengths fits a line to noise.
+       */
+      sequence_lengths: z.array(z.number().int().positive()).min(3),
+      /**
+       * Independent random sequences per length. RB averages over sequences as
+       * well as shots -- shots alone measure one sequence very precisely, which
+       * is not the quantity RB is defined to report.
+       */
+      sequences_per_length: z.number().int().positive(),
+      noise: z
+        .object({
+          model: z.literal("depolarizing"),
+          /** Depolarizing probability applied after each Clifford. */
+          depolarizing_rate: z.number().min(0).max(1),
+        })
+        .strict(),
+    })
+    .strict(),
+})
+export type ProtocolExperimentManifest = z.infer<typeof ProtocolExperimentManifestSchema>
+
 export const ExperimentManifestSchema = z.discriminatedUnion("domain", [
   QecExperimentManifestSchema,
   AlgorithmExperimentManifestSchema,
+  ProtocolExperimentManifestSchema,
 ])
 export type ExperimentManifest = z.infer<typeof ExperimentManifestSchema>

@@ -33,6 +33,12 @@ EXAMPLE_MANIFESTS: tuple[ExampleManifest, ...] = (
         description="Memory in the readout-dominated regime, where decoders actually separate.",
     ),
     ExampleManifest(
+        name="randomized-benchmarking",
+        domain="PROTOCOL",
+        package_path="examples/protocols/randomized-benchmarking.yaml",
+        description="Single-qubit Clifford RB, executed exactly and fitted against theory.",
+    ),
+    ExampleManifest(
         name="grover-search",
         domain="ALGORITHM",
         package_path="examples/algorithms/grover-search.yaml",

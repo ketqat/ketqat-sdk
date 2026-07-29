@@ -93,6 +93,16 @@ const BaseBenchmarkResultSchema = z.object({
   transformation_chain: TransformationChainSchema.optional(),
 })
 
+export const ProtocolMetricPointSchema = BaseMetricPointSchema.extend({
+  /** Clifford sequence length this point was measured at. */
+  sequence_length: z.number().int().nonnegative().optional(),
+  /** Fraction of shots returning to the initial state. */
+  survival_probability: z.number().min(0).max(1).optional(),
+  standard_error: z.number().nonnegative().optional(),
+  sequences: z.number().int().positive().optional(),
+})
+export type ProtocolMetricPoint = z.infer<typeof ProtocolMetricPointSchema>
+
 export const QecBenchmarkResultSchema = BaseBenchmarkResultSchema.extend({
   domain: z.literal("QEC"),
   metric_points: z.array(QecMetricPointSchema).default([]),
@@ -105,8 +115,15 @@ export const AlgorithmBenchmarkResultSchema = BaseBenchmarkResultSchema.extend({
 })
 export type AlgorithmBenchmarkResult = z.infer<typeof AlgorithmBenchmarkResultSchema>
 
+export const ProtocolBenchmarkResultSchema = BaseBenchmarkResultSchema.extend({
+  domain: z.literal("PROTOCOL"),
+  metric_points: z.array(ProtocolMetricPointSchema).default([]),
+})
+export type ProtocolBenchmarkResult = z.infer<typeof ProtocolBenchmarkResultSchema>
+
 export const BenchmarkResultSchema = z.discriminatedUnion("domain", [
   QecBenchmarkResultSchema,
   AlgorithmBenchmarkResultSchema,
+  ProtocolBenchmarkResultSchema,
 ])
 export type BenchmarkResult = z.infer<typeof BenchmarkResultSchema>

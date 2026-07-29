@@ -1,5 +1,5 @@
 import { z } from "zod";
-export const DomainSchema = z.enum(["QEC", "ALGORITHM"]);
+export const DomainSchema = z.enum(["QEC", "ALGORITHM", "PROTOCOL"]);
 export const ArtifactKindSchema = z.enum([
     "QEC_DECODER",
     "QEC_CODE",

@@ -2142,17 +2142,17 @@ export declare const ArtifactSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObj
 }>]>;
 export type Artifact = z.infer<typeof ArtifactSchema>;
 export declare const ArtifactListQuerySchema: z.ZodObject<{
-    domain: z.ZodOptional<z.ZodEnum<["QEC", "ALGORITHM"]>>;
+    domain: z.ZodOptional<z.ZodEnum<["QEC", "ALGORITHM", "PROTOCOL"]>>;
     kind: z.ZodOptional<z.ZodEnum<["QEC_DECODER", "QEC_CODE", "NOISE_MODEL", "SYNDROME_DATASET", "QUANTUM_ALGORITHM", "PROBLEM_INSTANCE", "CLASSICAL_REFERENCE", "BENCHMARK_SUITE", "SIMULATION_TOOL", "RESOURCE_ANALYSIS_TOOL"]>>;
     tag: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
-    domain?: "ALGORITHM" | "QEC" | undefined;
+    domain?: "ALGORITHM" | "PROTOCOL" | "QEC" | undefined;
     kind?: "BENCHMARK_SUITE" | "CLASSICAL_REFERENCE" | "NOISE_MODEL" | "PROBLEM_INSTANCE" | "QEC_CODE" | "QEC_DECODER" | "QUANTUM_ALGORITHM" | "RESOURCE_ANALYSIS_TOOL" | "SIMULATION_TOOL" | "SYNDROME_DATASET" | undefined;
     tag?: string | undefined;
     is_demo?: boolean | undefined;
 }, {
-    domain?: "ALGORITHM" | "QEC" | undefined;
+    domain?: "ALGORITHM" | "PROTOCOL" | "QEC" | undefined;
     kind?: "BENCHMARK_SUITE" | "CLASSICAL_REFERENCE" | "NOISE_MODEL" | "PROBLEM_INSTANCE" | "QEC_CODE" | "QEC_DECODER" | "QUANTUM_ALGORITHM" | "RESOURCE_ANALYSIS_TOOL" | "SIMULATION_TOOL" | "SYNDROME_DATASET" | undefined;
     tag?: string | undefined;
     is_demo?: boolean | undefined;

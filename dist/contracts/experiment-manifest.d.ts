@@ -535,6 +535,205 @@ export declare const AlgorithmExperimentManifestSchema: z.ZodObject<{
     };
 }>;
 export type AlgorithmExperimentManifest = z.infer<typeof AlgorithmExperimentManifestSchema>;
+/**
+ * Characterisation protocols: randomized benchmarking today, with room for
+ * interleaved RB and quantum volume.
+ *
+ * A separate domain rather than an `ALGORITHM` family, because the output is
+ * not a success probability on a problem instance. RB reports a decay parameter
+ * fitted across sequence lengths, and a contract that called it an algorithm
+ * would have no place to put the fit or its uncertainty.
+ */
+export declare const ProtocolExperimentManifestSchema: z.ZodObject<{
+    schema_version: z.ZodString;
+    benchmark: z.ZodObject<{
+        suite: z.ZodString;
+        version: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        suite: string;
+        version: string;
+    }, {
+        suite: string;
+        version: string;
+    }>;
+    experiment: z.ZodObject<{
+        name: z.ZodString;
+        description: z.ZodOptional<z.ZodString>;
+    }, "strip", z.ZodTypeAny, {
+        name: string;
+        description?: string | undefined;
+    }, {
+        name: string;
+        description?: string | undefined;
+    }>;
+    source: z.ZodDefault<z.ZodObject<{
+        repository_url: z.ZodOptional<z.ZodString>;
+        commit_sha: z.ZodOptional<z.ZodString>;
+    }, "strip", z.ZodTypeAny, {
+        repository_url?: string | undefined;
+        commit_sha?: string | undefined;
+    }, {
+        repository_url?: string | undefined;
+        commit_sha?: string | undefined;
+    }>>;
+    sampling: z.ZodObject<{
+        shots: z.ZodNumber;
+        seed: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        shots: number;
+        seed: number;
+    }, {
+        shots: number;
+        seed: number;
+    }>;
+    metrics: z.ZodArray<z.ZodString, "many">;
+    environment: z.ZodOptional<z.ZodObject<{
+        operating_system: z.ZodOptional<z.ZodString>;
+        architecture: z.ZodOptional<z.ZodString>;
+        python_version: z.ZodOptional<z.ZodString>;
+        node_version: z.ZodOptional<z.ZodString>;
+        packages: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
+        hardware: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+    }, "strip", z.ZodTypeAny, {
+        operating_system?: string | undefined;
+        architecture?: string | undefined;
+        python_version?: string | undefined;
+        node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
+    }, {
+        operating_system?: string | undefined;
+        architecture?: string | undefined;
+        python_version?: string | undefined;
+        node_version?: string | undefined;
+        packages?: Record<string, string> | undefined;
+        hardware?: Record<string, unknown> | undefined;
+    }>>;
+} & {
+    domain: z.ZodLiteral<"PROTOCOL">;
+    protocol: z.ZodObject<{
+        name: z.ZodLiteral<"randomized-benchmarking">;
+        /** 1 or 2. Standard Clifford RB is defined per qubit count. */
+        qubits: z.ZodUnion<[z.ZodLiteral<1>, z.ZodLiteral<2>]>;
+        /**
+         * Clifford sequence lengths to sample. Must span enough decay to fit:
+         * a set clustered at short lengths fits a line to noise.
+         */
+        sequence_lengths: z.ZodArray<z.ZodNumber, "many">;
+        /**
+         * Independent random sequences per length. RB averages over sequences as
+         * well as shots -- shots alone measure one sequence very precisely, which
+         * is not the quantity RB is defined to report.
+         */
+        sequences_per_length: z.ZodNumber;
+        noise: z.ZodObject<{
+            model: z.ZodLiteral<"depolarizing">;
+            /** Depolarizing probability applied after each Clifford. */
+            depolarizing_rate: z.ZodNumber;
+        }, "strict", z.ZodTypeAny, {
+            model: "depolarizing";
+            depolarizing_rate: number;
+        }, {
+            model: "depolarizing";
+            depolarizing_rate: number;
+        }>;
+    }, "strict", z.ZodTypeAny, {
+        name: "randomized-benchmarking";
+        qubits: 1 | 2;
+        sequence_lengths: number[];
+        sequences_per_length: number;
+        noise: {
+            model: "depolarizing";
+            depolarizing_rate: number;
+        };
+    }, {
+        name: "randomized-benchmarking";
+        qubits: 1 | 2;
+        sequence_lengths: number[];
+        sequences_per_length: number;
+        noise: {
+            model: "depolarizing";
+            depolarizing_rate: number;
+        };
+    }>;
+}, "strip", z.ZodTypeAny, {
+    schema_version: string;
+    benchmark: {
+        suite: string;
+        version: string;
+    };
+    experiment: {
+        name: string;
+        description?: string | undefined;
+    };
+    source: {
+        repository_url?: string | undefined;
+        commit_sha?: string | undefined;
+    };
+    sampling: {
+        shots: number;
+        seed: number;
+    };
+    metrics: string[];
+    environment?: {
+        operating_system?: string | undefined;
+        architecture?: string | undefined;
+        python_version?: string | undefined;
+        node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
+    } | undefined;
+    domain: "PROTOCOL";
+    protocol: {
+        name: "randomized-benchmarking";
+        qubits: 1 | 2;
+        sequence_lengths: number[];
+        sequences_per_length: number;
+        noise: {
+            model: "depolarizing";
+            depolarizing_rate: number;
+        };
+    };
+}, {
+    schema_version: string;
+    benchmark: {
+        suite: string;
+        version: string;
+    };
+    experiment: {
+        name: string;
+        description?: string | undefined;
+    };
+    source?: {
+        repository_url?: string | undefined;
+        commit_sha?: string | undefined;
+    } | undefined;
+    sampling: {
+        shots: number;
+        seed: number;
+    };
+    metrics: string[];
+    environment?: {
+        operating_system?: string | undefined;
+        architecture?: string | undefined;
+        python_version?: string | undefined;
+        node_version?: string | undefined;
+        packages?: Record<string, string> | undefined;
+        hardware?: Record<string, unknown> | undefined;
+    } | undefined;
+    domain: "PROTOCOL";
+    protocol: {
+        name: "randomized-benchmarking";
+        qubits: 1 | 2;
+        sequence_lengths: number[];
+        sequences_per_length: number;
+        noise: {
+            model: "depolarizing";
+            depolarizing_rate: number;
+        };
+    };
+}>;
+export type ProtocolExperimentManifest = z.infer<typeof ProtocolExperimentManifestSchema>;
 export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObject<{
     schema_version: z.ZodString;
     benchmark: z.ZodObject<{
@@ -1065,6 +1264,194 @@ export declare const ExperimentManifestSchema: z.ZodDiscriminatedUnion<"domain",
         execution: {
             engine: string;
             method: string;
+        };
+    };
+}>, z.ZodObject<{
+    schema_version: z.ZodString;
+    benchmark: z.ZodObject<{
+        suite: z.ZodString;
+        version: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        suite: string;
+        version: string;
+    }, {
+        suite: string;
+        version: string;
+    }>;
+    experiment: z.ZodObject<{
+        name: z.ZodString;
+        description: z.ZodOptional<z.ZodString>;
+    }, "strip", z.ZodTypeAny, {
+        name: string;
+        description?: string | undefined;
+    }, {
+        name: string;
+        description?: string | undefined;
+    }>;
+    source: z.ZodDefault<z.ZodObject<{
+        repository_url: z.ZodOptional<z.ZodString>;
+        commit_sha: z.ZodOptional<z.ZodString>;
+    }, "strip", z.ZodTypeAny, {
+        repository_url?: string | undefined;
+        commit_sha?: string | undefined;
+    }, {
+        repository_url?: string | undefined;
+        commit_sha?: string | undefined;
+    }>>;
+    sampling: z.ZodObject<{
+        shots: z.ZodNumber;
+        seed: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        shots: number;
+        seed: number;
+    }, {
+        shots: number;
+        seed: number;
+    }>;
+    metrics: z.ZodArray<z.ZodString, "many">;
+    environment: z.ZodOptional<z.ZodObject<{
+        operating_system: z.ZodOptional<z.ZodString>;
+        architecture: z.ZodOptional<z.ZodString>;
+        python_version: z.ZodOptional<z.ZodString>;
+        node_version: z.ZodOptional<z.ZodString>;
+        packages: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
+        hardware: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+    }, "strip", z.ZodTypeAny, {
+        operating_system?: string | undefined;
+        architecture?: string | undefined;
+        python_version?: string | undefined;
+        node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
+    }, {
+        operating_system?: string | undefined;
+        architecture?: string | undefined;
+        python_version?: string | undefined;
+        node_version?: string | undefined;
+        packages?: Record<string, string> | undefined;
+        hardware?: Record<string, unknown> | undefined;
+    }>>;
+} & {
+    domain: z.ZodLiteral<"PROTOCOL">;
+    protocol: z.ZodObject<{
+        name: z.ZodLiteral<"randomized-benchmarking">;
+        /** 1 or 2. Standard Clifford RB is defined per qubit count. */
+        qubits: z.ZodUnion<[z.ZodLiteral<1>, z.ZodLiteral<2>]>;
+        /**
+         * Clifford sequence lengths to sample. Must span enough decay to fit:
+         * a set clustered at short lengths fits a line to noise.
+         */
+        sequence_lengths: z.ZodArray<z.ZodNumber, "many">;
+        /**
+         * Independent random sequences per length. RB averages over sequences as
+         * well as shots -- shots alone measure one sequence very precisely, which
+         * is not the quantity RB is defined to report.
+         */
+        sequences_per_length: z.ZodNumber;
+        noise: z.ZodObject<{
+            model: z.ZodLiteral<"depolarizing">;
+            /** Depolarizing probability applied after each Clifford. */
+            depolarizing_rate: z.ZodNumber;
+        }, "strict", z.ZodTypeAny, {
+            model: "depolarizing";
+            depolarizing_rate: number;
+        }, {
+            model: "depolarizing";
+            depolarizing_rate: number;
+        }>;
+    }, "strict", z.ZodTypeAny, {
+        name: "randomized-benchmarking";
+        qubits: 1 | 2;
+        sequence_lengths: number[];
+        sequences_per_length: number;
+        noise: {
+            model: "depolarizing";
+            depolarizing_rate: number;
+        };
+    }, {
+        name: "randomized-benchmarking";
+        qubits: 1 | 2;
+        sequence_lengths: number[];
+        sequences_per_length: number;
+        noise: {
+            model: "depolarizing";
+            depolarizing_rate: number;
+        };
+    }>;
+}, "strip", z.ZodTypeAny, {
+    schema_version: string;
+    benchmark: {
+        suite: string;
+        version: string;
+    };
+    experiment: {
+        name: string;
+        description?: string | undefined;
+    };
+    source: {
+        repository_url?: string | undefined;
+        commit_sha?: string | undefined;
+    };
+    sampling: {
+        shots: number;
+        seed: number;
+    };
+    metrics: string[];
+    environment?: {
+        operating_system?: string | undefined;
+        architecture?: string | undefined;
+        python_version?: string | undefined;
+        node_version?: string | undefined;
+        packages: Record<string, string>;
+        hardware: Record<string, unknown>;
+    } | undefined;
+    domain: "PROTOCOL";
+    protocol: {
+        name: "randomized-benchmarking";
+        qubits: 1 | 2;
+        sequence_lengths: number[];
+        sequences_per_length: number;
+        noise: {
+            model: "depolarizing";
+            depolarizing_rate: number;
+        };
+    };
+}, {
+    schema_version: string;
+    benchmark: {
+        suite: string;
+        version: string;
+    };
+    experiment: {
+        name: string;
+        description?: string | undefined;
+    };
+    source?: {
+        repository_url?: string | undefined;
+        commit_sha?: string | undefined;
+    } | undefined;
+    sampling: {
+        shots: number;
+        seed: number;
+    };
+    metrics: string[];
+    environment?: {
+        operating_system?: string | undefined;
+        architecture?: string | undefined;
+        python_version?: string | undefined;
+        node_version?: string | undefined;
+        packages?: Record<string, string> | undefined;
+        hardware?: Record<string, unknown> | undefined;
+    } | undefined;
+    domain: "PROTOCOL";
+    protocol: {
+        name: "randomized-benchmarking";
+        qubits: 1 | 2;
+        sequence_lengths: number[];
+        sequences_per_length: number;
+        noise: {
+            model: "depolarizing";
+            depolarizing_rate: number;
         };
     };
 }>]>;

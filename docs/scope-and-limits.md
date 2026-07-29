@@ -140,6 +140,48 @@ this runner, not of the simulator, and it is tracked rather than dismissed.
 The distinction matters because the two get fixed by completely different work,
 and calling the second kind impossible is how a tractable gap stays open.
 
+## Characterisation protocols
+
+**Randomized benchmarking**, single- and two-qubit Clifford RB, executed
+*exactly*. RB is Clifford-only, so Stim runs the protocol itself rather than an
+approximation of it: with no noise the survival probability is 1.0 at every
+sequence length, not 0.999.
+
+Cliffords are drawn uniformly from the fully enumerated group — 24 elements for
+one qubit, 11520 for two, both checked against the known orders. This matters
+twice over. RB's theory assumes uniform sampling, and `stim.Tableau.random`
+takes no seed, so an earlier version of this code produced a different result
+and a different reproducibility hash on every run.
+
+The reported quantity is a fitted decay parameter, and for depolarizing noise it
+has a closed form, so the implementation is checked against theory rather than
+against its own previous output:
+
+```
+lambda = 1 - p d^2/(d^2-1)        EPC = (d-1)/d (1 - lambda)
+
+1 qubit,  p=0.01   analytic 0.986667   fitted 0.986454 +/- 0.000207
+2 qubits, p=0.005  analytic 0.994667   fitted 0.994896 +/- 0.000131
+```
+
+The asymptote is **fixed** at 1/d rather than fitted. A three-parameter fit to a
+handful of noisy points is underdetermined and will return a decay parameter
+with no physical meaning; fixing it is the standard choice and is recorded in
+the result rather than assumed.
+
+When the data cannot support a fit — too few sequence lengths above the
+depolarized floor, or a fitted parameter outside (0,1) — the result is
+**INCONCLUSIVE** with a reason. A protocol that always returns an error rate is
+more dangerous than one that sometimes declines to.
+
+Reported uncertainty is statistical only. It excludes the error from the
+single-exponential model being wrong, which dominates when gate errors are not
+gate-independent, and that is usually the larger term.
+
+**Not implemented**: interleaved RB, simultaneous RB, quantum volume, and
+tomography. Quantum volume needs non-Clifford circuits and so cannot use this
+path at all.
+
 ## Simulation
 
 - Exact statevector, **24 qubits maximum**. Above that it refuses rather than
