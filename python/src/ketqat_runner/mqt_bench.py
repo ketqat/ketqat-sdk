@@ -273,23 +273,20 @@ def compare_levels(benchmark: str, size: int, levels: Sequence[str] = ("ALG", "I
 #: OpenQASM 3 constructs Qiskit emits that KetQat's parser does not accept.
 #:
 #: Measured, not guessed. Of 23 MQT Bench benchmarks that generate at INDEP size
-#: 3 (mqt.bench 2.2.3), KetQat's parser accepts 10. The failures fall into exactly
-#: three groups, and each pattern below was derived from the parser's own error
-#: rather than from reading a specification:
+#: 3 (mqt.bench 2.2.3), KetQat's parser accepts 14. The remaining failures fall
+#: into exactly two groups, and each pattern below was derived from the parser's
+#: own error rather than from reading a specification:
 #:
 #:     6 fail on custom `gate` definitions
-#:     4 fail on hardware qubit syntax ($n)
 #:     3 fail on conditional forms the adapter does not support
 #:
+#: Hardware qubit syntax ($n) used to be a third group of 4. It is now supported
+#: (ketqat-sdk#168), so the pattern was removed rather than left to predict
+#: failures that no longer happen -- a stale pessimistic predictor is as wrong as
+#: an optimistic one.
 #: Detected at import so a record carries its own importability, instead of the
 #: suite claiming to work and failing later on two thirds of its contents.
 DIALECT_RISKS: tuple[tuple[str, str, str], ...] = (
-    (
-        "hardware_qubit_syntax",
-        "$",
-        "Uses hardware qubit syntax ($n), which Qiskit emits for physical qubits and KetQat's "
-        "OpenQASM 3 subset does not accept.",
-    ),
     (
         "custom_gate_definition",
         "gate ",
