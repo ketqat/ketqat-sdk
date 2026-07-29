@@ -106,6 +106,17 @@ COMPARABILITY_FIELDS = (
     "rounds",
     "physical_error_rate",
     "noise_model",
+    # Each noise channel is its own field, because `noise_model` carries only
+    # the model *name*. Two runs at different readout error rates would
+    # otherwise produce identical comparability keys and be ranked together --
+    # a comparison between two different experiments, presented as one.
+    #
+    # A run that did not model a channel has None here, so runs predating these
+    # fields still compare with each other and with new runs that also omit
+    # them. Only runs that actually differ are separated.
+    "readout_error_rate",
+    "reset_error_rate",
+    "idle_error_rate",
     "stopping_rule",
     "decoder_version",
 )

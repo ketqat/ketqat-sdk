@@ -33,6 +33,7 @@ SUPPORTED_QEC_CODE_FAMILIES = {
 SUPPORTED_QEC_BENCHMARKS = {
     ("surface-code-memory-mwpm", "0.1.0"),
     ("surface-code-memory-decoder-comparison", "0.1.0"),
+    ("surface-code-memory-readout-limited", "0.1.0"),
 }
 
 

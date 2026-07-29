@@ -12,8 +12,8 @@ This repository contains everything you need to participate:
 
 **Before you rely on any number from this project**, read
 [what it covers and what it does not](docs/scope-and-limits.md). The short
-version: one decoder, one noise model, no hardware, and a leaderboard that is
-currently a record rather than a comparison.
+version: two decoders, no hardware, circuit-level noise only, and a leaderboard
+that is currently a record rather than a comparison.
 
 ## Run your first benchmark in 3 minutes
 
