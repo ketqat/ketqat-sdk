@@ -32,6 +32,10 @@ import {
   emitQasm3,
   gateCount,
   parseQasm3,
+  cliffordDataRegression,
+  exactExpectation,
+  isCliffordGate,
+  nearCliffordVariant,
   totalQubits,
   twoQubitGateCount,
   usesClassicalControl,
@@ -3656,4 +3660,181 @@ c[0] = measure q[0];
   // The cost is computed, not incurred, and says so.
   assert.ok(one.assumptions.some((entry) => /does not sample/.test(entry)))
   assert.ok(one.assumptions.some((entry) => /compounds exponentially/.test(entry)))
+}
+
+
+// ---------------------------------------------------------------------------
+// Clifford data regression (ketqat-sdk#161)
+// ---------------------------------------------------------------------------
+{
+  const noise = {
+    model: "depolarizing",
+    one_qubit_error: 0.01,
+    two_qubit_error: 0.03,
+    readout_error: 0.02,
+  }
+
+  // ry rotates <Z>, so snapping non-Clifford gates actually moves the
+  // observable. A circuit whose observable is invariant produces a vacuous
+  // regression, which is tested separately below.
+  const varying = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+ry(0.6) q[0];
+t q[0];
+ry(0.9) q[0];
+cx q[0], q[1];
+ry(0.4) q[1];
+c[0] = measure q[0];
+c[1] = measure q[1];
+`).circuit
+
+  // Clifford classification, including the angle-dependent cases. rz(pi/2) is
+  // Clifford and rz(0.7) is not, and getting that backwards would put an
+  // unsimulable gate into a set labelled classically exact.
+  assert.equal(isCliffordGate("h", []), true)
+  assert.equal(isCliffordGate("cx", []), true)
+  assert.equal(isCliffordGate("t", []), false)
+  assert.equal(isCliffordGate("rz", [Math.PI / 2]), true)
+  assert.equal(isCliffordGate("rz", [0.7]), false)
+  // Unrecognised gates are non-Clifford by default: assuming otherwise is the
+  // dangerous direction.
+  assert.equal(isCliffordGate("mystery", []), false)
+
+  // The load-bearing check: CDR is measured against exact truth, which is
+  // available here because the circuit is small.
+  const exact = exactExpectation(varying, 0)
+  const result = cliffordDataRegression(varying, noise, {
+    seed: 11,
+    trainingCircuits: 20,
+    shots: 8000,
+  })
+  const rawError = Math.abs(result.raw_value - exact)
+  const mitigatedError = Math.abs(result.mitigated_value - exact)
+  assert.ok(
+    mitigatedError < rawError,
+    `CDR should be closer to exact: raw error ${rawError}, mitigated ${mitigatedError}`,
+  )
+  assert.ok(result.r_squared > 0.9, `expected a good linear fit, got R^2 ${result.r_squared}`)
+  assert.equal(result.interpolating, true)
+  assert.equal(result.training_points.length, 20)
+
+  // Reproducible from the seed, or a published mitigated value cannot be checked.
+  const repeat = cliffordDataRegression(varying, noise, { seed: 11, trainingCircuits: 20, shots: 8000 })
+  assert.equal(repeat.mitigated_value, result.mitigated_value)
+
+  // Training targets must be exact, not sampled: shot noise in the targets would
+  // enter the slope and be indistinguishable from a non-linear noise map.
+  for (const point of result.training_points) {
+    assert.ok(Number.isFinite(point.exact))
+    assert.ok(point.exact >= -1 && point.exact <= 1)
+  }
+
+  // A constant target makes R^2 undefined rather than perfect. Reporting 1 would
+  // say the fit is flawless precisely when the regression has learned nothing.
+  const flat = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+h q[0];
+t q[0];
+rz(0.7) q[0];
+c[0] = measure q[0];
+c[1] = measure q[1];
+`).circuit
+  const vacuous = cliffordDataRegression(flat, noise, { seed: 7, trainingCircuits: 12 })
+  assert.ok(Number.isNaN(vacuous.r_squared), "a constant target must not report R^2 = 1")
+  assert.ok(vacuous.warnings.some((entry) => /vacuous/.test(entry)))
+
+  // An already-Clifford circuit has nothing to learn from, and says so rather
+  // than returning a confident correction.
+  const clifford = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[2] c;
+h q[0];
+cx q[0], q[1];
+c[0] = measure q[0];
+c[1] = measure q[1];
+`).circuit
+  const cliffordResult = cliffordDataRegression(clifford, noise, { seed: 3, trainingCircuits: 8 })
+  assert.ok(cliffordResult.warnings.some((entry) => /already Clifford/.test(entry)))
+
+  // Substitution snaps to the nearest Clifford and reports how many it changed.
+  let calls = 0
+  const variant = nearCliffordVariant(varying, () => (calls++, 0), 1)
+  assert.ok(variant.substitutions > 0, "every non-Clifford gate should have been snapped")
+  for (const operation of variant.circuit.operations) {
+    if (operation.kind !== "gate") continue
+    assert.equal(
+      isCliffordGate(operation.name, operation.parameters),
+      true,
+      `${operation.name} survived substitution as non-Clifford`,
+    )
+  }
+
+  // Too few points for R^2 to mean anything is refused rather than fitted.
+  assert.throws(
+    () => cliffordDataRegression(varying, noise, { trainingCircuits: 2 }),
+    /at least 3|cannot be assessed/i,
+  )
+
+  // No measurement on the requested bit means there is no observable at all.
+  const unmeasured = { ...varying, operations: varying.operations.filter((o) => o.kind !== "measure") }
+  assert.throws(() => exactExpectation(unmeasured, 0), /No measurement writes/)
+
+  // The assumptions are stated, including the scale limit that bounds the method.
+  assert.ok(result.assumptions.some((entry) => /linear/.test(entry)))
+  assert.ok(result.assumptions.some((entry) => /bounds circuit size/.test(entry)))
+
+  // exactExpectation is checked against ANALYTIC values, not against itself.
+  //
+  // Added because a mutation scaling every exact value by 0.9 survived every
+  // other test here: the suite used exactExpectation both to build the training
+  // targets and as the truth it compared against, so a systematic error cancelled
+  // exactly. ry(theta)|0> gives <Z> = cos(theta), which is independent of this
+  // implementation.
+  for (const angle of [0, 0.6, 1.1, Math.PI / 2, Math.PI]) {
+    const rotated = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[1] q;
+bit[1] c;
+ry(${angle}) q[0];
+c[0] = measure q[0];
+`).circuit
+    const measured = exactExpectation(rotated, 0)
+    assert.ok(
+      Math.abs(measured - Math.cos(angle)) < 1e-9,
+      `<Z> after ry(${angle}) should be cos(${angle}) = ${Math.cos(angle)}, got ${measured}`,
+    )
+  }
+
+  // The reported slope must equal an independently computed least-squares slope.
+  //
+  // Added because inverting the ratio to variance/covariance survived: the target
+  // happened to sit near the training mean, where mitigated = mean_exact +
+  // slope * (raw - mean_noisy) barely depends on the slope, and R^2 fell only to
+  // ~0.96 -- inside the 0.9 threshold. Recomputing the slope from the returned
+  // training points makes it load-bearing regardless of where the target sits.
+  {
+    const points = result.training_points
+    const meanNoisy = points.reduce((sum, point) => sum + point.noisy, 0) / points.length
+    const meanExact = points.reduce((sum, point) => sum + point.exact, 0) / points.length
+    let covariance = 0
+    let variance = 0
+    for (const point of points) {
+      covariance += (point.noisy - meanNoisy) * (point.exact - meanExact)
+      variance += (point.noisy - meanNoisy) ** 2
+    }
+    const expectedSlope = covariance / variance
+    assert.ok(
+      Math.abs(result.slope - expectedSlope) < 1e-9,
+      `reported slope ${result.slope} should be covariance/variance = ${expectedSlope}`,
+    )
+    assert.ok(
+      Math.abs(result.intercept - (meanExact - expectedSlope * meanNoisy)) < 1e-9,
+      "reported intercept should follow from the same fit",
+    )
+  }
 }
