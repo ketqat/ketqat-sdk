@@ -345,7 +345,12 @@ function executeOnce(circuit, layout, state, random) {
             case "barrier":
                 return;
             case "conditional": {
-                if (registerValue(operation.register) === operation.equals) {
+                // A single-bit test reads that bit; without `bit` this is the
+                // whole-register comparison it has always been.
+                const observed = operation.bit === undefined
+                    ? registerValue(operation.register)
+                    : clbits[layout.clbitIndex({ register: operation.register, index: operation.bit })];
+                if (observed === operation.equals) {
                     applyOperation(operation.body);
                 }
                 return;

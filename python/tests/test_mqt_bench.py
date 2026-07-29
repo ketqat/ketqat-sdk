@@ -109,18 +109,15 @@ def test_importability_is_recorded_per_import() -> None:
     assert ghz["ketqat_importability"]["expected_to_parse"] is True
     assert ghz["ketqat_importability"]["blocking_constructs"] == []
 
-    # This assertion has moved twice as the parser gained constructs, each time to
-    # something that genuinely still blocks rather than being loosened: first from
-    # `qft`/hardware-qubit syntax (fixed in #168), then from `dj`/custom gate
-    # definitions (fixed in #170). What remains is conditional form.
-    dynamic = import_benchmark("ghz_dynamic", level="INDEP", size=3)
-    assert dynamic["ketqat_importability"]["expected_to_parse"] is False
-    constructs = [entry["construct"] for entry in dynamic["ketqat_importability"]["blocking_constructs"]]
-    assert "classical_condition" in constructs
-
-    # Both of the previously-blocked circuits now parse.
-    assert import_benchmark("qft", level="INDEP", size=3)["ketqat_importability"]["expected_to_parse"] is True
-    assert import_benchmark("dj", level="INDEP", size=3)["ketqat_importability"]["expected_to_parse"] is True
+    # Every benchmark that generates at INDEP size 3 now parses, so this test no
+    # longer has a failing example to assert on. The assertion moved twice as the
+    # parser gained constructs -- from `qft`/hardware qubits (#168) to `dj`/custom
+    # gates (#170) to `ghz_dynamic`/conditions (#172) -- each time to something
+    # that genuinely still blocked rather than being loosened. All three now pass.
+    for name in ("qft", "dj", "ghz_dynamic"):
+        record = import_benchmark(name, level="INDEP", size=3)
+        assert record["ketqat_importability"]["expected_to_parse"] is True, name
+        assert record["ketqat_importability"]["blocking_constructs"] == []
 
 
 def test_importability_names_the_parser_as_the_authority() -> None:
@@ -128,7 +125,7 @@ def test_importability_names_the_parser_as_the_authority() -> None:
 
     Verified against the real parser separately -- prediction and parser agree on
     all 23 benchmarks that generate at INDEP size 3, and re-verified after each
-    parser change: 10/23 originally, 14/23 after #168, 20/23 after #170.
+    parser change: 10/23 originally, then 14, 20 and now 23 of 23.
     """
     assessment = assess_importability("OPENQASM 3.0;\nqubit[2] q;\n")
     assert assessment["expected_to_parse"] is True
@@ -137,7 +134,12 @@ def test_importability_names_the_parser_as_the_authority() -> None:
 
 
 def test_every_dialect_risk_carries_an_explanation() -> None:
-    """A flag without a reason is not actionable."""
+    """A flag without a reason is not actionable.
+
+    DIALECT_RISKS is currently empty -- every construct MQT Bench emits is now
+    supported -- so this asserts the invariant for whatever is added next rather
+    than for present entries.
+    """
     for name, marker, explanation in DIALECT_RISKS:
         assert name and marker and len(explanation) > 40
 
