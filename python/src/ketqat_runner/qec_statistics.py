@@ -132,9 +132,33 @@ LATENCY_COMPARABILITY_FIELDS = (
 )
 
 
-def comparability_key(record: dict[str, Any]) -> tuple[Any, ...]:
-    """The tuple two runs must share to be ranked together."""
-    return tuple(record.get(field) for field in COMPARABILITY_FIELDS)
+#: Protocol runs compare on the protocol and its noise setting, not on code
+#: distance. A run at a different depolarizing rate is a different experiment,
+#: the same way a QEC run at a different physical error rate is
+#: (ketqat-sdk#110).
+PROTOCOL_COMPARABILITY_FIELDS = (
+    "benchmark_suite",
+    "benchmark_suite_version",
+    "protocol",
+    "qubits",
+    "noise_model",
+    "depolarizing_rate",
+    "sequence_lengths",
+    "sequences_per_length",
+    "stopping_rule",
+)
+
+
+def comparability_key(
+    record: dict[str, Any], fields: tuple[str, ...] = COMPARABILITY_FIELDS
+) -> tuple[Any, ...]:
+    """The tuple two runs must share to be ranked together.
+
+    `fields` defaults to the QEC set so existing callers are unchanged. Protocol
+    runs pass their own: comparing a randomized-benchmarking run on code
+    distance would be comparing it on a property it does not have.
+    """
+    return tuple(record.get(field) for field in fields)
 
 
 def runs_are_comparable(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:

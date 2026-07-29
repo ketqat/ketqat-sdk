@@ -157,6 +157,7 @@ def test_packaged_examples_are_readable_resources() -> None:
         "surface-code-memory",
         "decoder-comparison",
         "readout-limited-memory",
+        "randomized-benchmarking",
         "grover-search",
     }
     assert yaml.safe_load(read_example_manifest("qec/decoder-comparison"))["domain"] == "QEC"
@@ -549,3 +550,202 @@ def test_crosstalk_separates_runs_and_seeds_like_every_other_channel() -> None:
     assert comparability_key(record) != comparability_key(
         {**record, "crosstalk_error_rate": 0.02}
     )
+
+
+# --- Randomized benchmarking (ketqat-sdk#114) -------------------------------
+#
+# RB is Clifford-only, so Stim executes the protocol exactly rather than
+# approximating it. That exactness is what makes the tests below possible:
+# the decay parameter has a closed form under depolarizing noise, so the
+# implementation can be checked against theory instead of against itself.
+
+
+def _rb_manifest(**overrides) -> dict:
+    manifest = {
+        "schema_version": "0.1",
+        "domain": "PROTOCOL",
+        "benchmark": {"suite": "randomized-benchmarking-clifford", "version": "0.1.0"},
+        "experiment": {"name": "rb"},
+        "source": {},
+        "sampling": {"shots": 200, "seed": 7},
+        "metrics": ["survival_probability"],
+        "protocol": {
+            "name": "randomized-benchmarking",
+            "qubits": 1,
+            "sequence_lengths": [1, 2, 4, 8, 16, 32, 64, 128],
+            "sequences_per_length": 30,
+            "noise": {"model": "depolarizing", "depolarizing_rate": 0.01},
+        },
+    }
+    manifest["protocol"].update(overrides.pop("protocol", {}))
+    manifest.update(overrides)
+    return manifest
+
+
+@pytest.mark.parametrize("qubits", [1, 2])
+def test_noiseless_rb_survives_exactly(qubits: int) -> None:
+    """Not 0.999 -- exactly 1.0, at every sequence length.
+
+    The inverse is computed from the composed tableau rather than by inverting
+    each gate in reverse. If that composition were wrong the sequence would not
+    return to the initial state, and the error would look like noise rather
+    than like a bug.
+    """
+    from ketqat_runner.randomized_benchmarking import survival_probability
+
+    for length in (1, 8, 32):
+        sample = survival_probability(
+            qubits=qubits, length=length, depolarizing_rate=0.0, sequences=5, shots=200, seed=3
+        )
+        assert sample["survival_probability"] == 1.0
+
+
+@pytest.mark.parametrize(
+    "qubits,rate,analytic",
+    [
+        # lambda = 1 - p*d^2/(d^2-1): 4p/3 for one qubit, 16p/15 for two.
+        (1, 0.001, 1 - 4 * 0.001 / 3),
+        (1, 0.01, 1 - 4 * 0.01 / 3),
+        (2, 0.005, 1 - 0.005 * 16 / 15),
+    ],
+)
+def test_the_fitted_decay_matches_theory(qubits: int, rate: float, analytic: float) -> None:
+    """A golden test against a closed form, not a regression against myself.
+
+    A fit that agreed only with its own previous output would pass just as
+    happily if the whole protocol were wrong.
+    """
+    from ketqat_runner.randomized_benchmarking import fit_decay, survival_probability
+
+    lengths = [1, 2, 4, 8, 16, 32, 64] + ([128] if qubits == 1 else [])
+    points = [
+        survival_probability(
+            qubits=qubits,
+            length=length,
+            depolarizing_rate=rate,
+            sequences=25,
+            shots=200,
+            seed=11,
+        )
+        for length in lengths
+    ]
+    fit = fit_decay(points, qubits)
+    assert not fit["inconclusive"], fit.get("reason")
+
+    error = fit["decay_parameter_standard_error"]
+    assert error is not None and error > 0
+    deviation = abs(fit["decay_parameter"] - analytic)
+    assert deviation < 5 * error, (
+        f"fitted {fit['decay_parameter']:.6f} vs analytic {analytic:.6f} "
+        f"is {deviation / error:.1f} sigma away"
+    )
+
+    dimension = 2**qubits
+    expected_epc = (dimension - 1) / dimension * (1 - analytic)
+    assert abs(fit["error_per_clifford"] - expected_epc) < 5 * (
+        (dimension - 1) / dimension * error
+    )
+
+
+def test_a_fit_that_cannot_be_supported_is_inconclusive_not_a_number() -> None:
+    """A protocol that always returns an error rate is worse than one that
+    sometimes declines to."""
+    from ketqat_runner.randomized_benchmarking import fit_decay, survival_probability
+
+    points = [
+        survival_probability(
+            qubits=1, length=length, depolarizing_rate=0.5, sequences=10, shots=200, seed=5
+        )
+        for length in (16, 32, 64, 128)
+    ]
+    fit = fit_decay(points, 1)
+    assert fit["inconclusive"] is True
+    assert "decay_parameter" not in fit
+    assert fit["reason"]
+
+
+def test_rb_reports_uncertainty_across_sequences_not_only_shots() -> None:
+    """RB is defined as an average over the Clifford group.
+
+    One sequence measured very precisely is not that average, so a single
+    sequence must not report a confident standard error.
+    """
+    import math
+
+    from ketqat_runner.randomized_benchmarking import survival_probability
+
+    single = survival_probability(
+        qubits=1, length=16, depolarizing_rate=0.01, sequences=1, shots=4000, seed=5
+    )
+    assert math.isnan(single["standard_error"])
+
+    many = survival_probability(
+        qubits=1, length=16, depolarizing_rate=0.01, sequences=40, shots=100, seed=5
+    )
+    assert many["standard_error"] > 0
+
+
+def test_rb_runs_end_to_end_and_validates() -> None:
+    manifest = _rb_manifest()
+    validate_manifest(manifest)
+    result = run_experiment(manifest)
+    validate_result(result)
+
+    assert len(result["metric_points"]) == 8
+    fit = result["metric_points"][0]["metadata"]["decay_fit"]
+    assert abs(fit["decay_parameter"] - (1 - 4 * 0.01 / 3)) < 0.005
+    assert fit["asymptote_is_fixed"] is True
+    assert "statistical only" in fit["uncertainty_scope"]
+
+
+def test_rb_runs_at_different_noise_are_not_ranked_together() -> None:
+    quiet = run_experiment(_rb_manifest(protocol={"depolarizing_rate": 0.001} and {
+        "noise": {"model": "depolarizing", "depolarizing_rate": 0.001}
+    }))
+    loud = run_experiment(_rb_manifest())
+    quiet_key = quiet["metric_points"][0]["metadata"]["comparability_key"]
+    loud_key = loud["metric_points"][0]["metadata"]["comparability_key"]
+    assert quiet_key != loud_key
+
+
+def test_rb_is_reproducible() -> None:
+    first = run_experiment(_rb_manifest())
+    second = run_experiment(_rb_manifest())
+    assert first["reproducibility_hash"] == second["reproducibility_hash"]
+
+
+def test_duplicate_sequence_lengths_are_refused() -> None:
+    manifest = _rb_manifest(protocol={"sequence_lengths": [1, 2, 2, 4]})
+    with pytest.raises(KetQatValidationError, match="distinct"):
+        validate_manifest(manifest)
+
+
+def test_the_clifford_group_is_enumerated_completely() -> None:
+    """24 and 11520 are the known orders.
+
+    RB's theory rests on sampling *uniformly* from the Clifford group. Landing
+    on the exact known order is strong evidence the generators and composition
+    are right -- a wrong generator set almost never hits it by accident.
+    """
+    from ketqat_runner.randomized_benchmarking import CLIFFORD_GROUP_ORDERS, clifford_group
+
+    for qubits, order in CLIFFORD_GROUP_ORDERS.items():
+        group = clifford_group(qubits)
+        assert len(group) == order
+        assert len({str(element) for element in group}) == order, "elements must be distinct"
+
+
+def test_rb_sequences_are_reproducible_from_the_seed() -> None:
+    """`stim.Tableau.random` takes no seed and draws from global state.
+
+    Using it made two runs of the same manifest produce different results and
+    different reproducibility hashes -- the one guarantee this project sells.
+    """
+    from ketqat_runner.randomized_benchmarking import build_sequence
+
+    first = build_sequence(1, 12, 0.01, seed=99)
+    second = build_sequence(1, 12, 0.01, seed=99)
+    assert str(first) == str(second)
+
+    different = build_sequence(1, 12, 0.01, seed=100)
+    assert str(different) != str(first)

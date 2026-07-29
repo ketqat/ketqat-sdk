@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-export const DomainSchema = z.enum(["QEC", "ALGORITHM"])
+export const DomainSchema = z.enum(["QEC", "ALGORITHM", "PROTOCOL"])
 export type Domain = z.infer<typeof DomainSchema>
 
 export const ArtifactKindSchema = z.enum([

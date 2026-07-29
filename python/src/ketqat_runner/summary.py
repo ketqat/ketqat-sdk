@@ -96,6 +96,43 @@ def format_run_summary(result: dict[str, Any], output_path: str) -> str:
                 if failures is not None and shots is not None:
                     lines.append(f"      {failures} logical failures in {shots} shots")
 
+        elif metric == "survival_probability":
+            # The per-length points are the raw data; the fit is the result.
+            # Printed once rather than per point, because eight identical
+            # copies of the same fit is noise, not information.
+            if point is points[0]:
+                fit = metadata.get("decay_fit") or {}
+                if fit.get("inconclusive"):
+                    lines.append("    decay fit   INCONCLUSIVE")
+                    reason = fit.get("reason")
+                    if reason:
+                        lines.append(f"      {reason}")
+                elif fit:
+                    decay = fit.get("decay_parameter")
+                    epc = fit.get("error_per_clifford")
+                    epc_error = fit.get("error_per_clifford_standard_error")
+                    margin = (
+                        f" +/- {_format_number(epc_error)}" if epc_error is not None else ""
+                    )
+                    lines.append(
+                        f"    error per Clifford {_format_number(epc)}{margin}"
+                    )
+                    lines.append(
+                        f"      decay parameter {_format_number(decay)}, "
+                        f"asymptote fixed at {_format_number(fit.get('asymptote'))}"
+                    )
+                    excluded = fit.get("excluded_points") or 0
+                    if excluded:
+                        lines.append(
+                            f"      {excluded} sequence length(s) excluded: at or below the "
+                            "depolarized floor"
+                        )
+                    # The most common way to over-read an RB number.
+                    lines.append(
+                        "      uncertainty is statistical only; it excludes error from the "
+                        "single-exponential model being wrong"
+                    )
+
         elif metric == "success_probability":
             value = point.get("success_probability")
             shots = point.get("shots")

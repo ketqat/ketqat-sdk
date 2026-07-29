@@ -1,5 +1,5 @@
 import { z } from "zod";
-export declare const DomainSchema: z.ZodEnum<["QEC", "ALGORITHM"]>;
+export declare const DomainSchema: z.ZodEnum<["QEC", "ALGORITHM", "PROTOCOL"]>;
 export type Domain = z.infer<typeof DomainSchema>;
 export declare const ArtifactKindSchema: z.ZodEnum<["QEC_DECODER", "QEC_CODE", "NOISE_MODEL", "SYNDROME_DATASET", "QUANTUM_ALGORITHM", "PROBLEM_INSTANCE", "CLASSICAL_REFERENCE", "BENCHMARK_SUITE", "SIMULATION_TOOL", "RESOURCE_ANALYSIS_TOOL"]>;
 export type ArtifactKind = z.infer<typeof ArtifactKindSchema>;

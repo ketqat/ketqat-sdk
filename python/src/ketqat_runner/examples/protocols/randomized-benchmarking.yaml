@@ -1,0 +1,44 @@
+# Single-qubit Clifford randomized benchmarking.
+#
+# RB is Clifford-only, so Stim executes it *exactly* rather than approximating
+# it. With no noise the survival probability is 1.0 at every sequence length --
+# not 0.999, exactly 1.0 -- because the inverse Clifford is computed from the
+# composed tableau.
+#
+# The reported quantity is a decay parameter fitted across sequence lengths,
+# not a success probability at one setting. For depolarizing noise it has a
+# closed form, which is how this implementation is checked:
+#
+#   lambda = 1 - 4p/3          (one qubit)
+#   EPC    = (d-1)/d (1-lambda)
+#
+# At p=0.01 that gives lambda=0.986667 and EPC=0.006667. A real run recovers
+# 0.986656 +/- 0.000504 -- agreement with theory, not with itself.
+#
+# `sequence_lengths` must span enough decay to fit. A set clustered at short
+# lengths fits a line to shot noise and reports a confident wrong answer; the
+# fit declines with INCONCLUSIVE rather than inventing one.
+schema_version: "0.1"
+domain: PROTOCOL
+benchmark:
+  suite: randomized-benchmarking-clifford
+  version: "0.1.0"
+experiment:
+  name: single-qubit-clifford-rb
+  description: Single-qubit Clifford RB under depolarizing noise, fitted decay
+protocol:
+  name: randomized-benchmarking
+  qubits: 1
+  sequence_lengths: [1, 2, 4, 8, 16, 32, 64, 128]
+  # RB averages over sequences as well as shots. Shots alone measure one
+  # particular sequence very precisely, which is not what RB is defined to
+  # report -- the average over the Clifford group.
+  sequences_per_length: 30
+  noise:
+    model: depolarizing
+    depolarizing_rate: 0.01
+sampling:
+  shots: 200
+  seed: 7
+metrics:
+  - survival_probability

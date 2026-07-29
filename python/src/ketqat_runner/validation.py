@@ -30,6 +30,10 @@ SUPPORTED_QEC_CODE_FAMILIES = {
     "color-code-memory-xyz",
 }
 
+SUPPORTED_PROTOCOL_BENCHMARKS = {
+    ("randomized-benchmarking-clifford", "0.1.0"),
+}
+
 SUPPORTED_QEC_BENCHMARKS = {
     ("surface-code-memory-mwpm", "0.1.0"),
     ("surface-code-memory-decoder-comparison", "0.1.0"),
@@ -89,6 +93,10 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
     if domain == "ALGORITHM":
         validate_with_schema(manifest, "algorithm-experiment-manifest.schema.json", "algorithm manifest")
         return
+    if domain == "PROTOCOL":
+        validate_with_schema(manifest, "protocol-experiment-manifest.schema.json", "protocol manifest")
+        _validate_protocol_contract(manifest)
+        return
     raise KetQatValidationError(f"Unsupported KetQat domain: {domain!r}")
 
 
@@ -104,7 +112,23 @@ def validate_result(result: dict[str, Any]) -> None:
     if domain == "ALGORITHM":
         validate_with_schema(result, "algorithm-benchmark-result.schema.json", "algorithm result")
         return
+    if domain == "PROTOCOL":
+        validate_with_schema(result, "protocol-benchmark-result.schema.json", "protocol result")
+        return
     raise KetQatValidationError(f"Unsupported result domain: {domain!r}")
+
+
+def _validate_protocol_contract(manifest: dict[str, Any]) -> None:
+    benchmark = (manifest["benchmark"]["suite"], manifest["benchmark"]["version"])
+    if benchmark not in SUPPORTED_PROTOCOL_BENCHMARKS:
+        raise KetQatValidationError(
+            f"Unsupported protocol benchmark suite/version: {benchmark[0]} {benchmark[1]}."
+        )
+
+    protocol = manifest["protocol"]
+    lengths = protocol["sequence_lengths"]
+    if len(set(lengths)) != len(lengths):
+        raise KetQatValidationError("Protocol sequence_lengths must be distinct.")
 
 
 def _validate_qec_contract(manifest: dict[str, Any]) -> None:
