@@ -273,7 +273,27 @@ And heaviness is defined by the **ideal** distribution, because using the noisy
 median would let a bad device redefine which outputs count as heavy and pass
 itself.
 
-**Not implemented**: tomography. Quantum volume needs non-Clifford circuits and so cannot use this
+**Single-qubit state tomography** is implemented by linear inversion, and what
+it mostly reports is that a reconstruction is not a state.
+
+Linear inversion is unbiased and has a defect that matters more than its bias:
+from finite statistics it routinely returns a matrix with a negative eigenvalue,
+which cannot describe any physical system. That happens most often near a pure
+state, where the true Bloch vector has length 1 and shot noise pushes the
+estimate past it — so a reconstruction of a near-pure state is *more* likely to
+be unphysical than one of a mixed state, not less.
+
+The raw estimate is returned either way, with a physicality verdict beside it
+and the negative eigenvalue shown. Projection onto the nearest valid state is
+defensible, but it changes the estimate, and a caller told only the projected
+matrix cannot tell a clean measurement from one that needed rescuing.
+
+Known pure states reconstruct with fidelity exactly 1, and the maximally mixed
+state with purity exactly 0.5. Hermiticity and unit trace hold even when the
+matrix is unphysical, because those are properties of the estimator rather than
+of physicality, and conflating them would hide which one failed.
+
+**Not implemented**: process tomography, and state tomography beyond one qubit. Quantum volume needs non-Clifford circuits and so cannot use this
 path at all.
 
 ## Simulation
