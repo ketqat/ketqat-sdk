@@ -19,7 +19,7 @@ import type { QuantumCircuit } from "../circuit/graph.js";
 export declare const ZX_OPTIMIZER = "ketqat-zx-subset";
 export declare const ZX_OPTIMIZER_VERSION = "0.1.0";
 /** Rewrites this optimizer knows, published so a caller can see what ran. */
-export declare const SUPPORTED_REWRITES: readonly ["identity_removal", "self_inverse_cancellation", "phase_fusion", "hadamard_pair_cancellation", "zero_phase_removal"];
+export declare const SUPPORTED_REWRITES: readonly ["identity_removal", "self_inverse_cancellation", "phase_fusion", "hadamard_pair_cancellation", "zero_phase_removal", "hadamard_conjugation"];
 export type ZxRewrite = (typeof SUPPORTED_REWRITES)[number];
 export interface RewriteApplication {
     rewrite: ZxRewrite;
