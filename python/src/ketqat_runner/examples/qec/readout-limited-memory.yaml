@@ -1,0 +1,62 @@
+# Surface-code memory where measurement, not gates, is the dominant error.
+#
+# This is the regime real superconducting hardware usually sits in: readout is
+# frequently the largest single error channel, and a decoder benchmarked without
+# it has been benchmarked on a model no device matches.
+#
+# It is also the regime where these two decoders actually separate. Measured at
+# d=3, seed 42, 100,000 shots:
+#
+#   gate noise only     pymatching 0.00027 [0.00019, 0.00039]
+#                       ketqat-lookup 0.00044 [0.00033, 0.00059]   -> intervals
+#                       overlap; the data does not distinguish them
+#
+#   these rates         pymatching 0.00484 [0.00443, 0.00529]
+#                       ketqat-lookup 0.01161 [0.01096, 0.01229]   -> disjoint;
+#                       matching wins by 2.4x
+#
+# The reason is the truncation: `max_fault_weight: 2` means syndromes needing a
+# heavier explanation are abstentions, and unreliable measurement produces more
+# of them. That is a real property of the decoder, and it is invisible under
+# gate noise alone.
+#
+# `shots` is 20,000 because 2,000 is not enough to show this -- at 2,000 the two
+# intervals still overlap. A shot budget too small to resolve the difference
+# reports "no difference" just as confidently.
+schema_version: "0.1"
+domain: QEC
+benchmark:
+  suite: surface-code-memory-readout-limited
+  version: "0.1.0"
+experiment:
+  name: surface-code-readout-limited-memory
+  description: Memory experiment in the readout-dominated regime, both decoders
+qec:
+  experiment_type: memory
+  code:
+    family: rotated-surface-code
+    distances: [3]
+    rounds: distance
+  noise:
+    model: circuit-level-depolarizing
+    physical_error_rates: [0.001]
+    # Each of these is a real Stim channel, and each is part of the
+    # comparability key -- a run at these rates is not ranked against a run
+    # that did not model them. Set `readout_error_rate` to 0.0 and re-run to
+    # see how much of the logical error rate measurement alone accounts for.
+    readout_error_rate: 0.01
+    reset_error_rate: 0.005
+    idle_error_rate: 0.001
+  decoder:
+    name: pymatching
+  decoders:
+    - name: pymatching
+    - name: ketqat-lookup
+      options:
+        max_fault_weight: 2
+sampling:
+  shots: 20000
+  seed: 42
+metrics:
+  - logical_error_rate
+  - decoder_latency_ms

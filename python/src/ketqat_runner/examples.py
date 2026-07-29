@@ -27,6 +27,12 @@ EXAMPLE_MANIFESTS: tuple[ExampleManifest, ...] = (
         description="Two decoders, MWPM and truncated maximum-likelihood, on identical samples.",
     ),
     ExampleManifest(
+        name="readout-limited-memory",
+        domain="QEC",
+        package_path="examples/qec/readout-limited-memory.yaml",
+        description="Memory in the readout-dominated regime, where decoders actually separate.",
+    ),
+    ExampleManifest(
         name="grover-search",
         domain="ALGORITHM",
         package_path="examples/algorithms/grover-search.yaml",

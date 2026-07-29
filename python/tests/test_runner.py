@@ -153,7 +153,12 @@ def test_packaged_examples_are_readable_resources() -> None:
     # The set is pinned rather than counted, so adding an example is a deliberate
     # act that updates this line -- which is how the decoder comparison being
     # absent from `examples list` for so long finally surfaced.
-    assert names == {"surface-code-memory", "decoder-comparison", "grover-search"}
+    assert names == {
+        "surface-code-memory",
+        "decoder-comparison",
+        "readout-limited-memory",
+        "grover-search",
+    }
     assert yaml.safe_load(read_example_manifest("qec/decoder-comparison"))["domain"] == "QEC"
     assert yaml.safe_load(read_example_manifest("qec/surface-code-memory"))["domain"] == "QEC"
     assert yaml.safe_load(read_example_manifest("examples/algorithms/grover-search.yaml"))["domain"] == "ALGORITHM"
@@ -290,3 +295,157 @@ def test_non_qec_metrics_are_unaffected() -> None:
     assert _summarize(
         [{"metric": "success_probability", "success_probability": 0.96, "metadata": {}}]
     ) == {"success_probability": 0.96}
+
+
+# --- Noise channels beyond gate depolarization (ketqat-sdk#110) -------------
+#
+# The QEC path used to pass exactly one noise parameter to Stim
+# (`after_clifford_depolarization`). A manifest could name a readout error rate
+# and the run would ignore it, then publish a result labelled as though it had
+# been modelled. These tests exist to make that failure mode loud.
+
+
+def _noise_sample(**overrides):
+    from ketqat_runner.runner import _sample_surface_code_memory
+
+    params = dict(
+        benchmark_version="0.1",
+        distance=3,
+        physical_error_rate=0.001,
+        rounds=3,
+        shots=4000,
+        seed=7,
+        decoder_configs=[{"name": "pymatching"}],
+        code_family="rotated-surface-code",
+    )
+    params.update(overrides)
+    return _sample_surface_code_memory(**params)
+
+
+@pytest.mark.parametrize(
+    "channel", ["readout_error_rate", "reset_error_rate", "idle_error_rate"]
+)
+def test_each_noise_channel_measurably_changes_the_result(channel: str) -> None:
+    """A channel that reaches Stim changes the number of logical failures.
+
+    This is the test that a channel is actually *wired up*, not merely accepted
+    by the schema and dropped. Measured at d=3, p=0.001, 4000 shots, seed 7:
+    2 failures with no extra channel, 147-241 with one at 0.05. The thresholds
+    below sit far inside that gap, so the test fails loudly if a channel stops
+    reaching the circuit -- and does not fail on ordinary RNG drift.
+    """
+    reference = _noise_sample()["decoders"][0]["logical_failures"]
+    assert reference < 20, "reference run is unexpectedly noisy; thresholds invalid"
+
+    noisy = _noise_sample(extra_noise={channel: 0.05})["decoders"][0]["logical_failures"]
+    assert noisy > 50, f"{channel} did not reach the circuit: {noisy} failures"
+    assert noisy > reference * 10
+
+
+def test_a_run_without_extra_channels_is_bit_for_bit_what_it_always_was() -> None:
+    """Existing published results must stay reproducible.
+
+    The seed derivation grew new inputs. If those inputs changed the seed for
+    runs that do not use them, every result published before this change would
+    stop reproducing.
+    """
+    assert _noise_sample()["coordinate_seed"] == _derive_coordinate_seed(7, "0.1", 3, 0.001)
+    assert (
+        _noise_sample()["seed_derivation"]
+        == "sha256(global_seed,benchmark_version,code_distance,physical_error_rate)"
+    )
+
+
+def test_runs_differing_only_in_a_noise_channel_do_not_share_a_seed() -> None:
+    """Otherwise their shot noise is correlated, and comparing them overstates
+    the precision of the difference."""
+    a = _noise_sample(extra_noise={"readout_error_rate": 0.05})["coordinate_seed"]
+    b = _noise_sample(extra_noise={"readout_error_rate": 0.06})["coordinate_seed"]
+    assert a != b
+
+
+def test_the_recorded_seed_derivation_names_the_inputs_actually_used() -> None:
+    """A record that named only the original four inputs while the run used six
+    would describe a derivation that did not happen."""
+    derivation = _noise_sample(
+        extra_noise={"readout_error_rate": 0.05, "idle_error_rate": 0.01}
+    )["seed_derivation"]
+    assert derivation == (
+        "sha256(global_seed,benchmark_version,code_distance,physical_error_rate"
+        ",idle_error_rate,readout_error_rate)"
+    )
+
+
+def test_runs_at_different_noise_channels_are_not_ranked_together() -> None:
+    """`noise_model` carries only the model *name*, so it cannot separate these.
+
+    Without the per-channel comparability fields, a run at 5% readout error and
+    a run at 0% would land on the same leaderboard coordinate and be presented
+    as a comparison. They are two different experiments.
+    """
+    from ketqat_runner.qec_statistics import comparability_key
+
+    record = {
+        "benchmark_suite": "qec",
+        "benchmark_suite_version": "0.1",
+        "code_family": "rotated-surface-code",
+        "code_distance": 3,
+        "rounds": 3,
+        "physical_error_rate": 0.001,
+        "noise_model": "circuit-level-depolarizing",
+        "stopping_rule": "fixed_shots=4000",
+        "decoder_version": "pymatching-2.2.1",
+    }
+
+    # Runs that model no extra channel still compare with each other, so this
+    # change does not fragment the existing leaderboard.
+    assert comparability_key(record) == comparability_key(dict(record))
+
+    unmodelled = comparability_key(record)
+    at_five = comparability_key({**record, "readout_error_rate": 0.05})
+    at_six = comparability_key({**record, "readout_error_rate": 0.06})
+    assert unmodelled != at_five
+    assert at_five != at_six
+
+
+def test_a_misspelled_noise_rate_is_refused_rather_than_ignored() -> None:
+    """ketqat-sdk#99 one level up: a typo must not produce a run that silently
+    omits the channel the author asked for."""
+    manifest = _manifest()
+    manifest["qec"]["noise"]["readout_error_rat"] = 0.05
+    with pytest.raises(KetQatValidationError):
+        validate_manifest(manifest)
+
+
+def test_a_noise_channel_reaches_the_result_record() -> None:
+    """End to end: a manifest naming a channel produces a result whose
+    comparability key records it."""
+    manifest = _manifest()
+    manifest["sampling"]["shots"] = 200
+    manifest["qec"]["noise"]["readout_error_rate"] = 0.05
+    result = run_experiment(manifest)
+    validate_result(result)
+
+    metadata = result["metric_points"][0]["metadata"]
+    fields = metadata["comparability_key_fields"]
+    assert "readout_error_rate" in fields
+    assert metadata["comparability_key"][fields.index("readout_error_rate")] == 0.05
+
+
+def test_an_integer_noise_rate_is_recorded_as_a_float() -> None:
+    """`readout_error_rate: 0` is an int in YAML and a float in the seed payload.
+
+    They are equal in Python and different once serialised, which would make one
+    run's comparability key `0` and an identical run's `0.0`.
+    """
+    manifest = _manifest()
+    manifest["sampling"]["shots"] = 200
+    manifest["qec"]["noise"]["readout_error_rate"] = 0
+    result = run_experiment(manifest)
+
+    metadata = result["metric_points"][0]["metadata"]
+    recorded = metadata["comparability_key"][
+        metadata["comparability_key_fields"].index("readout_error_rate")
+    ]
+    assert isinstance(recorded, float)
+    assert json.dumps(recorded) == "0.0"

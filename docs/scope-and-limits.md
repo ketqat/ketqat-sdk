@@ -34,6 +34,26 @@ Those intervals overlap substantially, so the honest reading is that **this data
 does not distinguish the two decoders** — which is what the comparison reports
 rather than ranking them.
 
+That result is about the *noise model*, not about the decoders. Under
+readout-dominated noise they separate clearly. `ketqat run
+readout-limited-memory`, d=3 at 100,000 shots:
+
+```
+                     gate noise only              readout-dominated
+pymatching     0.00027 [0.00019, 0.00039]   0.00484 [0.00443, 0.00529]
+ketqat-lookup  0.00044 [0.00033, 0.00059]   0.01161 [0.01096, 0.01229]
+                     intervals overlap            disjoint, 2.4x apart
+```
+
+The cause is the truncation. `ketqat-lookup` enumerates faults up to
+`max_fault_weight` and abstains beyond it, and unreliable measurement produces
+more syndromes past that bound. Gate noise alone never exercises it.
+
+Two things follow, and both are easy to get wrong. A comparison under one noise
+model is not a general ranking. And a shot budget too small to resolve a
+difference reports "no difference" with exactly the same confidence as a real
+null — at 2,000 shots those two right-hand intervals still overlap.
+
 The public leaderboard currently shows one decoder because only the
 single-decoder baselines have been published to it. That is a publishing gap,
 not a capability gap.
@@ -69,6 +89,40 @@ Rates are named `one_qubit_error`, `two_qubit_error`, `readout_error`, and a
 misspelling is **refused rather than ignored** — an earlier version accepted an
 unknown key and produced a maximally noisy circuit reported as the run you asked
 for (ketqat-sdk#99).
+
+### The QEC path is separate, and has four channels
+
+The paragraphs above describe the statevector engine. QEC runs go through Stim
+instead, and until ketqat-sdk#110 they applied exactly **one** channel —
+depolarization after each Clifford. A manifest could name a readout error rate
+and the run would ignore it, then publish a result labelled as though readout
+error had been modelled.
+
+Four channels are now applied, each one a real Stim parameter:
+
+| Manifest field | Stim parameter | What it models |
+|---|---|---|
+| `physical_error_rates` | `after_clifford_depolarization` | gate error (swept) |
+| `readout_error_rate` | `before_measure_flip_probability` | measurement flips |
+| `reset_error_rate` | `after_reset_flip_probability` | imperfect reset |
+| `idle_error_rate` | `before_round_data_depolarization` | idling on data qubits |
+
+Readout error matters more than its position in that list suggests: on real
+superconducting devices it is frequently the *dominant* error, and it separates
+decoders that pure gate noise cannot, because matching and maximum-likelihood
+degrade differently when the syndrome itself is unreliable.
+
+**Absent is not zero.** A run that did not model a channel records it as absent,
+not as a device with perfect measurement. The three optional channels are also
+part of the comparability key, so a run at 5% readout error is not ranked
+against a run that never modelled it — those are two experiments, not one
+comparison.
+
+What is still missing is a property of the simulator, not an oversight:
+**amplitude and phase damping, leakage, and correlated or time-dependent noise
+are not expressible in Stim's stabilizer model at all.** Adding them means a
+different simulator, not a further parameter, and no amount of work on this path
+will produce them.
 
 ## Simulation
 

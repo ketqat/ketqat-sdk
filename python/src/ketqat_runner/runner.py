@@ -64,6 +64,11 @@ def _run_qec(manifest: dict[str, Any]) -> dict[str, Any]:
                 seed=seed,
                 decoder_configs=decoder_configs,
                 code_family=qec["code"]["family"],
+                extra_noise={
+                    key: float(qec["noise"][key])
+                    for key in _STIM_NOISE_CHANNELS
+                    if qec["noise"].get(key) is not None
+                },
             )
             for decoder_result in sample["decoders"]:
                 summary = logical_error_rate_summary(decoder_result["logical_failures"], shots)
@@ -117,12 +122,30 @@ def _run_qec(manifest: dict[str, Any]) -> dict[str, Any]:
                                         "rounds": sample["rounds"],
                                         "physical_error_rate": float(physical_error_rate),
                                         "noise_model": qec["noise"]["model"],
+                                        # Cast, so that a manifest writing
+                                        # `readout_error_rate: 0` does not
+                                        # produce an int here and a float in
+                                        # the seed payload -- equal in Python,
+                                        # but `0` and `0.0` once serialised.
+                                        **{
+                                            key: (
+                                                None
+                                                if qec["noise"].get(key) is None
+                                                else float(qec["noise"][key])
+                                            )
+                                            for key in _STIM_NOISE_CHANNELS
+                                        },
                                         "stopping_rule": f"fixed_shots={shots}",
                                         "decoder_version": decoder_result["decoder_version"],
                                     }
                                 )
                             ),
-                            "seed_derivation": "sha256(global_seed,benchmark_version,code_distance,physical_error_rate)",
+                            # Reports the derivation actually used. When extra
+                            # noise channels are present they are part of the
+                            # payload, and a record that named only the four
+                            # original inputs would describe a derivation the
+                            # run did not perform.
+                            "seed_derivation": sample["seed_derivation"],
                         },
                     }
                 )
@@ -140,6 +163,7 @@ def _sample_surface_code_memory(
     seed: int,
     decoder_configs: list[dict[str, Any]],
     code_family: str,
+    extra_noise: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     try:
         import numpy as np
@@ -147,7 +171,18 @@ def _sample_surface_code_memory(
     except ImportError as exc:
         raise RuntimeError(QEC_DEPENDENCY_MESSAGE) from exc
 
-    coordinate_seed = _derive_coordinate_seed(seed, benchmark_version, distance, physical_error_rate)
+    extra_noise = extra_noise or {}
+    # The seed must depend on every noise channel, not only the swept rate.
+    # Otherwise two runs differing solely in readout error would share a
+    # coordinate seed, and the shot-to-shot noise would be correlated between
+    # them -- which quietly makes a comparison look more precise than it is.
+    coordinate_seed = _derive_coordinate_seed(
+        seed,
+        benchmark_version,
+        distance,
+        physical_error_rate,
+        *(extra_noise[key] for key in sorted(extra_noise)),
+    )
     generator = _stim_generator_for(code_family)
 
     circuit_start = time.perf_counter_ns()
@@ -156,6 +191,14 @@ def _sample_surface_code_memory(
         distance=distance,
         rounds=rounds,
         after_clifford_depolarization=physical_error_rate,
+        # Absent stays absent. Stim treats 0 as "no channel", which is the same
+        # thing here, but the *record* distinguishes a run that modelled readout
+        # error at zero from one that did not model it at all.
+        **{
+            stim_name: extra_noise[manifest_name]
+            for manifest_name, stim_name in _STIM_NOISE_CHANNELS.items()
+            if manifest_name in extra_noise
+        },
     )
     sampler = circuit.compile_detector_sampler(seed=coordinate_seed)
     circuit_generation_seconds = (time.perf_counter_ns() - circuit_start) / 1_000_000_000
@@ -192,7 +235,11 @@ def _sample_surface_code_memory(
             }
         )
 
+    seed_inputs = ["global_seed", "benchmark_version", "code_distance", "physical_error_rate"]
+    seed_inputs += sorted(extra_noise)
+
     return {
+        "seed_derivation": f"sha256({','.join(seed_inputs)})",
         "coordinate_seed": coordinate_seed,
         "rounds": rounds,
         "generator": generator,
@@ -200,6 +247,20 @@ def _sample_surface_code_memory(
         "sampling_runtime_seconds": sampling_runtime_seconds,
         "decoders": decoder_results,
     }
+
+
+#: Manifest noise field to the Stim generator argument that implements it.
+#:
+#: Stim's stabilizer model can represent these exactly. Amplitude and phase
+#: damping and leakage cannot be expressed as Pauli channels and are therefore
+#: absent rather than approximated -- a coherent error approximated by a Pauli
+#: twirl is a different experiment, and running it under the original name would
+#: be the dishonest option.
+_STIM_NOISE_CHANNELS: dict[str, str] = {
+    "readout_error_rate": "before_measure_flip_probability",
+    "reset_error_rate": "after_reset_flip_probability",
+    "idle_error_rate": "before_round_data_depolarization",
+}
 
 
 #: Code family to Stim circuit generator. An unknown family is rejected rather
@@ -237,8 +298,26 @@ def _resolve_rounds(rounds: int | str, distance: int) -> int:
     return resolved
 
 
-def _derive_coordinate_seed(global_seed: int, benchmark_version: str, distance: int, physical_error_rate: float) -> int:
+def _derive_coordinate_seed(
+    global_seed: int,
+    benchmark_version: str,
+    distance: int,
+    physical_error_rate: float,
+    *extra_rates: float,
+) -> int:
+    """Derive the sampling seed from every parameter that defines the experiment.
+
+    The extra noise rates are part of the payload rather than decoration. Two
+    runs differing only in readout error must not share a coordinate seed: they
+    would draw correlated shot noise, and a comparison between them would look
+    more precise than the data supports.
+
+    A run with no extra channels produces exactly the seed it always did, so
+    results published before those channels existed stay reproducible.
+    """
     payload = f"{global_seed}|{benchmark_version}|{distance}|{physical_error_rate:.17g}"
+    for rate in extra_rates:
+        payload += f"|{rate:.17g}"
     return int.from_bytes(hashlib.sha256(payload.encode("utf-8")).digest()[:8], "big") % (2**32)
 
 

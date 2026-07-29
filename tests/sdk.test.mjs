@@ -3014,6 +3014,47 @@ c[0] = measure q[0];
   )
   assert.match(limits, /One model: \*\*depolarizing\*\*/)
 
+  // The QEC path applies its own channels, and every one of them must appear in
+  // the limits document with the Stim parameter it maps to.
+  //
+  // Derived from `_STIM_NOISE_CHANNELS` rather than pinned to a count, for the
+  // same reason as the decoder registry above: the QEC path shipped for months
+  // applying exactly one channel while a manifest could name three, so the
+  // failure worth catching is the code growing a channel the document does not
+  // mention -- which a hand-written number cannot catch.
+  const channelBlock = runnerSource.match(
+    /_STIM_NOISE_CHANNELS: dict\[str, str\] = \{([^}]*)\}/,
+  )?.[1]
+  assert.ok(channelBlock, "the QEC noise channel map should be findable")
+  const channels = [...channelBlock.matchAll(/"([a-z_]+)":\s*"([a-z_]+)"/g)]
+  assert.ok(channels.length >= 3, `expected the channel map to parse, got ${channels.length}`)
+  for (const [, manifestField, stimParameter] of channels) {
+    assert.ok(
+      limits.includes(`\`${manifestField}\``),
+      `docs/scope-and-limits.md does not mention the ${manifestField} channel`,
+    )
+    assert.ok(
+      limits.includes(`\`${stimParameter}\``),
+      `docs/scope-and-limits.md does not name the Stim parameter ${stimParameter}`,
+    )
+  }
+
+  // Each channel must also be a comparability field. A channel that changes the
+  // result but not the ranking coordinate would put two different experiments
+  // on one leaderboard row and present them as a comparison.
+  const statsSource = fs.readFileSync(
+    new URL("../python/src/ketqat_runner/qec_statistics.py", import.meta.url),
+    "utf8",
+  )
+  const comparability = statsSource.match(/COMPARABILITY_FIELDS = \(([\s\S]*?)\)/)?.[1]
+  assert.ok(comparability, "COMPARABILITY_FIELDS should be findable")
+  for (const [, manifestField] of channels) {
+    assert.ok(
+      comparability.includes(`"${manifestField}"`),
+      `${manifestField} changes the result but is not a comparability field`,
+    )
+  }
+
   // The code families the runner can actually execute, checked against the map
   // rather than against prose.
   const families = [...runnerSource.matchAll(/^\s+"([a-z-]+)":\s+"[a-z_]+:/gm)].map((m) => m[1])

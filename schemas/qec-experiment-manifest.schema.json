@@ -173,6 +173,21 @@
                     "maximum": 1
                   },
                   "minItems": 1
+                },
+                "readout_error_rate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "reset_error_rate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "idle_error_rate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
                 }
               },
               "required": [
