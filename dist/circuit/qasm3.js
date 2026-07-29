@@ -32,7 +32,6 @@ export const SUPPORTED_FEATURES = [
  * error that tells the user nothing.
  */
 const UNSUPPORTED_KEYWORDS = {
-    gate: "custom_gate_definition",
     def: "subroutine_definition",
     defcal: "pulse_calibration",
     cal: "pulse_calibration",
@@ -108,6 +107,18 @@ function splitStatements(source) {
 function leadingKeyword(text) {
     return (/^[A-Za-z_][A-Za-z0-9_]*/.exec(text)?.[0] ?? "").toLowerCase();
 }
+/**
+ * The leading identifier with its case intact.
+ *
+ * `leadingKeyword` lowercases, which is correct for language keywords and wrong
+ * for user identifiers: OpenQASM is case-sensitive, so a gate declared as
+ * `Oracle` is not found by looking up `oracle`. Using the lowercased form here
+ * meant definitions were collected and then never expanded -- the call passed
+ * through as an unknown primitive gate and only failed later, in the simulator.
+ */
+function leadingIdentifier(text) {
+    return /^[A-Za-z_][A-Za-z0-9_]*/.exec(text)?.[0] ?? "";
+}
 function parseParameters(raw) {
     const inner = raw.trim();
     if (inner.length === 0) {
@@ -146,6 +157,37 @@ function splitTopLevel(text, separator) {
     }
     parts.push(current);
     return parts.filter((part) => part.trim().length > 0);
+}
+/** Guards against a definition that expands into itself. */
+const MAX_GATE_EXPANSION_DEPTH = 32;
+/**
+ * Substitute formal names for actual ones in a body statement.
+ *
+ * Parameters are wrapped in parentheses. Without that, a body of `rz(p0 / 2)`
+ * called with `p0 = a + b` would become `rz(a + b / 2)` -- silently the wrong
+ * angle, and the kind of error that produces a plausible circuit rather than a
+ * failure. Word boundaries keep `p0` from matching inside `p01`.
+ */
+function substituteGateBody(body, definition, actualQubits, actualParameters) {
+    let result = body;
+    for (let index = 0; index < definition.parameters.length; index += 1) {
+        const formal = definition.parameters[index];
+        const actual = actualParameters[index];
+        if (actual === undefined)
+            continue;
+        result = result.replace(new RegExp(`\\b${escapeForRegExp(formal)}\\b`, "g"), `(${actual})`);
+    }
+    for (let index = 0; index < definition.qubits.length; index += 1) {
+        const formal = definition.qubits[index];
+        const actual = actualQubits[index];
+        if (actual === undefined)
+            continue;
+        result = result.replace(new RegExp(`\\b${escapeForRegExp(formal)}\\b`, "g"), actual);
+    }
+    return result;
+}
+function escapeForRegExp(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 function findRegister(registers, name) {
     return registers.find((register) => register.name === name);
@@ -251,6 +293,49 @@ function parseDeclaration(text, statement, context) {
     }
     return false;
 }
+/**
+ * Split `name(params) operands` with a balanced parameter list.
+ *
+ * A regex cannot do this. The previous pattern used `\(([^)]*)\)`, which stops
+ * at the first close paren, so `rz((pi)/2) q[0]` -- valid OpenQASM -- was
+ * rejected as an unparseable statement. That was latent until custom gate
+ * inlining started producing parenthesised arguments, since substituted
+ * parameters must be wrapped to preserve precedence (ketqat-sdk#170).
+ *
+ * Returns undefined when the text does not start with an identifier, and leaves
+ * `parameterText` undefined when there is no argument list at all -- which is
+ * different from an empty one.
+ */
+function splitCallSignature(text) {
+    const identifier = /^([A-Za-z_][A-Za-z0-9_]*)/.exec(text);
+    if (!identifier)
+        return undefined;
+    const name = identifier[1];
+    let cursor = name.length;
+    while (cursor < text.length && text[cursor] === " ")
+        cursor += 1;
+    let parameterText;
+    if (text[cursor] === "(") {
+        let depth = 0;
+        const start = cursor + 1;
+        for (; cursor < text.length; cursor += 1) {
+            const character = text[cursor];
+            if (character === "(")
+                depth += 1;
+            else if (character === ")") {
+                depth -= 1;
+                if (depth === 0)
+                    break;
+            }
+        }
+        // An unbalanced list is a syntax error, not something to guess at.
+        if (depth !== 0)
+            return undefined;
+        parameterText = text.slice(start, cursor);
+        cursor += 1;
+    }
+    return { name, parameterText, operandText: text.slice(cursor).trim() };
+}
 function parseOperation(text, statement, context) {
     const line = statement.line;
     // c[0] = measure q[0];
@@ -291,11 +376,11 @@ function parseOperation(text, statement, context) {
         return { kind: "barrier", qubits };
     }
     // gate application: name qargs;  /  name(params) qargs;
-    const gate = /^([A-Za-z_][A-Za-z0-9_]*)\s*(\(([^)]*)\))?\s+(.+)$/.exec(text);
-    if (gate) {
-        const name = gate[1];
-        const parameters = parseParameters(gate[3] ?? "");
-        const operands = splitTopLevel(gate[4], ",");
+    const gate = splitCallSignature(text);
+    if (gate && gate.operandText.length > 0) {
+        const name = gate.name;
+        const parameters = parseParameters(gate.parameterText ?? "");
+        const operands = splitTopLevel(gate.operandText, ",");
         const resolved = operands.map((operand) => resolveOperand(operand, context.qubitRegisters, line, "qubit"));
         const broadcastWidth = Math.max(...resolved.map((bits) => bits.length));
         if (resolved.some((bits) => bits.length !== 1 && bits.length !== broadcastWidth)) {
@@ -333,7 +418,7 @@ function buildMeasure(qubits, clbits, line) {
 }
 export function parseQasm3(source) {
     const statements = splitStatements(source);
-    const context = { qubitRegisters: [], clbitRegisters: [], loss: [] };
+    const context = { qubitRegisters: [], clbitRegisters: [], loss: [], definitions: new Map() };
     const operations = [];
     let sawVersion = false;
     let pendingCondition;
@@ -349,7 +434,14 @@ export function parseQasm3(source) {
             operations.push(operation);
         }
     };
-    for (const statement of statements) {
+    // Index of the last statement swallowed by a gate body, so the main loop does
+    // not also execute the body as top-level code.
+    let consumeUntil = -1;
+    for (let position = 0; position < statements.length; position += 1) {
+        const statement = statements[position];
+        if (position <= consumeUntil) {
+            continue;
+        }
         const text = statement.text.replace(/\s+/g, " ").trim();
         if (text.length === 0) {
             continue;
@@ -370,6 +462,65 @@ export function parseQasm3(source) {
             continue;
         }
         const keyword = leadingKeyword(text);
+        if (keyword === "gate") {
+            // `gate NAME(p0, p1) a, b { ... }`. The splitter already emits `{` and `}`
+            // as their own statements, so the body is collected by scanning forward to
+            // the matching close rather than re-lexing.
+            const signature = splitCallSignature(text.slice("gate".length).trim());
+            if (!signature) {
+                throw new Qasm3ParseError(`Could not read the gate declaration '${text}'.`, {
+                    feature: "custom_gate_definition",
+                    line: statement.line,
+                });
+            }
+            const name = signature.name;
+            const parameters = (signature.parameterText ?? "")
+                .split(",")
+                .map((entry) => entry.trim())
+                .filter((entry) => entry.length > 0);
+            const qubits = signature.operandText
+                .split(",")
+                .map((entry) => entry.trim())
+                .filter((entry) => entry.length > 0);
+            if (qubits.length === 0) {
+                throw new Qasm3ParseError(`Gate '${name}' declares no qubit arguments.`, {
+                    feature: "custom_gate_definition",
+                    line: statement.line,
+                });
+            }
+            // Scan forward for the body. Nested braces are counted so a definition
+            // containing a block does not end early.
+            const body = [];
+            let depth = 0;
+            let closed = false;
+            let cursor = position + 1;
+            for (; cursor < statements.length; cursor += 1) {
+                const inner = statements[cursor].text.replace(/\s+/g, " ").trim();
+                if (inner === "{") {
+                    depth += 1;
+                    continue;
+                }
+                if (inner === "}") {
+                    depth -= 1;
+                    if (depth <= 0) {
+                        closed = true;
+                        break;
+                    }
+                    continue;
+                }
+                if (inner.length > 0)
+                    body.push(inner);
+            }
+            if (!closed) {
+                throw new Qasm3ParseError(`Gate '${name}' has no closing brace.`, {
+                    feature: "custom_gate_definition",
+                    line: statement.line,
+                });
+            }
+            context.definitions.set(name, { name, parameters, qubits, body });
+            consumeUntil = cursor;
+            continue;
+        }
         if (keyword === "openqasm") {
             const version = /^openqasm\s+([0-9.]+)$/i.exec(text)?.[1];
             if (version === undefined || !version.startsWith("3")) {
@@ -410,6 +561,13 @@ export function parseQasm3(source) {
         if (parseDeclaration(text, statement, context)) {
             continue;
         }
+        // A call to a custom gate expands to its body. Done here rather than in
+        // applyStatement so recursion is bounded in one place.
+        const invoked = leadingIdentifier(text);
+        if (context.definitions.has(invoked)) {
+            expandCustomGate(text, statement, context, emit, 0);
+            continue;
+        }
         applyStatement(text, statement, context, emit);
     }
     if (!sawVersion) {
@@ -428,6 +586,63 @@ export function parseQasm3(source) {
         },
         loss_report: context.loss,
     };
+}
+/**
+ * Expand one call to a custom gate, recursively.
+ *
+ * Inlining loses the abstraction boundary, so the first expansion of each
+ * definition records a loss entry. It is `approximated` rather than `dropped`
+ * because the operations survive exactly -- what is lost is the grouping, not
+ * the circuit.
+ */
+function expandCustomGate(text, statement, context, emit, depth) {
+    if (depth > MAX_GATE_EXPANSION_DEPTH) {
+        throw new Qasm3ParseError(`Custom gate expansion exceeded ${MAX_GATE_EXPANSION_DEPTH} levels, which means a definition ` +
+            "expands into itself. OpenQASM gates cannot be recursive.", { feature: "custom_gate_definition", line: statement.line });
+    }
+    const call = splitCallSignature(text);
+    const definition = call ? context.definitions.get(call.name) : undefined;
+    if (!call || !definition) {
+        throw new Qasm3ParseError(`Could not read the call '${text}'.`, {
+            feature: "custom_gate_definition",
+            line: statement.line,
+        });
+    }
+    const actualParameters = splitTopLevel(call.parameterText ?? "", ",")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0);
+    const actualQubits = splitTopLevel(call.operandText, ",")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0);
+    if (actualQubits.length !== definition.qubits.length) {
+        throw new Qasm3ParseError(`Gate '${definition.name}' takes ${definition.qubits.length} qubit(s) but was called with ` +
+            `${actualQubits.length}.`, { feature: "custom_gate_definition", line: statement.line });
+    }
+    if (actualParameters.length !== definition.parameters.length) {
+        throw new Qasm3ParseError(`Gate '${definition.name}' takes ${definition.parameters.length} parameter(s) but was called ` +
+            `with ${actualParameters.length}.`, { feature: "custom_gate_definition", line: statement.line });
+    }
+    if (depth === 0 && !context.loss.some((entry) => entry.detail.includes(`'${definition.name}'`))) {
+        context.loss.push({
+            feature: "custom_gate_definition",
+            severity: "structural",
+            action: "approximated",
+            detail: `The custom gate '${definition.name}' was inlined into its constituent operations. The ` +
+                "operations are preserved exactly; what is lost is the grouping, so the circuit no longer " +
+                "records that these gates formed one named unit.",
+            location: `line ${statement.line}`,
+        });
+    }
+    for (const bodyStatement of definition.body) {
+        const substituted = substituteGateBody(bodyStatement, definition, actualQubits, actualParameters);
+        const inner = leadingIdentifier(substituted);
+        if (context.definitions.has(inner)) {
+            expandCustomGate(substituted, statement, context, emit, depth + 1);
+        }
+        else {
+            applyStatement(substituted, statement, context, emit);
+        }
+    }
 }
 function applyStatement(text, statement, context, emit) {
     try {
