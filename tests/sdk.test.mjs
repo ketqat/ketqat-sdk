@@ -2967,3 +2967,91 @@ c[0] = measure q[0];
   assert.ok(readme.includes(unverifiable.equivalence.reason), "the README quotes that reason verbatim")
   assert.match(readme, /separate\s+claims/i)
 }
+
+// ---------------------------------------------------------------------------
+// docs/scope-and-limits.md must stay true.
+//
+// A limits document is the one that rots most usefully in the wrong direction:
+// the project grows, the doc keeps understating, and eventually somebody reads
+// "one decoder" beside a leaderboard with four. These pin the claims that would
+// become false first -- and each is pinned against the code, not against a
+// number typed twice.
+// ---------------------------------------------------------------------------
+{
+  const limits = fs.readFileSync(new URL("../docs/scope-and-limits.md", import.meta.url), "utf8")
+  const runnerSource = fs.readFileSync(
+    new URL("../python/src/ketqat_runner/runner.py", import.meta.url),
+    "utf8",
+  )
+  const noiseSource = fs.readFileSync(new URL("../src/engine/noise.ts", import.meta.url), "utf8")
+
+  // The headline claim. If a second decoder is added, this fails and the
+  // document has to be rewritten -- which is the point.
+  const decoderSource = fs.readFileSync(
+    new URL("../python/src/ketqat_runner/decoders.py", import.meta.url),
+    "utf8",
+  )
+  assert.match(limits, /Implemented \| \*\*1\*\*/, "the decoder count is the claim most worth pinning")
+  assert.ok(
+    !/union[_-]?find|fusion[_-]?blossom|belief[_-]?propagation/i.test(decoderSource),
+    "a second decoder exists; docs/scope-and-limits.md still says one",
+  )
+
+  // Exactly one noise model.
+  assert.equal(
+    (noiseSource.match(/^export const \w*NoiseSchema = z$/gm) ?? []).length,
+    1,
+    "a second noise model exists; the limits document still describes one",
+  )
+  assert.match(limits, /One model: \*\*depolarizing\*\*/)
+
+  // The code families the runner can actually execute, checked against the map
+  // rather than against prose.
+  const families = [...runnerSource.matchAll(/^\s+"([a-z-]+)":\s+"[a-z_]+:/gm)].map((m) => m[1])
+  assert.ok(families.includes("repetition-code"), "the runner should still execute repetition codes")
+  assert.ok(families.includes("color-code"), "the runner should still execute color codes")
+  for (const family of ["surface code", "repetition code", "color code"]) {
+    assert.ok(limits.toLowerCase().includes(family), `the limits document must list ${family}`)
+  }
+
+  // The simulator ceiling, quoted rather than remembered.
+  const statevector = fs.readFileSync(new URL("../src/engine/statevector.ts", import.meta.url), "utf8")
+  const ceiling = statevector.match(/MAX_SIMULATED_QUBITS = (\d+)/)?.[1]
+  assert.ok(ceiling, "the statevector ceiling should be findable")
+  assert.match(limits, new RegExp(`\\*\\*${ceiling} qubits maximum\\*\\*`), "the quoted ceiling is stale")
+
+  // No provider may SUBMIT to hardware. Reading a real device's calibration is
+  // a different thing and is allowed: it produces no result, spends no quota,
+  // and compiling against a real coupling map is the point of a snapshot.
+  //
+  // This check took three attempts, and the wrong turns are worth recording.
+  // Matching `backend.run(` flagged the IBM adapter, whose only such call is in
+  // `run_on_fake_backend` and passes `seed_simulator` -- an argument that exists
+  // only on a simulator. Matching `QiskitRuntimeService(` flagged it too, and
+  // that service is used solely for `service.backends()`, which lists names.
+  // Both would have failed a build over code that does exactly what the
+  // document claims.
+  //
+  // What actually distinguishes submission is a *primitive* or a real task
+  // handle, so that is what is matched.
+  const submissionPatterns = [
+    /\bSampler\s*\(/,          // IBM primitive: submits
+    /\bEstimator\s*\(/,        // IBM primitive: submits
+    /\bSession\s*\(/,          // IBM: opens a device session
+    /AwsQuantumTask\s*\(/,     // Braket: a real task
+    /AwsDevice\s*\([^)]*arn:/, // Braket: a real device by ARN
+  ]
+  for (const provider of ["ibm", "braket"]) {
+    const source = fs
+      .readFileSync(new URL(`../python/src/ketqat_runner/providers/${provider}.py`, import.meta.url), "utf8")
+      .replace(/#.*$/gm, "")
+      .replace(/"""[\s\S]*?"""/g, "")
+    for (const pattern of submissionPatterns) {
+      assert.ok(
+        !pattern.test(source),
+        `${provider} can submit to hardware via ${pattern}; the limits document says none does`,
+      )
+    }
+  }
+  assert.match(limits, /\*\*None\.\*\* No result in this project has touched a quantum device/)
+}
