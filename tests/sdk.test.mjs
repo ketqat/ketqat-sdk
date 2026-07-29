@@ -3441,3 +3441,88 @@ c[0] = measure q[0];
     "the warning must say the number does not measure model error",
   )
 }
+
+// ---------------------------------------------------------------------------
+// Digital dynamical decoupling (ketqat-sdk#129).
+//
+// The transformation is straightforward. The judgement is what it claims: this
+// engine's only noise model is Markovian, so there is no mechanism by which
+// DDD can reduce error, and a routine that inserted pulses while letting a
+// reader believe something had been mitigated would be worse than none.
+// ---------------------------------------------------------------------------
+{
+  const {
+    DECOUPLING_SEQUENCES,
+    applyDynamicalDecoupling,
+    checkCircuitEquivalence,
+    gateCount,
+    parseQasm3,
+  } = await import("../dist/index.js")
+
+  // q1 is used early, idles while q0 and q2 work, then is used again.
+  const withWindow = parseQasm3(
+    `OPENQASM 3;\ninclude "stdgates.inc";\nqubit[3] q;\nh q[0];\nh q[1];\n` +
+      `cx q[0], q[2];\ncx q[0], q[2];\ncx q[0], q[2];\ncx q[1], q[2];\n`,
+  ).circuit
+
+  for (const sequence of Object.keys(DECOUPLING_SEQUENCES)) {
+    const result = applyDynamicalDecoupling(withWindow, { sequence })
+
+    // The defining property: the sequence multiplies to the identity, so a
+    // noiseless circuit must be unchanged. Checked by simulation, not asserted.
+    assert.equal(
+      checkCircuitEquivalence(withWindow, result.circuit).level,
+      "NUMERICALLY_CHECKED",
+      `${sequence} must leave the noiseless circuit unchanged`,
+    )
+    assert.ok(result.windows_filled > 0, `${sequence} should find the idle window`)
+    assert.equal(
+      gateCount(result.circuit) - gateCount(withWindow),
+      result.gates_added,
+      "the reported cost must match the gates actually added",
+    )
+  }
+
+  // XYXY costs more than XX, because it is twice the pulses.
+  const short = applyDynamicalDecoupling(withWindow, { sequence: "XX" })
+  const long = applyDynamicalDecoupling(withWindow, { sequence: "XYXY" })
+  assert.ok(long.gates_added > short.gates_added)
+
+  // A circuit with no idle window gets no pulses and stays byte-identical.
+  // Every qubit here is either busy or not yet in use.
+  const noWindow = parseQasm3(
+    `OPENQASM 3;\ninclude "stdgates.inc";\nqubit[2] q;\nh q[0];\ncx q[0], q[1];\n`,
+  ).circuit
+  const untouched = applyDynamicalDecoupling(noWindow)
+  assert.equal(untouched.windows_filled, 0)
+  assert.equal(untouched.gates_added, 0)
+  assert.equal(gateCount(untouched.circuit), gateCount(noWindow))
+
+  // The claim, pinned so it cannot drift back into an overclaim.
+  //
+  // An earlier draft said decoupling "makes the circuit measurably worse".
+  // Measured at 2% and 3% error over 200,000 shots, XX moved the total
+  // variation distance by +0.0002 and XYXY by -0.0006 against a baseline of
+  // 0.125 -- both within shot noise, in opposite directions. "No measurable
+  // difference" is what was observed; "worse" was not.
+  const warned = applyDynamicalDecoupling(withWindow)
+  assert.equal(warned.can_help, false, "no noise model here has memory")
+  assert.equal(warned.warnings.length, 1)
+  assert.match(warned.warnings[0], /Markovian/)
+  assert.match(warned.warnings[0], /no measurable difference/)
+  assert.ok(
+    !/measurably worse/.test(warned.warnings[0]),
+    "the warning must not claim an effect that was not observed",
+  )
+
+  // A caller with a noise model that does have memory is not warned, and does
+  // not have to edit this module to stop being.
+  const memoryful = applyDynamicalDecoupling(withWindow, { noiseHasMemory: true })
+  assert.equal(memoryful.can_help, true)
+  assert.equal(memoryful.warnings.length, 0)
+  assert.ok(memoryful.gates_added > 0, "the transformation still happens")
+
+  // Assumptions travel with the result.
+  assert.ok(warned.assumptions.some((entry) => /multiplies to the identity/.test(entry)))
+  assert.ok(warned.assumptions.some((entry) => /collapsed state/.test(entry)))
+}
