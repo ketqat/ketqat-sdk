@@ -109,17 +109,26 @@ def test_importability_is_recorded_per_import() -> None:
     assert ghz["ketqat_importability"]["expected_to_parse"] is True
     assert ghz["ketqat_importability"]["blocking_constructs"] == []
 
+    # `dj` declares custom gates, which the OpenQASM 3 subset adapter does not
+    # support. This used to assert on `qft` and hardware qubit syntax; that is no
+    # longer a blocker (ketqat-sdk#168), so the test moved to a construct that
+    # still is rather than being loosened to keep passing.
+    dj = import_benchmark("dj", level="INDEP", size=3)
+    assert dj["ketqat_importability"]["expected_to_parse"] is False
+    constructs = [entry["construct"] for entry in dj["ketqat_importability"]["blocking_constructs"]]
+    assert "custom_gate_definition" in constructs
+
+    # And qft, which used to fail, now parses.
     qft = import_benchmark("qft", level="INDEP", size=3)
-    assert qft["ketqat_importability"]["expected_to_parse"] is False
-    constructs = [entry["construct"] for entry in qft["ketqat_importability"]["blocking_constructs"]]
-    assert "hardware_qubit_syntax" in constructs
+    assert qft["ketqat_importability"]["expected_to_parse"] is True
 
 
 def test_importability_names_the_parser_as_the_authority() -> None:
     """It is a prediction and says so; the parser decides.
 
     Verified against the real parser separately -- prediction and parser agree on
-    all 23 benchmarks that generate at INDEP size 3.
+    all 23 benchmarks that generate at INDEP size 3, both before and after
+    hardware qubit support landed (10/23 then, 14/23 now).
     """
     assessment = assess_importability("OPENQASM 3.0;\nqubit[2] q;\n")
     assert assessment["expected_to_parse"] is True

@@ -189,6 +189,21 @@ function findRegister(registers: Register[], name: string): Register | undefined
 }
 
 /**
+ * Register name given to OpenQASM 3 hardware qubits (`$0`, `$1`, ...).
+ *
+ * Physical qubits belong to no declared register, so they need somewhere to
+ * live. The name begins with `$`, which OpenQASM identifiers may not, so it
+ * cannot collide with anything a program declares.
+ *
+ * Kept separate rather than folded into the first qubit register on purpose.
+ * `$5` is physical qubit 5 on a device; `q[5]` is the sixth qubit of a virtual
+ * register that a compiler may place anywhere. Treating them as the same thing
+ * would make a mapped circuit silently claim a virtual layout it does not have
+ * (ketqat-sdk#165).
+ */
+export const PHYSICAL_QUBIT_REGISTER = "$physical"
+
+/**
  * Resolves an operand to concrete bits. A bare register name broadcasts over
  * every bit in that register, which OpenQASM 3 permits.
  */
@@ -218,6 +233,31 @@ function resolveOperand(operand: string, registers: Register[], line: number, ki
       throw new Qasm3ParseError(`Unknown ${kindLabel} register '${text}'.`, { line })
     }
     return Array.from({ length: register.size }, (_unused, index) => ({ register: text, index }))
+  }
+
+  // Hardware qubits: `$n`. Qiskit emits these whenever a circuit has been mapped
+  // to physical qubits, which is most of what a transpiler produces -- so
+  // rejecting them made four of MQT Bench's benchmarks unparseable.
+  const physical = /^\$(\d+)$/.exec(text)
+  if (physical) {
+    if (kindLabel !== "qubit") {
+      throw new Qasm3ParseError(
+        `'${text}' is a hardware qubit, which cannot be used where a ${kindLabel} bit is expected.`,
+        { line },
+      )
+    }
+    const index = Number(physical[1])
+    // Declared on first use, because a program using `$n` never declares it. The
+    // register grows to cover the highest index seen, so the qubit count reflects
+    // the circuit rather than the order statements happened to appear in.
+    let register = findRegister(registers, PHYSICAL_QUBIT_REGISTER)
+    if (!register) {
+      register = { name: PHYSICAL_QUBIT_REGISTER, size: index + 1 }
+      registers.push(register)
+    } else if (index + 1 > register.size) {
+      register.size = index + 1
+    }
+    return [{ register: PHYSICAL_QUBIT_REGISTER, index }]
   }
 
   throw new Qasm3ParseError(`Could not parse ${kindLabel} operand '${text}'.`, { line })

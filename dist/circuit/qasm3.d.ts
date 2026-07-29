@@ -29,6 +29,20 @@ export interface Qasm3ParseResult {
     circuit: QuantumCircuit;
     loss_report: LossReportEntry[];
 }
+/**
+ * Register name given to OpenQASM 3 hardware qubits (`$0`, `$1`, ...).
+ *
+ * Physical qubits belong to no declared register, so they need somewhere to
+ * live. The name begins with `$`, which OpenQASM identifiers may not, so it
+ * cannot collide with anything a program declares.
+ *
+ * Kept separate rather than folded into the first qubit register on purpose.
+ * `$5` is physical qubit 5 on a device; `q[5]` is the sixth qubit of a virtual
+ * register that a compiler may place anywhere. Treating them as the same thing
+ * would make a mapped circuit silently claim a virtual layout it does not have
+ * (ketqat-sdk#165).
+ */
+export declare const PHYSICAL_QUBIT_REGISTER = "$physical";
 export declare function parseQasm3(source: string): Qasm3ParseResult;
 export interface EmitOptions {
     /** Emitted unless explicitly disabled; portable output should keep it. */

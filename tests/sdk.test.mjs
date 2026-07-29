@@ -32,6 +32,7 @@ import {
   emitQasm3,
   gateCount,
   parseQasm3,
+  PHYSICAL_QUBIT_REGISTER,
   cliffordDataRegression,
   exactExpectation,
   isCliffordGate,
@@ -3837,4 +3838,67 @@ c[0] = measure q[0];
       "reported intercept should follow from the same fit",
     )
   }
+}
+
+
+// ---------------------------------------------------------------------------
+// OpenQASM 3 hardware qubits, $n (ketqat-sdk#168)
+// ---------------------------------------------------------------------------
+{
+  // Qiskit emits $n whenever a circuit has been mapped to physical qubits, which
+  // is most of what a transpiler produces. Rejecting it made four of MQT Bench's
+  // benchmarks unparseable.
+  const { circuit } = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+bit[2] c;
+h $0;
+cx $0, $2;
+c[0] = measure $0;
+c[1] = measure $2;
+`)
+  assert.equal(circuit.operations.length, 4)
+  assert.deepEqual(circuit.qubit_registers, [{ name: PHYSICAL_QUBIT_REGISTER, size: 3 }])
+
+  // The register grows to the highest index seen, so the qubit count describes
+  // the circuit rather than the order statements happened to appear in.
+  const sparse = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+x $9;
+h $1;
+`).circuit
+  assert.deepEqual(sparse.qubit_registers, [{ name: PHYSICAL_QUBIT_REGISTER, size: 10 }])
+
+  // Physical and virtual qubits stay separate. $5 is physical qubit 5 on a
+  // device; q[5] is the sixth qubit of a register a compiler may place anywhere.
+  // Aliasing them would make a mapped circuit claim a virtual layout it lacks.
+  const mixed = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+bit[1] c;
+h q[0];
+x $5;
+c[0] = measure q[0];
+`).circuit
+  assert.deepEqual(mixed.qubit_registers, [
+    { name: "q", size: 2 },
+    { name: PHYSICAL_QUBIT_REGISTER, size: 6 },
+  ])
+  // The gate on $5 must not have been attributed to q.
+  const onPhysical = mixed.operations.filter(
+    (operation) =>
+      operation.kind === "gate" &&
+      operation.qubits.some((bit) => bit.register === PHYSICAL_QUBIT_REGISTER),
+  )
+  assert.equal(onPhysical.length, 1)
+  assert.equal(onPhysical[0].name, "x")
+
+  // The synthetic name cannot collide: OpenQASM identifiers may not start with $.
+  assert.ok(PHYSICAL_QUBIT_REGISTER.startsWith("$"))
+
+  // A hardware qubit where a classical bit belongs is refused with the reason,
+  // rather than silently creating a classical register named $physical.
+  assert.throws(
+    () => parseQasm3(`OPENQASM 3.0;\ninclude "stdgates.inc";\nqubit[1] q;\n$0 = measure q[0];\n`),
+    /hardware qubit|Could not parse/,
+  )
 }
