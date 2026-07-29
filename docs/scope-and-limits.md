@@ -98,7 +98,7 @@ depolarization after each Clifford. A manifest could name a readout error rate
 and the run would ignore it, then publish a result labelled as though readout
 error had been modelled.
 
-Four channels are now applied, each one a real Stim parameter:
+Five channels are now applied:
 
 | Manifest field | Stim parameter | What it models |
 |---|---|---|
@@ -106,6 +106,7 @@ Four channels are now applied, each one a real Stim parameter:
 | `readout_error_rate` | `before_measure_flip_probability` | measurement flips |
 | `reset_error_rate` | `after_reset_flip_probability` | imperfect reset |
 | `idle_error_rate` | `before_round_data_depolarization` | idling on data qubits |
+| `crosstalk_error_rate` | injected `DEPOLARIZE2` | correlated error between idling neighbours |
 
 Readout error matters more than its position in that list suggests: on real
 superconducting devices it is frequently the *dominant* error, and it separates
@@ -118,11 +119,26 @@ part of the comparability key, so a run at 5% readout error is not ranked
 against a run that never modelled it — those are two experiments, not one
 comparison.
 
-What is still missing is a property of the simulator, not an oversight:
-**amplitude and phase damping, leakage, and correlated or time-dependent noise
-are not expressible in Stim's stabilizer model at all.** Adding them means a
-different simulator, not a further parameter, and no amount of work on this path
-will produce them.
+What is still missing divides into two kinds, and an earlier version of this
+document got the division wrong — it claimed correlated noise was inexpressible in
+Stim, which is false. Stim has `CORRELATED_ERROR`, and `DEPOLARIZE2` on
+non-interacting qubits is correlated noise. That claim is why the crosstalk
+channel above now exists (ketqat-sdk#112).
+
+**Genuinely inexpressible**, because the stabilizer formalism cannot represent
+them: amplitude damping and phase damping are not Pauli channels, and leakage
+leaves the qubit subspace entirely. These need a density-matrix or higher-level
+simulator, not a further parameter, and no work on this path will produce them.
+Approximating a damping channel by a Pauli twirl and running it under the
+original name would be a different experiment reported as the requested one.
+
+**Expressible but not implemented**: time-dependent noise and drift. Stim can
+carry a different error rate per round; the generated circuits here use one
+`REPEAT` block with fixed rates, so every round is identical. That is a limit of
+this runner, not of the simulator, and it is tracked rather than dismissed.
+
+The distinction matters because the two get fixed by completely different work,
+and calling the second kind impossible is how a tractable gap stays open.
 
 ## Simulation
 

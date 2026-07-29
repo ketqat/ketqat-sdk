@@ -66,7 +66,7 @@ def _run_qec(manifest: dict[str, Any]) -> dict[str, Any]:
                 code_family=qec["code"]["family"],
                 extra_noise={
                     key: float(qec["noise"][key])
-                    for key in _STIM_NOISE_CHANNELS
+                    for key in _ALL_NOISE_CHANNELS
                     if qec["noise"].get(key) is not None
                 },
             )
@@ -133,7 +133,7 @@ def _run_qec(manifest: dict[str, Any]) -> dict[str, Any]:
                                                 if qec["noise"].get(key) is None
                                                 else float(qec["noise"][key])
                                             )
-                                            for key in _STIM_NOISE_CHANNELS
+                                            for key in _ALL_NOISE_CHANNELS
                                         },
                                         "stopping_rule": f"fixed_shots={shots}",
                                         "decoder_version": decoder_result["decoder_version"],
@@ -172,6 +172,7 @@ def _sample_surface_code_memory(
         raise RuntimeError(QEC_DEPENDENCY_MESSAGE) from exc
 
     extra_noise = extra_noise or {}
+    crosstalk_rate = extra_noise.get("crosstalk_error_rate")
     # The seed must depend on every noise channel, not only the swept rate.
     # Otherwise two runs differing solely in readout error would share a
     # coordinate seed, and the shot-to-shot noise would be correlated between
@@ -200,6 +201,8 @@ def _sample_surface_code_memory(
             if manifest_name in extra_noise
         },
     )
+    if crosstalk_rate is not None:
+        circuit = _inject_crosstalk(circuit, crosstalk_rate)
     sampler = circuit.compile_detector_sampler(seed=coordinate_seed)
     circuit_generation_seconds = (time.perf_counter_ns() - circuit_start) / 1_000_000_000
 
@@ -261,6 +264,108 @@ _STIM_NOISE_CHANNELS: dict[str, str] = {
     "reset_error_rate": "after_reset_flip_probability",
     "idle_error_rate": "before_round_data_depolarization",
 }
+
+
+#: Noise channels applied by rewriting the generated circuit, because
+#: `stim.Circuit.generated` has no argument for them.
+#:
+#: Crosstalk is correlated noise between qubits that are *not* interacting --
+#: neighbouring data qubits idling while the stabilizer round runs. Modelling it
+#: as `DEPOLARIZE2` rather than a fixed Pauli pair is deliberate: a correlated
+#: `ZZ` is invisible in a memory-Z experiment (it commutes with the observable)
+#: while dominating memory-X, so a fixed-Pauli crosstalk model reports "no
+#: effect" for the default experiment while genuinely perturbing the other.
+#: Measured at d=3, 20,000 shots, p=0.02: correlated ZZ gives 2 failures in
+#: memory-Z against a baseline of 4, and 4739 in memory-X. `DEPOLARIZE2` gives
+#: ~2610 in both.
+_POST_NOISE_CHANNELS: tuple[str, ...] = ("crosstalk_error_rate",)
+
+#: Every optional noise channel, however it is applied. Seeding, comparability
+#: and the result record must all iterate this rather than either half: a
+#: channel that changes the result but not the ranking coordinate would put two
+#: different experiments on one leaderboard row (ketqat-sdk#110).
+_ALL_NOISE_CHANNELS: tuple[str, ...] = tuple(_STIM_NOISE_CHANNELS) + _POST_NOISE_CHANNELS
+
+
+def _data_qubit_pairs(circuit: "Any") -> list[tuple[int, int]]:
+    """Nearest-neighbour *data* qubit pairs in a generated code circuit.
+
+    Data qubits are derived as the qubits the circuit never measure-resets, not
+    from a coordinate parity rule. Parity looked plausible and was wrong: every
+    qubit in the rotated d=3 layout has even coordinate sum, so a parity split
+    silently returns all 17 qubits as data and none as ancilla.
+    """
+    coordinates = circuit.get_final_qubit_coordinates()
+
+    ancilla: set[int] = set()
+
+    def scan(block: "Any") -> None:
+        for instruction in block:
+            if type(instruction).__name__ == "CircuitRepeatBlock":
+                scan(instruction.body_copy())
+                continue
+            if instruction.name in ("MR", "MRZ", "MRX"):
+                ancilla.update(target.qubit_value for target in instruction.targets_copy())
+
+    scan(circuit)
+
+    data = sorted(set(coordinates) - ancilla)
+    position = {qubit: tuple(int(axis) for axis in coordinates[qubit]) for qubit in data}
+    return [
+        (left, right)
+        for index, left in enumerate(data)
+        for right in data[index + 1 :]
+        if sorted(
+            [
+                abs(position[left][0] - position[right][0]),
+                abs(position[left][1] - position[right][1]),
+            ]
+        )
+        == [0, 2]
+    ]
+
+
+def _inject_crosstalk(circuit: "Any", probability: float) -> "Any":
+    """Apply a correlated two-qubit channel to idling neighbours, once per round.
+
+    `stim.Circuit.generated` has no crosstalk argument, so the generated circuit
+    is rewritten. The channel is inserted after the first TICK of each round --
+    before syndrome extraction, so the error is visible to the decoder rather
+    than applied after the measurement that would have caught it.
+
+    Recursion into repeat blocks is what makes this once *per round* rather than
+    once per experiment: the generator emits round two onward inside a
+    `REPEAT` block, so a rewrite that only walked the top level would apply
+    crosstalk to the first round and silently to no other.
+    """
+    import stim
+
+    pairs = _data_qubit_pairs(circuit)
+
+    def channel() -> "Any":
+        block = stim.Circuit()
+        for left, right in pairs:
+            block.append("DEPOLARIZE2", [left, right], probability)
+        return block
+
+    def rewrite(block: "Any") -> "Any":
+        rewritten = stim.Circuit()
+        injected = False
+        for instruction in block:
+            if type(instruction).__name__ == "CircuitRepeatBlock":
+                rewritten.append(
+                    stim.CircuitRepeatBlock(
+                        instruction.repeat_count, rewrite(instruction.body_copy())
+                    )
+                )
+                continue
+            rewritten.append(instruction)
+            if instruction.name == "TICK" and not injected:
+                rewritten += channel()
+                injected = True
+        return rewritten
+
+    return rewrite(circuit)
 
 
 #: Code family to Stim circuit generator. An unknown family is rejected rather

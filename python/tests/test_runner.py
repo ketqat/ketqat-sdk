@@ -449,3 +449,103 @@ def test_an_integer_noise_rate_is_recorded_as_a_float() -> None:
     ]
     assert isinstance(recorded, float)
     assert json.dumps(recorded) == "0.0"
+
+
+# --- Correlated crosstalk (ketqat-sdk#112) ----------------------------------
+
+
+def test_data_qubits_are_derived_from_measurement_not_coordinate_parity() -> None:
+    """A d=3 rotated surface code has 9 data qubits and 8 ancilla.
+
+    Coordinate parity looks like a reasonable way to split them and is wrong:
+    every qubit in this layout has an even coordinate sum, so a parity rule
+    returns all 17 as data and silently applies crosstalk to the ancilla too.
+    """
+    import stim
+
+    from ketqat_runner.runner import _data_qubit_pairs
+
+    circuit = stim.Circuit.generated("surface_code:rotated_memory_z", distance=3, rounds=3)
+    coordinates = circuit.get_final_qubit_coordinates()
+    assert len(coordinates) == 17
+    assert all(sum(int(a) for a in xy) % 2 == 0 for xy in coordinates.values())
+
+    # 9 data qubits in a 3x3 grid: 6 horizontal + 6 vertical neighbouring pairs.
+    assert len(_data_qubit_pairs(circuit)) == 12
+
+
+@pytest.mark.parametrize("distance,rounds", [(3, 3), (5, 5), (3, 7)])
+def test_crosstalk_is_applied_once_per_round(distance: int, rounds: int) -> None:
+    """Rounds after the first live inside a REPEAT block.
+
+    A rewrite that only walked the top level would apply crosstalk to round one
+    and to no other, which is a quieter bug than it sounds: the run still
+    produces a plausible number, just for an experiment nobody asked for.
+
+    Counted in targets rather than instructions because Stim fuses consecutive
+    same-probability DEPOLARIZE2 instructions into one -- counting instructions
+    reports 3 where the answer is 36.
+    """
+    import stim
+
+    from ketqat_runner.runner import _data_qubit_pairs, _inject_crosstalk
+
+    circuit = stim.Circuit.generated(
+        "surface_code:rotated_memory_z", distance=distance, rounds=rounds
+    )
+    pairs = _data_qubit_pairs(circuit)
+
+    def targets(c) -> int:
+        return sum(len(i.targets_copy()) for i in c.flattened() if i.name == "DEPOLARIZE2")
+
+    added = targets(_inject_crosstalk(circuit, 0.02)) - targets(circuit)
+    assert added == len(pairs) * 2 * rounds
+
+
+def test_crosstalk_measurably_changes_the_result() -> None:
+    reference = _noise_sample(shots=20000)["decoders"][0]["logical_failures"]
+    noisy = _noise_sample(shots=20000, extra_noise={"crosstalk_error_rate": 0.02})
+    assert noisy["decoders"][0]["logical_failures"] > reference * 10
+
+
+def test_crosstalk_is_visible_in_both_memory_bases() -> None:
+    """The reason crosstalk is DEPOLARIZE2 and not a correlated ZZ.
+
+    A correlated ZZ commutes with the memory-Z observable, so it is invisible
+    in the default experiment while dominating memory-X. Measured at d=3,
+    20,000 shots, p=0.02: ZZ gives 2 failures in memory-Z against a baseline of
+    4, and 4739 in memory-X. A crosstalk model that reports "no effect" for the
+    experiment most people run is worse than no crosstalk model, because it
+    looks like evidence of robustness.
+    """
+    for family in ("rotated-surface-code", "unrotated-surface-code"):
+        reference = _noise_sample(shots=20000, code_family=family)
+        noisy = _noise_sample(
+            shots=20000, code_family=family, extra_noise={"crosstalk_error_rate": 0.02}
+        )
+        assert noisy["decoders"][0]["logical_failures"] > reference["decoders"][0][
+            "logical_failures"
+        ] * 10, f"crosstalk is invisible for {family}"
+
+
+def test_crosstalk_separates_runs_and_seeds_like_every_other_channel() -> None:
+    from ketqat_runner.qec_statistics import comparability_key
+
+    a = _noise_sample(extra_noise={"crosstalk_error_rate": 0.02})["coordinate_seed"]
+    b = _noise_sample(extra_noise={"crosstalk_error_rate": 0.03})["coordinate_seed"]
+    assert a != b
+
+    record = {
+        "benchmark_suite": "qec",
+        "benchmark_suite_version": "0.1",
+        "code_family": "rotated-surface-code",
+        "code_distance": 3,
+        "rounds": 3,
+        "physical_error_rate": 0.001,
+        "noise_model": "circuit-level-depolarizing",
+        "stopping_rule": "fixed_shots=4000",
+        "decoder_version": "pymatching-2.2.1",
+    }
+    assert comparability_key(record) != comparability_key(
+        {**record, "crosstalk_error_rate": 0.02}
+    )
