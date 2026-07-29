@@ -23,6 +23,8 @@ import cmath
 import math
 from typing import Any
 
+from .fourier import apply_qft
+
 
 #: Above this the state vector stops being small. 2^20 complex amplitudes is
 #: already 16 MB, and the runner refuses rather than approximating.
@@ -58,43 +60,16 @@ def _phase_kickback(state: list[complex], qubits: int, phase: float) -> None:
 
 
 def _inverse_qft(state: list[complex], qubits: int) -> None:
-    """Inverse quantum Fourier transform, applied as gates rather than a matrix.
+    """Inverse QFT, delegated to the shared primitive in `fourier`.
 
-    Written as the standard swap-then-Hadamard-and-controlled-phase sequence so
-    the simulation exercises the circuit that would actually run, not a closed
-    form for its result.
+    This used to be implemented here. It was correct -- verified bit-identical
+    to the extracted version, and both agree with a directly-constructed DFT
+    matrix to floating-point precision -- but it was only ever exercised through
+    phase estimation's output, where a wrong sign or bit order can hide behind
+    "the most likely integer was right". `fourier` checks it against the DFT
+    definition directly, which is the test that actually pins it down.
     """
-    # Bit reversal.
-    for qubit in range(qubits // 2):
-        partner = qubits - 1 - qubit
-        for index in range(1 << qubits):
-            mirrored = index ^ ((1 << qubit) | (1 << partner))
-            if index < mirrored and (((index >> qubit) & 1) != ((index >> partner) & 1)):
-                state[index], state[mirrored] = state[mirrored], state[index]
-
-    inverse_root_two = 1 / math.sqrt(2)
-    for target in range(qubits):
-        # Controlled phase rotations from every earlier qubit, with the inverse
-        # sign because this is the inverse transform.
-        for control in range(target):
-            angle = -math.pi / (1 << (target - control))
-            factor = cmath.exp(1j * angle)
-            control_bit = 1 << control
-            target_bit = 1 << target
-            for index in range(1 << qubits):
-                if (index & control_bit) and (index & target_bit):
-                    state[index] *= factor
-
-        stride = 1 << target
-        for block in range(0, 1 << qubits, stride << 1):
-            for offset in range(stride):
-                index = block + offset
-                partner = index + stride
-                a = state[index]
-                b = state[partner]
-                state[index] = (a + b) * inverse_root_two
-                state[partner] = (a - b) * inverse_root_two
-
+    apply_qft(state, qubits, inverse=True)
 
 def phase_estimation_distribution(phase: float, counting_qubits: int) -> list[float]:
     """Exact outcome distribution over the counting register.
