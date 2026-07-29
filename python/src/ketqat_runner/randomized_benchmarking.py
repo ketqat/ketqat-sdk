@@ -429,3 +429,181 @@ def interleaved_gate_error(
             "protocol has not resolved the gate error -- it has bounded it."
         ),
     }
+
+
+# --- Simultaneous RB (ketqat-sdk#137) ---------------------------------------
+#
+# Interleaved RB could not distinguish gates here, because this engine gives
+# every gate the same error. Simultaneous RB can show a real difference, because
+# the thing it measures -- addressability -- is a property of running two qubits
+# *together*, and the crosstalk channel from ketqat-sdk#112 creates exactly that.
+#
+# Each qubit runs its own independent RB sequence. Run alone, a qubit sees only
+# its own gate error. Run alongside a neighbour, it also sees whatever the
+# neighbour's activity does to it. The difference in decay is the addressability
+# error, and it is zero when the qubits are genuinely independent.
+
+
+def _append_on_qubit(circuit: "Any", source: "Any", qubit: int) -> None:
+    """Copy a single-qubit circuit onto `qubit`, respecting Stim's fusion.
+
+    `to_circuit` fuses repeated gates: `S` with three targets means S applied
+    three times, emitted as one instruction. Appending once per *instruction*
+    rather than once per *target* silently drops the repeats, and the sequence
+    then fails to invert -- while still producing a plausible decay. This is the
+    same fusion that made counting DEPOLARIZE2 instructions undercount by 12x in
+    ketqat-sdk#112.
+    """
+    for instruction in source:
+        # Once per target, because the target count *is* the repetition count
+        # under Stim's fusion. Written as a range rather than a loop over the
+        # targets themselves: the targets are all qubit 0 and carry no
+        # information here, only their number does.
+        for _ in range(len(instruction.targets_copy())):
+            circuit.append(instruction.name, [qubit])
+
+
+def build_simultaneous_sequence(
+    length: int, depolarizing_rate: float, seed: int, crosstalk_rate: float = 0.0
+) -> "Any":
+    """Two independent single-qubit RB sequences, run at the same time.
+
+    Independent is the operative word: each qubit draws its own Cliffords and
+    its own inverse. Driving both with the same sequence would make them
+    correlated and the comparison meaningless -- any difference would then be
+    the correlation, not the crosstalk.
+    """
+    import numpy as np
+    import stim
+
+    group = clifford_group(1)
+    circuit = stim.Circuit()
+    composed = [stim.Tableau(1), stim.Tableau(1)]
+    # Separate generators per qubit, so neither sequence depends on the other's
+    # draws and adding a qubit does not renumber the first one's.
+    rngs = [np.random.default_rng(seed), np.random.default_rng(seed ^ 0x9E3779B9)]
+
+    for step in range(length):
+        for qubit in (0, 1):
+            index = int(rngs[qubit].integers(0, len(group)))
+            element = group[index]
+            composed[qubit] = composed[qubit].then(element)
+            # `to_circuit` emits on qubit 0; shift it onto the target.
+            _append_on_qubit(circuit, element.to_circuit(method="elimination"), qubit)
+        if depolarizing_rate > 0:
+            circuit.append("DEPOLARIZE1", [0, 1], depolarizing_rate)
+        if crosstalk_rate > 0:
+            # Correlated error between the two qubits while both are driven.
+            # This is what "addressability" means: acting on one disturbs the
+            # other.
+            circuit.append("DEPOLARIZE2", [0, 1], crosstalk_rate)
+
+    for qubit in (0, 1):
+        _append_on_qubit(circuit, (composed[qubit] ** -1).to_circuit(method="elimination"), qubit)
+    circuit.append("M", [0, 1])
+    return circuit
+
+
+def build_isolated_sequence(
+    length: int, depolarizing_rate: float, seed: int, qubit: int
+) -> "Any":
+    """One qubit's sequence from the simultaneous pair, run on its own.
+
+    Uses the same draws as `build_simultaneous_sequence` for that qubit, so the
+    comparison isolates the neighbour's presence rather than a different random
+    sequence. Comparing against a freshly drawn sequence would fold sequence
+    variation into the addressability estimate.
+    """
+    import numpy as np
+    import stim
+
+    group = clifford_group(1)
+    circuit = stim.Circuit()
+    composed = stim.Tableau(1)
+    rng = np.random.default_rng(seed if qubit == 0 else seed ^ 0x9E3779B9)
+
+    for _ in range(length):
+        element = group[int(rng.integers(0, len(group)))]
+        composed = composed.then(element)
+        circuit += element.to_circuit(method="elimination")
+        if depolarizing_rate > 0:
+            circuit.append("DEPOLARIZE1", [0], depolarizing_rate)
+
+    circuit += (composed**-1).to_circuit(method="elimination")
+    circuit.append("M", [0])
+    return circuit
+
+
+def simultaneous_survival(
+    *,
+    length: int,
+    depolarizing_rate: float,
+    sequences: int,
+    shots: int,
+    seed: int,
+    crosstalk_rate: float = 0.0,
+) -> dict[str, Any]:
+    """Per-qubit survival when both qubits are driven together."""
+    import numpy as np
+
+    per_qubit: list[list[float]] = [[], []]
+    for index in range(sequences):
+        sequence_seed = _derive_sequence_seed(seed, length, index)
+        circuit = build_simultaneous_sequence(length, depolarizing_rate, sequence_seed, crosstalk_rate)
+        samples = circuit.compile_sampler(seed=sequence_seed).sample(shots=shots)
+        for qubit in (0, 1):
+            per_qubit[qubit].append(float(np.mean(~samples[:, qubit])))
+
+    return {
+        "sequence_length": length,
+        "survival_probability": float(np.mean([np.mean(q) for q in per_qubit])),
+        "per_qubit": [float(np.mean(q)) for q in per_qubit],
+        "sequences": sequences,
+        "shots": shots,
+    }
+
+
+def isolated_survival(
+    *, length: int, depolarizing_rate: float, sequences: int, shots: int, seed: int, qubit: int
+) -> dict[str, Any]:
+    """The same qubit's survival with its neighbour idle."""
+    import numpy as np
+
+    values: list[float] = []
+    for index in range(sequences):
+        sequence_seed = _derive_sequence_seed(seed, length, index)
+        circuit = build_isolated_sequence(length, depolarizing_rate, sequence_seed, qubit)
+        samples = circuit.compile_sampler(seed=sequence_seed).sample(shots=shots)
+        values.append(float(np.mean(~samples[:, 0])))
+
+    return {
+        "sequence_length": length,
+        "survival_probability": float(np.mean(values)),
+        "sequences": sequences,
+        "shots": shots,
+    }
+
+
+def addressability_error(isolated_decay: float, simultaneous_decay: float) -> dict[str, Any]:
+    """How much worse a qubit does because its neighbour is being driven.
+
+    Zero when the qubits are genuinely independent, which is the property that
+    makes a non-zero value mean something. Reported as a difference in error
+    rather than a ratio, because the quantity of interest is the *added* error
+    and a ratio hides how large it is relative to the gate error itself.
+    """
+    isolated_error = 0.5 * (1 - isolated_decay)
+    simultaneous_error = 0.5 * (1 - simultaneous_decay)
+    added = simultaneous_error - isolated_error
+
+    return {
+        "isolated_error_per_clifford": isolated_error,
+        "simultaneous_error_per_clifford": simultaneous_error,
+        "addressability_error": added,
+        "interpretation": (
+            f"Driving the neighbour adds {added:.6f} error per Clifford "
+            f"({isolated_error:.6f} alone, {simultaneous_error:.6f} together). "
+            "A value consistent with zero means the qubits are independent at this noise level, "
+            "not that crosstalk is impossible."
+        ),
+    }
