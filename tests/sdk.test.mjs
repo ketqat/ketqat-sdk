@@ -788,7 +788,12 @@ assert.throws(
 
 // Unresolvable includes and wrong versions are rejected.
 assert.throws(() => parseQasm3(`OPENQASM 3;\ninclude "other.inc";\n`), (error) => error.feature === "include_resolution")
-assert.throws(() => parseQasm3(`OPENQASM 2.0;\nqreg q[1];\n`), (error) => error.feature === "version_declaration")
+// OpenQASM 2 is now read through a compatibility path rather than rejected
+// (ketqat-sdk#174): the qreg/creg and `measure a -> b` shims already existed and
+// were unreachable behind this gate, so every Cirq-produced circuit failed on its
+// version line. A version that is neither 2 nor 3 is still rejected -- covered in
+// the OpenQASM 2 section below, along with the dialect being recorded.
+assert.throws(() => parseQasm3(`OPENQASM 4.0;\nqreg q[1];\n`), (error) => error.feature === "version_declaration")
 
 // Out-of-range and undeclared operands fail loudly.
 assert.throws(() => parseQasm3(`OPENQASM 3;\nqubit[2] q;\nh q[5];\n`), Qasm3ParseError)
@@ -4189,4 +4194,55 @@ c[0] = measure $0;
   assert.match(emitted, /\$0/)
   assert.ok(!emitted.includes("$physical"), "the internal register name must not be emitted")
   assert.deepEqual(parseQasm3(emitted).circuit.operations, hardware.operations)
+}
+
+
+// ---------------------------------------------------------------------------
+// OpenQASM 2 source acceptance (ketqat-sdk#174)
+// ---------------------------------------------------------------------------
+{
+  // Cirq emits OpenQASM 2, and this adapter rejected it at the version line while
+  // already carrying OpenQASM 2 compatibility for qreg/creg and `measure a -> b`.
+  // Those shims were unreachable: every SupermarQ circuit failed on line 3.
+  const legacy = parseQasm3(`OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[2];
+creg m[2];
+h q[0];
+cx q[0],q[1];
+measure q[0] -> m[0];
+measure q[1] -> m[1];
+`)
+  assert.equal(legacy.circuit.operations.length, 4)
+  assert.deepEqual(legacy.circuit.qubit_registers, [{ name: "q", size: 2 }])
+
+  // The dialect is recorded, because a round trip emits OpenQASM 3 and so changes
+  // the declared version.
+  const dialect = legacy.loss_report.filter((entry) => entry.feature === "openqasm2_source")
+  assert.equal(dialect.length, 1)
+  assert.equal(dialect[0].action, "approximated")
+  assert.match(dialect[0].detail, /OpenQASM 2\.0/)
+
+  // qelib1.inc is OpenQASM 2's standard library and must be accepted; rejecting
+  // it would make accepting the version pointless.
+  parseQasm3(`OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nh q[0];\n`)
+
+  // An unknown include is still refused -- accepting OpenQASM 2 is not a licence
+  // to ignore what a file asked for.
+  assert.throws(
+    () => parseQasm3(`OPENQASM 2.0;\ninclude "mystery.inc";\nqreg q[1];\nh q[0];\n`),
+    /cannot resolve include/,
+  )
+
+  // A version that is neither 2 nor 3 is still rejected, and the message now says
+  // both are read.
+  assert.throws(
+    () => parseQasm3(`OPENQASM 4.0;\nqreg q[1];\n`),
+    /reads OpenQASM 3, and OpenQASM 2 through a compatibility path/,
+  )
+
+  // Emitted output is OpenQASM 3 regardless of what came in, and re-reads.
+  const emitted = emitQasm3(legacy.circuit)
+  assert.match(emitted, /OPENQASM 3/)
+  assert.deepEqual(parseQasm3(emitted).circuit.operations, legacy.circuit.operations)
 }
