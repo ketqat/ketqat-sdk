@@ -1688,3 +1688,99 @@ def test_out_of_range_widths_and_rates_are_refused() -> None:
         quantum_volume_circuit_probabilities(MAX_QV_WIDTH + 1, 7)
     with pytest.raises(ValueError, match=r"\[0, 1\]"):
         measure_quantum_volume(4, 10, 7, depolarizing_rate=1.5)
+
+
+# --- State tomography (ketqat-sdk#145) --------------------------------------
+#
+# The honest answer here is most often "this reconstruction is not a state".
+# Linear inversion routinely returns a matrix with a negative eigenvalue from
+# finite statistics, and it does so most often near a pure state -- exactly
+# where tomography is most interesting.
+
+
+def test_a_known_pure_state_is_recovered_with_fidelity_one() -> None:
+    """A routine that could not recover a state it was handed would be
+    measuring something else."""
+    from ketqat_runner.tomography import bloch_from_counts, fidelity_with_pure_state
+
+    cases = [
+        ((500, 500), (500, 500), (1000, 0), (0.0, 0.0, 1.0)),   # |0>
+        ((500, 500), (500, 500), (0, 1000), (0.0, 0.0, -1.0)),  # |1>
+        ((1000, 0), (500, 500), (500, 500), (1.0, 0.0, 0.0)),   # |+>
+        ((500, 500), (1000, 0), (500, 500), (0.0, 1.0, 0.0)),   # |i>
+    ]
+    for x_counts, y_counts, z_counts, target in cases:
+        bloch = bloch_from_counts(x_counts, y_counts, z_counts)
+        assert abs(fidelity_with_pure_state(bloch, target) - 1.0) < 1e-12
+
+
+def test_the_maximally_mixed_state_reconstructs_as_maximally_mixed() -> None:
+    from ketqat_runner.tomography import bloch_from_counts, reconstruct_state
+
+    result = reconstruct_state(bloch_from_counts((500, 500), (500, 500), (500, 500)))
+    assert abs(result["bloch_length"]) < 1e-12
+    assert abs(result["purity"] - 0.5) < 1e-12
+    assert all(abs(value - 0.5) < 1e-12 for value in result["eigenvalues"])
+    assert result["physical"] is True
+
+
+def test_an_unphysical_reconstruction_is_reported_rather_than_projected() -> None:
+    """The branch this module exists for.
+
+    Projection onto the nearest valid state is defensible, but it changes the
+    estimate, and a caller told only the projected matrix cannot tell a clean
+    measurement from one that needed rescuing. The raw estimate is returned so
+    the size of the excursion stays visible.
+    """
+    from ketqat_runner.tomography import bloch_from_counts, reconstruct_state
+
+    # High counts in every basis at once is impossible for a real state.
+    result = reconstruct_state(bloch_from_counts((950, 50), (950, 50), (950, 50)))
+    assert result["physical"] is False
+    assert result["bloch_length"] > 1
+    assert result["eigenvalues"][1] < 0, "an unphysical matrix must show its negative eigenvalue"
+    assert "not a density matrix" in result["reason"]
+    assert "take more shots" in result["reason"]
+    # Returned unchanged: the trace is still 1, so it is the raw estimator's
+    # output rather than something rescaled.
+    assert abs(result["trace"] - 1.0) < 1e-12
+
+
+def test_every_reconstruction_is_hermitian_with_unit_trace() -> None:
+    """True even when the matrix is not a valid state -- those are properties of
+    the estimator, not of physicality, and conflating them would hide which one
+    failed."""
+    from ketqat_runner.tomography import bloch_from_counts, reconstruct_state
+
+    for counts in [
+        ((700, 300), (400, 600), (900, 100)),
+        ((950, 50), (950, 50), (950, 50)),
+        ((500, 500), (500, 500), (500, 500)),
+    ]:
+        result = reconstruct_state(bloch_from_counts(*counts))
+        rho = result["density_matrix"]
+        assert abs(result["trace"] - 1.0) < 1e-12
+        assert abs(rho[0][1] - rho[1][0].conjugate()) < 1e-12
+        assert abs(rho[0][0].imag) < 1e-12 and abs(rho[1][1].imag) < 1e-12
+
+
+def test_shot_noise_is_reported_per_basis() -> None:
+    """Which lets a caller tell an unphysical estimate from a broken experiment."""
+    from ketqat_runner.tomography import bloch_from_counts
+
+    few = bloch_from_counts((60, 40), (60, 40), (60, 40))
+    many = bloch_from_counts((600, 400), (600, 400), (600, 400))
+    assert few["z_standard_error"] > many["z_standard_error"]
+    # A saturated basis carries no shot noise in this estimator.
+    assert bloch_from_counts((100, 0), (50, 50), (50, 50))["x_standard_error"] == 0
+
+
+def test_degenerate_inputs_are_refused() -> None:
+    from ketqat_runner.tomography import bloch_from_counts, fidelity_with_pure_state
+
+    with pytest.raises(ValueError, match="no shots"):
+        bloch_from_counts((0, 0), (50, 50), (50, 50))
+    with pytest.raises(ValueError, match="pure state"):
+        fidelity_with_pure_state(
+            bloch_from_counts((50, 50), (50, 50), (100, 0)), (0.0, 0.0, 0.5)
+        )
