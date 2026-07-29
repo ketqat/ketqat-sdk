@@ -25,9 +25,26 @@ export const SUPPORTED_REWRITES = [
     "phase_fusion",
     "hadamard_pair_cancellation",
     "zero_phase_removal",
+    "hadamard_conjugation",
 ];
 /** Gates that are their own inverse, so two in a row cancel. */
 const SELF_INVERSE = new Set(["x", "y", "z", "h", "cx", "cnot", "cz", "cy", "swap", "id", "i"]);
+/**
+ * Gates whose axis flips under Hadamard conjugation: H A H = B.
+ *
+ * Z-family and X-family exchange. The Y family is deliberately absent: H Y H is
+ * -Y, not Y. In a flat circuit that sign is a global phase and unobservable, so
+ * the rewrite would pass an equivalence check that ignores global phase -- which
+ * is exactly why it is excluded here rather than relied on. Adding it would mean
+ * tracking the phase, and an unrelied-on rule is cheaper than a tracked one.
+ */
+const CONJUGABLE = new Map([
+    ["z", "x"],
+    ["x", "z"],
+    ["rz", "rx"],
+    ["rx", "rz"],
+    ["s", "sx"],
+]);
 /** Single-qubit gates whose phases add when composed. */
 const PHASE_FAMILIES = new Set(["rz", "rx", "ry", "p", "u1"]);
 const T_GATES = new Set(["t", "tdg"]);
@@ -121,6 +138,37 @@ function sweep(pass) {
             operations.splice(index, 1);
             record(pass, name === "h" ? "hadamard_pair_cancellation" : "self_inverse_cancellation", `Cancelled a pair of adjacent ${current.name} gates.`);
             return true;
+        }
+        // Colour change: H Z(t) H = X(t), and H X(t) H = Z(t).
+        //
+        // This is a genuine ZX-calculus rewrite rather than a peephole
+        // cancellation, and it is the first one here that changes a gate's *kind*
+        // rather than removing gates that were already redundant. Every other rule
+        // in this file fires only when something cancels, so a circuit like
+        // `h; rz(t); h` -- which no adjacent pair cancels -- was left untouched at
+        // three gates where one suffices (ketqat-sdk#119).
+        //
+        // Conjugation needs the H on both sides and nothing in between on that
+        // qubit, which `nextInteracting` already guarantees for the pair; the
+        // closing H is looked up the same way.
+        if (name === "h" && current.qubits.length === 1 && CONJUGABLE.has(partnerName)) {
+            const closingIndex = nextInteracting(operations, partnerIndex, partner.qubits);
+            if (closingIndex !== null) {
+                const closing = operations[closingIndex];
+                if (closing !== undefined &&
+                    isGate(closing) &&
+                    closing.name.toLowerCase() === "h" &&
+                    sameQubits(closing.qubits, current.qubits) &&
+                    partner.qubits.length === 1 &&
+                    sameQubits(partner.qubits, current.qubits)) {
+                    const flipped = CONJUGABLE.get(partnerName);
+                    operations.splice(closingIndex, 1);
+                    operations[partnerIndex] = { ...partner, name: flipped };
+                    operations.splice(index, 1);
+                    record(pass, "hadamard_conjugation", `Rewrote h ${partner.name} h into ${flipped} by the colour-change rule.`);
+                    return true;
+                }
+            }
         }
         // Adjacent rotations about the same axis add their phases.
         if (name === partnerName &&

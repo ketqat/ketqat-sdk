@@ -1162,9 +1162,15 @@ assert.equal(identities.equivalence.level, "NUMERICALLY_CHECKED")
 
 // A gate between the pair blocks cancellation, because the pair is no longer
 // adjacent on that qubit.
-const blocked = optimizeWithZx(zxCircuit(`OPENQASM 3;\nqubit[1] q;\nh q[0];\nx q[0];\nh q[0];\n`))
+//
+// The middle gate is `y` rather than `x` on purpose. `h x h` is now rewritten
+// to `z` by the colour-change rule (ketqat-sdk#119), which is correct but tests
+// a different thing -- Y is excluded from that rule, so it still isolates the
+// blocking behaviour this assertion is about.
+const blocked = optimizeWithZx(zxCircuit(`OPENQASM 3;\nqubit[1] q;\nh q[0];\ny q[0];\nh q[0];\n`))
 assert.equal(blocked.after.gate_count, 3)
 assert.equal(blocked.equivalence.level, "NUMERICALLY_CHECKED")
+assert.ok(!blocked.rewrites.some((entry) => entry.rewrite === "hadamard_pair_cancellation"))
 
 // Gates on disjoint qubits are not mistaken for a cancelling pair.
 const disjoint = optimizeWithZx(zxCircuit(`OPENQASM 3;\nqubit[2] q;\nh q[0];\nh q[1];\n`))
@@ -3280,4 +3286,76 @@ c[0] = measure q[0];
   // Runtime is cycles x distance rounds x cycle time, stated in seconds.
   const expectedSeconds = (1e6 * sized.code_distance * sized.assumptions.cycle_time_ns) / 1e9
   assert.ok(Math.abs(sized.runtime_seconds - expectedSeconds) < 1e-6)
+}
+
+// ---------------------------------------------------------------------------
+// ZX colour change: H Z(t) H = X(t) (ketqat-sdk#119).
+//
+// The first rewrite here that changes a gate's *kind* rather than deleting
+// gates that were already redundant. Every other rule fires only when something
+// cancels, so `h; rz(t); h` sat at three gates where one suffices.
+// ---------------------------------------------------------------------------
+{
+  const { parseQasm3, checkCircuitEquivalence, optimizeWithZx, SUPPORTED_REWRITES } = await import(
+    "../dist/index.js"
+  )
+  const build = (body) =>
+    parseQasm3(`OPENQASM 3;\ninclude "stdgates.inc";\n\nqubit[2] q;\n\n${body}\n`).circuit
+
+  assert.ok(
+    SUPPORTED_REWRITES.includes("hadamard_conjugation"),
+    "the rewrite must be declared, not just implemented",
+  )
+
+  // Each conjugation collapses three gates to one, and the result is checked
+  // against the original by simulation rather than asserted.
+  for (const body of [
+    "h q[0];\nrz(0.7) q[0];\nh q[0];",
+    "h q[0];\nrx(0.7) q[0];\nh q[0];",
+    "h q[0];\nz q[0];\nh q[0];",
+    "h q[0];\nx q[0];\nh q[0];",
+    "h q[0];\ns q[0];\nh q[0];",
+  ]) {
+    const before = build(body)
+    const result = optimizeWithZx(before)
+    assert.equal(result.after.gate_count, 1, `${body} should collapse to one gate`)
+    assert.ok(
+      result.rewrites.some((entry) => entry.rewrite === "hadamard_conjugation"),
+      "the colour-change rewrite should be the one that fired",
+    )
+    assert.equal(
+      checkCircuitEquivalence(before, result.circuit).level,
+      "NUMERICALLY_CHECKED",
+      `${body} must stay equivalent after rewriting`,
+    )
+  }
+
+  // H Y H is -Y, not Y. In a flat circuit that sign is a global phase and the
+  // equivalence check ignores global phase, so a wrong rule here would pass.
+  // That is precisely why the rule is excluded, and why this asserts on the
+  // rewrite not firing rather than on equivalence.
+  const withY = build("h q[0];\ny q[0];\nh q[0];")
+  const yResult = optimizeWithZx(withY)
+  assert.ok(
+    !yResult.rewrites.some((entry) => entry.rewrite === "hadamard_conjugation"),
+    "Y must not be conjugated: H Y H = -Y, and the sign is not tracked",
+  )
+  assert.equal(yResult.after.gate_count, 3, "the Y circuit must be left alone")
+
+  // Conjugation needs the closing H. Without it there is nothing to rewrite.
+  const open = build("h q[0];\nrz(0.7) q[0];\ncx q[0], q[1];")
+  const openResult = optimizeWithZx(open)
+  assert.ok(
+    !openResult.rewrites.some((entry) => entry.rewrite === "hadamard_conjugation"),
+    "an unclosed H is not a conjugation",
+  )
+
+  // And the guard that matters most: a wrong rewrite is caught with a
+  // counterexample rather than reported as verified.
+  const wrong = checkCircuitEquivalence(
+    build("h q[0];\ncx q[0], q[1];"),
+    build("h q[0];\ncz q[0], q[1];"),
+  )
+  assert.equal(wrong.level, "FAILED")
+  assert.ok(wrong.counterexample, "FAILED must carry the counterexample that proved it")
 }
