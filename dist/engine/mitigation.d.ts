@@ -107,4 +107,53 @@ export declare function mitigateReadout(counts: Record<string, number>, confusio
     p0_given_0: number;
     p1_given_1: number;
 }, clbitIndex?: number): MitigationResult;
+/**
+ * The quasi-probability inverse of a single-qubit depolarizing channel.
+ *
+ * PEC works where DDD does not. DDD needs noise with memory and this engine's
+ * is Markovian, so it could only report that it cannot help (ketqat-sdk#129).
+ * A depolarizing channel, by contrast, has a well-defined inverse as a Pauli
+ * mixture -- it just has a negative coefficient, which is why the inverse is a
+ * *quasi*-probability and why it costs sampling overhead rather than being free.
+ *
+ * With Pauli-transfer parameter `lambda = 1 - 4p/3`, the inverse is
+ * `rho -> a rho + b (X rho X + Y rho Y + Z rho Z)` with `a - b = 1/lambda` and
+ * `a + 3b = 1`, giving `b < 0` for any real noise.
+ */
+export interface QuasiProbability {
+    /** Coefficient on the identity. */
+    identity: number;
+    /** Coefficient on each of X, Y and Z. Negative for any non-zero noise. */
+    pauli: number;
+    /** Sum of absolute coefficients. 1 exactly when there is no noise. */
+    gamma: number;
+    /** Sampling overhead for one application: the variance multiplier. */
+    overhead: number;
+    /** True when the decomposition has a negative term, which every real one does. */
+    hasNegativity: boolean;
+}
+export declare function depolarizingInverse(rate: number): QuasiProbability;
+export interface PecCost {
+    gamma: number;
+    /** Variance multiplier for the whole circuit: gamma^(2 * locations). */
+    sampling_overhead: number;
+    /** Shots needed to match an unmitigated estimator's precision. */
+    shots_for_parity: number;
+    noisy_locations: number;
+    warnings: string[];
+    assumptions: string[];
+}
+/**
+ * What PEC would cost on a circuit, before anyone runs it.
+ *
+ * The overhead compounds **per noisy location**, so it grows exponentially in
+ * circuit size. That is not a footnote: it is the reason PEC is impractical for
+ * anything but small circuits, and quoting a mitigated value without it invites
+ * a reader to think the bias was removed for free.
+ *
+ * Reported rather than applied. Sampling from a quasi-probability needs an
+ * execution loop this engine does not have, and computing the cost is the part
+ * that tells someone whether to attempt it at all.
+ */
+export declare function pecCost(rate: number, noisyLocations: number, shots?: number): PecCost;
 //# sourceMappingURL=mitigation.d.ts.map

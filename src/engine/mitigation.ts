@@ -387,3 +387,107 @@ export function mitigateReadout(
     },
   }
 }
+
+// --- Probabilistic error cancellation (ketqat-sdk#141) ----------------------
+
+/**
+ * The quasi-probability inverse of a single-qubit depolarizing channel.
+ *
+ * PEC works where DDD does not. DDD needs noise with memory and this engine's
+ * is Markovian, so it could only report that it cannot help (ketqat-sdk#129).
+ * A depolarizing channel, by contrast, has a well-defined inverse as a Pauli
+ * mixture -- it just has a negative coefficient, which is why the inverse is a
+ * *quasi*-probability and why it costs sampling overhead rather than being free.
+ *
+ * With Pauli-transfer parameter `lambda = 1 - 4p/3`, the inverse is
+ * `rho -> a rho + b (X rho X + Y rho Y + Z rho Z)` with `a - b = 1/lambda` and
+ * `a + 3b = 1`, giving `b < 0` for any real noise.
+ */
+export interface QuasiProbability {
+  /** Coefficient on the identity. */
+  identity: number
+  /** Coefficient on each of X, Y and Z. Negative for any non-zero noise. */
+  pauli: number
+  /** Sum of absolute coefficients. 1 exactly when there is no noise. */
+  gamma: number
+  /** Sampling overhead for one application: the variance multiplier. */
+  overhead: number
+  /** True when the decomposition has a negative term, which every real one does. */
+  hasNegativity: boolean
+}
+
+export function depolarizingInverse(rate: number): QuasiProbability {
+  if (rate < 0 || rate >= 0.75) {
+    throw new Error(
+      `A depolarizing rate of ${rate} has no usable inverse. At 3/4 the channel is completely ` +
+        "depolarizing and destroys the state, so no quasi-probability recovers it.",
+    )
+  }
+
+  const lambda = 1 - (4 * rate) / 3
+  const identity = (1 + 3 / lambda) / 4
+  const pauli = (1 - 1 / lambda) / 4
+  const gamma = Math.abs(identity) + 3 * Math.abs(pauli)
+
+  return {
+    identity,
+    pauli,
+    gamma,
+    overhead: gamma * gamma,
+    hasNegativity: pauli < 0,
+  }
+}
+
+export interface PecCost {
+  gamma: number
+  /** Variance multiplier for the whole circuit: gamma^(2 * locations). */
+  sampling_overhead: number
+  /** Shots needed to match an unmitigated estimator's precision. */
+  shots_for_parity: number
+  noisy_locations: number
+  warnings: string[]
+  assumptions: string[]
+}
+
+/**
+ * What PEC would cost on a circuit, before anyone runs it.
+ *
+ * The overhead compounds **per noisy location**, so it grows exponentially in
+ * circuit size. That is not a footnote: it is the reason PEC is impractical for
+ * anything but small circuits, and quoting a mitigated value without it invites
+ * a reader to think the bias was removed for free.
+ *
+ * Reported rather than applied. Sampling from a quasi-probability needs an
+ * execution loop this engine does not have, and computing the cost is the part
+ * that tells someone whether to attempt it at all.
+ */
+export function pecCost(rate: number, noisyLocations: number, shots = 1000): PecCost {
+  const inverse = depolarizingInverse(rate)
+  const overhead = Math.pow(inverse.gamma, 2 * noisyLocations)
+
+  const warnings: string[] = []
+  if (overhead > 1e6) {
+    warnings.push(
+      `A sampling overhead of ${overhead.toExponential(2)} means matching an unmitigated ` +
+        `estimator's precision needs about ${Math.ceil(overhead * shots).toExponential(2)} shots. ` +
+        "PEC is not practical at this circuit size and noise rate.",
+    )
+  }
+  if (!inverse.hasNegativity && rate > 0) {
+    warnings.push("No negative coefficient at a non-zero rate, which should not happen.")
+  }
+
+  return {
+    gamma: inverse.gamma,
+    sampling_overhead: overhead,
+    shots_for_parity: Math.ceil(overhead * shots),
+    noisy_locations: noisyLocations,
+    warnings,
+    assumptions: [
+      "Single-qubit depolarizing noise, inverted exactly as a Pauli quasi-probability.",
+      "Every noisy location is assumed independent and identically distributed.",
+      "Overhead is gamma^(2 x locations), so it compounds exponentially in circuit size.",
+      "Cost is computed, not incurred: this reports what PEC would take, it does not sample.",
+    ],
+  }
+}

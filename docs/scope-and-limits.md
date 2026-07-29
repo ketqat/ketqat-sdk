@@ -225,6 +225,29 @@ it appear and grow: +0.0052 at 1%, +0.0150 at 3%. That is a genuine measurement
 rather than a protocol check, because this engine's crosstalk channel creates
 exactly the correlation the protocol is designed to detect.
 
+**Probabilistic error cancellation** is costed, not applied. A depolarizing
+channel has an exact inverse as a Pauli quasi-probability, so unlike dynamical
+decoupling — which needs noise with memory this engine does not have — PEC is
+genuinely applicable here.
+
+What it reports is the price. The inverse carries a negative coefficient for any
+real noise, and that negativity is the whole cost: a genuine probability
+distribution would be free to sample. The sampling overhead is `gamma^(2 x
+locations)`, so it compounds exponentially in circuit size:
+
+```
+p = 0.01,  gamma = 1.020270
+    1 location     overhead 1.04
+   50 locations    overhead 7.4
+  200 locations    overhead 3.1e3
+ 1000 locations    overhead 2e17  -- reported as not practical
+```
+
+The cost is computed rather than incurred: sampling from a quasi-probability
+needs an execution loop this engine does not have, and knowing the overhead is
+what tells someone whether to attempt it at all. A mitigated value quoted
+without it invites a reader to think the bias was removed for free.
+
 **Not implemented**: quantum volume and tomography. Quantum volume needs non-Clifford circuits and so cannot use this
 path at all.
 

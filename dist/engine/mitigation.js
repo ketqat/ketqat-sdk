@@ -289,4 +289,59 @@ export function mitigateReadout(counts, confusion, clbitIndex = 0) {
         },
     };
 }
+export function depolarizingInverse(rate) {
+    if (rate < 0 || rate >= 0.75) {
+        throw new Error(`A depolarizing rate of ${rate} has no usable inverse. At 3/4 the channel is completely ` +
+            "depolarizing and destroys the state, so no quasi-probability recovers it.");
+    }
+    const lambda = 1 - (4 * rate) / 3;
+    const identity = (1 + 3 / lambda) / 4;
+    const pauli = (1 - 1 / lambda) / 4;
+    const gamma = Math.abs(identity) + 3 * Math.abs(pauli);
+    return {
+        identity,
+        pauli,
+        gamma,
+        overhead: gamma * gamma,
+        hasNegativity: pauli < 0,
+    };
+}
+/**
+ * What PEC would cost on a circuit, before anyone runs it.
+ *
+ * The overhead compounds **per noisy location**, so it grows exponentially in
+ * circuit size. That is not a footnote: it is the reason PEC is impractical for
+ * anything but small circuits, and quoting a mitigated value without it invites
+ * a reader to think the bias was removed for free.
+ *
+ * Reported rather than applied. Sampling from a quasi-probability needs an
+ * execution loop this engine does not have, and computing the cost is the part
+ * that tells someone whether to attempt it at all.
+ */
+export function pecCost(rate, noisyLocations, shots = 1000) {
+    const inverse = depolarizingInverse(rate);
+    const overhead = Math.pow(inverse.gamma, 2 * noisyLocations);
+    const warnings = [];
+    if (overhead > 1e6) {
+        warnings.push(`A sampling overhead of ${overhead.toExponential(2)} means matching an unmitigated ` +
+            `estimator's precision needs about ${Math.ceil(overhead * shots).toExponential(2)} shots. ` +
+            "PEC is not practical at this circuit size and noise rate.");
+    }
+    if (!inverse.hasNegativity && rate > 0) {
+        warnings.push("No negative coefficient at a non-zero rate, which should not happen.");
+    }
+    return {
+        gamma: inverse.gamma,
+        sampling_overhead: overhead,
+        shots_for_parity: Math.ceil(overhead * shots),
+        noisy_locations: noisyLocations,
+        warnings,
+        assumptions: [
+            "Single-qubit depolarizing noise, inverted exactly as a Pauli quasi-probability.",
+            "Every noisy location is assumed independent and identically distributed.",
+            "Overhead is gamma^(2 x locations), so it compounds exponentially in circuit size.",
+            "Cost is computed, not incurred: this reports what PEC would take, it does not sample.",
+        ],
+    };
+}
 //# sourceMappingURL=mitigation.js.map
