@@ -8,4 +8,5 @@ export * from "./noise.js";
 export * from "./mitigation.js";
 export * from "./fault-tolerant.js";
 export * from "./decoupling.js";
+export * from "./clifford-regression.js";
 //# sourceMappingURL=index.js.map
