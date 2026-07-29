@@ -219,6 +219,17 @@ Workbench says so where they are offered.
 
 ## Statistics
 
+- A **threshold estimate** is reported when a sweep actually contains a
+  crossing, as the median of the pairwise distance-curve crossings, together
+  with the spread across those pairs — never the estimate alone. A real sweep
+  at d=3,5,7 over p=0.003..0.018 gives 0.00516 with a spread of 0.00385, and
+  that spread being most of the estimate is the honest signal that three
+  distances do not pin it down.
+- **A sweep that never crosses is refused**, with a reason naming what to widen.
+  Below threshold a larger distance always does better, so the ordering never
+  changes and there is no threshold in the data; a number produced from it would
+  be an extrapolation dressed as a measurement. This matters more than the
+  estimate: a threshold is the headline figure of a QEC result.
 - Logical error rates carry a Wilson score interval, chosen because it stays
   sensible at zero observed failures, which is where QEC results usually live.
 - A run with no observed failures is reported as an **upper bound**, never as a

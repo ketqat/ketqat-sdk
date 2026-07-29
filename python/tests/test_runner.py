@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import builtins
+import math
 import json
 import subprocess
 import sys
@@ -973,3 +974,119 @@ def test_drift_separates_runs_and_seeds_like_every_other_channel() -> None:
         "noise_model": "circuit-level-depolarizing",
     }
     assert comparability_key(record) != comparability_key({**record, "drift_per_round": 0.2})
+
+
+# --- Threshold estimation (ketqat-sdk#127) ----------------------------------
+#
+# The runner already swept distance and physical error rate, so the data a
+# threshold needs was produced and discarded. What matters more than the
+# estimate is the refusal: a threshold is the headline figure of a QEC result,
+# and a confident number from a sweep that never crossed is the single most
+# misleading thing this project could publish.
+
+
+def _threshold_sweep(threshold: float, rates: list[float], distances: list[int]) -> list[dict]:
+    """Synthetic curves that cross at `threshold` by construction."""
+    points = []
+    for distance in distances:
+        for rate in rates:
+            x = (rate - threshold) * distance**0.7
+            points.append(
+                {
+                    "metric": "logical_error_rate",
+                    "code_distance": distance,
+                    "physical_error_rate": rate,
+                    "logical_error_rate": max(1e-6, min(0.5, 0.5 / (1 + math.e ** (-6 * x)))),
+                    "metadata": {},
+                }
+            )
+    return points
+
+
+@pytest.mark.parametrize("true_threshold", [0.005, 0.010, 0.020])
+def test_a_bracketing_sweep_recovers_the_threshold(true_threshold: float) -> None:
+    from ketqat_runner.threshold import estimate_threshold
+
+    rates = [true_threshold * factor for factor in (0.4, 0.7, 1.0, 1.3, 1.6)]
+    result = estimate_threshold(_threshold_sweep(true_threshold, rates, [3, 5, 7]))
+
+    assert not result["inconclusive"], result.get("reason")
+    assert abs(result["threshold_estimate"] - true_threshold) < true_threshold * 0.2
+    assert len(result["crossings"]) == 3, "every distance pair should contribute a crossing"
+
+
+def test_a_sweep_that_never_crosses_is_refused() -> None:
+    """The branch this module exists for.
+
+    Below threshold a larger distance always does better, so the ordering never
+    changes and there is no threshold in the data. Any number reported from it
+    would be an extrapolation dressed as a measurement.
+    """
+    from ketqat_runner.threshold import estimate_threshold
+
+    result = estimate_threshold(_threshold_sweep(0.010, [0.001, 0.002, 0.003, 0.004], [3, 5, 7]))
+
+    assert result["inconclusive"] is True
+    assert "threshold_estimate" not in result
+    assert "never crosses" in result["reason"] or "No pair" in result["reason"]
+    # The reason must tell the reader what to change, not merely that it failed.
+    assert "Widen" in result["reason"]
+
+
+@pytest.mark.parametrize(
+    "distances,rates,expected",
+    [
+        ([3], [0.004, 0.010, 0.016], "at least 2 distances"),
+        ([3, 5, 7], [0.004, 0.016], "at least 3 physical error rates"),
+    ],
+)
+def test_a_sweep_too_small_to_contain_a_crossing_says_which_dimension(
+    distances: list[int], rates: list[float], expected: str
+) -> None:
+    """'Inconclusive' without a reason is indistinguishable from a bug, and a
+    reader cannot tell whether to add distances or add rates."""
+    from ketqat_runner.threshold import estimate_threshold
+
+    result = estimate_threshold(_threshold_sweep(0.010, rates, distances))
+    assert result["inconclusive"] is True
+    assert expected in result["reason"]
+
+
+def test_the_summary_reports_a_threshold_only_when_distances_were_swept() -> None:
+    """A single-distance run cannot have a crossing, and saying so on every such
+    run reports the shape of the run back to the person who chose it."""
+    from ketqat_runner.runner import _summarize
+
+    single = _summarize(
+        [
+            {
+                "metric": "logical_error_rate",
+                "code_distance": 3,
+                "physical_error_rate": 0.001,
+                "logical_error_rate": 0.01,
+                "metadata": {},
+            }
+        ]
+    )
+    assert not any("threshold" in key for key in single)
+
+    # A real multi-distance sweep that does not cross must say so, because that
+    # is a finding about the sweep rather than about its shape.
+    flat = _summarize(_threshold_sweep(0.010, [0.001, 0.002, 0.003], [3, 5, 7]))
+    assert "threshold_estimate_inconclusive_reason" in flat
+    assert "threshold_estimate" not in flat
+
+    crossing = _summarize(_threshold_sweep(0.010, [0.004, 0.007, 0.010, 0.013, 0.016], [3, 5, 7]))
+    assert "threshold_estimate" in crossing
+    # Never the estimate alone: a bare threshold invites being quoted as a
+    # property of the code rather than of this sweep.
+    assert "threshold_crossing_spread" in crossing
+
+
+def test_a_threshold_estimate_carries_the_limits_of_its_method() -> None:
+    from ketqat_runner.threshold import estimate_threshold
+
+    result = estimate_threshold(_threshold_sweep(0.010, [0.004, 0.007, 0.010, 0.013, 0.016], [3, 5, 7]))
+    assert "not a confidence interval" in result["uncertainty_scope"]
+    assert "finite-size" in result["uncertainty_scope"]
+    assert "crossing" in result["method"]
