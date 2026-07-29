@@ -3588,3 +3588,72 @@ c[0] = measure q[0];
     "NUMERICALLY_CHECKED",
   )
 }
+
+// ---------------------------------------------------------------------------
+// Probabilistic error cancellation (ketqat-sdk#141).
+//
+// PEC works where DDD did not. DDD needs noise with memory and this engine's is
+// Markovian, so it could only report that it cannot help. A depolarizing
+// channel has a well-defined inverse as a Pauli mixture -- with a negative
+// coefficient, which is why it costs sampling overhead rather than being free.
+// ---------------------------------------------------------------------------
+{
+  const { depolarizingInverse, pecCost } = await import("../dist/index.js")
+
+  // No noise, no cost. gamma is exactly 1 and there is nothing to cancel, which
+  // is the anchor every other number here is relative to.
+  const none = depolarizingInverse(0)
+  assert.equal(none.gamma, 1)
+  assert.equal(none.overhead, 1)
+  assert.equal(none.hasNegativity, false)
+  assert.equal(none.pauli, 0)
+
+  // Any real noise produces a negative coefficient. That negativity *is* the
+  // reason PEC costs anything: a genuine probability distribution would be free
+  // to sample.
+  for (const rate of [0.001, 0.005, 0.01, 0.05]) {
+    const inverse = depolarizingInverse(rate)
+    assert.ok(inverse.hasNegativity, `rate ${rate} should have a negative coefficient`)
+    assert.ok(inverse.pauli < 0)
+    assert.ok(inverse.gamma > 1)
+
+    // The decomposition must still be trace preserving.
+    assert.ok(
+      Math.abs(inverse.identity + 3 * inverse.pauli - 1) < 1e-12,
+      "quasi-probabilities must sum to 1",
+    )
+
+    // Closed form: gamma = (3/lambda - 1)/2 with lambda = 1 - 4p/3. Checking
+    // against that rather than against the sum it was computed from would be
+    // circular, so both are computed independently and compared.
+    const lambda = 1 - (4 * rate) / 3
+    assert.ok(Math.abs(inverse.gamma - (3 / lambda - 1) / 2) < 1e-12)
+  }
+
+  // More noise costs more.
+  assert.ok(depolarizingInverse(0.05).gamma > depolarizingInverse(0.01).gamma)
+
+  // The overhead compounds per location, which is the fact that makes PEC
+  // impractical beyond small circuits. Reporting a mitigated value without it
+  // invites a reader to think the bias was removed for free.
+  const one = pecCost(0.01, 1)
+  const many = pecCost(0.01, 200)
+  assert.ok(many.sampling_overhead > one.sampling_overhead * 100)
+  assert.ok(Math.abs(many.sampling_overhead - Math.pow(many.gamma, 400)) / many.sampling_overhead < 1e-9)
+
+  // At a circuit size where it stops being practical, it says so rather than
+  // returning a number that looks usable.
+  const hopeless = pecCost(0.01, 1000)
+  assert.ok(hopeless.sampling_overhead > 1e6)
+  assert.ok(hopeless.warnings.some((warning) => /not practical/.test(warning)))
+  assert.ok(hopeless.shots_for_parity > hopeless.sampling_overhead)
+
+  // A completely depolarizing channel destroys the state, so no
+  // quasi-probability recovers it. Refused rather than returning an infinity.
+  assert.throws(() => depolarizingInverse(0.75), /no usable inverse/)
+  assert.throws(() => depolarizingInverse(-0.1), /no usable inverse/)
+
+  // The cost is computed, not incurred, and says so.
+  assert.ok(one.assumptions.some((entry) => /does not sample/.test(entry)))
+  assert.ok(one.assumptions.some((entry) => /compounds exponentially/.test(entry)))
+}
