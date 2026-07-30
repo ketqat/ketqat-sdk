@@ -69,6 +69,29 @@ export const DEFAULT_FT_ASSUMPTIONS = {
     prefactor: SURFACE_CODE_PREFACTOR,
     qubits_per_logical_d_squared: 2,
 };
+/**
+ * Published values for the prefactor A in p_L = A (p/p_th)^((d+1)/2).
+ *
+ * A is fitted, not derived. Qualtran's own implementation says of it: "The pre-factor
+ * $a$ has no clear provenance." It is nonetheless the difference between one code
+ * distance and the next, and distance drives the qubit count quadratically -- so
+ * reporting a single distance without saying which A produced it is false precision of
+ * exactly the kind the sensitivity curve exists to prevent.
+ *
+ * Both entries are in use in published tooling. Neither is more correct than the other.
+ */
+export const PREFACTOR_MODELS = [
+    {
+        name: "Fowler conventional",
+        prefactor: 0.03,
+        source: "The conventional value; used by this project's default assumptions.",
+    },
+    {
+        name: "Gidney-Fowler (Qualtran)",
+        prefactor: 0.1,
+        source: "Qualtran's QECScheme.make_gidney_fowler() default, after Fowler and Gidney (2018), arXiv:1808.06709 section XV.",
+    },
+];
 /** Logical error probability per logical qubit per cycle at distance `d`. */
 export function logicalErrorPerCycle(distance, assumptions) {
     const ratio = assumptions.physical_error_rate / assumptions.threshold;
@@ -117,6 +140,7 @@ export function estimateFaultTolerantResources(input, overrides = {}) {
         "Each Toffoli is charged 4 T gates.",
     ];
     const sensitivity = sensitivityCurve(input, assumptions, logicalCycles);
+    const modelSensitivity = modelSensitivityCurve(input, assumptions, logicalCycles);
     if (assumptions.physical_error_rate >= assumptions.threshold) {
         return {
             feasible: false,
@@ -133,6 +157,7 @@ export function estimateFaultTolerantResources(input, overrides = {}) {
             logical_error_probability: null,
             assumptions,
             sensitivity,
+            model_sensitivity: modelSensitivity,
             notes,
         };
     }
@@ -151,6 +176,7 @@ export function estimateFaultTolerantResources(input, overrides = {}) {
             logical_error_probability: null,
             assumptions,
             sensitivity,
+            model_sensitivity: modelSensitivity,
             notes,
         };
     }
@@ -171,6 +197,7 @@ export function estimateFaultTolerantResources(input, overrides = {}) {
         logical_error_probability: totalError,
         assumptions,
         sensitivity,
+        model_sensitivity: modelSensitivity,
         notes,
     };
 }
@@ -199,6 +226,32 @@ function sensitivityCurve(input, assumptions, logicalCycles) {
             code_distance: distance,
             physical_qubits: assumptions.qubits_per_logical_d_squared * distance * distance * input.logical_qubits,
             feasible: true,
+        };
+    });
+}
+/**
+ * The same algorithm costed under each published prefactor.
+ *
+ * Deliberately not folded into `sensitivityCurve`. That curve varies a property of the
+ * device; this one varies a property of the *model*, and conflating them would suggest
+ * the two uncertainties can be reduced the same way. They cannot: buying a better
+ * device narrows the first and does nothing to the second.
+ */
+function modelSensitivityCurve(input, assumptions, logicalCycles) {
+    return PREFACTOR_MODELS.map(({ name, prefactor, source }) => {
+        const scoped = { ...assumptions, prefactor };
+        const distance = assumptions.physical_error_rate >= assumptions.threshold
+            ? null
+            : requiredCodeDistance(input.logical_qubits, logicalCycles, scoped);
+        return {
+            model: name,
+            prefactor,
+            source,
+            code_distance: distance,
+            physical_qubits: distance === null
+                ? null
+                : assumptions.qubits_per_logical_d_squared * distance * distance * input.logical_qubits,
+            feasible: distance !== null,
         };
     });
 }

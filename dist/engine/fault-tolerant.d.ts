@@ -93,6 +93,31 @@ export interface SensitivityPoint {
     physical_qubits: number | null;
     feasible: boolean;
 }
+/**
+ * Published values for the prefactor A in p_L = A (p/p_th)^((d+1)/2).
+ *
+ * A is fitted, not derived. Qualtran's own implementation says of it: "The pre-factor
+ * $a$ has no clear provenance." It is nonetheless the difference between one code
+ * distance and the next, and distance drives the qubit count quadratically -- so
+ * reporting a single distance without saying which A produced it is false precision of
+ * exactly the kind the sensitivity curve exists to prevent.
+ *
+ * Both entries are in use in published tooling. Neither is more correct than the other.
+ */
+export declare const PREFACTOR_MODELS: ReadonlyArray<{
+    name: string;
+    prefactor: number;
+    source: string;
+}>;
+/** The same algorithm costed under each published prefactor. */
+export interface ModelSensitivityPoint {
+    model: string;
+    prefactor: number;
+    source: string;
+    code_distance: number | null;
+    physical_qubits: number | null;
+    feasible: boolean;
+}
 export interface FaultTolerantEstimate {
     feasible: boolean;
     /** Why not, when `feasible` is false. Empty otherwise. */
@@ -110,6 +135,15 @@ export interface FaultTolerantEstimate {
     assumptions: FaultTolerantAssumptions;
     /** How the answer moves when the physical error rate does. */
     sensitivity: SensitivityPoint[];
+    /**
+     * How the answer moves when the *model's* fitted prefactor does.
+     *
+     * Distinct from `sensitivity` and not a duplicate of it. A user can measure their
+     * device's error rate; nobody can measure A. Varying the device parameter while
+     * holding a fitted constant fixed reports the uncertainty the user can reduce and
+     * hides the one they cannot.
+     */
+    model_sensitivity: ModelSensitivityPoint[];
     notes: string[];
 }
 /** Logical error probability per logical qubit per cycle at distance `d`. */
