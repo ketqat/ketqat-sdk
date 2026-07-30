@@ -101,11 +101,11 @@ jobs:
       # Python, while the model itself is TypeScript -- so this needs both, and this
       # is the only job that has both. --require makes an absent Qualtran a failure
       # rather than a skip: a check that silently skips reads as a pass.
-      - name: Build TypeScript for the Qualtran parity check
+      - name: Build TypeScript for the resource-model parity check
         run: npm run build
 
-      - name: Verify surface-code model against Qualtran
-        run: python scripts/verify-qualtran-parity.py --require
+      - name: Verify surface-code model against Qualtran and QDK
+        run: python scripts/verify-resource-model-parity.py --require
 
       - name: Run Python tests
         run: pytest python/tests

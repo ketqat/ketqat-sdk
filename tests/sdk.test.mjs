@@ -3217,12 +3217,75 @@ c[0] = measure q[0];
 {
   const {
     DEFAULT_FT_ASSUMPTIONS,
+    LAYOUT_MODELS,
     PREFACTOR_MODELS,
     SURFACE_CODE_THRESHOLD,
     estimateFaultTolerantResources,
     logicalErrorPerCycle,
     requiredCodeDistance,
   } = await import("../dist/engine/fault-tolerant.js")
+
+  // ---- layout overhead (ketqat-sdk#204) ----------------------------------
+  // A logical qubit needs somewhere to route to. Lattice surgery moves information by
+  // merging and splitting patches, so a register of n logical qubits does not occupy n
+  // patches. This project counted bare n; Microsoft's estimator says 15 where n = 4.
+  //
+  // Unlike the prefactor, this is not two defensible readings of one constant. Routing
+  // space is real hardware and omitting it understates the footprint, so the bare row is
+  // retained only because it is what earlier estimates reported.
+  {
+    assert.ok(LAYOUT_MODELS.length >= 2, "one layout is not a comparison")
+    const routed = LAYOUT_MODELS.find((model) => model.name.includes("QDK"))
+    const bare = LAYOUT_MODELS.find((model) => !model.name.includes("QDK"))
+    assert.ok(routed && bare, "both a bare and a routed layout must be present")
+
+    // 2n + ceil(sqrt(8n)) + 1, checked against the values QDK 1.30.0 reports. These are
+    // not derived here -- they are what the reference implementation returned.
+    assert.deepEqual(
+      [4, 8, 16, 32, 100].map((n) => routed.logicalQubits(n)),
+      [15, 25, 45, 81, 230],
+    )
+    // The bare model must differ, or the routed row is decoration.
+    assert.deepEqual([4, 8, 16, 32, 100].map((n) => bare.logicalQubits(n)), [4, 8, 16, 32, 100])
+    // Routing overhead is a cost, never a saving, at any register size.
+    for (const n of [1, 2, 4, 9, 50, 1000]) {
+      assert.ok(
+        routed.logicalQubits(n) > bare.logicalQubits(n),
+        `routing cannot reduce the footprint at n=${n}`,
+      )
+    }
+    for (const model of LAYOUT_MODELS) {
+      assert.ok(model.source.length > 20, `${model.name} must say where its value comes from`)
+    }
+
+    const estimate = estimateFaultTolerantResources(
+      { logical_qubits: 4, t_count: 4, toffoli_count: 1, logical_depth: 8 },
+      { physical_error_rate: 1e-3, error_budget: 1e-2 },
+    )
+    assert.equal(estimate.layout_sensitivity.length, LAYOUT_MODELS.length)
+    const [bareRow, routedRow] = estimate.layout_sensitivity
+    assert.equal(bareRow.logical_qubits, 4)
+    assert.equal(routedRow.logical_qubits, 15)
+    // Distance is held fixed across the rows: the only thing varying is the layout, so a
+    // reader can attribute the difference to routing rather than to a distance change.
+    assert.equal(
+      routedRow.physical_qubits / bareRow.physical_qubits,
+      routedRow.logical_qubits / bareRow.logical_qubits,
+    )
+    assert.equal(
+      bareRow.physical_qubits,
+      DEFAULT_FT_ASSUMPTIONS.qubits_per_logical_d_squared * estimate.code_distance ** 2 * 4,
+    )
+
+    // Above threshold there is no distance, so there is no footprint to report either --
+    // but the logical count is still a property of the layout and is still reported.
+    const hopeless = estimateFaultTolerantResources(
+      { logical_qubits: 4, t_count: 4, toffoli_count: 1, logical_depth: 8 },
+      { physical_error_rate: 0.02 },
+    )
+    assert.ok(hopeless.layout_sensitivity.every((row) => row.physical_qubits === null))
+    assert.equal(hopeless.layout_sensitivity[1].logical_qubits, 15)
+  }
 
   // ---- model sensitivity (ketqat-sdk#190) --------------------------------
   // The prefactor A in p_L = A (p/p_th)^((d+1)/2) is fitted, not derived --
