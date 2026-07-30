@@ -26,6 +26,14 @@ resources = ["qualtran>=0.7", "qdk>=1.30"]
 # Mitiq is the reference for the ZNE extrapolators (scripts/verify-mitiq-parity.py).
 # An extra, not core: it pulls cirq and numpy, which the contract layer does not need.
 mitigation = ["mitiq>=1.0"]
+# Cross-framework conversion-loss probes (conversion_loss.py) read OpenQASM through each
+# framework's own reader. `ply` is cirq's qasm importer dependency and
+# `qiskit-qasm3-import` is Qiskit's OpenQASM 3 reader -- both are optional for those
+# packages and absent by default, and without them the probes skip, which reads as a pass.
+interop = [
+  "qiskit>=1.0", "qiskit-qasm3-import>=0.5", "cirq-core>=1.4", "ply>=3.11",
+  "pytket>=2.0", "pennylane>=0.40", "pennylane-qiskit>=0.40",
+]
 benchmarks = ["mqt.bench>=2.2", "qiskit>=1.0", "supermarq>=0.5", "cirq-core>=1.4", "qedcbench>=2.0", "pennylane>=0.40", "pennylane-qiskit>=0.40", "pytket>=2.0", "pyqir>=0.10"]
 # Provider adapters are extras so the base install stays small and a machine
 # without a vendor SDK gets a clear message instead of an ImportError deep in a
