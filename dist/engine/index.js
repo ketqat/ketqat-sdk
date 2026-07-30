@@ -11,4 +11,5 @@ export * from "./decoupling.js";
 export * from "./clifford-regression.js";
 export * from "./virtual-distillation.js";
 export * from "./zx-graph.js";
+export * from "./routing-verification.js";
 //# sourceMappingURL=index.js.map

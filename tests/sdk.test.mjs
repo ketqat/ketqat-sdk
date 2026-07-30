@@ -32,6 +32,9 @@ import {
   emitQasm3,
   gateCount,
   parseQasm3,
+  verifyRouting,
+  unpermuteAmplitudes,
+  MAX_VERIFIABLE_QUBITS,
   localComplementation,
   extractCircuit,
   extractVerified,
@@ -4897,5 +4900,137 @@ c[0] = measure q[0];
       agreed += 1
     }
     assert.equal(agreed, fixture.cases.length)
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// Routing verification (ketqat-sdk#194)
+// ---------------------------------------------------------------------------
+{
+  // Routing already existed and was tested for the property that is easy to test:
+  // every two-qubit gate lands on a real coupling edge. That is necessary and badly
+  // insufficient -- a layout-tracking error produces gates that are all on legal
+  // edges and computes the wrong circuit, which is the failure most likely to
+  // survive because the output looks structurally perfect.
+  const line = (width) => ({
+    schema_version: 1,
+    snapshot_id: `line-${width}`,
+    provider: "test",
+    backend: `line${width}`,
+    retrieved_at: "2026-07-30T00:00:00Z",
+    source: "synthetic",
+    is_synthetic: true,
+    qubit_count: width,
+    native_gates: ["h","x","y","z","s","sdg","t","tdg","rx","ry","rz","cx","swap","id","p","u"],
+    basis_two_qubit_gate: "cx",
+    qubits: Array.from({ length: width }, (_unused, index) => ({ index, operational: true })),
+    couplings: Array.from({ length: width - 1 }, (_unused, index) => ({ control: index, target: index + 1 })),
+    capabilities: {
+      all_to_all_connectivity: false,
+      mid_circuit_measurement: false,
+      reset: false,
+      feed_forward: false,
+    },
+    modality: "superconducting",
+  })
+
+  const routeAndVerify = (body, width) => {
+    const source = `OPENQASM 3.0;\ninclude "stdgates.inc";\nqubit[${width}] q;\n${body}`
+    const { circuit } = parseQasm3(source)
+    const profile = line(width)
+    const routed = transpileForHardware(circuit, profile, {})
+    return {
+      routed,
+      verification: verifyRouting(circuit, routed.circuit, routed.final_layout, profile, routed.swap_count),
+    }
+  }
+
+  // The load-bearing check: equivalent up to the final permutation. Asymmetric
+  // circuits are included deliberately -- a permutation applied in the wrong
+  // direction passes on symmetric states and fails on these.
+  const cases = [
+    ["h q[0];\ncx q[0], q[4];\n", 5],
+    ["h q[0];\ncx q[0], q[4];\ncx q[1], q[3];\n", 5],
+    ["x q[0];\nh q[2];\ncx q[0], q[4];\nt q[3];\ncx q[2], q[0];\n", 5],
+    ["ry(0.7) q[0];\ncx q[0], q[3];\nrz(1.1) q[3];\ncx q[1], q[3];\n", 4],
+  ]
+  for (const [body, width] of cases) {
+    const { verification } = routeAndVerify(body, width)
+    assert.equal(verification.verdict, "equivalent", verification.detail)
+    assert.equal(verification.offCouplingGates.length, 0)
+    assert.ok(verification.maxAmplitudeDifference < 1e-9)
+  }
+
+  // Routing actually happened on the far-apart cases, so the checks above are not
+  // vacuously passing on unrouted circuits.
+  assert.ok(routeAndVerify("h q[0];\ncx q[0], q[4];\n", 5).routed.swap_count > 0)
+
+  // A wrong final layout must be caught. This is the exact failure the coupling
+  // check cannot see: the circuit is untouched and every gate is still legal, only
+  // the claimed permutation is wrong.
+  {
+    const source = `OPENQASM 3.0;\ninclude "stdgates.inc";\nqubit[5] q;\nx q[0];\nh q[2];\ncx q[0], q[4];\n`
+    const { circuit } = parseQasm3(source)
+    const profile = line(5)
+    const routed = transpileForHardware(circuit, profile, {})
+    const scrambled = [...routed.final_layout]
+    ;[scrambled[0], scrambled[1]] = [scrambled[1], scrambled[0]]
+    const verification = verifyRouting(circuit, routed.circuit, scrambled, profile, routed.swap_count)
+    assert.equal(verification.verdict, "differs", "a wrong layout must not be reported as equivalent")
+    assert.equal(verification.offCouplingGates.length, 0, "the gates are still all legal, which is the point")
+    assert.match(verification.detail, /how a layout-tracking error hides/)
+  }
+
+  // An off-coupling gate is caught, and reported as unrunnable rather than as an
+  // equivalence failure -- a correct circuit the device cannot run is a different
+  // problem from a wrong one.
+  {
+    const profile = line(5)
+    const illegal = {
+      qubit_registers: [{ name: "q", size: 5 }],
+      clbit_registers: [],
+      operations: [
+        {
+          kind: "gate",
+          name: "cx",
+          parameters: [],
+          qubits: [
+            { register: "q", index: 0 },
+            { register: "q", index: 4 },
+          ],
+        },
+      ],
+    }
+    const verification = verifyRouting(illegal, illegal, [0, 1, 2, 3, 4], profile, 0)
+    assert.equal(verification.verdict, "differs")
+    assert.equal(verification.offCouplingGates.length, 1)
+    assert.match(verification.detail, /cannot run on the device/)
+  }
+
+  // The permutation direction is fixed, not guessed. Logical l ends on
+  // finalLayout[l], so bit finalLayout[l] of a routed index carries bit l.
+  {
+    // Two qubits swapped: |01> in routed order must become |10> in logical order.
+    const routedAmplitudes = { real: [0, 1, 0, 0], imaginary: [0, 0, 0, 0] }
+    const unpermuted = unpermuteAmplitudes(routedAmplitudes, [1, 0], 2)
+    assert.equal(unpermuted.real[2], 1, "bit 0 routed must land on bit 1 logical")
+    // Identity layout is a no-op.
+    assert.deepEqual(unpermuteAmplitudes(routedAmplitudes, [0, 1], 2).real, [0, 1, 0, 0])
+    assert.throws(() => unpermuteAmplitudes({ real: [1, 0], imaginary: [0, 0] }, [0, 1], 2), /Expected 4 amplitudes/)
+  }
+
+  // Too wide to compare exactly reports INCONCLUSIVE rather than assuming success,
+  // and the coupling check still applies.
+  {
+    const width = MAX_VERIFIABLE_QUBITS + 2
+    const wide = {
+      qubit_registers: [{ name: "q", size: width }],
+      clbit_registers: [],
+      operations: [],
+    }
+    const verification = verifyRouting(wide, wide, Array.from({ length: width }, (_u, i) => i), line(width), 0)
+    assert.equal(verification.verdict, "inconclusive")
+    assert.match(verification.detail, /INCONCLUSIVE rather than assumed/)
   }
 }
