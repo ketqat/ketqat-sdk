@@ -32,6 +32,13 @@ import {
   emitQasm3,
   gateCount,
   parseQasm3,
+  localComplementation,
+  pivot,
+  applyVerified,
+  graphToMatrix,
+  sameUpToScalar,
+  neighbours,
+  isInterior,
   emitQasm2,
   Qasm2EmitError,
   virtualDistillation,
@@ -4475,4 +4482,195 @@ c[0] = measure q[0];
   const parameterisedQasm = emitQasm2(parameterised).qasm
   assert.match(parameterisedQasm, /ry\(0\.7\) q\[0\];/)
   assert.match(parameterisedQasm, /reset q\[0\];/)
+}
+
+
+// ---------------------------------------------------------------------------
+// Graph-like ZX rewrites: local complementation and pivoting (ketqat-sdk#188)
+// ---------------------------------------------------------------------------
+{
+  const star = (phase) => ({
+    spiders: [
+      { id: 0, phase: 0 },
+      { id: 1, phase: 0.25 },
+      { id: 2, phase },
+      { id: 3, phase: 0 },
+    ],
+    edges: [
+      [0, 2],
+      [1, 2],
+      [2, 3],
+    ],
+    inputs: [0],
+    outputs: [3],
+  })
+
+  // The load-bearing property: both rules preserve the linear map exactly, up to a
+  // scalar. This is not a heuristic -- the dense matrix is computed before and
+  // after, so a rule that fires when its side conditions do not hold is caught.
+  for (const phase of [0.5, 1.5]) {
+    const result = applyVerified(star(phase), (graph) => localComplementation(graph, 2))
+    assert.equal(result.verdict, "preserved", `local complementation at ${phase}pi: ${result.detail}`)
+    assert.ok(result.maxDifference < 1e-9)
+    // It genuinely removed a spider rather than reporting success and doing nothing.
+    assert.equal(result.outcome.graph.spiders.length, 3)
+  }
+
+  // Side conditions are refused, not assumed. Applying the rule at the wrong phase
+  // does not simplify the diagram -- it changes what the diagram means.
+  for (const phase of [0, 0.25, 1]) {
+    const result = applyVerified(star(phase), (graph) => localComplementation(graph, 2))
+    assert.equal(result.verdict, "not_applied")
+    assert.match(result.detail, /needs a phase of \+pi\/2 or -pi\/2/)
+  }
+
+  // A boundary spider is refused: removing it changes the diagram's arity, which is
+  // a different diagram rather than a simplified one.
+  const boundary = applyVerified(star(0.5), (graph) => localComplementation(graph, 0))
+  assert.equal(boundary.verdict, "not_applied")
+  assert.match(boundary.detail, /boundary/)
+
+  const pivotGraph = (first, second, extra = []) => ({
+    spiders: [
+      { id: 0, phase: 0 },
+      { id: 1, phase: 0 },
+      { id: 2, phase: first },
+      { id: 3, phase: second },
+      { id: 4, phase: 0.25 },
+      { id: 5, phase: 0 },
+    ],
+    edges: [
+      [0, 2],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [3, 5],
+      [2, 4],
+      ...extra,
+    ],
+    inputs: [0, 1],
+    outputs: [5, 4],
+  })
+
+  // Pivoting removes TWO spiders, across every phase combination.
+  //
+  // The phase correction here is where I got it wrong first time: the shared
+  // neighbourhood takes (a + b + 1) * pi, and I omitted the +1. The map check
+  // caught it immediately -- the rewrite changed the linear map by 0.5 in all four
+  // combinations, including a = b = 0 where my version applied no correction at
+  // all. That extra pi is unconditional, not a special case for pi-phased spiders.
+  for (const [first, second] of [
+    [0, 0],
+    [1, 0],
+    [0, 1],
+    [1, 1],
+  ]) {
+    const result = applyVerified(pivotGraph(first, second), (graph) => pivot(graph, 2, 3))
+    assert.equal(result.verdict, "preserved", `pivot at ${first}pi,${second}pi: ${result.detail}`)
+    assert.equal(result.outcome.graph.spiders.length, 4, "pivoting removes two spiders")
+  }
+
+  // And with a larger shared neighbourhood, which is where the +1 matters most.
+  for (const [first, second] of [
+    [0, 0],
+    [1, 1],
+  ]) {
+    const result = applyVerified(pivotGraph(first, second, [[2, 5]]), (graph) => pivot(graph, 2, 3))
+    assert.equal(result.verdict, "preserved", result.detail)
+  }
+
+  // Pivot side conditions.
+  assert.equal(applyVerified(pivotGraph(0.5, 0), (graph) => pivot(graph, 2, 3)).verdict, "not_applied")
+  assert.match(
+    applyVerified(pivotGraph(0, 0), (graph) => pivot(graph, 2, 4)).detail,
+    /boundary|not adjacent/,
+  )
+
+  // Randomised diagrams: the strongest check, since a rule can be right on a
+  // hand-picked shape and wrong in general.
+  let randomState = 20260730
+  const nextRandom = () => {
+    randomState = (randomState * 1103515245 + 12345) & 0x7fffffff
+    return randomState / 0x7fffffff
+  }
+  let complementationChecked = 0
+  let pivotChecked = 0
+  for (let trial = 0; trial < 60; trial += 1) {
+    const spiderCount = 5 + Math.floor(nextRandom() * 2)
+    const spiders = Array.from({ length: spiderCount }, (_unused, id) => ({
+      id,
+      phase: [0, 0.5, 1, 1.5, 0.25][Math.floor(nextRandom() * 5)],
+    }))
+    const edges = []
+    for (let a = 0; a < spiderCount; a += 1) {
+      for (let b = a + 1; b < spiderCount; b += 1) {
+        if (nextRandom() < 0.5) edges.push([a, b])
+      }
+    }
+    const graph = { spiders, edges, inputs: [0], outputs: [spiderCount - 1] }
+
+    for (const spider of spiders) {
+      const result = applyVerified(graph, (g) => localComplementation(g, spider.id))
+      if (result.verdict === "not_applied") continue
+      assert.equal(result.verdict, "preserved", `random local complementation: ${result.detail}`)
+      complementationChecked += 1
+    }
+    for (const [a, b] of edges) {
+      const result = applyVerified(graph, (g) => pivot(g, a, b))
+      if (result.verdict === "not_applied") continue
+      assert.equal(result.verdict, "preserved", `random pivot: ${result.detail}`)
+      pivotChecked += 1
+    }
+  }
+  assert.ok(complementationChecked > 10, `only ${complementationChecked} random complementations fired`)
+  assert.ok(pivotChecked > 10, `only ${pivotChecked} random pivots fired`)
+
+  // The evaluator refuses rather than crawling on a diagram too big to evaluate,
+  // and the wrapper reports INCONCLUSIVE rather than assuming the rewrite is fine.
+  const huge = {
+    spiders: Array.from({ length: 16 }, (_unused, id) => ({ id, phase: id === 2 ? 0.5 : 0 })),
+    edges: [
+      [0, 2],
+      [1, 2],
+      [2, 3],
+    ],
+    inputs: [0],
+    outputs: [15],
+  }
+  const inconclusive = applyVerified(huge, (graph) => localComplementation(graph, 2))
+  assert.equal(inconclusive.verdict, "inconclusive")
+  assert.match(inconclusive.detail, /not reported as an optimisation without a check/)
+
+  // The verification machinery must report an unsound rewrite as CHANGED.
+  //
+  // Added because a mutation hardcoding the verdict to "preserved" survived every
+  // other test here: I only ever asserted the positive case, so the check that the
+  // check works was missing. An unsound rewrite is fed in deliberately.
+  const unsound = applyVerified(star(0.5), (graph) => ({
+    applied: true,
+    reason: "deliberately unsound: deletes a spider without adjusting anything",
+    graph: {
+      ...graph,
+      spiders: graph.spiders.filter((spider) => spider.id !== 2),
+      edges: graph.edges.filter(([a, b]) => a !== 2 && b !== 2),
+    },
+  }))
+  assert.equal(unsound.verdict, "changed", "an unsound rewrite must be reported as changing the map")
+  assert.match(unsound.detail, /must not be applied/)
+  assert.ok(unsound.maxDifference > 1e-6)
+
+  // And a rewrite that declines is neither preserved nor changed.
+  const declined = applyVerified(star(0), (graph) => localComplementation(graph, 2))
+  assert.equal(declined.verdict, "not_applied")
+
+  // Helpers behave.
+  assert.deepEqual(neighbours(star(0.5), 2), [0, 1, 3])
+  assert.equal(isInterior(star(0.5), 2), true)
+  assert.equal(isInterior(star(0.5), 0), false)
+
+  // sameUpToScalar must not call different maps equal.
+  const identity = graphToMatrix(star(0.5))
+  const different = graphToMatrix(star(0.25))
+  assert.equal(sameUpToScalar(identity, identity).equal, true)
+  assert.equal(sameUpToScalar(identity, different).equal, false)
 }

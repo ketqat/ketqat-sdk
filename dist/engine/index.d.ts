@@ -10,4 +10,5 @@ export * from "./fault-tolerant.js";
 export * from "./decoupling.js";
 export * from "./clifford-regression.js";
 export * from "./virtual-distillation.js";
+export * from "./zx-graph.js";
 //# sourceMappingURL=index.d.ts.map
