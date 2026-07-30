@@ -10,6 +10,7 @@ from ketqat_runner.framework_interop import (
     FRAMEWORK_BIT_ORDERING,
     FRAMEWORK_DIALECTS,
     FrameworkInteropError,
+    FrameworkUnavailableError,
     compare_statevectors,
     is_symmetric_under_bit_reversal,
     reverse_bit_order,
@@ -40,7 +41,15 @@ def test_recorded_conventions_are_verified_against_the_installed_library(framewo
     circuit could not distinguish the conventions at all.
     """
     pytest.importorskip(framework, reason=f"{framework} is an optional extra")
-    report = verify_bit_ordering(framework)
+    # Installed is not the same as usable. PennyLane reads OpenQASM only through the
+    # separate pennylane-qiskit plugin, so `import pennylane` can succeed while every
+    # circuit load fails -- which is the state the `resources` extra produces, since
+    # qualtran depends on pennylane and not on the plugin. That yields no measurement,
+    # so it is skipped. A genuine convention mismatch still raises and still fails.
+    try:
+        report = verify_bit_ordering(framework)
+    except FrameworkUnavailableError as exc:
+        pytest.skip(f"{framework} cannot read OpenQASM here, so the convention is unverifiable: {exc}")
     assert report["matches_record"], f"{framework} measured {report['measured']}, table says {report['recorded']}"
     assert report["agrees_with_ketqat"] is False
     assert report["occupied_indices"] == [0, 2]
