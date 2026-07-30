@@ -86,6 +86,36 @@ export class Qasm3ParseError extends Error {
 export interface Qasm3ParseResult {
   circuit: QuantumCircuit
   loss_report: LossReportEntry[]
+  /**
+   * Where each custom-gate expansion landed in the flattened operation list
+   * (ketqat-sdk#200).
+   *
+   * Inlining is exact but it erases structure: after expansion the circuit is a flat
+   * list and nothing records that five of those operations were one named unit. The
+   * loss report says a gate *was* inlined; these say **which operations came from
+   * it**, which is what a caller needs to show a subcircuit as a unit rather than
+   * pre-flattened.
+   *
+   * Spans are half-open `[start, end)` over `circuit.operations`, and they nest: a
+   * custom gate calling another produces an inner span inside an outer one.
+   */
+  subcircuits: SubcircuitSpan[]
+}
+
+/** One expansion of a custom gate into the flattened operation list. */
+export interface SubcircuitSpan {
+  name: string
+  /** Nesting depth: 0 for a call in the program, 1 for a call inside a definition. */
+  depth: number
+  /** First operation index this expansion produced. */
+  start: number
+  /** One past the last operation index. Half-open so `end - start` is the length. */
+  end: number
+  /** Actual qubit operands at the call site. */
+  qubits: string[]
+  /** Actual parameter expressions at the call site, before substitution. */
+  parameters: string[]
+  line: number
 }
 
 interface Statement {
@@ -196,6 +226,13 @@ interface Context {
   loss: LossReportEntry[]
   /** Custom gates declared with `gate`, expanded at their call sites. */
   definitions: Map<string, GateDefinition>
+  /**
+   * Where each expansion landed, so a caller can show a subcircuit as a unit.
+   *
+   * Recorded during expansion rather than reconstructed afterwards: once the list is
+   * flat there is no way to tell which operations came from which call.
+   */
+  subcircuits: SubcircuitSpan[]
 }
 
 /**
@@ -576,7 +613,13 @@ function parseCondition(
 
 export function parseQasm3(source: string): Qasm3ParseResult {
   const statements = splitStatements(source)
-  const context: Context = { qubitRegisters: [], clbitRegisters: [], loss: [], definitions: new Map() }
+  const context: Context = {
+    qubitRegisters: [],
+    clbitRegisters: [],
+    loss: [],
+    definitions: new Map(),
+    subcircuits: [],
+  }
   const operations: Operation[] = []
 
   let sawVersion = false
@@ -795,7 +838,7 @@ export function parseQasm3(source: string): Qasm3ParseResult {
     // applyStatement so recursion is bounded in one place.
     const invoked = leadingIdentifier(text)
     if (context.definitions.has(invoked)) {
-      expandCustomGate(text, statement, context, emit, 0)
+      expandCustomGate(text, statement, context, emit, 0, () => operations.length)
       continue
     }
 
@@ -818,6 +861,7 @@ export function parseQasm3(source: string): Qasm3ParseResult {
       operations,
     },
     loss_report: context.loss,
+    subcircuits: context.subcircuits,
   }
 }
 
@@ -835,6 +879,7 @@ function expandCustomGate(
   context: Context,
   emit: (operation: SimpleOperation) => void,
   depth: number,
+  operationCount: () => number,
 ): void {
   if (depth > MAX_GATE_EXPANSION_DEPTH) {
     throw new Qasm3ParseError(
@@ -888,15 +933,28 @@ function expandCustomGate(
     })
   }
 
+  const spanStart = operationCount()
   for (const bodyStatement of definition.body) {
     const substituted = substituteGateBody(bodyStatement, definition, actualQubits, actualParameters)
     const inner = leadingIdentifier(substituted)
     if (context.definitions.has(inner)) {
-      expandCustomGate(substituted, statement, context, emit, depth + 1)
+      expandCustomGate(substituted, statement, context, emit, depth + 1, operationCount)
     } else {
       applyStatement(substituted, statement, context, emit)
     }
   }
+  // Recorded after the body so `end` reflects everything the expansion produced,
+  // including nested expansions. Pushed in completion order, so an inner span
+  // appears before the outer one that contains it.
+  context.subcircuits.push({
+    name: definition.name,
+    depth,
+    start: spanStart,
+    end: operationCount(),
+    qubits: actualQubits,
+    parameters: actualParameters,
+    line: statement.line,
+  })
 }
 
 function applyStatement(

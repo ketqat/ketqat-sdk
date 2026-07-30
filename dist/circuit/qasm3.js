@@ -459,7 +459,13 @@ function parseCondition(text) {
 }
 export function parseQasm3(source) {
     const statements = splitStatements(source);
-    const context = { qubitRegisters: [], clbitRegisters: [], loss: [], definitions: new Map() };
+    const context = {
+        qubitRegisters: [],
+        clbitRegisters: [],
+        loss: [],
+        definitions: new Map(),
+        subcircuits: [],
+    };
     const operations = [];
     let sawVersion = false;
     let pendingCondition;
@@ -648,7 +654,7 @@ export function parseQasm3(source) {
         // applyStatement so recursion is bounded in one place.
         const invoked = leadingIdentifier(text);
         if (context.definitions.has(invoked)) {
-            expandCustomGate(text, statement, context, emit, 0);
+            expandCustomGate(text, statement, context, emit, 0, () => operations.length);
             continue;
         }
         applyStatement(text, statement, context, emit);
@@ -668,6 +674,7 @@ export function parseQasm3(source) {
             operations,
         },
         loss_report: context.loss,
+        subcircuits: context.subcircuits,
     };
 }
 /**
@@ -678,7 +685,7 @@ export function parseQasm3(source) {
  * because the operations survive exactly -- what is lost is the grouping, not
  * the circuit.
  */
-function expandCustomGate(text, statement, context, emit, depth) {
+function expandCustomGate(text, statement, context, emit, depth, operationCount) {
     if (depth > MAX_GATE_EXPANSION_DEPTH) {
         throw new Qasm3ParseError(`Custom gate expansion exceeded ${MAX_GATE_EXPANSION_DEPTH} levels, which means a definition ` +
             "expands into itself. OpenQASM gates cannot be recursive.", { feature: "custom_gate_definition", line: statement.line });
@@ -716,16 +723,29 @@ function expandCustomGate(text, statement, context, emit, depth) {
             location: `line ${statement.line}`,
         });
     }
+    const spanStart = operationCount();
     for (const bodyStatement of definition.body) {
         const substituted = substituteGateBody(bodyStatement, definition, actualQubits, actualParameters);
         const inner = leadingIdentifier(substituted);
         if (context.definitions.has(inner)) {
-            expandCustomGate(substituted, statement, context, emit, depth + 1);
+            expandCustomGate(substituted, statement, context, emit, depth + 1, operationCount);
         }
         else {
             applyStatement(substituted, statement, context, emit);
         }
     }
+    // Recorded after the body so `end` reflects everything the expansion produced,
+    // including nested expansions. Pushed in completion order, so an inner span
+    // appears before the outer one that contains it.
+    context.subcircuits.push({
+        name: definition.name,
+        depth,
+        start: spanStart,
+        end: operationCount(),
+        qubits: actualQubits,
+        parameters: actualParameters,
+        line: statement.line,
+    });
 }
 function applyStatement(text, statement, context, emit) {
     try {
