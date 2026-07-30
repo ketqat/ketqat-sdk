@@ -109,7 +109,8 @@
     "metrics:oss": "node scripts/collect-oss-metrics.mjs",
     "validate:contribution": "node scripts/validate-contribution.mjs",
     "verify:outreach": "node scripts/verify-outreach-claims.mjs",
-    "verify:resource-model-parity": "python3 scripts/verify-resource-model-parity.py"
+    "verify:resource-model-parity": "python3 scripts/verify-resource-model-parity.py",
+    "verify:mitiq-parity": "python3 scripts/verify-mitiq-parity.py"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

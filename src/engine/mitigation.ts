@@ -297,7 +297,15 @@ export function zeroNoiseExtrapolation(
   }
 }
 
-function linearExtrapolateToZero(points: Array<{ scale: number; value: number }>): number {
+/**
+ * Least-squares linear fit evaluated at zero noise.
+ *
+ * Exported so it can be differentially tested against Mitiq's `LinearFactory`. It was
+ * private, which left the extrapolation -- the one piece of arithmetic that decides the
+ * mitigated value -- unreachable by any test that could compare it with a reference
+ * implementation.
+ */
+export function linearExtrapolateToZero(points: Array<{ scale: number; value: number }>): number {
   const n = points.length
   if (n === 0) return 0
   if (n === 1) return points[0]?.value ?? 0
@@ -313,7 +321,13 @@ function linearExtrapolateToZero(points: Array<{ scale: number; value: number }>
 }
 
 /** Lagrange interpolation through every point, evaluated at zero. */
-function richardsonExtrapolateToZero(points: Array<{ scale: number; value: number }>): number {
+/**
+ * Richardson extrapolation: the polynomial through every point, evaluated at zero.
+ *
+ * Exported for the same reason as the linear fit. Mitiq's `RichardsonFactory` computes the
+ * same quantity, so agreement is checkable rather than assumed.
+ */
+export function richardsonExtrapolateToZero(points: Array<{ scale: number; value: number }>): number {
   if (points.length === 0) return 0
   if (points.length === 1) return points[0]?.value ?? 0
   let total = 0

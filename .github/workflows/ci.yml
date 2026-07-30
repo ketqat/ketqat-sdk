@@ -94,7 +94,7 @@ jobs:
       - name: Install runner with real QEC dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e "python[qec,resources]"
+          python -m pip install -e "python[qec,resources,mitigation]"
           python -m pip install pytest
 
       # The surface-code model is differentially tested against Qualtran, which is
@@ -106,6 +106,12 @@ jobs:
 
       - name: Verify surface-code model against Qualtran and QDK
         run: python scripts/verify-resource-model-parity.py --require
+
+      # Mitiq is the reference for the ZNE extrapolation, the one piece of the mitigation
+      # pipeline with a single right answer. Same job for the same reason: it needs Node
+      # for the model and Python for the reference.
+      - name: Verify ZNE extrapolation against Mitiq
+        run: python scripts/verify-mitiq-parity.py --require
 
       - name: Run Python tests
         run: pytest python/tests
