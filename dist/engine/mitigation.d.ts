@@ -97,6 +97,29 @@ export interface ZneOptions {
  */
 export declare function zeroNoiseExtrapolation(circuit: QuantumCircuit, noise: NoiseModel, options?: ZneOptions): MitigationResult;
 /**
+ * Least-squares linear fit evaluated at zero noise.
+ *
+ * Exported so it can be differentially tested against Mitiq's `LinearFactory`. It was
+ * private, which left the extrapolation -- the one piece of arithmetic that decides the
+ * mitigated value -- unreachable by any test that could compare it with a reference
+ * implementation.
+ */
+export declare function linearExtrapolateToZero(points: Array<{
+    scale: number;
+    value: number;
+}>): number;
+/** Lagrange interpolation through every point, evaluated at zero. */
+/**
+ * Richardson extrapolation: the polynomial through every point, evaluated at zero.
+ *
+ * Exported for the same reason as the linear fit. Mitiq's `RichardsonFactory` computes the
+ * same quantity, so agreement is checkable rather than assumed.
+ */
+export declare function richardsonExtrapolateToZero(points: Array<{
+    scale: number;
+    value: number;
+}>): number;
+/**
  * Readout-error mitigation for a single classical bit.
  *
  * Inverts the 2x2 confusion matrix measured by preparing |0> and |1>. The
