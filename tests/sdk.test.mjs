@@ -33,6 +33,9 @@ import {
   gateCount,
   parseQasm3,
   localComplementation,
+  extractCircuit,
+  extractVerified,
+  extractedToMatrix,
   pivot,
   applyVerified,
   graphToMatrix,
@@ -4673,4 +4676,149 @@ c[0] = measure q[0];
   const different = graphToMatrix(star(0.25))
   assert.equal(sameUpToScalar(identity, identity).equal, true)
   assert.equal(sameUpToScalar(identity, different).equal, false)
+}
+
+
+// ---------------------------------------------------------------------------
+// ZX circuit extraction (ketqat-sdk#190)
+// ---------------------------------------------------------------------------
+{
+  const boundaryOnly = (phases, edges) => ({
+    spiders: phases.map((phase, id) => ({ id, phase })),
+    edges,
+    inputs: phases.map((_unused, index) => index),
+    outputs: phases.map((_unused, index) => index),
+  })
+
+  // The load-bearing check: the extracted circuit's unitary must match the
+  // diagram's own linear map up to scalar. A claim that extraction succeeded is
+  // worth only as much as the check behind it, so the same comparison used for the
+  // rewrites is applied here.
+  const cases = [
+    boundaryOnly([0, 0], [[0, 1]]),
+    boundaryOnly([0.5, 0.25], [[0, 1]]),
+    boundaryOnly([0.25, 0.5, 1], [[0, 1], [1, 2]]),
+    boundaryOnly([0.5, 0.5, 0.5], []),
+    boundaryOnly([0.25, 0.25, 0.25, 0.25], [[0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]]),
+  ]
+  for (const graph of cases) {
+    const result = extractVerified(graph)
+    assert.equal(result.verdict, "matches", result.detail)
+    assert.ok(result.maxDifference < 1e-9)
+  }
+
+  // A zero phase emits nothing: P(0) is the identity, and emitting it would inflate
+  // the gate count that resource estimates elsewhere consume.
+  const withZeroPhases = extractCircuit(boundaryOnly([0, 0, 0.5], []))
+  assert.equal(withZeroPhases.gates.length, 1)
+  assert.equal(withZeroPhases.gates[0].name, "p")
+
+  // Each Hadamard edge becomes exactly one CZ.
+  const edges = extractCircuit(boundaryOnly([0, 0, 0], [[0, 1], [1, 2]]))
+  assert.equal(edges.gates.filter((gate) => gate.name === "cz").length, 2)
+
+  // Refusals, each naming what would be needed instead. An extraction that
+  // silently produced the wrong circuit would be worse than none: ZX
+  // simplification is worth having because the result is provably the same map,
+  // and a wrong extraction discards the guarantee while keeping its appearance.
+  const interior = {
+    spiders: [{ id: 0, phase: 0 }, { id: 1, phase: 0.5 }, { id: 2, phase: 0 }],
+    edges: [[0, 1], [1, 2]],
+    inputs: [0],
+    outputs: [2],
+  }
+  assert.equal(extractVerified(interior).verdict, "not_extracted")
+
+  const arityMismatch = {
+    spiders: [{ id: 0, phase: 0 }, { id: 1, phase: 0 }],
+    edges: [[0, 1]],
+    inputs: [0, 1],
+    outputs: [1],
+  }
+  assert.match(extractVerified(arityMismatch).detail, /needs them equal/)
+
+  const permuted = {
+    spiders: [{ id: 0, phase: 0 }, { id: 1, phase: 0 }],
+    edges: [[0, 1]],
+    inputs: [0, 1],
+    outputs: [1, 0],
+  }
+  assert.match(extractVerified(permuted).detail, /gflow-based algorithm, which is not/)
+
+  assert.equal(extractCircuit({ spiders: [], edges: [], inputs: [], outputs: [] }).extracted, false)
+
+  // Refusing to build a matrix from a refused extraction, rather than returning
+  // something meaningless.
+  assert.throws(() => extractedToMatrix(extractCircuit(arityMismatch)), /refused extraction/)
+
+  // The end-to-end point of the rewrites: a diagram with an interior spider cannot
+  // be extracted, local complementation removes it while preserving the map, and
+  // the simplified diagram then extracts exactly. Without extraction the deletion
+  // changes nothing anyone runs.
+  const unsimplified = {
+    spiders: [{ id: 0, phase: 0 }, { id: 1, phase: 0 }, { id: 2, phase: 0.5 }],
+    edges: [[0, 2], [1, 2], [0, 1]],
+    inputs: [0, 1],
+    outputs: [0, 1],
+  }
+  const beforeSimplification = extractVerified(unsimplified)
+  assert.equal(beforeSimplification.verdict, "not_extracted")
+  assert.match(beforeSimplification.detail, /interior spider/)
+
+  const simplified = applyVerified(unsimplified, (graph) => localComplementation(graph, 2))
+  assert.equal(simplified.verdict, "preserved", simplified.detail)
+
+  const afterSimplification = extractVerified(simplified.outcome.graph)
+  assert.equal(afterSimplification.verdict, "matches", afterSimplification.detail)
+  assert.ok(afterSimplification.maxDifference < 1e-9)
+
+  // The verification ingredients must discriminate, tested directly.
+  //
+  // Mutation testing showed the "differs" branch of extractVerified is unreachable
+  // through that function: the gate list is derived from the diagram, so for a
+  // well-formed diagram it cannot disagree. Rather than contrive a case, the two
+  // ingredients are tested on inputs that DO disagree, so the guard would fire if
+  // extractCircuit ever stopped being a faithful reading.
+  {
+    const graph = boundaryOnly([0.5, 0.25], [[0, 1]])
+    const faithful = extractCircuit(graph)
+    const tampered = {
+      ...faithful,
+      gates: faithful.gates.map((gate) =>
+        gate.name === "p" ? { ...gate, parameters: [(gate.parameters[0] ?? 0) + Math.PI / 3] } : gate,
+      ),
+    }
+    const comparison = sameUpToScalar(graphToMatrix(graph), extractedToMatrix(tampered))
+    assert.equal(comparison.equal, false, "a tampered gate list must not compare equal to the diagram")
+    assert.ok(comparison.maxDifference > 1e-6)
+
+    // And the faithful one does compare equal, so the check is not simply strict.
+    assert.equal(sameUpToScalar(graphToMatrix(graph), extractedToMatrix(faithful)).equal, true)
+  }
+
+  // Randomised boundary-only diagrams, since extraction can be right on a
+  // hand-picked shape and wrong in general.
+  let extractionState = 987654321
+  const nextExtractionRandom = () => {
+    extractionState = (extractionState * 1103515245 + 12345) & 0x7fffffff
+    return extractionState / 0x7fffffff
+  }
+  let checked = 0
+  for (let trial = 0; trial < 40; trial += 1) {
+    const width = 2 + Math.floor(nextExtractionRandom() * 3)
+    const phases = Array.from(
+      { length: width },
+      () => [0, 0.25, 0.5, 0.75, 1, 1.5][Math.floor(nextExtractionRandom() * 6)],
+    )
+    const randomEdges = []
+    for (let a = 0; a < width; a += 1) {
+      for (let b = a + 1; b < width; b += 1) {
+        if (nextExtractionRandom() < 0.5) randomEdges.push([a, b])
+      }
+    }
+    const result = extractVerified(boundaryOnly(phases, randomEdges))
+    assert.equal(result.verdict, "matches", `random extraction failed: ${result.detail}`)
+    checked += 1
+  }
+  assert.equal(checked, 40)
 }
