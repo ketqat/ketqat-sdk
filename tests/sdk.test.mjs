@@ -4822,3 +4822,80 @@ c[0] = measure q[0];
   }
   assert.equal(checked, 40)
 }
+
+
+// ---------------------------------------------------------------------------
+// Differential test against PyZX (ketqat-sdk#192)
+// ---------------------------------------------------------------------------
+{
+  // The ZX rewrites were verified against our own matrix evaluator, which
+  // establishes internal consistency and nothing about whether the rules are the
+  // ones the literature defines. PyZX is the reference implementation of exactly
+  // these rewrites, so agreeing with it is a stronger claim -- and it is the same
+  // discipline that caught the pivot phase bug, applied one level out.
+  //
+  // These are golden files: evidence from PyZX at generation time rather than a
+  // live check. That limitation is real, which is why
+  // scripts/generate-pyzx-fixtures.py exists and the PyZX version is recorded in
+  // each file, so a stale fixture is visible rather than silent.
+  const fixtureDirectory = new URL("./fixtures/", import.meta.url)
+
+  const loadFixture = (name) => {
+    const parsed = JSON.parse(fs.readFileSync(new URL(name, fixtureDirectory), "utf8"))
+    assert.ok(parsed.pyzx_version, `${name} must record the PyZX version it came from`)
+    assert.ok(parsed.cases.length >= 40, `${name} has only ${parsed.cases.length} cases`)
+    assert.match(parsed.note, /reference implementation/)
+    return parsed
+  }
+
+  const toMatrix = (flat) => {
+    const size = Math.round(Math.sqrt(flat.length))
+    return {
+      real: Array.from({ length: size }, (_unused, row) =>
+        Array.from({ length: size }, (_ignored, column) => flat[row * size + column][0]),
+      ),
+      imaginary: Array.from({ length: size }, (_unused, row) =>
+        Array.from({ length: size }, (_ignored, column) => flat[row * size + column][1]),
+      ),
+    }
+  }
+
+  const buildGraph = (entry) => ({
+    spiders: entry.phases.map((phase, id) => ({ id, phase })),
+    edges: entry.edges.map(([a, b]) => [a, b]),
+    inputs: [entry.in],
+    outputs: [entry.out],
+  })
+
+  {
+    const fixture = loadFixture("pyzx-lcomp.json")
+    let agreed = 0
+    for (const entry of fixture.cases) {
+      const outcome = localComplementation(buildGraph(entry), entry.target)
+      assert.ok(outcome.applied, `PyZX applied lcomp where we declined: ${outcome.reason}`)
+      const comparison = sameUpToScalar(graphToMatrix(outcome.graph), toMatrix(entry.pyzx_after))
+      assert.ok(
+        comparison.equal,
+        `local complementation disagrees with PyZX ${fixture.pyzx_version} by ${comparison.maxDifference}: phases ${entry.phases}, target ${entry.target}`,
+      )
+      agreed += 1
+    }
+    assert.equal(agreed, fixture.cases.length)
+  }
+
+  {
+    const fixture = loadFixture("pyzx-pivot.json")
+    let agreed = 0
+    for (const entry of fixture.cases) {
+      const outcome = pivot(buildGraph(entry), entry.u, entry.v)
+      assert.ok(outcome.applied, `PyZX applied pivot where we declined: ${outcome.reason}`)
+      const comparison = sameUpToScalar(graphToMatrix(outcome.graph), toMatrix(entry.pyzx_after))
+      assert.ok(
+        comparison.equal,
+        `pivoting disagrees with PyZX ${fixture.pyzx_version} by ${comparison.maxDifference}: phases ${entry.phases}, u=${entry.u}, v=${entry.v}`,
+      )
+      agreed += 1
+    }
+    assert.equal(agreed, fixture.cases.length)
+  }
+}
