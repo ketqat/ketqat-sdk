@@ -484,3 +484,203 @@ export function applyVerified(
       : `Linear map CHANGED (max difference ${comparison.maxDifference.toExponential(2)}). The rewrite is unsound on this diagram and must not be applied.`,
   }
 }
+
+/**
+ * Circuit extraction from a graph-like ZX diagram (ketqat-sdk#190).
+ *
+ * The rewrites above delete spiders, and until a reduced diagram can be turned
+ * back into gates that deletion changes nothing anyone runs. Extraction is what
+ * makes the simplification have an effect.
+ *
+ * **Scope, stated rather than implied.** General ZX extraction needs a gflow and is
+ * a substantial algorithm. What is implemented here is exact for one class -- a
+ * diagram whose spiders are exactly its boundary, each spider being both an input
+ * and an output in the same order. In that form the diagram is a phase-and-CZ
+ * circuit and extraction is a direct reading:
+ *
+ *     Hadamard edge (u,v)  ->  CZ on those qubits (they differ by 1/sqrt(2), which
+ *                              is a scalar and so physically irrelevant)
+ *     spider phase alpha   ->  P(pi * alpha) on that qubit
+ *
+ * Diagrams outside that class are **refused with the reason**, not extracted
+ * approximately. An extraction that silently produced the wrong circuit would be
+ * worse than none: the whole point of ZX simplification is that the result is
+ * provably the same map, and a wrong extraction discards the guarantee while
+ * keeping the appearance of it.
+ *
+ * The extracted circuit is verified the same way the rewrites are -- its unitary is
+ * compared against the diagram's linear map up to scalar -- so a claim that
+ * extraction succeeded is backed by the same evidence.
+ */
+
+export interface ExtractedGate {
+  name: "p" | "cz"
+  qubits: number[]
+  parameters: number[]
+}
+
+export interface ExtractionResult {
+  extracted: boolean
+  reason: string
+  gates: ExtractedGate[]
+  qubits: number
+}
+
+/**
+ * Extract a circuit, or refuse and say why.
+ *
+ * Phases of 0 emit nothing: a P(0) is the identity, and emitting it would inflate
+ * the gate count that resource estimates elsewhere in this package consume.
+ */
+export function extractCircuit(graph: ZxGraph): ExtractionResult {
+  const spiderIds = graph.spiders.map((spider) => spider.id)
+  const width = graph.inputs.length
+
+  if (width === 0) {
+    return { extracted: false, reason: "A diagram with no inputs has no circuit to extract.", gates: [], qubits: 0 }
+  }
+  if (graph.outputs.length !== width) {
+    return {
+      extracted: false,
+      reason: `This diagram has ${width} input(s) and ${graph.outputs.length} output(s). Extraction produces a unitary, which needs them equal.`,
+      gates: [],
+      qubits: 0,
+    }
+  }
+  if (graph.inputs.join(",") !== graph.outputs.join(",")) {
+    return {
+      extracted: false,
+      reason:
+        "Extraction here handles diagrams whose inputs and outputs are the same spiders in the same " +
+        "order. A permuted or disjoint boundary needs the general gflow-based algorithm, which is not " +
+        "implemented -- refused rather than approximated.",
+      gates: [],
+      qubits: 0,
+    }
+  }
+  if (spiderIds.length !== width || !spiderIds.every((id) => graph.inputs.includes(id))) {
+    const interior = spiderIds.filter((id) => isInterior(graph, id))
+    return {
+      extracted: false,
+      reason:
+        `This diagram has ${interior.length} interior spider(s) (${interior.join(", ")}). Extraction here ` +
+        "handles diagrams reduced to their boundary; simplify further with local complementation or " +
+        "pivoting first, or use the general algorithm.",
+      gates: [],
+      qubits: 0,
+    }
+  }
+
+  const qubitOf = new Map(graph.inputs.map((id, index) => [id, index]))
+  const gates: ExtractedGate[] = []
+
+  for (const spider of graph.spiders) {
+    const phase = normalisePhase(spider.phase)
+    // A zero phase is the identity; emitting P(0) would inflate the gate count.
+    if (Math.abs(phase) < 1e-9) continue
+    gates.push({ name: "p", qubits: [qubitOf.get(spider.id) as number], parameters: [Math.PI * phase] })
+  }
+
+  for (const [a, b] of graph.edges) {
+    const first = qubitOf.get(a)
+    const second = qubitOf.get(b)
+    if (first === undefined || second === undefined) {
+      return {
+        extracted: false,
+        reason: `Edge (${a}, ${b}) touches a spider outside the boundary, which this extraction cannot place.`,
+        gates: [],
+        qubits: width,
+      }
+    }
+    gates.push({ name: "cz", qubits: [first, second], parameters: [] })
+  }
+
+  return {
+    extracted: true,
+    reason: `Extracted ${gates.length} gate(s) on ${width} qubit(s): ${gates.filter((gate) => gate.name === "p").length} phase, ${gates.filter((gate) => gate.name === "cz").length} CZ.`,
+    gates,
+    qubits: width,
+  }
+}
+
+/** Dense unitary of an extracted circuit, for comparison against the diagram. */
+export function extractedToMatrix(result: ExtractionResult): { real: number[][]; imaginary: number[][] } {
+  if (!result.extracted) {
+    throw new ZxGraphError("Cannot build a matrix from a refused extraction.")
+  }
+  const size = 1 << result.qubits
+  const real: number[][] = Array.from({ length: size }, (_unused, row) =>
+    Array.from({ length: size }, (_ignored, column) => (row === column ? 1 : 0)),
+  )
+  const imaginary: number[][] = Array.from({ length: size }, () => new Array(size).fill(0))
+
+  // Every gate here is diagonal, so the product is diagonal and each basis state
+  // just accumulates a phase. Keeping that explicit avoids a general matrix
+  // multiply and makes the correspondence with the diagram legible.
+  for (let basis = 0; basis < size; basis += 1) {
+    let angle = 0
+    for (const gate of result.gates) {
+      if (gate.name === "p") {
+        // Qubit q is bit q of the basis index, matching this package's
+        // little-endian convention.
+        if ((basis >> (gate.qubits[0] as number)) & 1) angle += gate.parameters[0] as number
+      } else {
+        const a = (basis >> (gate.qubits[0] as number)) & 1
+        const b = (basis >> (gate.qubits[1] as number)) & 1
+        if (a === 1 && b === 1) angle += Math.PI
+      }
+    }
+    ;(real[basis] as number[])[basis] = Math.cos(angle)
+    ;(imaginary[basis] as number[])[basis] = Math.sin(angle)
+  }
+
+  return { real, imaginary }
+}
+
+/**
+ * Extract and verify against the diagram's own linear map.
+ *
+ * A claim that extraction succeeded is only worth as much as the check behind it,
+ * so the same up-to-scalar comparison used for the rewrites is applied here.
+ */
+export function extractVerified(graph: ZxGraph): {
+  result: ExtractionResult
+  verdict: "matches" | "differs" | "inconclusive" | "not_extracted"
+  maxDifference: number | null
+  detail: string
+} {
+  const result = extractCircuit(graph)
+  if (!result.extracted) {
+    return { result, verdict: "not_extracted", maxDifference: null, detail: result.reason }
+  }
+
+  let diagram
+  try {
+    diagram = graphToMatrix(graph)
+  } catch (error) {
+    return {
+      result,
+      verdict: "inconclusive",
+      maxDifference: null,
+      detail: `Extracted, but could not verify: ${(error as Error).message} Not reported as equivalent without a check.`,
+    }
+  }
+
+  const circuit = extractedToMatrix(result)
+  // The comparison is a guard, not a discriminator: the gate list is derived from
+  // the diagram, so for a well-formed diagram it cannot disagree, and mutation
+  // testing confirmed the "differs" branch is unreachable through this function.
+  // It is kept because that reasoning depends on extractCircuit staying faithful --
+  // if it ever stops being a direct reading of the diagram, this is what would
+  // catch it. The ingredients are tested directly instead: extractedToMatrix
+  // against a tampered gate list, and sameUpToScalar on known-unequal maps.
+  const comparison = sameUpToScalar(diagram, circuit)
+  return {
+    result,
+    verdict: comparison.equal ? "matches" : "differs",
+    maxDifference: comparison.maxDifference,
+    detail: comparison.equal
+      ? `Extracted circuit matches the diagram up to scalar (max difference ${comparison.maxDifference.toExponential(2)}).`
+      : `Extracted circuit does NOT match the diagram (max difference ${comparison.maxDifference.toExponential(2)}). The extraction is wrong on this diagram.`,
+  }
+}

@@ -123,4 +123,66 @@ export declare function applyVerified(graph: ZxGraph, rewrite: (graph: ZxGraph) 
     maxDifference: number | null;
     detail: string;
 };
+/**
+ * Circuit extraction from a graph-like ZX diagram (ketqat-sdk#190).
+ *
+ * The rewrites above delete spiders, and until a reduced diagram can be turned
+ * back into gates that deletion changes nothing anyone runs. Extraction is what
+ * makes the simplification have an effect.
+ *
+ * **Scope, stated rather than implied.** General ZX extraction needs a gflow and is
+ * a substantial algorithm. What is implemented here is exact for one class -- a
+ * diagram whose spiders are exactly its boundary, each spider being both an input
+ * and an output in the same order. In that form the diagram is a phase-and-CZ
+ * circuit and extraction is a direct reading:
+ *
+ *     Hadamard edge (u,v)  ->  CZ on those qubits (they differ by 1/sqrt(2), which
+ *                              is a scalar and so physically irrelevant)
+ *     spider phase alpha   ->  P(pi * alpha) on that qubit
+ *
+ * Diagrams outside that class are **refused with the reason**, not extracted
+ * approximately. An extraction that silently produced the wrong circuit would be
+ * worse than none: the whole point of ZX simplification is that the result is
+ * provably the same map, and a wrong extraction discards the guarantee while
+ * keeping the appearance of it.
+ *
+ * The extracted circuit is verified the same way the rewrites are -- its unitary is
+ * compared against the diagram's linear map up to scalar -- so a claim that
+ * extraction succeeded is backed by the same evidence.
+ */
+export interface ExtractedGate {
+    name: "p" | "cz";
+    qubits: number[];
+    parameters: number[];
+}
+export interface ExtractionResult {
+    extracted: boolean;
+    reason: string;
+    gates: ExtractedGate[];
+    qubits: number;
+}
+/**
+ * Extract a circuit, or refuse and say why.
+ *
+ * Phases of 0 emit nothing: a P(0) is the identity, and emitting it would inflate
+ * the gate count that resource estimates elsewhere in this package consume.
+ */
+export declare function extractCircuit(graph: ZxGraph): ExtractionResult;
+/** Dense unitary of an extracted circuit, for comparison against the diagram. */
+export declare function extractedToMatrix(result: ExtractionResult): {
+    real: number[][];
+    imaginary: number[][];
+};
+/**
+ * Extract and verify against the diagram's own linear map.
+ *
+ * A claim that extraction succeeded is only worth as much as the check behind it,
+ * so the same up-to-scalar comparison used for the rewrites is applied here.
+ */
+export declare function extractVerified(graph: ZxGraph): {
+    result: ExtractionResult;
+    verdict: "matches" | "differs" | "inconclusive" | "not_extracted";
+    maxDifference: number | null;
+    detail: string;
+};
 //# sourceMappingURL=zx-graph.d.ts.map
