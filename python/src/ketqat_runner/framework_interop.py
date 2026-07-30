@@ -78,6 +78,21 @@ class FrameworkInteropError(RuntimeError):
     """An interoperability check that could not be performed as specified."""
 
 
+class FrameworkUnavailableError(FrameworkInteropError):
+    """The framework is installed but cannot read OpenQASM, so nothing can be checked.
+
+    Separate from `FrameworkInteropError` because the two demand opposite responses. A
+    convention mismatch is a finding and must fail loudly. A framework that cannot parse
+    the probe at all yields no finding either way, and reporting it as a mismatch would
+    claim a measurement that was never taken.
+
+    PennyLane is the case this exists for: its OpenQASM support lives in the separate
+    `pennylane-qiskit` plugin, so `import pennylane` succeeds while every circuit load
+    fails. Installing the `resources` extra reaches exactly that state, because qualtran
+    declares pennylane as a dependency and has no need of the plugin.
+    """
+
+
 def reverse_bit_order(amplitudes: Sequence[complex], qubits: int) -> list[complex]:
     """Reindex amplitudes between the two conventions.
 
@@ -117,7 +132,7 @@ def _pennylane_state(openqasm2: str, qubits: int) -> list[complex]:
     try:
         loaded = qml.from_qasm(openqasm2)
     except RuntimeError as exc:
-        raise FrameworkInteropError(
+        raise FrameworkUnavailableError(
             f"PennyLane could not load the circuit: {exc}. Its OpenQASM support lives in the separate "
             "pennylane-qiskit plugin, so this is usually a missing plugin rather than a bad circuit."
         ) from exc

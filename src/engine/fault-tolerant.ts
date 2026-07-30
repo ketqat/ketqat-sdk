@@ -94,6 +94,45 @@ export interface SensitivityPoint {
   feasible: boolean
 }
 
+/**
+ * Published values for the prefactor A in p_L = A (p/p_th)^((d+1)/2).
+ *
+ * A is fitted, not derived. Qualtran's own implementation says of it: "The pre-factor
+ * $a$ has no clear provenance." It is nonetheless the difference between one code
+ * distance and the next, and distance drives the qubit count quadratically -- so
+ * reporting a single distance without saying which A produced it is false precision of
+ * exactly the kind the sensitivity curve exists to prevent.
+ *
+ * Both entries are in use in published tooling. Neither is more correct than the other.
+ */
+export const PREFACTOR_MODELS: ReadonlyArray<{
+  name: string
+  prefactor: number
+  source: string
+}> = [
+  {
+    name: "Fowler conventional",
+    prefactor: 0.03,
+    source: "The conventional value; used by this project's default assumptions.",
+  },
+  {
+    name: "Gidney-Fowler (Qualtran)",
+    prefactor: 0.1,
+    source:
+      "Qualtran's QECScheme.make_gidney_fowler() default, after Fowler and Gidney (2018), arXiv:1808.06709 section XV.",
+  },
+]
+
+/** The same algorithm costed under each published prefactor. */
+export interface ModelSensitivityPoint {
+  model: string
+  prefactor: number
+  source: string
+  code_distance: number | null
+  physical_qubits: number | null
+  feasible: boolean
+}
+
 export interface FaultTolerantEstimate {
   feasible: boolean
   /** Why not, when `feasible` is false. Empty otherwise. */
@@ -111,6 +150,15 @@ export interface FaultTolerantEstimate {
   assumptions: FaultTolerantAssumptions
   /** How the answer moves when the physical error rate does. */
   sensitivity: SensitivityPoint[]
+  /**
+   * How the answer moves when the *model's* fitted prefactor does.
+   *
+   * Distinct from `sensitivity` and not a duplicate of it. A user can measure their
+   * device's error rate; nobody can measure A. Varying the device parameter while
+   * holding a fitted constant fixed reports the uncertainty the user can reduce and
+   * hides the one they cannot.
+   */
+  model_sensitivity: ModelSensitivityPoint[]
   notes: string[]
 }
 
@@ -176,6 +224,7 @@ export function estimateFaultTolerantResources(
   ]
 
   const sensitivity = sensitivityCurve(input, assumptions, logicalCycles)
+  const modelSensitivity = modelSensitivityCurve(input, assumptions, logicalCycles)
 
   if (assumptions.physical_error_rate >= assumptions.threshold) {
     return {
@@ -194,6 +243,7 @@ export function estimateFaultTolerantResources(
       logical_error_probability: null,
       assumptions,
       sensitivity,
+      model_sensitivity: modelSensitivity,
       notes,
     }
   }
@@ -214,6 +264,7 @@ export function estimateFaultTolerantResources(
       logical_error_probability: null,
       assumptions,
       sensitivity,
+      model_sensitivity: modelSensitivity,
       notes,
     }
   }
@@ -237,6 +288,7 @@ export function estimateFaultTolerantResources(
     logical_error_probability: totalError,
     assumptions,
     sensitivity,
+    model_sensitivity: modelSensitivity,
     notes,
   }
 }
@@ -271,6 +323,39 @@ function sensitivityCurve(
       physical_qubits:
         assumptions.qubits_per_logical_d_squared * distance * distance * input.logical_qubits,
       feasible: true,
+    }
+  })
+}
+
+/**
+ * The same algorithm costed under each published prefactor.
+ *
+ * Deliberately not folded into `sensitivityCurve`. That curve varies a property of the
+ * device; this one varies a property of the *model*, and conflating them would suggest
+ * the two uncertainties can be reduced the same way. They cannot: buying a better
+ * device narrows the first and does nothing to the second.
+ */
+function modelSensitivityCurve(
+  input: FaultTolerantInput,
+  assumptions: FaultTolerantAssumptions,
+  logicalCycles: number,
+): ModelSensitivityPoint[] {
+  return PREFACTOR_MODELS.map(({ name, prefactor, source }) => {
+    const scoped: FaultTolerantAssumptions = { ...assumptions, prefactor }
+    const distance =
+      assumptions.physical_error_rate >= assumptions.threshold
+        ? null
+        : requiredCodeDistance(input.logical_qubits, logicalCycles, scoped)
+    return {
+      model: name,
+      prefactor,
+      source,
+      code_distance: distance,
+      physical_qubits:
+        distance === null
+          ? null
+          : assumptions.qubits_per_logical_d_squared * distance * distance * input.logical_qubits,
+      feasible: distance !== null,
     }
   })
 }

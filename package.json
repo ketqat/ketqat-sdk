@@ -108,7 +108,8 @@
     "verify:maintainers": "node scripts/verify-maintainers.mjs",
     "metrics:oss": "node scripts/collect-oss-metrics.mjs",
     "validate:contribution": "node scripts/validate-contribution.mjs",
-    "verify:outreach": "node scripts/verify-outreach-claims.mjs"
+    "verify:outreach": "node scripts/verify-outreach-claims.mjs",
+    "verify:qualtran-parity": "python3 scripts/verify-qualtran-parity.py"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

@@ -3217,11 +3217,76 @@ c[0] = measure q[0];
 {
   const {
     DEFAULT_FT_ASSUMPTIONS,
+    PREFACTOR_MODELS,
     SURFACE_CODE_THRESHOLD,
     estimateFaultTolerantResources,
     logicalErrorPerCycle,
     requiredCodeDistance,
   } = await import("../dist/engine/fault-tolerant.js")
+
+  // ---- model sensitivity (ketqat-sdk#190) --------------------------------
+  // The prefactor A in p_L = A (p/p_th)^((d+1)/2) is fitted, not derived --
+  // Qualtran's own source says it "has no clear provenance" -- and it moves the
+  // answer by a full distance step, so the qubit count by up to ~1.5x. The
+  // existing sensitivity curve varies the *device* error rate, which a user can
+  // measure. Nobody can measure A, so varying only the device parameter reports
+  // the uncertainty that can be reduced and hides the one that cannot.
+  {
+    assert.ok(PREFACTOR_MODELS.length >= 2, "one prefactor is not a sensitivity analysis")
+    // Both published values must be present, and labelled with where they come from.
+    const values = PREFACTOR_MODELS.map((m) => m.prefactor)
+    assert.ok(values.includes(0.03), "the conventional value")
+    assert.ok(values.includes(0.1), "Qualtran's gidney_fowler default")
+    for (const model of PREFACTOR_MODELS) {
+      assert.ok(model.source.length > 20, `${model.name} must say where its value comes from`)
+    }
+
+    // p = 3e-3 is chosen because the two prefactors *disagree* there: d = 15 vs 17,
+    // a 1.28x difference in physical qubits. At 1e-3 and 5e-4 they happen to agree,
+    // which is why this input is pinned rather than a convenient round number -- the
+    // first version of this test used 1e-3, saw both models return 9, and failed.
+    // Agreement is common; the row exists for when it is absent.
+    const estimate = estimateFaultTolerantResources(
+      { logical_qubits: 4, t_count: 1000, toffoli_count: 0, logical_depth: 1000 },
+      { physical_error_rate: 3e-3, error_budget: 1e-2 },
+    )
+    assert.equal(estimate.model_sensitivity.length, PREFACTOR_MODELS.length)
+
+    const distances = estimate.model_sensitivity.map((row) => row.code_distance)
+    assert.deepEqual(distances, [15, 17], "the prefactor moves the distance by one step here")
+    const qubits = estimate.model_sensitivity.map((row) => row.physical_qubits)
+    assert.deepEqual(qubits, [1800, 2312], "and the footprint by 1.28x")
+
+    // A larger prefactor means a larger predicted logical error rate, so it can
+    // never require a *smaller* distance. Monotonicity is the property that would
+    // break silently if the mapping were wired up wrongly.
+    const ordered = [...estimate.model_sensitivity].sort((a, b) => a.prefactor - b.prefactor)
+    for (let index = 1; index < ordered.length; index += 1) {
+      assert.ok(
+        ordered[index].code_distance >= ordered[index - 1].code_distance,
+        "a larger prefactor cannot require a smaller distance",
+      )
+    }
+
+    // Qubit counts follow d^2 at the reported distance, and are reported per model
+    // rather than only for the default.
+    for (const row of estimate.model_sensitivity) {
+      assert.equal(
+        row.physical_qubits,
+        DEFAULT_FT_ASSUMPTIONS.qubits_per_logical_d_squared * row.code_distance ** 2 * 4,
+      )
+      assert.equal(row.feasible, true)
+    }
+
+    // Above threshold no prefactor helps: the answer is infeasible for every model,
+    // not merely expensive under the pessimistic one.
+    const hopeless = estimateFaultTolerantResources(
+      { logical_qubits: 4, t_count: 10, toffoli_count: 0, logical_depth: 10 },
+      { physical_error_rate: 0.02 },
+    )
+    assert.ok(hopeless.model_sensitivity.every((row) => row.feasible === false))
+    assert.ok(hopeless.model_sensitivity.every((row) => row.code_distance === null))
+  }
 
   // Above threshold the surface code does not suppress error. Adding distance
   // makes it worse, so no distance satisfies any budget. Reporting a very large
