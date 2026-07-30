@@ -123,6 +123,50 @@ export const PREFACTOR_MODELS: ReadonlyArray<{
   },
 ]
 
+/**
+ * How many logical qubits a layout actually occupies (ketqat-sdk#204).
+ *
+ * A logical qubit needs somewhere to route to. Lattice surgery moves information by
+ * merging and splitting patches, which needs free space adjacent to the data, so a
+ * register of n logical qubits does not occupy n patches. Microsoft's resource
+ * estimator uses 2n + ceil(sqrt(8n)) + 1 -- verified here against `qdk` 1.30.0, exact
+ * at n = 4, 8, 16, 32 and 100 -- and this project used bare n, which is 4 where QDK
+ * says 15.
+ *
+ * That is not a convention difference like the prefactor. Routing space is real
+ * hardware, and omitting it understates the algorithm footprint by ~3.75x at small n.
+ * Reported rather than silently substituted, because the existing figure is what every
+ * stored estimate used and changing its meaning without saying so would make old and
+ * new numbers incomparable.
+ */
+export const LAYOUT_MODELS: ReadonlyArray<{
+  name: string
+  source: string
+  logicalQubits: (algorithmQubits: number) => number
+}> = [
+  {
+    name: "Bare register",
+    source:
+      "One patch per logical qubit, no routing space. This project's original figure; an underestimate, kept so earlier estimates remain interpretable.",
+    logicalQubits: (algorithmQubits) => algorithmQubits,
+  },
+  {
+    name: "2D lattice-surgery layout (QDK)",
+    source:
+      "2n + ceil(sqrt(8n)) + 1, after Beverland et al. (2022), arXiv:2211.07629. Verified against Microsoft's qdk 1.30.0 estimator at n = 4, 8, 16, 32, 100.",
+    logicalQubits: (algorithmQubits) =>
+      2 * algorithmQubits + Math.ceil(Math.sqrt(8 * algorithmQubits)) + 1,
+  },
+]
+
+/** The algorithm footprint under each layout convention. */
+export interface LayoutSensitivityPoint {
+  layout: string
+  source: string
+  logical_qubits: number
+  physical_qubits: number | null
+}
+
 /** The same algorithm costed under each published prefactor. */
 export interface ModelSensitivityPoint {
   model: string
@@ -159,6 +203,14 @@ export interface FaultTolerantEstimate {
    * hides the one they cannot.
    */
   model_sensitivity: ModelSensitivityPoint[]
+  /**
+   * The algorithm footprint under each layout convention.
+   *
+   * Unlike `model_sensitivity`, the entries here are not equally defensible: routing
+   * space is real hardware, so the bare-register row is an underestimate rather than an
+   * alternative reading. It is retained because it is the figure earlier estimates used.
+   */
+  layout_sensitivity: LayoutSensitivityPoint[]
   notes: string[]
 }
 
@@ -225,6 +277,7 @@ export function estimateFaultTolerantResources(
 
   const sensitivity = sensitivityCurve(input, assumptions, logicalCycles)
   const modelSensitivity = modelSensitivityCurve(input, assumptions, logicalCycles)
+  const layoutSensitivity = layoutSensitivityCurve(input, assumptions, logicalCycles)
 
   if (assumptions.physical_error_rate >= assumptions.threshold) {
     return {
@@ -244,6 +297,7 @@ export function estimateFaultTolerantResources(
       assumptions,
       sensitivity,
       model_sensitivity: modelSensitivity,
+      layout_sensitivity: layoutSensitivity,
       notes,
     }
   }
@@ -265,6 +319,7 @@ export function estimateFaultTolerantResources(
       assumptions,
       sensitivity,
       model_sensitivity: modelSensitivity,
+      layout_sensitivity: layoutSensitivity,
       notes,
     }
   }
@@ -289,6 +344,7 @@ export function estimateFaultTolerantResources(
     assumptions,
     sensitivity,
     model_sensitivity: modelSensitivity,
+    layout_sensitivity: layoutSensitivity,
     notes,
   }
 }
@@ -356,6 +412,37 @@ function modelSensitivityCurve(
           ? null
           : assumptions.qubits_per_logical_d_squared * distance * distance * input.logical_qubits,
       feasible: distance !== null,
+    }
+  })
+}
+
+/**
+ * Algorithm footprint under each layout convention.
+ *
+ * The distance is held fixed at the estimate's own, so the only thing varying is how
+ * many patches the register occupies. Mixing in a distance change would hide which
+ * factor caused the difference, and the whole point is that routing space is a separate
+ * multiplier from code distance.
+ */
+function layoutSensitivityCurve(
+  input: FaultTolerantInput,
+  assumptions: FaultTolerantAssumptions,
+  logicalCycles: number,
+): LayoutSensitivityPoint[] {
+  const distance =
+    assumptions.physical_error_rate >= assumptions.threshold
+      ? null
+      : requiredCodeDistance(input.logical_qubits, logicalCycles, assumptions)
+  return LAYOUT_MODELS.map(({ name, source, logicalQubits }) => {
+    const occupied = logicalQubits(input.logical_qubits)
+    return {
+      layout: name,
+      source,
+      logical_qubits: occupied,
+      physical_qubits:
+        distance === null
+          ? null
+          : assumptions.qubits_per_logical_d_squared * distance * distance * occupied,
     }
   })
 }

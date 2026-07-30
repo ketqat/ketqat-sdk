@@ -109,6 +109,34 @@ export declare const PREFACTOR_MODELS: ReadonlyArray<{
     prefactor: number;
     source: string;
 }>;
+/**
+ * How many logical qubits a layout actually occupies (ketqat-sdk#204).
+ *
+ * A logical qubit needs somewhere to route to. Lattice surgery moves information by
+ * merging and splitting patches, which needs free space adjacent to the data, so a
+ * register of n logical qubits does not occupy n patches. Microsoft's resource
+ * estimator uses 2n + ceil(sqrt(8n)) + 1 -- verified here against `qdk` 1.30.0, exact
+ * at n = 4, 8, 16, 32 and 100 -- and this project used bare n, which is 4 where QDK
+ * says 15.
+ *
+ * That is not a convention difference like the prefactor. Routing space is real
+ * hardware, and omitting it understates the algorithm footprint by ~3.75x at small n.
+ * Reported rather than silently substituted, because the existing figure is what every
+ * stored estimate used and changing its meaning without saying so would make old and
+ * new numbers incomparable.
+ */
+export declare const LAYOUT_MODELS: ReadonlyArray<{
+    name: string;
+    source: string;
+    logicalQubits: (algorithmQubits: number) => number;
+}>;
+/** The algorithm footprint under each layout convention. */
+export interface LayoutSensitivityPoint {
+    layout: string;
+    source: string;
+    logical_qubits: number;
+    physical_qubits: number | null;
+}
 /** The same algorithm costed under each published prefactor. */
 export interface ModelSensitivityPoint {
     model: string;
@@ -144,6 +172,14 @@ export interface FaultTolerantEstimate {
      * hides the one they cannot.
      */
     model_sensitivity: ModelSensitivityPoint[];
+    /**
+     * The algorithm footprint under each layout convention.
+     *
+     * Unlike `model_sensitivity`, the entries here are not equally defensible: routing
+     * space is real hardware, so the bare-register row is an underestimate rather than an
+     * alternative reading. It is retained because it is the figure earlier estimates used.
+     */
+    layout_sensitivity: LayoutSensitivityPoint[];
     notes: string[];
 }
 /** Logical error probability per logical qubit per cycle at distance `d`. */

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Differential test: this project's surface-code model against Qualtran's.
+"""Differential test: this project's surface-code model against Qualtran and QDK.
 
 Item 5 asks for resource estimates "using Qualtran/PennyLane/QDK models". Qualtran is
 Python and this project's estimator is TypeScript, so it cannot be called at runtime
@@ -28,7 +28,7 @@ more correct. Qualtran's own source says of the prefactor: "The pre-factor $a$ h
 clear provenance." The disagreement is quantified and reported instead, because it moves
 the answer by a full distance step and therefore the qubit count by up to ~1.6x.
 
-Run: python scripts/verify-qualtran-parity.py
+Run: python scripts/verify-resource-model-parity.py
 Requires: qualtran, and `npm run build` to have produced dist/.
 """
 
@@ -66,6 +66,7 @@ THRESHOLD = 0.01
 ERROR_RATES = [3e-3, 1e-3, 5e-4, 1e-4]
 BUDGETS = [1e-6, 1e-9, 1e-12, 1e-15]
 PREFACTORS = [0.03, 0.1]
+REGISTER_SIZES = [4, 8, 16, 32, 100]
 
 failures: list[str] = []
 notes: list[str] = []
@@ -80,7 +81,7 @@ def ts_distances() -> list[dict]:
     """Ask the built TypeScript estimator for its answers."""
     script = """
 import { requiredCodeDistance, logicalErrorPerCycle, DEFAULT_FT_ASSUMPTIONS,
-         PREFACTOR_MODELS } from "./dist/engine/fault-tolerant.js"
+         PREFACTOR_MODELS, LAYOUT_MODELS } from "./dist/engine/fault-tolerant.js"
 const rows = []
 for (const p of %(rates)s) for (const budget of %(budgets)s) for (const prefactor of %(prefs)s) {
   const a = { ...DEFAULT_FT_ASSUMPTIONS, physical_error_rate: p, error_budget: budget, prefactor }
@@ -90,11 +91,14 @@ for (const p of %(rates)s) for (const budget of %(budgets)s) for (const prefacto
 console.log(JSON.stringify({ rows, models: PREFACTOR_MODELS,
   qubitsPerLogicalDSquared: DEFAULT_FT_ASSUMPTIONS.qubits_per_logical_d_squared,
   defaultPrefactor: DEFAULT_FT_ASSUMPTIONS.prefactor,
-  threshold: DEFAULT_FT_ASSUMPTIONS.threshold }))
+  threshold: DEFAULT_FT_ASSUMPTIONS.threshold,
+  layouts: LAYOUT_MODELS.map((m) => ({ name: m.name,
+    qubits: %(sizes)s.map((n) => m.logicalQubits(n)) })) }))
 """ % {
         "rates": json.dumps(ERROR_RATES),
         "budgets": json.dumps(BUDGETS),
         "prefs": json.dumps(PREFACTORS),
+        "sizes": json.dumps(REGISTER_SIZES),
     }
     path = ROOT / ".qualtran-parity-probe.mjs"
     path.write_text(script)
@@ -107,7 +111,7 @@ console.log(JSON.stringify({ rows, models: PREFACTOR_MODELS,
     return json.loads(out.stdout)
 
 
-print("Differential test: ketqat surface-code model vs Qualtran\n")
+print("Differential test: ketqat surface-code model vs Qualtran and QDK\n")
 
 payload = ts_distances()
 rows = payload["rows"]
@@ -219,6 +223,96 @@ print(
 )
 print("   Neither value is more correct; Qualtran calls the prefactor unprovenanced.\n")
 
+# ------------------------------------------------------------------ 5. QDK layout
+print("5. Layout overhead against Microsoft's QDK estimator")
+try:
+    from qdk.estimator import LogicalCounts
+except ImportError:
+    message = 'qdk is not installed. `pip install -e "python[resources]"` for the layout check.'
+    if REQUIRE:
+        print(f"   FAIL: {message}")
+        failures.append(message)
+    else:
+        print(f"   SKIP: {message}")
+else:
+    def qdk_estimate(algorithm_qubits: int, t_count: int, ccz_count: int) -> dict:
+        result = LogicalCounts(
+            {
+                "numQubits": algorithm_qubits,
+                "tCount": t_count,
+                "rotationCount": 0,
+                "rotationDepth": 0,
+                "cczCount": ccz_count,
+                "measurementCount": 0,
+            }
+        ).estimate()
+        raw = result.json
+        data = json.loads(raw) if isinstance(raw, str) else raw
+        return data
+
+    # Read from the TypeScript build. Reimplementing the formula here would compare
+    # Python with QDK and leave the shipped model unchecked -- four mutations to
+    # LAYOUT_MODELS survived a version of this check that did exactly that.
+    layouts = {entry["name"]: entry["qubits"] for entry in payload["layouts"]}
+    routed = [name for name in layouts if "QDK" in name or "layout" in name.lower()]
+    check(bool(routed), "no routed layout model found in LAYOUT_MODELS")
+    layout_checked = 0
+    for name in routed:
+        for index, n in enumerate(REGISTER_SIZES):
+            data = qdk_estimate(n, 4, 1)
+            theirs = data["physicalCounts"]["breakdown"]["algorithmicLogicalQubits"]
+            mine = layouts[name][index]
+            check(mine == theirs, f"layout mismatch at n={n}: ours {mine}, QDK {theirs}")
+            layout_checked += 1
+    # And the bare-register model must NOT match, or the two entries are the same thing
+    # twice and the routed row is decoration.
+    bare = [name for name in layouts if name not in routed]
+    for name in bare:
+        check(
+            layouts[name] != layouts[routed[0]],
+            f"layout model '{name}' is identical to '{routed[0]}'; one of them is redundant",
+        )
+    print(
+        f"   {layout_checked} register sizes agree with QDK's algorithmicLogicalQubits, "
+        f"read from the TypeScript build ({', '.join(routed)})."
+    )
+
+    # The per-logical-qubit footprint is now agreed by three independent sources.
+    data = qdk_estimate(4, 4, 1)
+    logical = data["logicalQubit"]
+    d_qdk = logical["codeDistance"]
+    check(
+        logical["physicalQubits"] == DEFAULT_QUBITS_PER_LOGICAL_D_SQUARED * d_qdk * d_qdk,
+        f"QDK per-logical footprint {logical['physicalQubits']} != {DEFAULT_QUBITS_PER_LOGICAL_D_SQUARED}d^2 at d={d_qdk}",
+    )
+    print(
+        f"   Per-logical footprint {DEFAULT_QUBITS_PER_LOGICAL_D_SQUARED}d^2 agreed by three "
+        "independent implementations (this project, Qualtran, QDK)."
+    )
+
+    # Reported, not asserted: the factory share. This project counts magic *states* and
+    # declines to size a factory, so its total is not comparable to QDK's -- and the gap
+    # is not a rounding difference.
+    print()
+    print("6. What this project's total omits (reported, not asserted)")
+    for t_count, ccz in ((1, 0), (4, 1), (100, 10), (10000, 1000)):
+        data = qdk_estimate(4, t_count, ccz)
+        counts = data["physicalCounts"]
+        breakdown = counts["breakdown"]
+        total = counts["physicalQubits"]
+        factories = breakdown["physicalQubitsForTfactories"]
+        share = 100 * factories / total if total else 0
+        print(
+            f"   T={t_count:<6} CCZ={ccz:<5} QDK total {total:>8,}  "
+            f"algorithm {breakdown['physicalQubitsForAlgorithm']:>6,}  "
+            f"factories {factories:>8,} ({share:.0f}% of the machine)"
+        )
+    notes.append(
+        "magic-state factories are 58-98% of QDK's machine and are not in this project's "
+        "physical_qubits, which counts magic states rather than sizing a factory"
+    )
+    print()
+
 # ------------------------------------------------------------------------- verdict
 if failures:
     print("FAIL")
@@ -226,8 +320,9 @@ if failures:
         print("  -", line)
     sys.exit(1)
 
-print("PASS: the two models agree on form, qubit count, and inversion away from")
-print("      exact budget boundaries. Prefactor difference quantified above.")
+print("PASS: form, per-logical footprint and inversion agree with Qualtran away from")
+print("      exact budget boundaries; the layout formula agrees with QDK. The prefactor")
+print("      spread and the omitted factory footprint are quantified above, not asserted.")
 if notes:
     print("\nRecorded conventions:")
     for line in notes:
