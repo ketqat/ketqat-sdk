@@ -32,6 +32,10 @@ import {
   emitQasm3,
   gateCount,
   parseQasm3,
+  diffCircuits,
+  verifyDiff,
+  operationKey,
+  CircuitDiffError,
   distilledError,
   requiredLevels,
   estimateFactoryCost,
@@ -5190,4 +5194,149 @@ c[0] = measure q[0];
   assert.throws(() => estimateFactoryCost(100, 0), /at least one logical qubit/)
   assert.throws(() => estimateFactoryCost(-1, 10), /finite and non-negative/)
   assert.throws(() => requiredLevels(1e-3, 0), /Target error must be in/)
+}
+
+
+// ---------------------------------------------------------------------------
+// Circuit diff (ketqat-sdk#198)
+// ---------------------------------------------------------------------------
+{
+  const circuitOf = (body, width = 5) =>
+    parseQasm3(`OPENQASM 3.0;\ninclude "stdgates.inc";\nqubit[${width}] q;\n${body}`).circuit
+
+  // The load-bearing property is accounting, and it is an identity rather than a
+  // tolerance: removed+unchanged must reproduce the left circuit exactly, and
+  // unchanged+added the right. A diff that lost an operation would still render as a
+  // plausible list while understating the change.
+  const soundnessCases = [
+    [circuitOf("h q[0];\ncx q[0], q[1];\n"), circuitOf("h q[0];\nswap q[0], q[1];\ncx q[1], q[2];\n")],
+    [circuitOf("h q[0];\n"), circuitOf("h q[0];\n")],
+    [circuitOf("h q[0];\n"), circuitOf("x q[0];\n")],
+    [circuitOf(""), circuitOf("h q[0];\ncx q[0], q[1];\n")],
+    [circuitOf("h q[0];\ncx q[0], q[1];\n"), circuitOf("")],
+    [circuitOf("h q[0];\nt q[1];\nh q[2];\n"), circuitOf("t q[1];\n")],
+  ]
+  for (const [left, right] of soundnessCases) {
+    const diff = diffCircuits(left, right)
+    const verification = verifyDiff(left, right, diff)
+    assert.ok(verification.sound, verification.detail)
+    assert.ok(verification.reconstructsLeft && verification.reconstructsRight)
+    // The counts must add up to both inputs.
+    assert.equal(diff.unchanged + diff.removed, left.operations.length)
+    assert.equal(diff.unchanged + diff.added, right.operations.length)
+  }
+
+  // Identical circuits report identical, not "everything replaced".
+  {
+    const same = circuitOf("h q[0];\ncx q[0], q[1];\n")
+    const diff = diffCircuits(same, same)
+    assert.equal(diff.identical, true)
+    assert.equal(diff.added, 0)
+    assert.equal(diff.removed, 0)
+    assert.equal(diff.unchanged, 2)
+  }
+
+  // An angle change must not be hidden. Excluding parameters from the identity would
+  // treat rz(0.5) and rz(0.7) as the same operation, which is the quietest way for a
+  // transformation to alter a circuit's meaning.
+  {
+    const before = circuitOf("rz(0.5) q[0];\n")
+    const after = circuitOf("rz(0.7) q[0];\n")
+    const diff = diffCircuits(before, after)
+    assert.equal(diff.identical, false)
+    assert.equal(diff.added, 1)
+    assert.equal(diff.removed, 1)
+    assert.ok(verifyDiff(before, after, diff).sound)
+  }
+
+  // Qubit changes are detected too: the same gate on different qubits is a different
+  // operation.
+  {
+    const diff = diffCircuits(circuitOf("cx q[0], q[1];\n"), circuitOf("cx q[1], q[2];\n"))
+    assert.equal(diff.identical, false)
+  }
+
+  // The alignment is minimal in edit count, not merely valid. Deleting everything and
+  // adding everything is always a valid diff and always useless.
+  {
+    const left = circuitOf("h q[0];\nt q[1];\nh q[2];\n")
+    const right = circuitOf("h q[0];\nx q[1];\nh q[2];\n")
+    const diff = diffCircuits(left, right)
+    assert.equal(diff.unchanged, 2, "the two matching h gates must be recognised as unchanged")
+    assert.equal(diff.added, 1)
+    assert.equal(diff.removed, 1)
+  }
+
+  // Per-gate deltas make a change attributable. "6 operations added" does not say
+  // whether a transpiler inserted SWAPs or decomposed a Toffoli.
+  {
+    const diff = diffCircuits(
+      circuitOf("h q[0];\ncx q[0], q[1];\n"),
+      circuitOf("h q[0];\nswap q[0], q[1];\nswap q[1], q[2];\ncx q[2], q[3];\n"),
+    )
+    const swaps = diff.gateDeltas.find((entry) => entry.name === "swap")
+    assert.ok(swaps, "swap should appear in the gate deltas")
+    assert.equal(swaps.delta, 2)
+    // Only changed names are listed; h is unchanged and so absent.
+    assert.ok(!diff.gateDeltas.some((entry) => entry.name === "h"))
+    assert.match(diff.summary, /Largest change: swap \+2/)
+  }
+
+  // Entries are emitted in sequence order, so the list reads as a diff rather than
+  // three buckets.
+  {
+    const diff = diffCircuits(circuitOf("h q[0];\nt q[1];\n"), circuitOf("h q[0];\nx q[1];\n"))
+    assert.equal(diff.entries[0]?.kind, "unchanged")
+    assert.ok(diff.entries.slice(1).some((entry) => entry.kind === "removed"))
+    assert.ok(diff.entries.slice(1).some((entry) => entry.kind === "added"))
+  }
+
+  // Operation identity covers every operation kind, not only gates.
+  {
+    const withMeasure = parseQasm3(
+      `OPENQASM 3.0;\ninclude "stdgates.inc";\nqubit[2] q;\nbit[1] c;\nh q[0];\nc[0] = measure q[0];\n`,
+    ).circuit.operations
+    assert.ok(operationKey(withMeasure[0]).startsWith("gate:h"))
+    const barrier = parseQasm3(
+      `OPENQASM 3.0;\ninclude "stdgates.inc";\nqubit[2] q;\nbarrier q[0], q[1];\n`,
+    ).circuit.operations[0]
+    assert.ok(operationKey(barrier).startsWith("barrier:"))
+    const conditional = parseQasm3(
+      `OPENQASM 3.0;\ninclude "stdgates.inc";\nqubit[1] q;\nbit[1] c;\nif (c[0]) { x q[0]; }\n`,
+    ).circuit.operations[0]
+    assert.match(operationKey(conditional), /^if\(c\[0\]==1\):gate:x/)
+  }
+
+  // A diff too large to align exactly refuses rather than exhausting memory, and the
+  // guard is on the product so a long-against-short diff still works.
+  {
+    const wide = { qubit_registers: [{ name: "q", size: 1 }], clbit_registers: [], operations: [] }
+    const many = {
+      ...wide,
+      operations: Array.from({ length: 2100 }, () => ({
+        kind: "gate",
+        name: "h",
+        parameters: [],
+        qubits: [{ register: "q", index: 0 }],
+      })),
+    }
+    assert.throws(() => diffCircuits(many, many), CircuitDiffError)
+    // Long against short is fine: 2100 x 1 is a small table.
+    const short = { ...wide, operations: [many.operations[0]] }
+    assert.ok(diffCircuits(many, short).removed > 0)
+  }
+
+  // A tampered diff must be reported unsound, so the verification is not vacuous.
+  {
+    const left = circuitOf("h q[0];\ncx q[0], q[1];\n")
+    const right = circuitOf("h q[0];\n")
+    const diff = diffCircuits(left, right)
+    assert.ok(verifyDiff(left, right, diff).sound)
+
+    const tampered = { ...diff, entries: diff.entries.filter((entry) => entry.kind !== "removed") }
+    const verification = verifyDiff(left, right, tampered)
+    assert.equal(verification.sound, false, "dropping a removal must be caught")
+    assert.match(verification.detail, /UNSOUND/)
+    assert.match(verification.detail, /understates or misstates the change/)
+  }
 }
