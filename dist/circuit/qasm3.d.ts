@@ -28,6 +28,35 @@ export declare class Qasm3ParseError extends Error {
 export interface Qasm3ParseResult {
     circuit: QuantumCircuit;
     loss_report: LossReportEntry[];
+    /**
+     * Where each custom-gate expansion landed in the flattened operation list
+     * (ketqat-sdk#200).
+     *
+     * Inlining is exact but it erases structure: after expansion the circuit is a flat
+     * list and nothing records that five of those operations were one named unit. The
+     * loss report says a gate *was* inlined; these say **which operations came from
+     * it**, which is what a caller needs to show a subcircuit as a unit rather than
+     * pre-flattened.
+     *
+     * Spans are half-open `[start, end)` over `circuit.operations`, and they nest: a
+     * custom gate calling another produces an inner span inside an outer one.
+     */
+    subcircuits: SubcircuitSpan[];
+}
+/** One expansion of a custom gate into the flattened operation list. */
+export interface SubcircuitSpan {
+    name: string;
+    /** Nesting depth: 0 for a call in the program, 1 for a call inside a definition. */
+    depth: number;
+    /** First operation index this expansion produced. */
+    start: number;
+    /** One past the last operation index. Half-open so `end - start` is the length. */
+    end: number;
+    /** Actual qubit operands at the call site. */
+    qubits: string[];
+    /** Actual parameter expressions at the call site, before substitution. */
+    parameters: string[];
+    line: number;
 }
 /**
  * Register name given to OpenQASM 3 hardware qubits (`$0`, `$1`, ...).

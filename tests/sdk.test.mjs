@@ -5340,3 +5340,105 @@ c[0] = measure q[0];
     assert.match(verification.detail, /understates or misstates the change/)
   }
 }
+
+
+// ---------------------------------------------------------------------------
+// Subcircuit spans (ketqat-sdk#200)
+// ---------------------------------------------------------------------------
+{
+  // Inlining is exact but it erases structure: after expansion the circuit is flat and
+  // nothing records that several operations were one named unit. The loss report says
+  // a gate WAS inlined; spans say which operations came from it, which is what showing
+  // a subcircuit as a unit requires.
+  const plain = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+gate Oracle a, b { x a; cx a, b; x a; }
+qubit[2] q;
+h q[0];
+Oracle q[0], q[1];
+h q[1];
+`)
+  assert.equal(plain.circuit.operations.length, 5)
+  assert.equal(plain.subcircuits.length, 1)
+  const oracle = plain.subcircuits[0]
+  assert.equal(oracle.name, "Oracle")
+  assert.equal(oracle.depth, 0)
+  // Half-open, so end - start is the length, and it covers exactly the expansion.
+  assert.equal(oracle.start, 1)
+  assert.equal(oracle.end, 4)
+  assert.deepEqual(oracle.qubits, ["q[0]", "q[1]"])
+  // The span's operations are the expansion, and the ones outside it are not.
+  const inside = plain.circuit.operations.slice(oracle.start, oracle.end).map((operation) => operation.name)
+  assert.deepEqual(inside, ["x", "cx", "x"])
+  assert.equal(plain.circuit.operations[0].name, "h")
+  assert.equal(plain.circuit.operations[4].name, "h")
+
+  // Two calls of the same gate are separate spans with their own operands, not one
+  // merged region.
+  const twice = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+gate Pair a, b { cx a, b; }
+qubit[3] q;
+Pair q[0], q[1];
+h q[2];
+Pair q[1], q[2];
+`)
+  assert.equal(twice.subcircuits.length, 2)
+  assert.deepEqual(
+    twice.subcircuits.map((span) => [span.start, span.end]),
+    [
+      [0, 1],
+      [2, 3],
+    ],
+  )
+  assert.deepEqual(twice.subcircuits[0].qubits, ["q[0]", "q[1]"])
+  assert.deepEqual(twice.subcircuits[1].qubits, ["q[1]", "q[2]"])
+
+  // Nesting: a custom gate calling another yields an inner span contained by the
+  // outer one, with depth recording which is which.
+  const nested = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+gate Inner a { h a; t a; }
+gate Outer a, b { Inner a; cx a, b; }
+qubit[2] q;
+Outer q[0], q[1];
+`)
+  assert.equal(nested.subcircuits.length, 2)
+  const inner = nested.subcircuits.find((span) => span.name === "Inner")
+  const outer = nested.subcircuits.find((span) => span.name === "Outer")
+  assert.equal(inner.depth, 1)
+  assert.equal(outer.depth, 0)
+  // Containment: the inner span lies within the outer one.
+  assert.ok(inner.start >= outer.start && inner.end <= outer.end)
+  assert.equal(outer.end - outer.start, 3)
+  assert.equal(inner.end - inner.start, 2)
+  // Inner is recorded first, because spans are pushed on completion.
+  assert.ok(nested.subcircuits.indexOf(inner) < nested.subcircuits.indexOf(outer))
+
+  // Call-site parameters are kept unsubstituted, so a reader sees what was written.
+  const parameterised = parseQasm3(`OPENQASM 3.0;
+include "stdgates.inc";
+gate Rot(theta) a { rz(theta) a; }
+qubit[1] q;
+Rot(0.7) q[0];
+`)
+  assert.deepEqual(parameterised.subcircuits[0].parameters, ["0.7"])
+
+  // A circuit with no custom gates reports no spans rather than one covering
+  // everything.
+  assert.deepEqual(
+    parseQasm3(`OPENQASM 3.0;\ninclude "stdgates.inc";\nqubit[2] q;\nh q[0];\ncx q[0], q[1];\n`).subcircuits,
+    [],
+  )
+
+  // Every span must be a valid range over the operations it claims, on every fixture
+  // above -- an out-of-range span would slice silently and show the wrong operations.
+  for (const result of [plain, twice, nested, parameterised]) {
+    for (const span of result.subcircuits) {
+      assert.ok(span.start >= 0, `${span.name}: negative start`)
+      assert.ok(span.end <= result.circuit.operations.length, `${span.name}: end past the circuit`)
+      assert.ok(span.end > span.start, `${span.name}: empty or inverted span`)
+      assert.ok(span.line > 0, `${span.name}: no source line`)
+    }
+  }
+}
