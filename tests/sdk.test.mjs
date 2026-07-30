@@ -32,6 +32,13 @@ import {
   emitQasm3,
   gateCount,
   parseQasm3,
+  distilledError,
+  requiredLevels,
+  estimateFactoryCost,
+  DistillationError,
+  STATES_PER_BLOCK,
+  DISTILLATION_PREFACTOR,
+  MAX_DISTILLATION_LEVELS,
   verifyRouting,
   unpermuteAmplitudes,
   MAX_VERIFIABLE_QUBITS,
@@ -5033,4 +5040,154 @@ c[0] = measure q[0];
     assert.equal(verification.verdict, "inconclusive")
     assert.match(verification.detail, /INCONCLUSIVE rather than assumed/)
   }
+}
+
+
+// ---------------------------------------------------------------------------
+// Magic-state distillation factories (ketqat-sdk#196)
+// ---------------------------------------------------------------------------
+{
+  // fault-tolerant.ts counted magic states and said so explicitly, because
+  // inventing a footprint would be a fabricated number. This closes the gap by
+  // grounding the cost in the protocol's arithmetic, and the tests keep the exact
+  // parts separate from the modelled part.
+
+  // Exact: 15-to-1 suppresses error as p -> 35 p^3. Checkable by hand.
+  assert.equal(DISTILLATION_PREFACTOR, 35)
+  assert.equal(STATES_PER_BLOCK, 15)
+  assert.ok(Math.abs(distilledError(1e-3) - 35e-9) < 1e-20)
+  assert.ok(Math.abs(distilledError(0.1) - 0.035) < 1e-12)
+  assert.equal(distilledError(0), 0)
+  assert.throws(() => distilledError(-0.1), DistillationError)
+  assert.throws(() => distilledError(1.5), DistillationError)
+
+  // Exact: the level count follows from the recursion, and states per output is
+  // 15^levels.
+  {
+    const twoLevels = requiredLevels(1e-3, 1e-10)
+    assert.equal(twoLevels.levels, 2)
+    assert.equal(twoLevels.statesPerOutput, 225)
+    assert.ok(twoLevels.reachedTarget)
+    // The intermediate errors are reported so convergence is visible, not asserted.
+    assert.equal(twoLevels.errorPerLevel.length, 2)
+    assert.ok(Math.abs(twoLevels.errorPerLevel[0] - 3.5e-8) < 1e-12)
+
+    const oneLevel = requiredLevels(1e-4, 1e-10)
+    assert.equal(oneLevel.levels, 1)
+    assert.equal(oneLevel.statesPerOutput, 15)
+  }
+
+  // More rounds must never make a converging state worse, and the level count must
+  // rise (or hold) as the target tightens.
+  {
+    const loose = requiredLevels(1e-3, 1e-5)
+    const tight = requiredLevels(1e-3, 1e-30)
+    assert.ok(tight.levels >= loose.levels)
+    assert.ok(tight.finalError <= loose.finalError)
+  }
+
+  // The fixed point is a real boundary, not a tolerance. Distillation improves a
+  // state only when 35 p^3 < p, i.e. p < 1/sqrt(35) ~ 0.169; above it more rounds
+  // make things worse, so a level count there would be actively misleading.
+  {
+    const aboveFixedPoint = requiredLevels(0.2, 1e-10)
+    assert.equal(aboveFixedPoint.levels, 0)
+    assert.equal(aboveFixedPoint.reachedTarget, false)
+    assert.match(aboveFixedPoint.reason, /fixed point/)
+    assert.match(aboveFixedPoint.reason, /physical error rate has to come down first/)
+    // And just below it, distillation does help.
+    assert.ok(requiredLevels(0.15, 0.14).levels > 0)
+  }
+
+  // An unreachable target is reported as not reached rather than by adding levels
+  // indefinitely.
+  {
+    const unreachable = requiredLevels(0.16, 1e-30)
+    assert.ok(unreachable.levels <= MAX_DISTILLATION_LEVELS)
+    if (!unreachable.reachedTarget) assert.match(unreachable.reason, /rather than by adding levels/)
+  }
+
+  // The point of the whole module: a T count without a factory understates the
+  // device. Here the factory is three quarters of it.
+  {
+    const small = estimateFactoryCost(100, 10)
+    assert.ok(small.factoryPhysicalQubits > small.algorithmPhysicalQubits)
+    assert.ok(small.factoryShareOfDevice > 0.5)
+    assert.equal(small.totalPhysicalQubits, small.algorithmPhysicalQubits + small.factoryPhysicalQubits)
+    assert.ok(small.warnings.some((entry) => /understates the hardware requirement/.test(entry)))
+
+    // Exact arithmetic is reported separately from the model, so a reader can tell
+    // which numbers are checkable and which are assumptions.
+    assert.ok(small.exactArithmetic.some((entry) => /15-to-1 consumes 15 inputs/.test(entry)))
+    assert.ok(small.modelAssumptions.some((entry) => /NOT a measured or published figure/.test(entry)))
+
+    // Total raw states is exact: magic states times 15^levels.
+    assert.equal(small.totalInputStates, 100 * small.statesPerOutput)
+  }
+
+  // A Clifford circuit needs no factory at all.
+  //
+  // Tested because the first version computed the share from the un-zeroed
+  // footprint and warned that a zero-T circuit's factory dominated the device -- a
+  // warning about a factory it does not have.
+  {
+    const clifford = estimateFactoryCost(0, 10)
+    assert.equal(clifford.factoryPhysicalQubits, 0)
+    assert.equal(clifford.factoryShareOfDevice, 0)
+    assert.equal(clifford.totalPhysicalQubits, clifford.algorithmPhysicalQubits)
+    assert.ok(clifford.warnings.some((entry) => /no factory is needed/.test(entry)))
+    assert.ok(
+      !clifford.warnings.some((entry) => /% of the device/.test(entry)),
+      "a circuit with no factory must not be warned about its factory size",
+    )
+  }
+
+  // The factory's footprint does not grow with T count -- it is a fixed
+  // installation whose share therefore falls as the algorithm grows.
+  {
+    const shares = [
+      estimateFactoryCost(100, 10).factoryShareOfDevice,
+      estimateFactoryCost(1000, 50).factoryShareOfDevice,
+      estimateFactoryCost(1e6, 100).factoryShareOfDevice,
+    ]
+    for (const [index, share] of shares.entries()) {
+      if (index === 0) continue
+      assert.ok(share < shares[index - 1], `share should fall as the algorithm grows: ${shares.join(", ")}`)
+    }
+  }
+
+  // The footprint must scale with the level count, since each level is another
+  // block of patches.
+  //
+  // Added because a mutation dropping the level factor survived every other test:
+  // the remaining assertions only compared shares and orderings, and a footprint
+  // too small by a factor of two still satisfied "factory larger than algorithm".
+  {
+    const oneLevel = estimateFactoryCost(100, 10, { rawStateError: 1e-4, targetStateError: 1e-10 })
+    const twoLevels = estimateFactoryCost(100, 10, { rawStateError: 1e-3, targetStateError: 1e-10 })
+    assert.equal(oneLevel.levels, 1)
+    assert.equal(twoLevels.levels, 2)
+    assert.equal(
+      twoLevels.factoryPhysicalQubits,
+      2 * oneLevel.factoryPhysicalQubits,
+      "two levels must cost twice one level's patches",
+    )
+    // And the exact per-level footprint: 15 patches of 2d^2 at the factory distance.
+    assert.equal(oneLevel.factoryPhysicalQubits, 15 * 2 * 15 * 15)
+  }
+
+  // A larger factory distance costs quadratically more, as 2d^2 requires.
+  {
+    const near = estimateFactoryCost(100, 10, { factoryDistance: 11 })
+    const far = estimateFactoryCost(100, 10, { factoryDistance: 21 })
+    assert.ok(Math.abs(far.factoryPhysicalQubits / near.factoryPhysicalQubits - (21 * 21) / (11 * 11)) < 1e-9)
+  }
+
+  // Distances must be odd and at least 3, matching the surface-code convention
+  // used by the surrounding estimate.
+  assert.throws(() => estimateFactoryCost(100, 10, { factoryDistance: 4 }), /odd integer/)
+  assert.throws(() => estimateFactoryCost(100, 10, { algorithmDistance: 1 }), /odd integer/)
+  assert.throws(() => estimateFactoryCost(100, 0), /at least one logical qubit/)
+  assert.throws(() => estimateFactoryCost(-1, 10), /finite and non-negative/)
+  assert.throws(() => requiredLevels(1e-3, 0), /Target error must be in/)
 }

@@ -12,4 +12,5 @@ export * from "./clifford-regression.js";
 export * from "./virtual-distillation.js";
 export * from "./zx-graph.js";
 export * from "./routing-verification.js";
+export * from "./distillation.js";
 //# sourceMappingURL=index.d.ts.map
