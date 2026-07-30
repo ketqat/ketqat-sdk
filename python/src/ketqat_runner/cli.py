@@ -9,6 +9,16 @@ import yaml
 
 from .examples import get_example_manifest, list_example_manifests, read_example_manifest
 from .runner import run_experiment
+from .jobs import (
+    JobError,
+    TOKEN_ENVIRONMENT_VARIABLE as JOB_TOKEN_VARIABLE,
+    cancel_job,
+    get_job,
+    job_bundle,
+    list_jobs,
+    submit_job,
+    summarize_job,
+)
 from .publish import (
     DEFAULT_BASE_URL,
     PublishError,
@@ -65,7 +75,129 @@ def main() -> int:
         help="Check the result and print what would be sent, without publishing.",
     )
 
+    # Job commands. Item 12 asks for parity across API, CLI and MCP; the REST API and the
+    # MCP tools could submit, poll and cancel, and the CLI could not reach jobs at all.
+    # These enqueue and never execute -- a CLI that ran a circuit locally and uploaded the
+    # answer would produce a record with no audit trail and no enforced limits.
+    job_parser = subcommands.add_parser(
+        "job",
+        help="Queue, poll and cancel sandboxed execution jobs.",
+        description=(
+            "Jobs run in a separate sandboxed worker, never in this process. The API token is "
+            f"read from the {JOB_TOKEN_VARIABLE} environment variable, the same one `ketqat publish` "
+            "uses, and is deliberately not a command-line option."
+        ),
+    )
+    job_subcommands = job_parser.add_subparsers(dest="job_command", required=True)
+
+    job_submit = job_subcommands.add_parser(
+        "submit",
+        help="Queue a circuit for sandboxed simulation.",
+        description=(
+            "Prints what would run and exits without queueing unless --confirm is given. The "
+            "default is to refuse, so a scripted invocation that forgets the flag cannot submit."
+        ),
+    )
+    job_submit.add_argument("qasm", type=Path, help="OpenQASM 3 file to simulate.")
+    job_submit.add_argument("--shots", type=int, default=1024, help="Shots to sample. Defaults to 1024.")
+    job_submit.add_argument(
+        "--operation", default="simulate", help="Worker operation. Defaults to simulate."
+    )
+    job_submit.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Actually queue the job. Without this the command only reports what would run.",
+    )
+    job_submit.add_argument("--base-url", default=DEFAULT_BASE_URL, help=f"Defaults to {DEFAULT_BASE_URL}.")
+
+    job_status = job_subcommands.add_parser("status", help="Show one job's current state.")
+    job_status.add_argument("job_id")
+    job_status.add_argument("--base-url", default=DEFAULT_BASE_URL)
+
+    job_list = job_subcommands.add_parser("list", help="List your jobs, most recent first.")
+    job_list.add_argument("--status", help="Filter by status, e.g. QUEUED or RUNNING.")
+    job_list.add_argument("--limit", type=int, default=20)
+    job_list.add_argument("--base-url", default=DEFAULT_BASE_URL)
+
+    job_cancel = job_subcommands.add_parser(
+        "cancel",
+        help="Request cancellation of a job.",
+        description=(
+            "A request, not an interruption. A queued job is cancelled outright; a running one "
+            "records the request and stops at its next transition."
+        ),
+    )
+    job_cancel.add_argument("job_id")
+    job_cancel.add_argument("--base-url", default=DEFAULT_BASE_URL)
+
+    job_bundle_parser = job_subcommands.add_parser(
+        "bundle", help="Fetch the reproducibility bundle for a finished job."
+    )
+    job_bundle_parser.add_argument("job_id")
+    job_bundle_parser.add_argument("--output", type=Path, help="Write the bundle here instead of stdout.")
+    job_bundle_parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
+
     args = parser.parse_args()
+
+    if args.command == "job":
+        try:
+            if args.job_command == "submit":
+                qasm = args.qasm.read_text(encoding="utf-8")
+                # The refusal path raises with the description, so the safe default and the
+                # explanation are one thing rather than two that can disagree.
+                job = submit_job(
+                    operation=args.operation,
+                    qasm=qasm,
+                    shots=args.shots,
+                    confirmed=args.confirm,
+                    base_url=args.base_url,
+                )
+                print("Queued a sandboxed execution job.")
+                print(summarize_job(job))
+                print(f"\nPoll it with: ketqat job status {job.get('id', '<id>')}")
+                return 0
+
+            if args.job_command == "status":
+                print(summarize_job(get_job(args.job_id, base_url=args.base_url)))
+                return 0
+
+            if args.job_command == "list":
+                payload = list_jobs(status=args.status, limit=args.limit, base_url=args.base_url)
+                entries = payload.get("jobs") or []
+                if not entries:
+                    print("No jobs." if not args.status else f"No jobs with status {args.status}.")
+                    return 0
+                for entry in entries:
+                    print(summarize_job(entry))
+                    print()
+                return 0
+
+            if args.job_command == "cancel":
+                job = cancel_job(args.job_id, base_url=args.base_url)
+                # Never reported as "cancelled" for a running job: the worker is not
+                # interrupted, so that claim would be untrue.
+                print("Cancellation requested.")
+                print(summarize_job(job))
+                return 0
+
+            if args.job_command == "bundle":
+                bundle = job_bundle(args.job_id, base_url=args.base_url)
+                text = json.dumps(bundle, indent=2, sort_keys=True)
+                if args.output:
+                    args.output.write_text(text + "\n", encoding="utf-8")
+                    print(f"Wrote the bundle to {args.output}.")
+                else:
+                    print(text)
+                return 0
+        except JobError as error:
+            # The refusal-without-confirm path arrives here too, and it is not a failure of
+            # the command: it is the command doing what it is for. Exit 2 distinguishes it
+            # from a transport or authorization error.
+            print(str(error), file=sys.stderr)
+            return 2 if not getattr(args, "confirm", True) else 1
+        except OSError as error:
+            print(f"Could not read {args.qasm}: {error}", file=sys.stderr)
+            return 1
 
     if args.command == "run":
         try:
