@@ -55,9 +55,9 @@ def main() -> int:
         help="Publish a local result file to a KetQat registry.",
         description=(
             "Publish a result produced by `ketqat run`. The API token is read from the "
-            "KETQAT_API_TOKEN environment variable and is deliberately not a command-line "
-            "option: arguments are visible in shell history, in `ps` output to other users, "
-            "and in CI logs."
+            "KETQAT_API_TOKEN environment variable (KETQAT_TOKEN is also accepted) and is "
+            "deliberately not a command-line option: arguments are visible in shell history, "
+            "in `ps` output to other users, and in CI logs."
         ),
     )
     publish_parser.add_argument("result", type=Path, help="Result JSON written by `ketqat run`.")

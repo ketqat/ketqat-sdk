@@ -1,4 +1,5 @@
 import { type Artifact, type ArtifactListQuery, type BenchmarkResult, type BenchmarkSuite, type ReproducibilityBundle, type Visibility } from "../contracts/index.js";
+export * from "./token.js";
 /**
  * States a job never leaves. Kept here rather than imported from the queue,
  * which lives in the private control plane; the client must know when to stop

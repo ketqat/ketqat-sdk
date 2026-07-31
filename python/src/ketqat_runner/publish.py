@@ -26,7 +26,6 @@ goes out.
 from __future__ import annotations
 
 import json
-import os
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -34,11 +33,19 @@ from typing import Any
 
 from .hashing import calculate_reproducibility_hash
 from .runner_version import SDK_VERSION
+from .token_env import (
+    ACCEPTED_TOKEN_VARIABLES,
+    AmbiguousApiTokenError,
+    CANONICAL_TOKEN_VARIABLE,
+    missing_api_token_message,
+    resolve_api_token,
+)
 from .validation import KetQatValidationError, validate_result
 
 
-#: The environment variable holding the API token. Deliberately the only source.
-TOKEN_ENVIRONMENT_VARIABLE = "KETQAT_API_TOKEN"
+#: The canonical environment variable holding the API token. `KETQAT_TOKEN` is also
+#: accepted; see `token_env`. Kept under the old name because `jobs` and `cli` import it.
+TOKEN_ENVIRONMENT_VARIABLE = CANONICAL_TOKEN_VARIABLE
 
 DEFAULT_BASE_URL = "https://ketqat.com"
 
@@ -109,13 +116,15 @@ def check_publishable(result: dict[str, Any]) -> None:
 
 
 def _token() -> str:
-    token = os.environ.get(TOKEN_ENVIRONMENT_VARIABLE, "").strip()
+    # Both accepted names are read (#218). An ambiguous pair is surfaced as a
+    # PublishError rather than resolved: publishing under the wrong identity produces a
+    # record that looks correct and is misattributed.
+    try:
+        token = resolve_api_token()
+    except AmbiguousApiTokenError as exc:
+        raise PublishError(str(exc)) from exc
     if not token:
-        raise PublishError(
-            f"No API token. Set {TOKEN_ENVIRONMENT_VARIABLE} in your environment.\n"
-            "It is deliberately not a command-line option: arguments are visible in shell history, "
-            "in `ps` output to other users, and in CI logs."
-        )
+        raise PublishError(missing_api_token_message())
     return token
 
 
@@ -171,7 +180,7 @@ def publish_result(
             ) from exc
         if exc.code == 401:
             raise PublishError(
-                f"The registry rejected the token ({TOKEN_ENVIRONMENT_VARIABLE}). It may be revoked "
+                f"The registry rejected the token ({' or '.join(ACCEPTED_TOKEN_VARIABLES)}). It may be revoked "
                 "or belong to a different registry."
             ) from exc
         if exc.code == 429:

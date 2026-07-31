@@ -1513,8 +1513,11 @@ assert.equal(noRegistry.exitCode, 2)
 assert.match(noRegistry.stderr, /--registry <url> or set KETQAT_URL/)
 
 // A push without a token refuses, and explains why the token is not a flag.
-const previousToken = process.env.KETQAT_TOKEN
+// Both accepted names are cleared (#218): clearing only one would leave the CLI
+// authenticated from the other and turn this into a test of nothing.
+const previousTokens = { ...process.env }
 delete process.env.KETQAT_TOKEN
+delete process.env.KETQAT_API_TOKEN
 const cardFixture = new URL("./fixtures-cli-card.json", import.meta.url)
 fs.writeFileSync(
   cardFixture,
@@ -1533,7 +1536,10 @@ fs.writeFileSync(
 )
 const noToken = await runCli(["push", "surface-code-memory", cardFixture.pathname, "--registry", "https://example.test"])
 assert.equal(noToken.exitCode, 2)
-assert.match(noToken.stderr, /KETQAT_TOKEN/)
+// The message must name the canonical variable, which is the one printed beside
+// the token on the Settings page, and mention the accepted alias.
+assert.match(noToken.stderr, /KETQAT_API_TOKEN/)
+assert.match(noToken.stderr, /KETQAT_TOKEN is also accepted/)
 // The reason matters: a flag would leak the token into shell history.
 assert.match(noToken.stderr, /shell history/)
 
@@ -1543,7 +1549,9 @@ assert.equal((await runCli(["pull"])).exitCode, 2)
 assert.equal((await runCli(["search"])).exitCode, 2)
 
 fs.rmSync(cardFixture)
-if (previousToken !== undefined) process.env.KETQAT_TOKEN = previousToken
+for (const name of ["KETQAT_TOKEN", "KETQAT_API_TOKEN"]) {
+  if (previousTokens[name] !== undefined) process.env[name] = previousTokens[name]
+}
 
 // The client validates a Quantum Card locally before publishing, so an invalid
 // card fails with the offending field rather than a bare 400 from the server.
@@ -2932,11 +2940,15 @@ c[0] = measure q[0];
     assert.equal(noId.exitCode, 2)
     assert.match(noId.stderr, /requires a job id/)
 
-    // Every job subcommand needs a token, and it is never read from a flag.
+    // Every job subcommand needs a token, and it is never read from a flag. Both
+    // accepted names are cleared (#218), or the other one would still authenticate.
     delete process.env.KETQAT_TOKEN
+    const previousApiToken = process.env.KETQAT_API_TOKEN
+    delete process.env.KETQAT_API_TOKEN
     const noToken = await runCli(["job", "watch", "watched", "--registry", "https://example.test"])
     assert.equal(noToken.exitCode, 2)
-    assert.match(noToken.stderr, /KETQAT_TOKEN/)
+    assert.match(noToken.stderr, /KETQAT_API_TOKEN/)
+    if (previousApiToken !== undefined) process.env.KETQAT_API_TOKEN = previousApiToken
   } finally {
     globalThis.fetch = originalFetch
     if (originalToken === undefined) delete process.env.KETQAT_TOKEN
@@ -5569,4 +5581,62 @@ Rot(0.7) q[0];
       assert.ok(span.line > 0, `${span.name}: no source line`)
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// API token resolution (#218): one credential, two accepted names.
+//
+// The defect: this CLI read KETQAT_TOKEN while the Settings page that mints the
+// token, the README, the quickstart and the Python CLI all said KETQAT_API_TOKEN.
+// Following the documentation produced "No API token" with the token exported.
+// ---------------------------------------------------------------------------
+{
+  const {
+    ACCEPTED_TOKEN_VARIABLES,
+    AmbiguousApiTokenError,
+    CANONICAL_TOKEN_VARIABLE,
+    missingApiTokenMessage,
+    resolveApiToken,
+  } = await import("../dist/client/index.js")
+
+  assert.equal(CANONICAL_TOKEN_VARIABLE, "KETQAT_API_TOKEN")
+  assert.deepEqual([...ACCEPTED_TOKEN_VARIABLES], ["KETQAT_API_TOKEN", "KETQAT_TOKEN"])
+
+  // Either name resolves. The alias is what keeps existing shells and scripts working.
+  assert.equal(resolveApiToken({ KETQAT_API_TOKEN: "kq_canonical" }), "kq_canonical")
+  assert.equal(resolveApiToken({ KETQAT_TOKEN: "kq_alias" }), "kq_alias")
+  assert.equal(resolveApiToken({}), undefined)
+
+  // Both set to the same token is not a conflict; both set to different tokens is.
+  assert.equal(
+    resolveApiToken({ KETQAT_API_TOKEN: "kq_same", KETQAT_TOKEN: "kq_same" }),
+    "kq_same",
+  )
+  assert.throws(
+    () => resolveApiToken({ KETQAT_API_TOKEN: "kq_one", KETQAT_TOKEN: "kq_two" }),
+    AmbiguousApiTokenError,
+    "two different tokens must be refused: choosing one files an owned record under the wrong identity",
+  )
+
+  // No message may carry a token value; an error that echoed it would put the token
+  // wherever stderr was captured.
+  try {
+    resolveApiToken({ KETQAT_API_TOKEN: "kq_secret_one", KETQAT_TOKEN: "kq_secret_two" })
+    assert.fail("expected AmbiguousApiTokenError")
+  } catch (error) {
+    assert.doesNotMatch(error.message, /kq_secret/)
+    assert.match(error.message, /KETQAT_API_TOKEN/)
+    assert.match(error.message, /KETQAT_TOKEN/)
+  }
+
+  // `export KETQAT_API_TOKEN=` is how a shell clears a variable. Honouring the empty
+  // string as a token produces a 401 whose message blames the server -- and an empty
+  // canonical must not mask a real alias.
+  assert.equal(resolveApiToken({ KETQAT_API_TOKEN: "" }), undefined)
+  assert.equal(resolveApiToken({ KETQAT_API_TOKEN: "   " }), undefined)
+  assert.equal(resolveApiToken({ KETQAT_API_TOKEN: "", KETQAT_TOKEN: "kq_real" }), "kq_real")
+
+  const message = missingApiTokenMessage()
+  for (const name of ACCEPTED_TOKEN_VARIABLES) assert.match(message, new RegExp(name))
+  assert.match(message, /shell history/)
 }
