@@ -32,17 +32,28 @@ const APPENDIX_PLACEHOLDER = "   Copyright [yyyy] [name of copyright owner]"
 
 const canonical = readFileSync(new URL("../.licenses/apache-2.0.txt", import.meta.url), "utf8").split("\n")
 
-/** Every copy that ships to a user. */
-const COPIES = ["../LICENSE", "../python/LICENSE"]
+/**
+ * Every copy that ships to a user, with the name to print for it.
+ *
+ * The label is carried rather than derived with `path.replace("../", "")`, which replaces
+ * only the first occurrence -- so a path with a second `../` in it would have been
+ * reported under a name that was not its own. Flagged by CodeQL as
+ * `js/incomplete-sanitization`; carrying the label removes the string surgery instead of
+ * patching it.
+ */
+const COPIES = [
+  { url: "../LICENSE", label: "LICENSE" },
+  { url: "../python/LICENSE", label: "python/LICENSE" },
+]
 
 const failures = []
 
-for (const relative of COPIES) {
+for (const { url, label } of COPIES) {
   let lines
   try {
-    lines = readFileSync(new URL(relative, import.meta.url), "utf8").split("\n")
+    lines = readFileSync(new URL(url, import.meta.url), "utf8").split("\n")
   } catch {
-    failures.push(`${relative.replace("../", "")} is missing; every distributed package must carry the licence`)
+    failures.push(`${label} is missing; every distributed package must carry the licence`)
     continue
   }
 
@@ -53,7 +64,7 @@ for (const relative of COPIES) {
     // The one line the licence intends you to edit.
     if (theirs === APPENDIX_PLACEHOLDER && /^ {3}Copyright \d{4} .+/.test(ours)) continue
     failures.push(
-      `${relative.replace("../", "")} line ${index + 1}\n    canonical: ${theirs}\n    ours:      ${ours}`,
+      `${label} line ${index + 1}\n    canonical: ${theirs}\n    ours:      ${ours}`,
     )
   }
 }

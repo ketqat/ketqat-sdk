@@ -247,10 +247,19 @@ def fit_decay(points: list[dict[str, Any]], qubits: int) -> dict[str, Any]:
     return {
         "inconclusive": False,
         "decay_parameter": decay,
-        "decay_parameter_standard_error": decay * slope_error if slope_error == slope_error else None,
+        # `not math.isnan(...)` rather than `slope_error == slope_error`. Both are
+        # correct -- NaN is the only value unequal to itself -- but the second reads as a
+        # typo, and CodeQL reports it as a comparison of identical expressions, which is
+        # usually a real bug. An unreadable idiom in the middle of a fitted standard error
+        # is worth removing even when it works.
+        "decay_parameter_standard_error": (
+            decay * slope_error if not math.isnan(slope_error) else None
+        ),
         "error_per_clifford": error_per_clifford,
         "error_per_clifford_standard_error": (
-            (dimension - 1) / dimension * decay * slope_error if slope_error == slope_error else None
+            (dimension - 1) / dimension * decay * slope_error
+            if not math.isnan(slope_error)
+            else None
         ),
         "amplitude": math.exp(intercept),
         "asymptote": asymptote,

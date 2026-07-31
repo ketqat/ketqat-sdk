@@ -9,9 +9,9 @@ import yaml
 
 from .examples import get_example_manifest, list_example_manifests, read_example_manifest
 from .runner import run_experiment
+from .token_env import CANONICAL_TOKEN_VARIABLE as JOB_TOKEN_VARIABLE
 from .jobs import (
     JobError,
-    TOKEN_ENVIRONMENT_VARIABLE as JOB_TOKEN_VARIABLE,
     cancel_job,
     get_job,
     job_bundle,
