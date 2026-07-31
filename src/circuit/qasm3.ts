@@ -123,20 +123,73 @@ interface Statement {
   line: number
 }
 
+/**
+ * Replaces every block comment with spaces, preserving newlines and length.
+ *
+ * A linear scan rather than a lazy `slash-star ... star-slash` regular expression. That
+ * regex backtracks quadratically on an **unterminated** comment: with no closing delimiter
+ * to find, each of the N openings re-scans the rest of the input.
+ *
+ * The delimiters are spelled out in words above rather than written literally, because a
+ * literal one ends this comment. That is not hypothetical: the first version of this text
+ * contained one, TypeScript compiled the remaining prose as expression statements, the
+ * build passed, and CodeQL caught it as `js/useless-expression`.
+ *
+ * Measured on the shipped regex: 6 KB took 2 ms, 24 KB 28 ms, 60 KB 177 ms, 120 KB
+ * 704 ms -- four times the input for twenty-five times the work, so a megabyte of it
+ * stalls the thread for the better part of a minute.
+ *
+ * This matters here specifically. The SDK holds no secrets and opens no listener, so its
+ * real attack surface is untrusted-payload parsing, and this function is the first thing
+ * every parse of a submitted circuit goes through.
+ *
+ * An unterminated comment is treated as running to end of input, which is what the regex
+ * did too -- it simply matched nothing and left the text in place. Blanking it is the more
+ * useful reading: the remainder is commented out, so it should not parse as code.
+ */
+function stripBlockComments(source: string): string {
+  const pieces: string[] = []
+  let index = 0
+  while (index < source.length) {
+    const start = source.indexOf("/*", index)
+    if (start === -1) {
+      pieces.push(source.slice(index))
+      break
+    }
+    pieces.push(source.slice(index, start))
+    const end = source.indexOf("*/", start + 2)
+    const commentEnd = end === -1 ? source.length : end + 2
+    // Newlines survive so every later line number is still the author's. Blanked with a
+    // single non-backtracking replace over the slice, not character by character: a
+    // per-character concatenation of a 600 KB comment was measured at 186 s, which is
+    // slower than the bug being fixed.
+    pieces.push(source.slice(start, commentEnd).replace(/[^\n]/g, " "))
+    index = commentEnd
+  }
+  return pieces.join("")
+}
+
 /** Strips comments, then splits on `;` and `{`/`}` while tracking line numbers. */
 function splitStatements(source: string): Statement[] {
-  const withoutBlockComments = source.replace(/\/\*[\s\S]*?\*\//g, (match) => match.replace(/[^\n]/g, " "))
+  const withoutBlockComments = stripBlockComments(source)
   const statements: Statement[] = []
-  let buffer = ""
+  const buffered: string[] = []
+  // Whether anything non-whitespace is in the buffer, carried rather than recomputed.
+  // The previous version asked `buffer.trim().length === 0` once per character, and trim
+  // scans the whole buffer -- so a statement N characters long cost O(N^2). It was not
+  // theoretical: 600 KB with no `;` in it took 192 seconds, and needed no comment, no
+  // clever regex and nothing malformed. A single long token is enough.
+  let bufferHasContent = false
   let line = 1
   let bufferStartLine = 1
 
   const push = (): void => {
-    const text = buffer.trim()
+    const text = buffered.join("").trim()
     if (text.length > 0) {
       statements.push({ text, line: bufferStartLine })
     }
-    buffer = ""
+    buffered.length = 0
+    bufferHasContent = false
     bufferStartLine = line
   }
 
@@ -151,13 +204,15 @@ function splitStatements(source: string): Statement[] {
         statements.push({ text: character, line })
         bufferStartLine = line
       } else {
-        if (buffer.trim().length === 0 && character.trim().length > 0) {
+        const characterHasContent = character.trim().length > 0
+        if (!bufferHasContent && characterHasContent) {
           bufferStartLine = line
         }
-        buffer += character
+        if (characterHasContent) bufferHasContent = true
+        buffered.push(character)
       }
     }
-    buffer += " "
+    buffered.push(" ")
     line += 1
   }
   push()
