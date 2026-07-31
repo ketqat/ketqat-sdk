@@ -109,6 +109,8 @@ NODE
 
 First local success does not require login. To publish after signing in to ketqat.com, create a token in account settings and import the JSON result:
 
+The token variable is `KETQAT_API_TOKEN` -- the name the Settings page prints beside the token it mints. `KETQAT_TOKEN` is accepted as an alias by both CLIs, because the TypeScript CLI once read only that one. Setting both to *different* tokens is refused rather than resolved: a job and its results are owned, so choosing one would file a record under an identity you did not pick.
+
 ```bash
 export KETQAT_API_TOKEN="kq_..."
 curl -X POST https://ketqat.com/api/runs/import \

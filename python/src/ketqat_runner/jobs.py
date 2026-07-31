@@ -26,16 +26,17 @@ and never written to a file.
 from __future__ import annotations
 
 import json
-import os
 import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
 
-# Imported rather than redefined. `ketqat publish` already reads KETQAT_API_TOKEN, and a
-# second variable for `ketqat job` would mean a user who configured one surface of this
-# CLI found the other unauthenticated for no reason they could see.
+# Imported rather than redefined. `ketqat publish` already reads the same variables, and a
+# second name for `ketqat job` would mean a user who configured one surface of this CLI
+# found the other unauthenticated for no reason they could see. That is exactly the defect
+# #218 fixed between the two CLIs, so it is not reintroduced within one of them.
 from .publish import DEFAULT_BASE_URL, TOKEN_ENVIRONMENT_VARIABLE
+from .token_env import AmbiguousApiTokenError, missing_api_token_message, resolve_api_token
 DEFAULT_TIMEOUT_SECONDS = 30
 
 #: Terminal states. Polling past one of these waits for something that cannot happen.
@@ -47,13 +48,12 @@ class JobError(Exception):
 
 
 def _token() -> str:
-    token = os.environ.get(TOKEN_ENVIRONMENT_VARIABLE, "").strip()
+    try:
+        token = resolve_api_token()
+    except AmbiguousApiTokenError as exc:
+        raise JobError(str(exc)) from exc
     if not token:
-        raise JobError(
-            f"No API token. Set {TOKEN_ENVIRONMENT_VARIABLE} in your environment.\n"
-            "It is deliberately not a command-line option: arguments are visible in shell history, "
-            "in `ps` output to other users, and in CI logs."
-        )
+        raise JobError(missing_api_token_message())
     return token
 
 

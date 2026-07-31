@@ -1,5 +1,12 @@
 import { readFileSync } from "node:fs"
-import { KetQatClient, TERMINAL_JOB_STATUSES } from "../client/index.js"
+import {
+  ACCEPTED_TOKEN_VARIABLES,
+  CANONICAL_TOKEN_VARIABLE,
+  KetQatClient,
+  missingApiTokenMessage,
+  resolveApiToken,
+  TERMINAL_JOB_STATUSES,
+} from "../client/index.js"
 import { HardwareProfileSchema } from "../hardware/profile.js"
 import { emitQasm3, parseQasm3, Qasm3ParseError } from "../circuit/qasm3.js"
 import {
@@ -67,9 +74,11 @@ The local "simulate" command runs on this machine. "job submit" runs the same
 engine in a sandboxed container with enforced limits and an audit trail, and is
 what to use for anything whose result will be published.
 
-Authentication reads KETQAT_TOKEN from the environment. A token is never
-accepted as a command-line argument, because arguments appear in shell history
-and in the process list.
+Authentication reads ${CANONICAL_TOKEN_VARIABLE} from the environment
+(${ACCEPTED_TOKEN_VARIABLES[1]} is also accepted; setting both to different
+tokens is refused rather than resolved). A token is never accepted as a
+command-line argument, because arguments appear in shell history and in the
+process list.
 
 Every command prints one JSON object to stdout.`
 
@@ -147,12 +156,18 @@ function registryClient(flags: Map<string, string>, options: { requireToken?: bo
       "No registry URL. Pass --registry <url> or set KETQAT_URL.",
     )
   }
-  const token = process.env.KETQAT_TOKEN
+  // Both KETQAT_API_TOKEN and KETQAT_TOKEN are accepted (#218). This CLI read only the
+  // second while every document, including the page that mints the token, printed the
+  // first -- so following the documentation produced "No API token" with the token set.
+  // Two different values raise rather than resolve; see src/client/token.ts.
+  let token: string | undefined
+  try {
+    token = resolveApiToken()
+  } catch (error) {
+    throw new RegistryConfigurationError((error as Error).message)
+  }
   if (options.requireToken && !token) {
-    throw new RegistryConfigurationError(
-      "No API token. Set KETQAT_TOKEN in the environment. Tokens are not accepted as arguments, " +
-        "because arguments appear in shell history and in the process list.",
-    )
+    throw new RegistryConfigurationError(missingApiTokenMessage())
   }
   return new KetQatClient({ baseUrl, ...(token ? { token } : {}) })
 }

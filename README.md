@@ -40,6 +40,9 @@ ketqat run surface-code-memory --output run.json
 # `shots` in the manifest to tighten the bound.
 
 # 3. Publish it later, if you choose (create a token after signing in)
+# Both CLIs read KETQAT_API_TOKEN; KETQAT_TOKEN is also accepted. Setting both to
+# different tokens is refused rather than resolved, since the wrong one would file
+# your run under someone else's identity.
 export KETQAT_API_TOKEN="kq_..."
 ketqat publish run.json --dry-run   # shows exactly what would be sent
 ketqat publish run.json

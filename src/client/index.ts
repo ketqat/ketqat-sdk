@@ -13,6 +13,8 @@ import {
 } from "../contracts/index.js"
 import { validateJob } from "../worker/job.js"
 
+export * from "./token.js"
+
 /**
  * States a job never leaves. Kept here rather than imported from the queue,
  * which lives in the private control plane; the client must know when to stop
