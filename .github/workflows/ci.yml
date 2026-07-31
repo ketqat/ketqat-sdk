@@ -144,7 +144,9 @@ jobs:
       # tests must pass without them, since the not-run paths are part of what
       # they check.
       - name: Run provider tests
-        run: pytest python/tests/test_providers.py -v
+        # test_noise_channels needs the braket extra this job installs; in the plain
+        # python job it would importorskip, and a skip reads as a pass.
+        run: pytest python/tests/test_providers.py python/tests/test_cancellation.py python/tests/test_noise_channels.py -v
 
       # The tests would still pass if both extras were missing, because each is
       # skipped when its SDK is absent. That would be a silent hole, so this
