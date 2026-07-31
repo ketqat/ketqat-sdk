@@ -126,11 +126,18 @@ interface Statement {
 /**
  * Replaces every block comment with spaces, preserving newlines and length.
  *
- * A linear scan rather than `/\/\*[\s\S]*?\*\//g`. That regex backtracks quadratically on
- * an **unterminated** comment: with no closing `*/` to find, each of the N `/*` openings
- * re-scans the rest of the input. Measured on the shipped version: 6 KB took 2 ms, 24 KB
- * 28 ms, 60 KB 177 ms, 120 KB 704 ms -- four times the input for twenty-five times the
- * work, so a megabyte of it stalls the thread for the better part of a minute.
+ * A linear scan rather than a lazy `slash-star ... star-slash` regular expression. That
+ * regex backtracks quadratically on an **unterminated** comment: with no closing delimiter
+ * to find, each of the N openings re-scans the rest of the input.
+ *
+ * The delimiters are spelled out in words above rather than written literally, because a
+ * literal one ends this comment. That is not hypothetical: the first version of this text
+ * contained one, TypeScript compiled the remaining prose as expression statements, the
+ * build passed, and CodeQL caught it as `js/useless-expression`.
+ *
+ * Measured on the shipped regex: 6 KB took 2 ms, 24 KB 28 ms, 60 KB 177 ms, 120 KB
+ * 704 ms -- four times the input for twenty-five times the work, so a megabyte of it
+ * stalls the thread for the better part of a minute.
  *
  * This matters here specifically. The SDK holds no secrets and opens no listener, so its
  * real attack surface is untrusted-payload parsing, and this function is the first thing
