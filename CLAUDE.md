@@ -53,7 +53,7 @@ CI splits Node and Python jobs, installs the real QEC dependencies, validates np
 This is the repository's most load-bearing behavior. `src/reproducibility/index.ts` and `python/src/ketqat_runner/hashing.py` must produce byte-identical canonical JSON and therefore identical SHA-256 digests, for every input.
 
 - Keys are sorted; `undefined` values are dropped; a fixed exclusion set (`id`, `slug`, `started_at`, `finished_at`, `created_at`, `updated_at`, `submitted_at`, `ui_metadata`, `reproducibility_hash`, `owner_username`, `visibility`) is removed at every level.
-- Changing the exclusion set, the canonical form, or number formatting changes **every future hash** and silently breaks comparison with every stored run. Treat it as a breaking contract change requiring a schema version bump and a planning ADR.
+- Changing the exclusion set, the canonical form, or number formatting changes **every future hash** and silently breaks comparison with every stored run. Treat it as a breaking contract change requiring a schema version bump and a planning ADR. The full policy, including the versioned-exclusion-set escape hatch that makes such a change safe, is [`docs/schema-versioning.md`](docs/schema-versioning.md).
 - Any change to hashing needs a parity fixture covering it in both languages. Known sharp edges already covered by fixtures: explicit `null` versus absent keys, whole-number floats, and negative zero.
 - Add TypeScript tests for schema, hashing, compatibility, client, and demo changes; add Python tests when runner behavior changes.
 
