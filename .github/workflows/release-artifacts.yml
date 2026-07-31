@@ -117,11 +117,20 @@ jobs:
         run: |
           cd /tmp
           /tmp/py/bin/ketqat run grover-search --output /tmp/algorithm.json
+          # `execution_class` is optional on a result and is deliberately never inferred
+          # from `is_demo`: a run that did not record how it was produced must read as
+          # "not recorded", not as a guess, and adding a default would change every
+          # future hash. So it is asserted where it is present and reported where it is
+          # not -- the QEC step below asserts it outright, because that harness records
+          # one. `is_demo` is the assertion that always applies.
           /tmp/py/bin/python -c "import json; \
             run = json.load(open('/tmp/algorithm.json')); \
-            assert run['execution_class'] == 'SIMULATION', run['execution_class']; \
-            assert run.get('is_demo') is not True, 'a demo record is not a measurement'; \
-            print('execution class:', run['execution_class'], '| hash:', run['reproducibility_hash'][:16])"
+            assert run['is_demo'] is False, 'a demo record is not a measurement'; \
+            assert run['status'] == 'COMPLETED', run['status']; \
+            classes = {point.get('execution_class', 'not recorded') for point in run['metric_points']}; \
+            assert 'HARDWARE' not in classes, 'this runner reaches no hardware'; \
+            print('is_demo:', run['is_demo'], '| execution class:', sorted(classes), \
+                  '| hash:', run['reproducibility_hash'][:16])"
 
       - name: The two languages must agree on the hash
         # The one contract that cannot be checked in either language alone. Both sides
