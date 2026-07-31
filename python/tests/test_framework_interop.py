@@ -50,9 +50,17 @@ def test_recorded_conventions_are_verified_against_the_installed_library(framewo
         report = verify_bit_ordering(framework)
     except FrameworkUnavailableError as exc:
         pytest.skip(f"{framework} cannot read OpenQASM here, so the convention is unverifiable: {exc}")
-    assert report["matches_record"], f"{framework} measured {report['measured']}, table says {report['recorded']}"
-    assert report["agrees_with_ketqat"] is False
-    assert report["occupied_indices"] == [0, 2]
+    else:
+        # `else` rather than falling through. `pytest.skip` raises, so the fall-through
+        # was correct -- but only because of a fact about pytest that nothing here states,
+        # and CodeQL reads it as a possibly-unbound `report` (py/uninitialized-local-variable).
+        # If the skip were ever softened to a log, the asserts below would raise NameError
+        # and the test would fail for a reason unrelated to bit ordering.
+        assert report["matches_record"], (
+            f"{framework} measured {report['measured']}, table says {report['recorded']}"
+        )
+        assert report["agrees_with_ketqat"] is False
+        assert report["occupied_indices"] == [0, 2]
 
 
 def test_a_framework_without_a_probe_is_refused_rather_than_trusted() -> None:
