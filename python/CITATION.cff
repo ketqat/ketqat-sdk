@@ -1,0 +1,43 @@
+cff-version: 1.2.0
+title: KetQat SDK
+message: >-
+  If you use KetQat in research, please cite the software. Cite the specific
+  version you ran: results are reproducible only against the schema and hashing
+  behaviour of that version.
+type: software
+license: Apache-2.0
+repository-code: https://github.com/ketqat/ketqat-sdk
+url: https://ketqat.com
+abstract: >-
+  Typed scientific contracts, JSON Schemas, canonical serialization and
+  reproducibility hashing, scientific compatibility rules, a typed REST client,
+  and a local runner for quantum error-correction and quantum-algorithm
+  benchmarks.
+keywords:
+  - quantum computing
+  - quantum error correction
+  - reproducibility
+  - benchmarking
+  - open science
+version: 0.2.0
+
+# Authors are the GitHub identities with merged contributions, taken from the
+# repository's own contributor list. Legal names, affiliations, and ORCID iDs
+# are deliberately absent rather than guessed: a citation file is a claim about
+# real people, and inventing an affiliation misattributes work to an
+# institution that never saw it. Replace an alias with a real name only with
+# that person's agreement.
+authors:
+  - alias: dorakingx
+    website: https://github.com/dorakingx
+  - alias: raunavm
+    website: https://github.com/raunavm
+
+# No DOI. Nothing has been deposited with Zenodo or any other archive, so there
+# is no identifier to record. Publishing one before the deposit exists would
+# make the citation unresolvable, which is worse than having none. Connecting
+# Zenodo is a human step -- see docs/citation.md.
+identifiers: []
+
+# No preferred-citation. There is no paper. A software citation that points at a
+# non-existent publication sends readers somewhere that does not exist.

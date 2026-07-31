@@ -51,9 +51,18 @@ const requiredFiles = [
   "schemas/artifact.schema.json",
   "examples/qec/surface-code-memory.yaml",
   "examples/algorithms/grover-search.yaml",
+  // Required, not merely allowed: an artifact a user cannot cite is a gap this list is
+  // the right place to hold shut, and "allowed" would let it silently disappear again.
+  "CITATION.cff",
+  // ketqat-web imports this from `ketqat-sdk/client`. Omitting it breaks that import at
+  // install time rather than at build time, which is the worst moment to find out.
+  "dist/client/token.js",
+  "dist/client/token.d.ts",
 ]
 
-const allowedRootFiles = new Set(["LICENSE", "README.md", "package.json"])
+// CITATION.cff ships so an installed copy can be cited; the repository had one and none
+// of the three artifacts did, and `npm install` never sees the repository.
+const allowedRootFiles = new Set(["LICENSE", "README.md", "package.json", "CITATION.cff"])
 const isAllowedPackageFile = (path) =>
   allowedRootFiles.has(path) ||
   (path.startsWith("dist/") && /(?:\.js|\.js\.map|\.d\.ts|\.d\.ts\.map)$/.test(path)) ||

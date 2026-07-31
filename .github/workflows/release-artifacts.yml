@@ -1,0 +1,202 @@
+name: Release artifacts (clean room)
+
+# Builds every release artifact and then uses **only those artifacts**, in fresh
+# environments, with the checkout nowhere on the path.
+#
+# This exists because every other job in this repository tests the repository. That is a
+# different question from what a user installs, and the gap between them is where
+# packaging defects live: ketqat-benchmarks shipped a wheel containing the harness and
+# none of its suites, results, citation file or gate, with every test green, because CI
+# installed the source tree with `-e .` and every path resolved.
+#
+# Nothing here publishes. First publication to npm and PyPI is gated by
+# docs/first-release-checklist.md and is a human decision. No registry credential is used
+# or needed, and there is no step that could reach one.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v5.0.0
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: |
+          npm ci
+          python -m pip install --quiet build
+
+      # Builds each artifact twice and fails if the two do not hash identically. An
+      # artifact nobody can rebuild is one nobody can check.
+      - name: Build artifacts, twice, and compare
+        run: npm run build:release
+
+      - name: Gate on what the artifacts contain
+        run: npm run verify:release
+
+      - name: Publish nothing
+        # A cheap, explicit assertion rather than a comment. The build records
+        # published: false and this fails if that ever stops being true.
+        run: |
+          python - <<'PY'
+          import json, pathlib, sys
+          provenance = json.loads(pathlib.Path("dist-release/provenance.json").read_text())
+          if provenance["published"] is not False:
+              sys.exit("provenance claims publication; this workflow must never publish")
+          print("provenance records published: false")
+          PY
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-artifacts
+          path: dist-release/
+          retention-days: 14
+
+  clean-room:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Deliberately **no checkout**. If this job can see the repository, it is not a
+      # clean room, and a missing file in an artifact resolves from the source tree
+      # exactly as it did in the defect this job exists to catch.
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v5.0.0
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: "3.12"
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-artifacts
+          path: /tmp/artifacts
+
+      - name: Checksums must match before anything is installed
+        run: |
+          cd /tmp/artifacts
+          sha256sum --check SHA256SUMS
+
+      - name: Install the Python wheel, and only that
+        run: |
+          python -m venv /tmp/py
+          /tmp/py/bin/pip install --quiet "/tmp/artifacts/$(cd /tmp/artifacts && ls ketqat-*-py3-none-any.whl)[qec,algorithms]"
+
+      - name: Install the npm tarball, and only that
+        run: |
+          mkdir -p /tmp/node && cd /tmp/node
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund "/tmp/artifacts/$(cd /tmp/artifacts && ls ketqat-sdk-*.tgz)"
+
+      - name: Nothing may resolve back to a source tree
+        run: |
+          cd /tmp
+          /tmp/py/bin/python -c "import ketqat_runner, pathlib; \
+            path = pathlib.Path(ketqat_runner.__file__).resolve(); \
+            assert 'site-packages' in str(path), f'resolved outside the install: {path}'; \
+            print('python:', path)"
+          cd /tmp/node
+          node -e "console.log('node:', import.meta.resolve('ketqat-sdk/reproducibility'))"
+
+      - name: An algorithm runs, from the installed artifact
+        run: |
+          cd /tmp
+          /tmp/py/bin/ketqat run grover-search --output /tmp/algorithm.json
+          # `execution_class` is optional on a result and is deliberately never inferred
+          # from `is_demo`: a run that did not record how it was produced must read as
+          # "not recorded", not as a guess, and adding a default would change every
+          # future hash. So it is asserted where it is present and reported where it is
+          # not -- the QEC step below asserts it outright, because that harness records
+          # one. `is_demo` is the assertion that always applies.
+          /tmp/py/bin/python -c "import json; \
+            run = json.load(open('/tmp/algorithm.json')); \
+            assert run['is_demo'] is False, 'a demo record is not a measurement'; \
+            assert run['status'] == 'COMPLETED', run['status']; \
+            classes = {point.get('execution_class', 'not recorded') for point in run['metric_points']}; \
+            assert 'HARDWARE' not in classes, 'this runner reaches no hardware'; \
+            print('is_demo:', run['is_demo'], '| execution class:', sorted(classes), \
+                  '| hash:', run['reproducibility_hash'][:16])"
+
+      - name: The two languages must agree on the hash
+        # The one contract that cannot be checked in either language alone. Both sides
+        # here come from the built artifacts, so this is a statement about what ships.
+        run: |
+          cd /tmp/node
+          node -e "
+            const { calculateReproducibilityHash } = await import('ketqat-sdk/reproducibility')
+            const fs = await import('node:fs')
+            const payload = JSON.parse(fs.readFileSync('/tmp/algorithm.json', 'utf8'))
+            fs.writeFileSync('/tmp/hash-node.txt', calculateReproducibilityHash(payload))
+          "
+          cd /tmp
+          /tmp/py/bin/python -c "import json; \
+            from ketqat_runner.hashing import calculate_reproducibility_hash; \
+            open('/tmp/hash-python.txt','w').write( \
+              calculate_reproducibility_hash(json.load(open('/tmp/algorithm.json'))))"
+          node="$(cat /tmp/hash-node.txt)"
+          python="$(cat /tmp/hash-python.txt)"
+          recorded="$(/tmp/py/bin/python -c "import json;print(json.load(open('/tmp/algorithm.json'))['reproducibility_hash'])")"
+          echo "node    $node"
+          echo "python  $python"
+          echo "runner  $recorded"
+          test "$node" = "$python" || { echo "TypeScript and Python disagree"; exit 1; }
+          test "$node" = "$recorded" || { echo "neither matches the hash the run recorded"; exit 1; }
+
+      - name: The result validates against the shipped schemas
+        run: |
+          cd /tmp/node
+          node -e "
+            const { BenchmarkResultSchema } = await import('ketqat-sdk/contracts')
+            const fs = await import('node:fs')
+            const parsed = BenchmarkResultSchema.safeParse(JSON.parse(fs.readFileSync('/tmp/algorithm.json','utf8')))
+            if (!parsed.success) { console.error(JSON.stringify(parsed.error.issues.slice(0,5), null, 2)); process.exit(1) }
+            console.log('validated against the packaged schema')
+          "
+
+      - name: The read-only MCP surface is read-only in the artifact
+        run: |
+          cd /tmp/node
+          node -e "
+            const mcp = await import('ketqat-sdk/mcp')
+            const tools = mcp.listTools()
+            if (tools.length === 0) throw new Error('the packaged MCP surface is empty')
+            const mutating = tools.filter((tool) => tool.readOnly !== true)
+            if (mutating.length > 0) throw new Error('mutating tool in the read-only list: ' + mutating.map(t => t.name).join(', '))
+            console.log(tools.length + ' MCP tools, all readOnly')
+          "
+
+      - name: A three-decoder QEC comparison runs, from published packages only
+        # ketqat-benchmarks holds the heavy scientific dependencies so this package stays
+        # zod-only, so the QEC half of the clean room installs it from its own repository
+        # rather than from anything in this one.
+        run: |
+          python -m venv /tmp/qec
+          /tmp/qec/bin/pip install --quiet \
+            "https://github.com/ketqat/ketqat-benchmarks/archive/refs/heads/main.tar.gz#egg=ketqat-benchmarks[decoders]"
+          cd /tmp
+          /tmp/qec/bin/python -m ketqat_benchmarks.decoder_comparison \
+            --distance 3 --rounds 3 --noise 0.02 --max-shots 2000 --output /tmp/qec.json
+          /tmp/qec/bin/ketqat-benchmarks-gate /tmp/qec.json
+          /tmp/qec/bin/python -c "import json; \
+            report = json.load(open('/tmp/qec.json')); \
+            assert report['decoders_run'] == 3, report['decoders_run']; \
+            assert report['execution_class'] == 'SIMULATION', report['execution_class']; \
+            assert report['is_demo'] is False and report['publishable'] is True; \
+            digests = {d['consumed_sample_sha256'] for d in report['decoders'] if d['available']}; \
+            assert len(digests) == 1, f'decoders did not share one sample: {digests}'; \
+            print('3 decoders, one sample', digests.pop()[:16], 'class', report['execution_class'])"

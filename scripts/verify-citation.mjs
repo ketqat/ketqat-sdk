@@ -15,7 +15,7 @@
  * comment describing the policy it replaced. Matching explanatory text is
  * fragile in the one direction that matters: it fires on honesty.
  */
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 
 const source = readFileSync(new URL("../CITATION.cff", import.meta.url), "utf8")
 
@@ -55,6 +55,23 @@ if (declared !== pkgVersion) {
 
 const licence = /^license:\s*(\S+)/m.exec(source)?.[1]
 if (licence !== "Apache-2.0") failures.push(`license is ${licence}; expected Apache-2.0`)
+
+// The Python distribution carries its own copy, because sdists and wheels store a symlink
+// as a symlink and the packaged file then resolved to nothing. A copy is safe only while
+// something fails when the two differ: otherwise the version above is checked against
+// package.json while the file a user installs still says something else.
+const pythonCitation = new URL("../python/CITATION.cff", import.meta.url)
+if (!existsSync(pythonCitation)) {
+  failures.push(
+    "python/CITATION.cff is missing, so the Python wheel and sdist ship without a citation " +
+      "file and an installed copy cannot be cited",
+  )
+} else if (readFileSync(pythonCitation, "utf8") !== source) {
+  failures.push(
+    "python/CITATION.cff differs from the canonical CITATION.cff. They are two copies of one " +
+      "fact; the way that fails is a stale version in the half nobody looks at.",
+  )
+}
 
 if (failures.length > 0) {
   console.error(`FAIL: ${failures.length} problem(s) in CITATION.cff\n`)
