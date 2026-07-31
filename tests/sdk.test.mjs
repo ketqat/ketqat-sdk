@@ -5640,3 +5640,77 @@ Rot(0.7) q[0];
   for (const name of ACCEPTED_TOKEN_VARIABLES) assert.match(message, new RegExp(name))
   assert.match(message, /shell history/)
 }
+
+// ---------------------------------------------------------------------------
+// OpenQASM 3 parsing must stay linear in input size.
+//
+// Two separate quadratics lived here, and the SDK's real attack surface is
+// untrusted-payload parsing -- it holds no secrets and opens no listener, so
+// this function is most of what an attacker can reach.
+//
+//   1. Block comments were stripped with /\/\*[\s\S]*?\*\//g. With no closing
+//      `*/` to find, each of the N openings re-scanned the rest of the input:
+//      60 KB took 182 ms, 600 KB took 18 s. (CodeQL js/polynomial-redos.)
+//
+//   2. splitStatements asked `buffer.trim().length === 0` once per character,
+//      and trim scans the whole buffer -- so one statement N characters long
+//      cost O(N^2). This one CodeQL did not flag and was the larger of the two:
+//      600 KB of plain spaces took 192 seconds, with no comment, no clever
+//      regex and nothing malformed in the input at all.
+//
+// Asserted as a ceiling generous enough not to flake on a loaded runner, and
+// far below the seconds-to-minutes the defects cost. A quadratic cannot pass it.
+// ---------------------------------------------------------------------------
+{
+  const { parseQasm3 } = await import("../dist/circuit/qasm3.js")
+
+  const header = "OPENQASM 3.0;\nqubit[1] q;\n"
+  const payloads = {
+    "unterminated block comment": `${header}/*${"a".repeat(600_000)}`,
+    "repeated comment openings": `${header}/*${"a/*".repeat(200_000)}`,
+    "one very long whitespace run": header + " ".repeat(600_000),
+    "one very long token": `${header}${"a".repeat(600_000)};`,
+  }
+
+  for (const [label, payload] of Object.entries(payloads)) {
+    const started = performance.now()
+    try {
+      parseQasm3(payload)
+    } catch {
+      // Refusing these is fine. Taking minutes to refuse them is not.
+    }
+    const elapsed = performance.now() - started
+    assert.ok(
+      elapsed < 5_000,
+      `${label}: ${payload.length} characters took ${elapsed.toFixed(0)} ms; parsing must be linear in input size`,
+    )
+  }
+
+  // Correctness, not only speed. A comment must still be removed, the code
+  // around it must still parse, and line numbers must survive -- newlines inside
+  // a comment are preserved so a later error still names the author's line.
+  const commented = `OPENQASM 3.0;
+include "stdgates.inc";
+qubit[2] q;
+/* a comment
+   spanning
+   three lines */
+h q[0];
+cx q[0], q[1];
+`
+  const parsed = parseQasm3(commented)
+  assert.equal(parsed.circuit.operations.length, 2, "the code around a block comment must still parse")
+  assert.deepEqual(
+    parsed.circuit.operations.map((operation) => operation.name),
+    ["h", "cx"],
+  )
+
+  // An unterminated comment runs to end of input: the remainder is commented
+  // out, so it must not parse as code.
+  const unterminated = parseQasm3(`${header}h q[0];\n/* everything after this\nx q[0];\n`)
+  assert.deepEqual(
+    unterminated.circuit.operations.map((operation) => operation.name),
+    ["h"],
+    "code inside an unterminated comment must not be executed",
+  )
+}
