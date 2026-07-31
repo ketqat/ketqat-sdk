@@ -1,5 +1,7 @@
 import assert from "node:assert/strict"
 import fs from "node:fs"
+import os from "node:os"
+import path from "node:path"
 import { fileURLToPath } from "node:url"
 import {
   AlgorithmExperimentManifestSchema,
@@ -2197,11 +2199,16 @@ c[1] = measure q[1];
     const originalToken = process.env.KETQAT_TOKEN
     process.env.KETQAT_TOKEN = "kq_test"
     try {
-      fs.writeFileSync("/tmp/ketqat-cli-job.qasm", BELL_QASM)
+      // A private directory rather than a fixed name in a shared /tmp: a predictable
+      // world-writable path can be pre-created or swapped between the write and the read,
+      // and two concurrent runs would clobber each other. (js/insecure-temporary-file.)
+      const jobDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "ketqat-cli-"))
+      const jobCircuit = path.join(jobDirectory, "job.qasm")
+      fs.writeFileSync(jobCircuit, BELL_QASM)
       const result = await runCli([
         "job",
         "submit",
-        "/tmp/ketqat-cli-job.qasm",
+        jobCircuit,
         "--registry",
         "https://ketqat.example",
         "--shots",

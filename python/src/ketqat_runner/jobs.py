@@ -35,7 +35,7 @@ from typing import Any
 # second name for `ketqat job` would mean a user who configured one surface of this CLI
 # found the other unauthenticated for no reason they could see. That is exactly the defect
 # #218 fixed between the two CLIs, so it is not reintroduced within one of them.
-from .publish import DEFAULT_BASE_URL, TOKEN_ENVIRONMENT_VARIABLE
+from .publish import DEFAULT_BASE_URL
 from .token_env import AmbiguousApiTokenError, missing_api_token_message, resolve_api_token
 DEFAULT_TIMEOUT_SECONDS = 30
 
