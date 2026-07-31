@@ -48,5 +48,7 @@ of a reproducibility hash input, so recording evidence about a run cannot change
 that run's hash — which is what allows evidence to accumulate over time without
 invalidating anything.
 
-See `src/contracts/verification-evidence.ts` for the validation rules, and
-`docs/provenance.md` for what is recorded about where a result came from.
+See `src/contracts/verification-evidence.ts` for the validation rules,
+[`provenance.md`](provenance.md) for what is recorded about where a result came from,
+and [`schema-versioning.md`](schema-versioning.md) for why evidence can accumulate
+without ever changing a run's hash.
