@@ -237,6 +237,21 @@ Public registry readback, artifact attestation, GitHub Release creation, and par
 
 The first public release remains blocked on the human ownership, Trusted Publisher, protected Environment, and approval steps in [`docs/first-release-checklist.md`](docs/first-release-checklist.md). Do not create a release tag until every hard-stop item is signed off.
 
+## Citing
+
+Cite the **version** you ran, not just the project: a result is reproducible only against the
+schema and hashing behaviour of that version.
+
+`CITATION.cff` is the machine-readable form, and it now ships inside the npm tarball, the
+wheel and the sdist, so an installed copy is citable without the repository. A published run
+has its own BibTeX, generated from the record, carrying the benchmark suite and version it
+was measured under — that is what makes it comparable to anything else, and it is what a
+paper comparing decoders should cite.
+
+There is no DOI: nothing has been deposited with an archive yet, and publishing an
+identifier that does not resolve is worse than having none. See
+[`docs/citation.md`](docs/citation.md), including the human steps for minting one.
+
 ## Scientific Limitations
 
 Demo data is synthetic and marked with `is_demo: true`. It must not be read as performance evidence, popularity ranking, or scientific verification. Real local QEC runs are still small software simulations, not QPU evidence. Threshold claims require real benchmark methodology and review outside this MVP.
