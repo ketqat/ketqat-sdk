@@ -27,3 +27,4 @@ yarn-error.log*
 
 # Collected by scripts/collect-oss-metrics.mjs for the test to inspect.
 .tmp-metrics.json
+dist-release/

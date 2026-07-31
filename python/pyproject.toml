@@ -55,5 +55,16 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/ketqat_runner"]
 
+# The citation file goes *into* the artifact. It was in the repository and in neither the
+# wheel nor the sdist, so an installed copy could not be cited -- and `pip install` never
+# sees the repository.
+#
+# `python/CITATION.cff` is a byte-identical copy of the canonical file at the repository
+# root, not a symlink: sdists and wheels store a symlink as a symlink, so the packaged file
+# resolved to nothing. `npm run verify:citation` fails when the two differ, which is the
+# only thing that makes a second copy safe.
+[tool.hatch.build.targets.wheel.force-include]
+"CITATION.cff" = "ketqat_runner/CITATION.cff"
+
 [tool.hatch.build.targets.sdist]
-include = ["src/ketqat_runner", "pyproject.toml"]
+include = ["src/ketqat_runner", "pyproject.toml", "CITATION.cff", "README.md", "LICENSE"]
