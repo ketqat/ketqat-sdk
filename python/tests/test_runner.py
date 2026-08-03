@@ -1786,22 +1786,37 @@ def test_degenerate_inputs_are_refused() -> None:
         )
 
 
-def test_grover_iteration_count_is_the_exact_optimum():
+def test_grover_iteration_count_is_the_exact_optimum() -> None:
     """ketqat-sdk#228: round((pi/4)sqrt(N)) overshot at n=2.
 
     Two qubits, one marked state: a single Grover iteration succeeds with
     certainty. The old formula ran two iterations and reported 25%, which a
     4096-shot reference run faithfully measured -- the record was honest, the
-    physics was wrong. The exact optimum k = round(pi/(4 theta) - 1/2) must
-    give certainty at n=2 and keep the established counts at larger n.
+    physics was wrong. Exercises the real runner path rather than re-deriving
+    the formula, so a regression in the runner fails here even if a helper
+    changed in lockstep.
     """
-    import math
+    from ketqat_runner.runner import _run_algorithm
 
-    def optimal(n: int) -> int:
-        theta = math.asin(1 / math.sqrt(2**n))
-        return max(1, round(math.pi / (4 * theta) - 0.5))
+    manifest = {
+        "schema_version": "0.1",
+        "domain": "ALGORITHM",
+        "benchmark": {"suite": "grover-search-local", "version": "0.1.0"},
+        "experiment": {"name": "grover-n2-regression", "description": "n=2 takes one certain iteration"},
+        "algorithm": {
+            "family": "grover-search",
+            "problem": {"type": "marked-state-search", "qubit_counts": [2, 3, 4, 5, 6], "marked_state": "all-ones"},
+            "execution": {"engine": "ketqat-runner", "method": "shot-based"},
+        },
+        "sampling": {"shots": 4096, "seed": 7},
+        "metrics": ["success_probability"],
+    }
+    result = _run_algorithm(manifest)
+    by_n = {point["qubit_count"]: point for point in result["metric_points"]}
 
-    assert optimal(2) == 1, "n=2 takes exactly one iteration"
-    assert math.isclose(math.sin(3 * math.asin(0.5)) ** 2, 1.0), "and that iteration is certain"
+    assert by_n[2]["metadata"]["grover_iterations"] == 1, "n=2 takes exactly one iteration"
+    # One iteration at n=2 is analytically certain; the only randomness is
+    # shot sampling of probability 1.0, which cannot miss.
+    assert by_n[2]["success_probability"] == 1.0
     # The counts the old formula already got right must not move.
-    assert [optimal(n) for n in (3, 4, 5, 6)] == [2, 3, 4, 6]
+    assert [by_n[n]["metadata"]["grover_iterations"] for n in (3, 4, 5, 6)] == [2, 3, 4, 6]
