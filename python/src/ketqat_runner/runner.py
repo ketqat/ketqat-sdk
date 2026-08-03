@@ -646,8 +646,12 @@ def _run_algorithm(manifest: dict[str, Any]) -> dict[str, Any]:
         if n < 1:
             raise ValueError("Qubit counts must be positive.")
         marked_state = "1" * n if algorithm["problem"].get("marked_state") == "all-ones" else str(algorithm["problem"].get("marked_state", "1" * n))
-        iterations = max(1, round((math.pi / 4) * math.sqrt(2**n)))
         theta = math.asin(1 / math.sqrt(2**n))
+        # Exact optimum for sin^2((2k+1)theta): k = round(pi/(4 theta) - 1/2).
+        # The old round((pi/4)sqrt(N)) overshot at n=2 -- round(1.57) = 2
+        # iterations turned the textbook certain-success case into 25%
+        # (ketqat-sdk#228). The two formulas agree for n >= 3.
+        iterations = max(1, round(math.pi / (4 * theta) - 0.5))
         success_probability = math.sin((2 * iterations + 1) * theta) ** 2
         successes = sum(1 for _ in range(shots) if rng.random() < success_probability)
         metric_points.append(
