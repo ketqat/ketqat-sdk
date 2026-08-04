@@ -78,7 +78,7 @@ ketqat run qpe.yaml --output qpe.json
 
 The dyadic phase 0.375 is exactly representable at every register width in the
 example, so every point reports `success_probability` 1.0. Expected
-reproducibility hash prefix: `946de250e932`.
+reproducibility hash: `946de250e93211a081ac67a6b1756f5efc43d34c4f5fdc22d593e0d77f8c0ce1`.
 
 ## 3. Three-decoder QEC comparison (SIMULATION — shared Stim samples)
 
