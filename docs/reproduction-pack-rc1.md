@@ -14,6 +14,7 @@ that claim only exists when someone unaffiliated runs this and says so.
   ```
   2ad833fc0ee1f76b31ef72fc16bee07be9eecf5794220fa1947a79a1c1b20c4f  ketqat-0.2.0-py3-none-any.whl
   154c057d98ed01e303a632a7f2f3d5b1d65f38837791ab81efd5160c84e8bcbf  ketqat_benchmarks-0.1.0-py3-none-any.whl
+  9aa3915ba4acdcdcb28a412e2e180ba65f32f33b33c81dbbf7792c878c690f54  ketqat-sdk-0.2.0.tgz   (optional; only for the Node parity check)
   ```
 
 - **Python 3.12 or 3.13.** On 3.14 the tesseract decoder wheel refuses to
@@ -46,8 +47,11 @@ resolves a different stim or decoder version, hashes may legitimately differ**
 ```bash
 python3.12 -m venv rc1 && . rc1/bin/activate
 sha256sum ketqat-0.2.0-py3-none-any.whl ketqat_benchmarks-0.1.0-py3-none-any.whl
+# Every scientific dependency pinned to the verified set below -- an
+# unpinned resolve can legitimately change hashes (see "Interpreting failures").
 pip install 'ketqat-0.2.0-py3-none-any.whl[qec]' ketqat_benchmarks-0.1.0-py3-none-any.whl \
-  beliefmatching==0.2.0 tesseract-decoder sinter==1.16.0
+  numpy==2.2.6 stim==1.16.0 PyMatching==2.4.0 \
+  beliefmatching==0.2.0 'tesseract-decoder==0.1.1.dev20260802231159' sinter==1.16.0
 ```
 
 ## 1. Grover search (MODELLED — analytic success probability, no circuit executed)
