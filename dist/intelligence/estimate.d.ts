@@ -270,6 +270,16 @@ export declare function occupiedLogicalQubits(algorithmQubits: number, layout: L
  */
 export interface CoreEvaluation {
     feasible: boolean;
+    /**
+     * True when the magic-state count could not be determined at all.
+     *
+     * Distinct from a magic-state count of zero, and the distinction is the whole
+     * point: a Clifford-only circuit genuinely needs no factory, while a circuit
+     * of un-synthesized arbitrary rotations has a T count nobody has computed yet.
+     * Both arrive here as `t_count: 0`, and reporting the second as "no factory
+     * needed" turns a gap into a claim.
+     */
+    magicStatesUndetermined: boolean;
     infeasibilityCode: InfeasibilityCode | null;
     infeasibilityReason: string | null;
     codeDistance: number | null;

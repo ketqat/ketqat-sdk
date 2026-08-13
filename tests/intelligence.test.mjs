@@ -948,3 +948,152 @@ test("the reproduction command names a binary this package actually installs", (
   assert.match(bundle.reproduction_command, /^ketqat-engine intelligence verify/)
   assert.equal(buildReport(bundle).reproduction_command, bundle.reproduction_command)
 })
+
+// ------------------------- an undetermined T count is not a T count of zero
+
+/**
+ * Found by building a real reference case that exercises the refusal path
+ * (ketqat-web#305). A circuit of un-synthesized arbitrary rotations and a
+ * Clifford-only circuit both arrive with `t_count: 0`, and the estimator
+ * reported both as "consumes no magic states, so it needs no distillation
+ * factory at all" with a factory footprint of 0.
+ *
+ * For the Clifford circuit that is a measurement. For the other it is a
+ * fabricated reassurance about a cost nobody has computed -- invariant 4 of
+ * ketqat-planning#121, missing became zero.
+ */
+function undeterminedWorkload() {
+  return QuantumWorkloadSchema.parse({
+    ...workload,
+    logical: {
+      ...workload.logical,
+      t_count: 0,
+      toffoli_count: 0,
+      clifford_count: 0,
+      unsupported_for_ft_count: 120_000,
+    },
+  })
+}
+
+test("an undetermined magic-state demand is UNKNOWN, never zero", () => {
+  const estimate = estimateForScenario(undeterminedWorkload(), base)
+
+  assert.equal(estimate.magic_state_count.value, null, "the demand is unknown, not zero")
+  assert.equal(estimate.magic_state_count.evidence, "UNKNOWN")
+  assert.equal(estimate.factory_physical_qubits.value, null, "no factory can be sized from an unknown demand")
+  assert.equal(estimate.total_physical_qubits.value, null, "and so no total machine size follows")
+  assert.equal(estimate.runtime.value, null, "nor a runtime")
+  assert.match(estimate.warnings.join(" "), /undetermined, not zero/)
+  // The reassuring sentence that belongs only to a genuinely Clifford circuit.
+  assert.ok(
+    !estimate.warnings.join(" ").includes("needs no distillation factory at all"),
+    "an unassessable circuit must not be told it needs no factory",
+  )
+})
+
+test("a genuinely Clifford-only circuit still reports zero, and says why", () => {
+  // The converse. Without this, the fix above could be 'return UNKNOWN whenever
+  // the T count is zero', which would break the case that was already correct.
+  const clifford = QuantumWorkloadSchema.parse({
+    ...workload,
+    logical: { ...workload.logical, t_count: 0, toffoli_count: 0, unsupported_for_ft_count: 0, clifford_count: 22 },
+  })
+  const estimate = estimateForScenario(clifford, base)
+
+  assert.equal(estimate.magic_state_count.value, 0, "measured zero, not unknown")
+  assert.equal(estimate.factory_physical_qubits.value, 0)
+  assert.ok(estimate.total_physical_qubits.value > 0, "the machine is still sized")
+  assert.match(estimate.warnings.join(" "), /needs no distillation factory at all/)
+})
+
+test("the throughput threshold refuses an undetermined demand rather than requiring zero", () => {
+  const withTarget = customScenario({ runtime_target: 3600 })
+
+  const undetermined = computeAdvantageThresholds(undeterminedWorkload(), withTarget, null)
+  assert.equal(
+    undetermined.min_factory_throughput_for_runtime_target.value,
+    null,
+    "zero here would read as 'no factory throughput is required'",
+  )
+
+  const clifford = QuantumWorkloadSchema.parse({
+    ...workload,
+    logical: { ...workload.logical, t_count: 0, toffoli_count: 0, unsupported_for_ft_count: 0 },
+  })
+  assert.equal(
+    computeAdvantageThresholds(clifford, withTarget, null).min_factory_throughput_for_runtime_target.value,
+    0,
+    "a Clifford circuit genuinely requires none",
+  )
+})
+
+test("an undetermined demand still reaches INSUFFICIENT_EVIDENCE rather than a feasible verdict", () => {
+  const scoped = undeterminedWorkload()
+  const estimate = estimateForScenario(scoped, base)
+  const threshold = computeAdvantageThresholds(scoped, base, null)
+  const assessment = assessDecision({ workload: scoped, scenario: base, baseline: null, estimate, threshold })
+
+  assert.equal(assessment.status, "INSUFFICIENT_EVIDENCE")
+  assert.ok(assessment.reason_codes.includes("T_COUNT_NOT_DETERMINED"))
+  assert.match(assessment.missing_evidence.join(" "), /Clifford\+T synthesis/)
+})
+
+test("the arithmetic display does not print a zero the estimate refused to report", () => {
+  // "0 T + 4 x 0 Toffoli = 0" is technically correct arithmetic that reads as a
+  // finding, and it would have put the zero back on the page that the UNKNOWN
+  // handling above removed it from. Found by re-reading every use of
+  // `magicStates` during review of ketqat-sdk#242.
+  const undetermined = estimateForScenario(undeterminedWorkload(), base)
+  assert.match(undetermined.exact_arithmetic[0], /not computed/)
+  assert.ok(!/= 0\./.test(undetermined.exact_arithmetic[0]))
+
+  const clifford = QuantumWorkloadSchema.parse({
+    ...workload,
+    logical: { ...workload.logical, t_count: 0, toffoli_count: 0, unsupported_for_ft_count: 0 },
+  })
+  assert.match(estimateForScenario(clifford, base).exact_arithmetic[0], /= 0\./)
+})
+
+test("no cycle-time threshold is derived from an undetermined magic-state demand", () => {
+  // Raised in review of ketqat-sdk#242. `roundsPerRun` takes the max of the
+  // cycle-limited and factory-limited terms; with an undetermined demand the
+  // factory term silently became 0, so both cycle-time thresholds looked
+  // computable -- and each emits a `required_conditions` sentence a decision
+  // maker would act on.
+  const withTarget = customScenario({ runtime_target: 3600 })
+  const threshold = computeAdvantageThresholds(undeterminedWorkload(), withTarget, demoBaseline())
+
+  assert.equal(threshold.max_cycle_time_for_runtime_target.value, null)
+  assert.equal(threshold.max_cycle_time_to_beat_classical_runtime.value, null)
+  assert.equal(
+    threshold.required_conditions.filter((line) => line.includes("surface-code cycle")).length,
+    0,
+    "a condition derived from a phantom zero must not be stated",
+  )
+
+  // The same scenario on a workload with a real T count still computes both.
+  const real = computeAdvantageThresholds(workload, withTarget, demoBaseline())
+  assert.ok(real.max_cycle_time_for_runtime_target.value > 0)
+  assert.ok(real.max_cycle_time_to_beat_classical_runtime.value > 0)
+})
+
+test("an undetermined demand is not also described as an underestimate", () => {
+  // "This figure is too low" beside "there is no figure" is a contradiction,
+  // and the first half invites anchoring on a number that does not exist.
+  const estimate = estimateForScenario(undeterminedWorkload(), base)
+  const warnings = estimate.warnings.join(" ")
+  assert.match(warnings, /undetermined, not zero/)
+  assert.ok(!warnings.includes("is an underestimate"), "the two messages contradict each other")
+
+  assert.match(estimate.t_count.limitations.join(" "), /undetermined rather than underestimated/)
+
+  // A workload that has both a real T count and unsupported gates genuinely is
+  // an underestimate, and must still say so.
+  const partiallySynthesized = QuantumWorkloadSchema.parse({
+    ...workload,
+    logical: { ...workload.logical, t_count: 8, unsupported_for_ft_count: 40 },
+  })
+  const partial = estimateForScenario(partiallySynthesized, base)
+  assert.match(partial.warnings.join(" "), /is an underestimate/)
+  assert.match(partial.t_count.limitations.join(" "), /are an underestimate/)
+})
