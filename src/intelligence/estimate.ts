@@ -408,14 +408,38 @@ function countQuantity(value: number, unit: string, workload: QuantumWorkload): 
     model: MODEL,
     modelVersion: VERSION,
     assumptions: [`Gate set: ${workload.gate_set.join(", ") || "unstated"}.`],
-    limitations:
-      workload.logical.unsupported_for_ft_count > 0
+    // "An underestimate" presumes a figure exists that is too low. When no
+    // gate contributes a T count at all, the derived figures are absent rather
+    // than low, and saying otherwise implies a number a reader could anchor on
+    // (raised in review of ketqat-sdk#242).
+    limitations: workloadMagicStatesUndetermined(workload)
+      ? [
+          `${workload.logical.unsupported_for_ft_count} gate(s) are neither Clifford nor T, and the circuit ` +
+            "records no T or Toffoli gates, so figures derived from the T count are undetermined rather than " +
+            "underestimated.",
+        ]
+      : workload.logical.unsupported_for_ft_count > 0
         ? [
             `${workload.logical.unsupported_for_ft_count} gate(s) are neither Clifford nor T, so counts derived ` +
               "from the T count are an underestimate until those are synthesized.",
           ]
         : [],
   })
+}
+
+/**
+ * Whether the magic-state demand is undetermined, from the workload alone.
+ *
+ * Depends on no scenario: any positive Toffoli cost leaves the sum zero only
+ * when both the T and Toffoli counts are zero, so this agrees with the
+ * `magicStatesUndetermined` computed inside `evaluate`.
+ */
+function workloadMagicStatesUndetermined(workload: QuantumWorkload): boolean {
+  return (
+    workload.logical.t_count === 0 &&
+    workload.logical.toffoli_count === 0 &&
+    workload.logical.unsupported_for_ft_count > 0
+  )
 }
 
 function scenarioAssumptions(scenario: ResourceScenario): string[] {
@@ -599,7 +623,11 @@ export function estimateForScenario(
         "by more than a factor of two.",
     )
   }
-  if (workload.logical.unsupported_for_ft_count > 0) {
+  // Only when a T count exists to be an underestimate *of*. When the demand is
+  // undetermined the warning below already says there is no figure at all, and
+  // "this number is too low" beside "there is no number" reads as a
+  // contradiction (raised in review of ketqat-sdk#242).
+  if (workload.logical.unsupported_for_ft_count > 0 && !core.magicStatesUndetermined) {
     warnings.push(
       `${workload.logical.unsupported_for_ft_count} gate(s) are neither Clifford nor T. Every figure derived from ` +
         "the T count is an underestimate until they are synthesized into a Clifford+T basis.",

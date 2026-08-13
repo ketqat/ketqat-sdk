@@ -1053,3 +1053,47 @@ test("the arithmetic display does not print a zero the estimate refused to repor
   })
   assert.match(estimateForScenario(clifford, base).exact_arithmetic[0], /= 0\./)
 })
+
+test("no cycle-time threshold is derived from an undetermined magic-state demand", () => {
+  // Raised in review of ketqat-sdk#242. `roundsPerRun` takes the max of the
+  // cycle-limited and factory-limited terms; with an undetermined demand the
+  // factory term silently became 0, so both cycle-time thresholds looked
+  // computable -- and each emits a `required_conditions` sentence a decision
+  // maker would act on.
+  const withTarget = customScenario({ runtime_target: 3600 })
+  const threshold = computeAdvantageThresholds(undeterminedWorkload(), withTarget, demoBaseline())
+
+  assert.equal(threshold.max_cycle_time_for_runtime_target.value, null)
+  assert.equal(threshold.max_cycle_time_to_beat_classical_runtime.value, null)
+  assert.equal(
+    threshold.required_conditions.filter((line) => line.includes("surface-code cycle")).length,
+    0,
+    "a condition derived from a phantom zero must not be stated",
+  )
+
+  // The same scenario on a workload with a real T count still computes both.
+  const real = computeAdvantageThresholds(workload, withTarget, demoBaseline())
+  assert.ok(real.max_cycle_time_for_runtime_target.value > 0)
+  assert.ok(real.max_cycle_time_to_beat_classical_runtime.value > 0)
+})
+
+test("an undetermined demand is not also described as an underestimate", () => {
+  // "This figure is too low" beside "there is no figure" is a contradiction,
+  // and the first half invites anchoring on a number that does not exist.
+  const estimate = estimateForScenario(undeterminedWorkload(), base)
+  const warnings = estimate.warnings.join(" ")
+  assert.match(warnings, /undetermined, not zero/)
+  assert.ok(!warnings.includes("is an underestimate"), "the two messages contradict each other")
+
+  assert.match(estimate.t_count.limitations.join(" "), /undetermined rather than underestimated/)
+
+  // A workload that has both a real T count and unsupported gates genuinely is
+  // an underestimate, and must still say so.
+  const partiallySynthesized = QuantumWorkloadSchema.parse({
+    ...workload,
+    logical: { ...workload.logical, t_count: 8, unsupported_for_ft_count: 40 },
+  })
+  const partial = estimateForScenario(partiallySynthesized, base)
+  assert.match(partial.warnings.join(" "), /is an underestimate/)
+  assert.match(partial.t_count.limitations.join(" "), /are an underestimate/)
+})

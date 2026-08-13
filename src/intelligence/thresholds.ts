@@ -282,8 +282,17 @@ export function computeAdvantageThresholds(
 
   // Runtime is linear in the cycle time under both limiters, so the slowest
   // acceptable cycle is a division rather than a search.
+  /**
+   * Surface-code rounds this run occupies, under whichever limiter binds.
+   *
+   * `null` when the magic-state demand is undetermined, not just when the
+   * estimate is infeasible. Taking the max against a factory term of zero would
+   * make both cycle-time thresholds look computable from a demand nobody has
+   * calculated -- and each of them emits a `required_conditions` sentence a
+   * decision maker would act on. Raised in review of ketqat-sdk#242.
+   */
   const roundsPerRun =
-    evaluation.codeDistance === null
+    evaluation.codeDistance === null || evaluation.magicStatesUndetermined
       ? null
       : Math.max(
           evaluation.logicalCycles * evaluation.codeDistance,
@@ -305,7 +314,9 @@ export function computeAdvantageThresholds(
     maxCycleForTarget = refuse(
       "max_cycle_time_for_runtime_target",
       "ESTIMATE_INFEASIBLE",
-      evaluation.infeasibilityReason ?? "The run length could not be determined under these assumptions.",
+      evaluation.magicStatesUndetermined
+        ? evaluation.distillationReason
+        : (evaluation.infeasibilityReason ?? "The run length could not be determined under these assumptions."),
       "ns",
     )
   } else {
@@ -457,7 +468,9 @@ export function computeAdvantageThresholds(
     maxCycleToBeatClassical = refuse(
       "max_cycle_time_to_beat_classical_runtime",
       "ESTIMATE_INFEASIBLE",
-      evaluation.infeasibilityReason ?? `The quantum runtime is not available. ${evaluation.distillationReason}`,
+      evaluation.magicStatesUndetermined
+        ? evaluation.distillationReason
+        : (evaluation.infeasibilityReason ?? `The quantum runtime is not available. ${evaluation.distillationReason}`),
       "ns",
     )
     speedup = refuse(

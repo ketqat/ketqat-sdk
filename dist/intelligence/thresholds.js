@@ -194,7 +194,16 @@ export function computeAdvantageThresholds(workload, scenario, baseline, core) {
             "distance does not meet the budget; a larger one costs more.");
     // Runtime is linear in the cycle time under both limiters, so the slowest
     // acceptable cycle is a division rather than a search.
-    const roundsPerRun = evaluation.codeDistance === null
+    /**
+     * Surface-code rounds this run occupies, under whichever limiter binds.
+     *
+     * `null` when the magic-state demand is undetermined, not just when the
+     * estimate is infeasible. Taking the max against a factory term of zero would
+     * make both cycle-time thresholds look computable from a demand nobody has
+     * calculated -- and each of them emits a `required_conditions` sentence a
+     * decision maker would act on. Raised in review of ketqat-sdk#242.
+     */
+    const roundsPerRun = evaluation.codeDistance === null || evaluation.magicStatesUndetermined
         ? null
         : Math.max(evaluation.logicalCycles * evaluation.codeDistance, evaluation.magicStates > 0 && evaluation.distillationReachedTarget
             ? (evaluation.magicStates * scenario.factory.rounds_per_distillation) /
@@ -205,7 +214,9 @@ export function computeAdvantageThresholds(workload, scenario, baseline, core) {
         maxCycleForTarget = refuse("max_cycle_time_for_runtime_target", "NO_RUNTIME_TARGET", "This scenario states no runtime target, so there is no runtime to meet. A target was not assumed.", "ns");
     }
     else if (roundsPerRun === null || roundsPerRun === 0) {
-        maxCycleForTarget = refuse("max_cycle_time_for_runtime_target", "ESTIMATE_INFEASIBLE", evaluation.infeasibilityReason ?? "The run length could not be determined under these assumptions.", "ns");
+        maxCycleForTarget = refuse("max_cycle_time_for_runtime_target", "ESTIMATE_INFEASIBLE", evaluation.magicStatesUndetermined
+            ? evaluation.distillationReason
+            : (evaluation.infeasibilityReason ?? "The run length could not be determined under these assumptions."), "ns");
     }
     else {
         const nanoseconds = (scenario.runtime_target * 1e9) / roundsPerRun;
@@ -273,7 +284,9 @@ export function computeAdvantageThresholds(workload, scenario, baseline, core) {
         speedup = refuse("runtime_speedup_over_classical", "NO_CLASSICAL_RUNTIME", `${INSUFFICIENT_ECONOMIC_EVIDENCE}: the classical baseline records no runtime.`, "ratio");
     }
     else if (roundsPerRun === null || roundsPerRun === 0 || evaluation.runtime === null) {
-        maxCycleToBeatClassical = refuse("max_cycle_time_to_beat_classical_runtime", "ESTIMATE_INFEASIBLE", evaluation.infeasibilityReason ?? `The quantum runtime is not available. ${evaluation.distillationReason}`, "ns");
+        maxCycleToBeatClassical = refuse("max_cycle_time_to_beat_classical_runtime", "ESTIMATE_INFEASIBLE", evaluation.magicStatesUndetermined
+            ? evaluation.distillationReason
+            : (evaluation.infeasibilityReason ?? `The quantum runtime is not available. ${evaluation.distillationReason}`), "ns");
         speedup = refuse("runtime_speedup_over_classical", "ESTIMATE_INFEASIBLE", evaluation.infeasibilityReason ?? "The quantum runtime is not available.", "ratio");
     }
     else {
