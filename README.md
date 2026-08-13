@@ -109,6 +109,50 @@ Subpath exports are available for:
 - `ketqat-sdk/client`
 - `ketqat-sdk/demo`
 
+## Resource Intelligence
+
+`ketqat-sdk/intelligence` costs a workload under explicitly stated assumptions and reports
+what hardware would have to achieve for the result to be worth having. It answers three
+questions and refuses a fourth:
+
+1. How much logical and physical resource would this computation require?
+2. Which algorithm, QEC, hardware, layout, factory and error-model assumptions does that
+   answer depend on?
+3. What would hardware performance, runtime, factory throughput and cost have to satisfy
+   to beat a stated classical baseline?
+
+It does not answer "when will quantum win". A crossing date requires a hardware forecast,
+and a forecast presented as a calculation is the most quotable and least defensible number
+this package could emit.
+
+```bash
+ketqat-engine intelligence validate examples/intelligence/demo-assessment.yaml
+ketqat-engine intelligence report   examples/intelligence/demo-assessment.yaml --output report.json
+ketqat-engine intelligence verify   report.json
+```
+
+`verify` recomputes the estimates, thresholds and decision assessments from the bundle's
+own inputs and compares them, not just the hash. A hash check proves the file was not
+edited; it does not prove the conclusions follow from the inputs, and a bundle whose
+decision section was written by hand and then re-hashed would pass one and fail the other.
+
+Three things are enforced by the types rather than by convention:
+
+- **A bare number is not representable.** Every decision-bearing quantity carries its unit,
+  evidence class (`MEASURED`, `USER_PROVIDED`, `DERIVED`, `MODELLED`, `UNKNOWN`), bound
+  kind, source, model and version, assumptions, sensitivity and limitations. A quantity
+  with no value must declare `UNKNOWN`; one declaring `UNKNOWN` cannot carry a number.
+- **No economic conclusion without both halves.** Absent a classical baseline or a quantum
+  cost model, every economic threshold is `UNKNOWN` and names the missing input. No price
+  for fault-tolerant quantum machine time is invented, because none exists to look up.
+- **No averaging across assumptions.** There is deliberately no function that combines two
+  estimates. A mean of a conservative and an optimistic footprint is a number no model
+  predicts, carrying the apparent authority of both.
+
+Above the code threshold the estimator reports infeasible with the reason, never a very
+large number -- a large number reads as "expensive but possible", which is the opposite of
+true.
+
 ## Schema Versioning
 
 The npm package version and research schema version are separate. `SDK_VERSION` is currently `0.2.0`; `SCHEMA_VERSION` is currently `0.1`.

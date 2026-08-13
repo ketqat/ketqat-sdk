@@ -21,6 +21,74 @@ which is a human decision.
 
 ### Added
 
+- **Quantum Resource Intelligence: contracts, threshold engine, decision assessment and
+  reproducible bundles** ([#236](https://github.com/ketqat/ketqat-sdk/issues/236)).
+  A new `ketqat-sdk/intelligence` export, additive throughout: no existing schema, hash,
+  or contract semantic changes.
+
+  The engine already computed code distances, footprints and distillation costs. What was
+  missing was everything that turns those into something a decision can rest on. This adds
+  it: `QuantumWorkload`, `ClassicalBaseline`, `ResourceScenario`, `HardwareModelSnapshot`,
+  `QecModelSnapshot`, `EconomicModel`, `ResourceEstimateSnapshot`, `AdvantageThreshold`,
+  `DecisionAssessment` and `ResourceIntelligenceBundle`, with ten generated JSON Schemas.
+
+  Four properties are structural rather than documented:
+
+  - **Every decision-bearing number wears an envelope.** A bare `number` is not
+    representable. Each carries its unit, evidence class, bound kind, source, model and
+    version, assumptions, sensitivity and limitations. A quantity with no value is forced
+    to declare `UNKNOWN`; a quantity declaring `UNKNOWN` cannot carry a number.
+  - **Economic conclusions are gated on evidence.** `POTENTIALLY_ECONOMIC` and
+    `ECONOMICALLY_COMPETITIVE_UNDER_ASSUMPTIONS` are unreachable unless a classical
+    baseline *and* a quantum cost model are both present. With neither, the assessment
+    says `Insufficient evidence for economic comparison` and names the missing input. No
+    price for quantum machine time is invented anywhere in the module.
+  - **Three footprints stay apart.** The algorithm's own patches, the routing space a
+    lattice-surgery layout needs, and the magic-state factory are computed and reported
+    separately. If distillation cannot reach its target error the factory is not sized, so
+    the *total* is `UNKNOWN` rather than the algorithm figure under a label implying the
+    whole.
+  - **Thresholds are conditions, not dates.** "A surface-code cycle below 250 ns would be
+    required to beat the supplied classical runtime" is checkable and stays true whatever
+    any vendor ships. No calendar-year projection is produced.
+
+  Runtime is costed twice -- once limited by logical cycles, once by magic-state
+  throughput -- because which one binds is the actionable output, and reporting only the
+  first attributes a factory bottleneck to the wrong subsystem.
+
+- **`ketqat-engine intelligence` commands**: `validate`, `estimate`, `compare`, `report`
+  and `verify`. `verify` recomputes the estimates, thresholds *and* decision assessments
+  from the bundle's own inputs, not merely its hash: a bundle whose conclusions were edited
+  by hand and then re-hashed passes a hash check and fails this one, with a non-zero exit.
+
+  Assessment documents are read as JSON or as a **declared subset of YAML**, parsed in
+  repository so the runtime dependency set stays `zod` alone. Anchors, aliases, tags, flow
+  collections and multi-document files are refused by name rather than mis-parsed.
+
+- **Three read-only MCP tools**: `estimate_resource_intelligence`,
+  `compare_resource_scenarios`, `verify_resource_intelligence_bundle`. They are in
+  `src/mcp/index.ts` because they genuinely change nothing -- no remote write, no queued
+  job, no purchased device time.
+
+- **Cross-language hash parity for bundles.** `fixtures/reproducibility/resource-intelligence-bundle.json`
+  is hashed by both implementations in CI. The bundle reuses the existing version 2
+  exclusion set rather than extending it, which is why every timestamp in the module is
+  called `created_at` -- a key the canonicalizer has dropped at every level since version 1.
+  Extending the exclusion set would have been a new hash version, and a new hash version
+  invalidates comparison with every record already stored.
+
+### Changed
+
+- The npm package size policy moved from 2 MB to 2.5 MB, with the reason recorded in
+  `scripts/verify-package-contents.mjs`. The measured cost of #236 was ~510 KB against a
+  1.68 MB baseline, after two reductions made while adding it: naming the `Quantity` type
+  so declarations reference it instead of expanding it structurally (413 KB of
+  `bundle.d.ts` became 6 KB), and emitting the new schemas with in-document `$ref`s
+  instead of full inlining (216 KB became 61 KB). The same treatment applied to
+  `dist/contracts` and `dist/engine`, plus the ~490 KB of source maps that point at files
+  the package does not ship, is [#237](https://github.com/ketqat/ketqat-sdk/issues/237).
+
+
 - **Release artifacts are built and checked without being published.**
   `npm run build:release` produces the npm tarball, the Python wheel and sdist, CycloneDX
   SBOMs for both, `SHA256SUMS`, provenance and reproducibility evidence in `dist-release/`.

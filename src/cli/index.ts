@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { readFileSync, writeFileSync } from "node:fs"
 import {
   ACCEPTED_TOKEN_VARIABLES,
   CANONICAL_TOKEN_VARIABLE,
@@ -26,6 +26,16 @@ import { circuitDepth, transpileForHardware } from "../engine/transpile.js"
 import { optimizeWithZx } from "../engine/zx.js"
 import { zeroNoiseExtrapolation } from "../engine/mitigation.js"
 import { NoiseModelSchema } from "../engine/noise.js"
+import {
+  AssessmentFileError,
+  buildBundle,
+  buildReport,
+  readAssessmentDocument,
+  reportToCsv,
+  resolveAssessment,
+  verifyBundle,
+  type ResourceScenario,
+} from "../intelligence/index.js"
 
 /**
  * Engine command line.
@@ -57,6 +67,13 @@ Commands:
   equivalence <a.qasm> <b.qasm>          Compare two circuits
   mitigate zne <file.qasm>               Zero-noise extrapolation; requires --noise-1q or --noise-2q
 
+Resource intelligence (all local; nothing is sent anywhere):
+  intelligence validate <file>           Check an assessment document and report what it would compute
+  intelligence estimate <file>           Resource estimates for every scenario; --output
+  intelligence compare <file>            Scenario comparison table; --output, --csv
+  intelligence report <file>             Full KetQat Decision Report; --output
+  intelligence verify <bundle.json>      Recompute the hash AND the decisions from the bundle's own inputs
+
 Registry commands (need --registry <url> or KETQAT_URL):
   search <query>                         Search artifacts, suites, and runs
   pull <slug>                            Fetch an artifact with its versions and relations
@@ -81,6 +98,18 @@ command-line argument, because arguments appear in shell history and in the
 process list.
 
 Every command prints one JSON object to stdout.`
+
+/**
+ * Write a result to `--output` when one was asked for.
+ *
+ * The object still goes to stdout either way, so a pipeline and a saved file
+ * cannot disagree about what a command produced.
+ */
+function writeOutput(flags: Map<string, string>, value: unknown): void {
+  const target = flags.get("output")
+  if (!target || target === "true") return
+  writeFileSync(target, `${JSON.stringify(value, null, 2)}\n`)
+}
 
 function parseFlags(argv: string[]): { positional: string[]; flags: Map<string, string> } {
   const positional: string[] = []
@@ -303,6 +332,120 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
         return { exitCode: 0, stdout: { command: "mitigate.zne", ...result } }
       }
 
+      case "intelligence": {
+        // Every path here is a pure local calculation over a file the user
+        // wrote. Nothing reaches the network, nothing needs a token, and
+        // nothing executes user code: OpenQASM goes through the same typed
+        // parser the rest of this CLI uses.
+        const path = positional[2]
+        if (!subcommand || !path) {
+          return {
+            exitCode: 2,
+            stderr: "usage: intelligence <validate|estimate|compare|report|verify> <file> [--output <file>]",
+          }
+        }
+        const source = readFileSync(path, "utf8")
+
+        if (subcommand === "verify") {
+          let candidate: unknown
+          try {
+            candidate = JSON.parse(source)
+          } catch (error) {
+            return {
+              exitCode: 2,
+              stderr: `${path} is not valid JSON: ${(error as Error).message}`,
+            }
+          }
+          const verification = verifyBundle(candidate)
+          const output = { command: "intelligence verify", file: path, ...verification }
+          writeOutput(flags, output)
+          // A failed verification is a failure, not a report of one. A zero exit
+          // here would let a CI step "verify" a fabricated bundle and pass.
+          return { exitCode: verification.valid ? 0 : 1, stdout: output }
+        }
+
+        const spec = readAssessmentDocument(source, path)
+        const resolved = resolveAssessment(spec)
+
+        if (subcommand === "validate") {
+          const output = {
+            command: "intelligence validate",
+            file: path,
+            valid: true,
+            workload: {
+              name: resolved.workload.name,
+              is_demo: resolved.workload.is_demo,
+              logical_counts_evidence: resolved.workload.logical_counts_evidence,
+              logical: resolved.workload.logical,
+            },
+            classical_baseline: resolved.baseline === null ? null : { evidence: resolved.baseline.evidence },
+            // Named rather than counted: "3 scenarios" does not tell a reader
+            // whether the one they meant to add is among them.
+            scenarios: resolved.scenarios.map((scenario: ResourceScenario) => ({
+              name: scenario.name,
+              preset: scenario.preset,
+              revision: scenario.revision,
+            })),
+            economic_comparison_available:
+              resolved.baseline !== null &&
+              resolved.scenarios.some((scenario: ResourceScenario) => scenario.economics !== null),
+          }
+          writeOutput(flags, output)
+          return { exitCode: 0, stdout: output }
+        }
+
+        const bundle = buildBundle(resolved)
+
+        if (subcommand === "estimate") {
+          const output = {
+            command: "intelligence estimate",
+            reproducibility_hash: bundle.reproducibility_hash,
+            is_demo: bundle.is_demo,
+            estimates: bundle.estimates,
+          }
+          writeOutput(flags, output)
+          return { exitCode: 0, stdout: output }
+        }
+
+        if (subcommand === "compare") {
+          if (flags.has("csv")) {
+            const csv = reportToCsv(bundle)
+            const target = flags.get("output")
+            if (target && target !== "true") {
+              writeFileSync(target, csv)
+              return { exitCode: 0, stdout: { command: "intelligence compare", written: target, format: "csv" } }
+            }
+            return { exitCode: 0, stderr: csv }
+          }
+          const output = {
+            command: "intelligence compare",
+            reproducibility_hash: bundle.reproducibility_hash,
+            is_demo: bundle.is_demo,
+            comparison: bundle.comparison,
+            thresholds: bundle.thresholds,
+          }
+          writeOutput(flags, output)
+          return { exitCode: 0, stdout: output }
+        }
+
+        if (subcommand === "report") {
+          const output = {
+            command: "intelligence report",
+            report: buildReport(bundle),
+            // The bundle travels with the report so `verify` has something to
+            // recompute. A report alone carries a hash it cannot substantiate.
+            bundle,
+          }
+          writeOutput(flags, output)
+          return { exitCode: 0, stdout: output }
+        }
+
+        return {
+          exitCode: 2,
+          stderr: `Unknown intelligence subcommand '${subcommand}'. Expected validate, estimate, compare, report, or verify.`,
+        }
+      }
+
       case "search": {
         const term = positional.slice(1).join(" ")
         if (!term) return { exitCode: 2, stderr: "search requires a query." }
@@ -482,6 +625,9 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
     }
   } catch (error) {
     if (error instanceof RegistryConfigurationError) {
+      return { exitCode: 2, stderr: error.message }
+    }
+    if (error instanceof AssessmentFileError) {
       return { exitCode: 2, stderr: error.message }
     }
     if (error instanceof Qasm3ParseError) {

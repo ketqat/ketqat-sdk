@@ -34,17 +34,22 @@ assert.ok(capabilities?.tools, "tools capability must be advertised")
 
 // Every tool is discoverable, with a JSON Schema the client can validate against.
 const listed = await client.listTools()
-assert.equal(listed.tools.length, 7, `expected 7 tools, got ${listed.tools.length}`)
+assert.equal(listed.tools.length, 10, `expected 10 tools, got ${listed.tools.length}`)
 
 const names = listed.tools.map((tool) => tool.name).sort()
 assert.deepEqual(names, [
   "check_circuit_equivalence",
+  // Resource intelligence (ketqat-sdk#236). Listed here rather than counted,
+  // so a mutating tool joining this server has to change this list by name.
+  "compare_resource_scenarios",
   "convert_circuit",
+  "estimate_resource_intelligence",
   "estimate_resources",
   "inspect_circuit",
   "optimize_with_zx",
   "simulate_circuit",
   "transpile_for_hardware",
+  "verify_resource_intelligence_bundle",
 ])
 
 for (const tool of listed.tools) {
@@ -92,14 +97,14 @@ assert.equal(unknown.isError, true)
 
 // The session survives errors: a good call still works afterwards.
 const afterErrors = await client.listTools()
-assert.equal(afterErrors.tools.length, 7, "the server must remain usable after tool errors")
+assert.equal(afterErrors.tools.length, 10, "the server must remain usable after tool errors")
 
 // ping is part of the protocol and must be answered.
 await client.ping()
 
 await client.close()
 
-console.log("MCP conformance: official client completed handshake, discovery, 7 tools, and error handling.")
+console.log("MCP conformance: official client completed handshake, discovery, 10 tools, and error handling.")
 
 // ---------------------------------------------------------------------------
 // Framing and notification edge cases
@@ -166,7 +171,7 @@ console.log("MCP conformance: official client completed handshake, discovery, 7 
     input.write(`${frame.slice(12)}\n`)
     await new Promise((resolve) => setImmediate(resolve))
     assert.equal(lines.length, 1, "the completed frame must produce exactly one response")
-    assert.equal(JSON.parse(lines[0]).result.tools.length, 7)
+    assert.equal(JSON.parse(lines[0]).result.tools.length, 10)
 
     // A malformed frame gets a parse error and does not kill the session.
     input.write("{ not json at all }\n")
@@ -212,7 +217,7 @@ console.log("MCP conformance: official client completed handshake, discovery, 7 
 
   // The manifest derives schemas from zod, so it cannot drift from the handlers.
   const manifest = toolManifest()
-  assert.equal(manifest.length, 7)
+  assert.equal(manifest.length, 10)
   assert.ok(manifest.every((tool) => tool.annotations.readOnlyHint === true))
 
   console.log("MCP framing: partial frames buffered, malformed frames recovered, notifications unanswered.")

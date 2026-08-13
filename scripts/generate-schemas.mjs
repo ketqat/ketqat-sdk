@@ -17,6 +17,16 @@ import {
   QuantumCardSchema,
   ReproducibilityBundleSchema,
   VerificationEvidenceSchema,
+  QuantumWorkloadSchema,
+  ClassicalBaselineSchema,
+  ResourceScenarioSchema,
+  HardwareModelSnapshotSchema,
+  QecModelSnapshotSchema,
+  EconomicModelSchema,
+  ResourceEstimateSnapshotSchema,
+  AdvantageThresholdSchema,
+  DecisionAssessmentSchema,
+  ResourceIntelligenceBundleSchema,
 } from "../dist/index.js"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
@@ -53,6 +63,17 @@ const schemas = {
   "quantum-card.schema.json": QuantumCardSchema,
   "artifact-relation.schema.json": ArtifactRelationSchema,
   "circuit-transformation.schema.json": CircuitTransformationSchema,
+  // Resource intelligence (ketqat-sdk#236). Additive: no existing schema changes.
+  "quantum-workload.schema.json": QuantumWorkloadSchema,
+  "classical-baseline.schema.json": ClassicalBaselineSchema,
+  "resource-scenario.schema.json": ResourceScenarioSchema,
+  "hardware-model-snapshot.schema.json": HardwareModelSnapshotSchema,
+  "qec-model-snapshot.schema.json": QecModelSnapshotSchema,
+  "economic-model.schema.json": EconomicModelSchema,
+  "resource-estimate-snapshot.schema.json": ResourceEstimateSnapshotSchema,
+  "advantage-threshold.schema.json": AdvantageThresholdSchema,
+  "decision-assessment.schema.json": DecisionAssessmentSchema,
+  "resource-intelligence-bundle.schema.json": ResourceIntelligenceBundleSchema,
 }
 
 // The QEC code catalog is data, not a schema, and is emitted to both locations
@@ -152,14 +173,43 @@ function assertSchemaIsNotVacuous(filename, jsonSchema, zodSchema) {
   }
 }
 
+/**
+ * Schemas that reference repeated sub-schemas rather than inlining them.
+ *
+ * Every resource-intelligence contract wraps its numbers in the same `Quantity`
+ * envelope -- around thirty times in one estimate, and an estimate appears
+ * inside the bundle alongside a threshold and an assessment that do the same.
+ * Fully inlined, `resource-intelligence-bundle.schema.json` was 216 KB of the
+ * same object repeated.
+ *
+ * "root" emits in-document `$ref` pointers for the repeats. That is *not* the
+ * `"seen"` strategy that once collapsed sub-schemas to `{}` and left fields
+ * unvalidated: a `$ref` resolves to the real constraint, and the vacuity check
+ * below still runs over the output. The older contracts keep full inlining so
+ * no already-published schema document changes shape.
+ */
+const REFERENCED_SCHEMAS = new Set([
+  "quantum-workload.schema.json",
+  "classical-baseline.schema.json",
+  "resource-scenario.schema.json",
+  "hardware-model-snapshot.schema.json",
+  "qec-model-snapshot.schema.json",
+  "economic-model.schema.json",
+  "resource-estimate-snapshot.schema.json",
+  "advantage-threshold.schema.json",
+  "decision-assessment.schema.json",
+  "resource-intelligence-bundle.schema.json",
+])
+
 for (const [filename, schema] of Object.entries(schemas)) {
   const jsonSchema = zodToJsonSchema(schema, {
     name: filename.replace(".schema.json", ""),
     target: "jsonSchema7",
+    ...(REFERENCED_SCHEMAS.has(filename) ? { $refStrategy: "root" } : {}),
     // "none" fully inlines repeated sub-schemas; "seen" collapsed repeats to {},
     // which left fields like the bundle-level environment unvalidated by JSON
     // Schema consumers. No contract is recursive, so full inlining is safe.
-    $refStrategy: "none",
+    ...(REFERENCED_SCHEMAS.has(filename) ? {} : { $refStrategy: "none" }),
   })
   assertSchemaIsNotVacuous(filename, jsonSchema, schema)
   const serialized = `${JSON.stringify(jsonSchema, null, 2)}\n`

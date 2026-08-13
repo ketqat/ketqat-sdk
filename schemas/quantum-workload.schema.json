@@ -1,0 +1,186 @@
+{
+  "$ref": "#/definitions/quantum-workload",
+  "definitions": {
+    "quantum-workload": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "is_demo": {
+          "type": "boolean"
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "OPENQASM3",
+                "KETQAT_WORKBENCH_CIRCUIT",
+                "KETQAT_ARTIFACT",
+                "KETQAT_RUN",
+                "MANUAL_LOGICAL_COUNTS",
+                "ALGORITHM_FAMILY"
+              ]
+            },
+            "reference": {
+              "type": "string",
+              "minLength": 1
+            },
+            "openqasm3": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source_digest": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "citation": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        "logical": {
+          "type": "object",
+          "properties": {
+            "logical_qubits": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "circuit_depth": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "gate_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "one_qubit_gate_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "two_qubit_gate_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "clifford_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "t_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "toffoli_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unsupported_for_ft_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "measurement_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "reset_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "conditional_count": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "logical_qubits",
+            "circuit_depth",
+            "gate_count",
+            "one_qubit_gate_count",
+            "two_qubit_gate_count",
+            "clifford_count",
+            "t_count",
+            "toffoli_count",
+            "unsupported_for_ft_count",
+            "measurement_count",
+            "reset_count",
+            "conditional_count"
+          ],
+          "additionalProperties": false
+        },
+        "logical_counts_evidence": {
+          "type": "string",
+          "enum": [
+            "MEASURED",
+            "USER_PROVIDED",
+            "DERIVED",
+            "MODELLED",
+            "UNKNOWN"
+          ]
+        },
+        "problem_size": {
+          "type": "object",
+          "properties": {
+            "description": {
+              "type": "string",
+              "minLength": 1
+            },
+            "value": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "description"
+          ],
+          "additionalProperties": false
+        },
+        "gate_set": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "name",
+        "description",
+        "is_demo",
+        "source",
+        "logical",
+        "logical_counts_evidence",
+        "gate_set",
+        "notes"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

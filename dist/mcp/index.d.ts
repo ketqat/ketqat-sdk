@@ -33,6 +33,22 @@ export declare const transpileForHardwareTool: McpToolDefinition;
 export declare const optimizeWithZxTool: McpToolDefinition;
 export declare const checkEquivalenceTool: McpToolDefinition;
 /** Every read-only engine tool. */
+/**
+ * Resource intelligence, as pure calculation (ketqat-sdk#236).
+ *
+ * These belong in this file rather than in `execution.ts` because they change
+ * nothing: no remote project is created or updated, no job is queued, no QPU
+ * time is bought, and no network call is made. They read a document the caller
+ * supplies and compute over it, exactly as the CLI does.
+ *
+ * The boundary this file exists to hold is that `readOnly: true` must be *true*.
+ * A tool that saved an assessment to a registry, or that spent money on a
+ * device, would have to be declared in `execution.ts` behind its own type and
+ * its own confirmation, however convenient it would be to add it here.
+ */
+export declare const estimateResourceIntelligenceTool: McpToolDefinition;
+export declare const compareResourceScenariosTool: McpToolDefinition;
+export declare const verifyResourceIntelligenceBundleTool: McpToolDefinition;
 export declare const MCP_TOOLS: McpToolDefinition[];
 export interface McpToolError {
     error: string;

@@ -36,3 +36,24 @@ export {
 export {
   CircuitTransformationSchema,
 } from "../contracts/transformation.js"
+export {
+  QuantumWorkloadSchema,
+  LogicalResourceCountsSchema,
+  WorkloadSourceSchema,
+} from "../intelligence/workload.js"
+export { ClassicalBaselineSchema } from "../intelligence/baseline.js"
+export {
+  ResourceScenarioSchema,
+  HardwareModelSnapshotSchema,
+  QecModelSnapshotSchema,
+  EconomicModelSchema,
+  FactoryAssumptionsSchema,
+} from "../intelligence/scenario.js"
+export { ResourceEstimateSnapshotSchema } from "../intelligence/estimate.js"
+export { AdvantageThresholdSchema } from "../intelligence/thresholds.js"
+export { DecisionAssessmentSchema } from "../intelligence/decision.js"
+export {
+  ResourceIntelligenceBundleSchema,
+  EvidenceSourceSchema,
+} from "../intelligence/bundle.js"
+export { QuantitySchema } from "../intelligence/measurement.js"
