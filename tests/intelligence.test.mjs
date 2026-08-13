@@ -948,3 +948,92 @@ test("the reproduction command names a binary this package actually installs", (
   assert.match(bundle.reproduction_command, /^ketqat-engine intelligence verify/)
   assert.equal(buildReport(bundle).reproduction_command, bundle.reproduction_command)
 })
+
+// ------------------------- an undetermined T count is not a T count of zero
+
+/**
+ * Found by building a real reference case that exercises the refusal path
+ * (ketqat-web#305). A circuit of un-synthesized arbitrary rotations and a
+ * Clifford-only circuit both arrive with `t_count: 0`, and the estimator
+ * reported both as "consumes no magic states, so it needs no distillation
+ * factory at all" with a factory footprint of 0.
+ *
+ * For the Clifford circuit that is a measurement. For the other it is a
+ * fabricated reassurance about a cost nobody has computed -- invariant 4 of
+ * ketqat-planning#121, missing became zero.
+ */
+function undeterminedWorkload() {
+  return QuantumWorkloadSchema.parse({
+    ...workload,
+    logical: {
+      ...workload.logical,
+      t_count: 0,
+      toffoli_count: 0,
+      clifford_count: 0,
+      unsupported_for_ft_count: 120_000,
+    },
+  })
+}
+
+test("an undetermined magic-state demand is UNKNOWN, never zero", () => {
+  const estimate = estimateForScenario(undeterminedWorkload(), base)
+
+  assert.equal(estimate.magic_state_count.value, null, "the demand is unknown, not zero")
+  assert.equal(estimate.magic_state_count.evidence, "UNKNOWN")
+  assert.equal(estimate.factory_physical_qubits.value, null, "no factory can be sized from an unknown demand")
+  assert.equal(estimate.total_physical_qubits.value, null, "and so no total machine size follows")
+  assert.equal(estimate.runtime.value, null, "nor a runtime")
+  assert.match(estimate.warnings.join(" "), /undetermined, not zero/)
+  // The reassuring sentence that belongs only to a genuinely Clifford circuit.
+  assert.ok(
+    !estimate.warnings.join(" ").includes("needs no distillation factory at all"),
+    "an unassessable circuit must not be told it needs no factory",
+  )
+})
+
+test("a genuinely Clifford-only circuit still reports zero, and says why", () => {
+  // The converse. Without this, the fix above could be 'return UNKNOWN whenever
+  // the T count is zero', which would break the case that was already correct.
+  const clifford = QuantumWorkloadSchema.parse({
+    ...workload,
+    logical: { ...workload.logical, t_count: 0, toffoli_count: 0, unsupported_for_ft_count: 0, clifford_count: 22 },
+  })
+  const estimate = estimateForScenario(clifford, base)
+
+  assert.equal(estimate.magic_state_count.value, 0, "measured zero, not unknown")
+  assert.equal(estimate.factory_physical_qubits.value, 0)
+  assert.ok(estimate.total_physical_qubits.value > 0, "the machine is still sized")
+  assert.match(estimate.warnings.join(" "), /needs no distillation factory at all/)
+})
+
+test("the throughput threshold refuses an undetermined demand rather than requiring zero", () => {
+  const withTarget = customScenario({ runtime_target: 3600 })
+
+  const undetermined = computeAdvantageThresholds(undeterminedWorkload(), withTarget, null)
+  assert.equal(
+    undetermined.min_factory_throughput_for_runtime_target.value,
+    null,
+    "zero here would read as 'no factory throughput is required'",
+  )
+
+  const clifford = QuantumWorkloadSchema.parse({
+    ...workload,
+    logical: { ...workload.logical, t_count: 0, toffoli_count: 0, unsupported_for_ft_count: 0 },
+  })
+  assert.equal(
+    computeAdvantageThresholds(clifford, withTarget, null).min_factory_throughput_for_runtime_target.value,
+    0,
+    "a Clifford circuit genuinely requires none",
+  )
+})
+
+test("an undetermined demand still reaches INSUFFICIENT_EVIDENCE rather than a feasible verdict", () => {
+  const scoped = undeterminedWorkload()
+  const estimate = estimateForScenario(scoped, base)
+  const threshold = computeAdvantageThresholds(scoped, base, null)
+  const assessment = assessDecision({ workload: scoped, scenario: base, baseline: null, estimate, threshold })
+
+  assert.equal(assessment.status, "INSUFFICIENT_EVIDENCE")
+  assert.ok(assessment.reason_codes.includes("T_COUNT_NOT_DETERMINED"))
+  assert.match(assessment.missing_evidence.join(" "), /Clifford\+T synthesis/)
+})

@@ -131,6 +131,20 @@ export function occupiedLogicalQubits(algorithmQubits, layout) {
 export function evaluate(workload, scenario) {
     const { logical } = workload;
     const magicStates = logical.t_count + scenario.decomposition.toffoli_t_cost * logical.toffoli_count;
+    /**
+     * A T count of zero means two different things, and only one of them is zero.
+     *
+     * A Clifford-only circuit needs no magic states: the zero is a measurement.
+     * A circuit whose gates are neither Clifford nor T has a T count nobody has
+     * computed: the zero is an absence. Before this distinction existed, the
+     * second case reported "this circuit consumes no magic states, so it needs no
+     * distillation factory at all" and a factory footprint of 0 -- a fabricated
+     * reassurance about a circuit whose fault-tolerant cost is unknown.
+     *
+     * Found by building a real reference case that exercises the refusal path
+     * (ketqat-web#305).
+     */
+    const magicStatesUndetermined = magicStates === 0 && logical.unsupported_for_ft_count > 0;
     const logicalCycles = Math.max(logical.circuit_depth, 1);
     const occupiedLogical = occupiedLogicalQubits(logical.logical_qubits, scenario.layout_model);
     const assumptions = {
@@ -144,6 +158,7 @@ export function evaluate(workload, scenario) {
     const base = {
         logicalCycles,
         magicStates,
+        magicStatesUndetermined,
         occupiedLogical,
         distillationLevels: 0,
         rawInputStates: null,
@@ -207,7 +222,18 @@ export function evaluate(workload, scenario) {
     let levels = 0;
     let reachedTarget = true;
     let distillationReason = "This circuit consumes no magic states, so no factory is needed.";
-    if (needsFactory) {
+    if (magicStatesUndetermined) {
+        // Not zero -- unknown. Everything downstream of the magic-state count is
+        // therefore unknown too, including the total machine size.
+        factoryPhysical = null;
+        rawInputStates = null;
+        reachedTarget = false;
+        distillationReason =
+            `${logical.unsupported_for_ft_count} gate(s) are neither Clifford nor T and the circuit records no T or ` +
+                "Toffoli gates, so the magic-state demand is undetermined rather than zero. No factory can be sized, and " +
+                "no total machine size follows, until those gates are synthesized into a Clifford+T basis.";
+    }
+    else if (needsFactory) {
         const distillation = requiredLevels(scenario.factory.raw_state_error, scenario.factory.target_state_error);
         levels = distillation.levels;
         reachedTarget = distillation.reachedTarget;
@@ -238,7 +264,7 @@ export function evaluate(workload, scenario) {
         throughput = scenario.factory.parallel_factories / secondsPerState;
         runtimeFactoryLimited = magicStates / throughput;
     }
-    else if (!needsFactory) {
+    else if (!needsFactory && !magicStatesUndetermined) {
         runtimeFactoryLimited = 0;
     }
     const runtime = runtimeFactoryLimited === null ? null : Math.max(runtimeCycleLimited, runtimeFactoryLimited);
@@ -437,7 +463,12 @@ export function estimateForScenario(workload, scenario) {
         warnings.push(`${workload.logical.unsupported_for_ft_count} gate(s) are neither Clifford nor T. Every figure derived from ` +
             "the T count is an underestimate until they are synthesized into a Clifford+T basis.");
     }
-    if (core.magicStates === 0) {
+    if (core.magicStatesUndetermined) {
+        warnings.push("The magic-state demand is undetermined, not zero: every gate that would contribute to it is still " +
+            "un-synthesized. No factory footprint, no total machine size and no runtime are reported, because each " +
+            "would be a number invented to fill the gap.");
+    }
+    else if (core.magicStates === 0) {
         warnings.push("This circuit consumes no magic states, so it needs no distillation factory at all. The factory footprint " +
             "is zero because there is no factory, not because one was assumed to be free.");
     }
@@ -489,7 +520,9 @@ export function estimateForScenario(workload, scenario) {
         conditional_count: countQuantity(workload.logical.conditional_count, "conditionals", workload),
         code_distance: derived(core.codeDistance, "code distance", core.infeasibilityReason ?? "Smallest odd distance whose logical error rate meets the per-qubit-per-cycle budget."),
         logical_cycles: derived(core.logicalCycles, "cycles", "Circuit depth, floored at one."),
-        magic_state_count: derived(core.magicStates, "magic states", `T count plus ${scenario.decomposition.toffoli_t_cost} per Toffoli.`),
+        magic_state_count: derived(core.magicStatesUndetermined ? null : core.magicStates, "magic states", core.magicStatesUndetermined
+            ? notComputable(core.distillationReason)
+            : `T count plus ${scenario.decomposition.toffoli_t_cost} per Toffoli.`),
         raw_magic_state_input_count: derived(core.rawInputStates, "raw states", core.distillationReachedTarget
             ? `Magic states x 15^${core.distillationLevels}, the 15-to-1 input multiplier.`
             : notComputable(`Not computed: ${core.distillationReason}`)),
@@ -505,7 +538,7 @@ export function estimateForScenario(workload, scenario) {
         }),
         factory_physical_qubits: derived(core.factoryPhysical, "physical qubits", core.factoryPhysical === null
             ? notComputable(`Not computed: ${core.distillationReason}`)
-            : core.magicStates === 0
+            : core.magicStates === 0 && !core.magicStatesUndetermined
                 ? "No factory: this circuit consumes no magic states."
                 : `${core.distillationLevels} level(s) x 15 patches x ${scenario.factory.parallel_factories} factory(ies).`),
         total_physical_qubits: derived(core.totalPhysical, "physical qubits", core.totalPhysical === null
@@ -527,12 +560,12 @@ export function estimateForScenario(workload, scenario) {
             : "Logical cycles x code distance x surface-code cycle time."),
         runtime_factory_limited: derived(core.runtimeFactoryLimited, "s", core.runtimeFactoryLimited === null
             ? notComputable(`Not computed: ${core.distillationReason}`)
-            : core.magicStates === 0
+            : core.magicStates === 0 && !core.magicStatesUndetermined
                 ? "Zero: no magic states are consumed."
                 : "Magic states divided by factory throughput."),
         runtime_limiter: core.runtimeLimiter,
         magic_state_throughput: derived(core.throughputStatesPerSecond, "states/s", core.throughputStatesPerSecond === null
-            ? notComputable(core.magicStates === 0
+            ? notComputable(core.magicStates === 0 && !core.magicStatesUndetermined
                 ? "No factory: this circuit consumes no magic states."
                 : `Not computed: ${core.distillationReason}`)
             : `${scenario.factory.parallel_factories} factory(ies), one state per ` +

@@ -331,6 +331,15 @@ export function computeAdvantageThresholds(
       "This scenario states no runtime target, so no throughput is required by one.",
       "states/s",
     )
+  } else if (evaluation.magicStatesUndetermined) {
+    // Zero here would say "no factory throughput is required", which is a
+    // reassurance about a demand nobody has computed.
+    minThroughputForTarget = refuse(
+      "min_factory_throughput_for_runtime_target",
+      "ESTIMATE_INFEASIBLE",
+      evaluation.distillationReason,
+      "states/s",
+    )
   } else if (evaluation.magicStates === 0) {
     minThroughputForTarget = bound(
       0,
