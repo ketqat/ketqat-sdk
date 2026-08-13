@@ -316,7 +316,7 @@ test("invariant 9: a bundle carries inputs, assumptions, estimates, decisions an
   assert.equal(bundle.assessments.length, scenarios.length)
   assert.ok(bundle.sources.length >= 3)
   assert.ok(bundle.limitations.length > 0)
-  assert.match(bundle.reproduction_command, /ketqat intelligence verify/)
+  assert.match(bundle.reproduction_command, /ketqat-engine intelligence verify/)
   // The circuit travels with the bundle so the counts can be recomputed.
   assert.ok(bundle.workload.source.openqasm3.includes("OPENQASM 3.0"))
 })
@@ -842,7 +842,7 @@ test("the report restates the bundle and never adds a figure the bundle lacks", 
   )
   assert.ok(report.limitations.length > 0)
   assert.ok(report.sources.length >= 3)
-  assert.match(report.reproduction_command, /ketqat intelligence verify/)
+  assert.match(report.reproduction_command, /ketqat-engine intelligence verify/)
 })
 
 test("the report names unknowns instead of leaving them blank", () => {
@@ -928,4 +928,23 @@ test("an invalid assessment reaching MCP is refused, not guessed at", () => {
     assessment: { workload: { name: "n", description: "d" } },
   })
   assert.equal(result.error, "invalid_input")
+})
+
+test("verify accepts the report file the report command writes", () => {
+  // The documented workflow is `report --output report.json` then `verify
+  // report.json`. That file is a wrapper carrying the bundle, and requiring the
+  // caller to extract it first would make the documented flow fail on its own
+  // output (raised in review of ketqat-sdk#238).
+  const bundle = buildBundle({ workload, baseline: demoBaseline(), scenarios })
+  const reportFile = { command: "intelligence report", report: buildReport(bundle), bundle }
+  assert.equal(verifyBundle(reportFile).valid, true)
+  assert.equal(verifyBundle(bundle).valid, true)
+})
+
+test("the reproduction command names a binary this package actually installs", () => {
+  const bundle = buildBundle({ workload, baseline: demoBaseline(), scenarios })
+  // `bin` declares `ketqat-engine`, not `ketqat`; the latter is the Python
+  // runner and does not implement these subcommands.
+  assert.match(bundle.reproduction_command, /^ketqat-engine intelligence verify/)
+  assert.equal(buildReport(bundle).reproduction_command, bundle.reproduction_command)
 })

@@ -28,7 +28,8 @@ Resource intelligence (all local; nothing is sent anywhere):
   intelligence estimate <file>           Resource estimates for every scenario; --output
   intelligence compare <file>            Scenario comparison table; --output, --csv
   intelligence report <file>             Full KetQat Decision Report; --output
-  intelligence verify <bundle.json>      Recompute the hash AND the decisions from the bundle's own inputs
+  intelligence verify <file>             Recompute the hash AND the decisions from the bundle's own
+                                         inputs. Accepts a bundle, or a report file containing one.
 
 Registry commands (need --registry <url> or KETQAT_URL):
   search <query>                         Search artifacts, suites, and runs

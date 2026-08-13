@@ -2,7 +2,7 @@
   "schema_version": "0.1",
   "bundle_kind": "RESOURCE_INTELLIGENCE",
   "reproducibility_hash_version": 2,
-  "reproducibility_hash": "6e391520548e732a7de42e72aad2de31a1e15e0aa31825f8371cf443e6ae562c",
+  "reproducibility_hash": "dc365fe90658d3b7c95add29f8e8ab50a7871b19f47ba58d82c56fe4f6325a7d",
   "is_demo": true,
   "generator": {
     "name": "ketqat-resource-intelligence",
@@ -5180,5 +5180,5 @@
     "Nothing in this bundle predicts when any device will meet any condition it states.",
     "This bundle is built from a demonstration fixture. It is not evidence about any real workload, device, organisation, or quantum advantage claim."
   ],
-  "reproduction_command": "ketqat intelligence verify <this-file>"
+  "reproduction_command": "ketqat-engine intelligence verify <this-file>"
 }

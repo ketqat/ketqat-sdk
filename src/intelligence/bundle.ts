@@ -286,7 +286,7 @@ export function buildBundle(input: BundleInput): ResourceIntelligenceBundle {
     comparison,
     sources: input.sources ?? [],
     limitations,
-    reproduction_command: "ketqat intelligence verify <this-file>",
+    reproduction_command: "ketqat-engine intelligence verify <this-file>",
     ...(input.createdAt ? { created_at: input.createdAt } : {}),
   }
 
@@ -322,7 +322,15 @@ export type Verification = z.infer<typeof VerificationSchema>
  * and compares those too.
  */
 export function verifyBundle(candidate: unknown): Verification {
-  const parsed = ResourceIntelligenceBundleSchema.safeParse(candidate)
+  // `intelligence report --output` writes `{ command, report, bundle }`, and the
+  // obvious next step is to verify that file. Requiring the caller to extract
+  // the bundle first would make the documented workflow fail on its own output,
+  // so a report wrapper is unwrapped here rather than rejected.
+  const unwrapped =
+    candidate && typeof candidate === "object" && "bundle" in (candidate as Record<string, unknown>)
+      ? (candidate as { bundle: unknown }).bundle
+      : candidate
+  const parsed = ResourceIntelligenceBundleSchema.safeParse(unwrapped)
   if (!parsed.success) {
     return {
       valid: false,
