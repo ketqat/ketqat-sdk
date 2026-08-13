@@ -62,6 +62,10 @@
       "types": "./dist/engine/index.d.ts",
       "import": "./dist/engine/index.js"
     },
+    "./intelligence": {
+      "types": "./dist/intelligence/index.d.ts",
+      "import": "./dist/intelligence/index.js"
+    },
     "./hardware": {
       "types": "./dist/hardware/profile.d.ts",
       "import": "./dist/hardware/profile.js"
@@ -94,7 +98,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.json && node scripts/generate-schemas.mjs",
     "clean": "rm -rf dist",
     "generate:schemas": "npm run build",
-    "test": "npm run build && node tests/sdk.test.mjs && node tests/zod4-incompatibility.test.mjs && node tests/mcp-conformance.test.mjs && npm run verify:package-contents && npm run verify:dist-tracked && npm run verify:schema-sync && npm run verify:license && npm run verify:citation && npm run verify:workflows && npm run verify:outreach",
+    "test": "npm run build && node tests/sdk.test.mjs && node --test tests/intelligence.test.mjs && node tests/zod4-incompatibility.test.mjs && node tests/mcp-conformance.test.mjs && npm run verify:package-contents && npm run verify:dist-tracked && npm run verify:schema-sync && npm run verify:license && npm run verify:citation && npm run verify:workflows && npm run verify:outreach",
     "test:python": "python3.11 -m pytest python/tests",
     "verify:clean-install": "node scripts/verify-npm-clean-install.mjs",
     "verify:package-contents": "node scripts/verify-package-contents.mjs",

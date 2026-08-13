@@ -1,0 +1,111 @@
+# KetQat Intelligence assessment document.
+#
+# A demonstration. The circuit below is a fixture, the classical baseline is an
+# illustrative figure rather than a measurement, and `is_demo: true` propagates
+# into every estimate, every assessment, and the report, so nothing derived from
+# this file can be quoted as a finding about a real workload.
+#
+#   ketqat-engine intelligence validate examples/intelligence/demo-assessment.yaml
+#   ketqat-engine intelligence report   examples/intelligence/demo-assessment.yaml --output report.json
+#   ketqat-engine intelligence verify   report.json
+
+schema_version: "0.1"
+
+workload:
+  name: Demonstration arithmetic block
+  description: >
+    A small Clifford+T circuit with Toffoli gates, used to demonstrate the
+    KetQat Intelligence pipeline end to end. Not a real workload.
+  is_demo: true
+  openqasm3: |
+      OPENQASM 3.0;
+      include "stdgates.inc";
+      
+      // KetQat Intelligence demonstration circuit. Not a real workload.
+      qubit[6] q;
+      bit[6] c;
+      
+      h q[0];
+      h q[1];
+      h q[2];
+      cx q[0], q[3];
+      cx q[1], q[4];
+      cx q[2], q[5];
+      t q[3];
+      t q[4];
+      t q[5];
+      ccx q[0], q[1], q[3];
+      ccx q[1], q[2], q[4];
+      t q[3];
+      tdg q[4];
+      cx q[3], q[5];
+      h q[3];
+      t q[5];
+      ccx q[3], q[4], q[5];
+      s q[0];
+      t q[0];
+      cx q[0], q[1];
+      h q[2];
+      t q[2];
+      c[0] = measure q[0];
+      c[1] = measure q[1];
+      c[2] = measure q[2];
+      c[3] = measure q[3];
+      c[4] = measure q[4];
+      c[5] = measure q[5];
+  problem_size:
+    description: Demonstration instance; no real problem size is claimed.
+  notes:
+    - Demonstration fixture. Not evidence about any workload, device, organisation, or advantage claim.
+
+# Remove this block entirely to see every economic conclusion refused by name
+# rather than computed.
+classical_baseline:
+  schema_version: "0.1"
+  evidence: USER_PROVIDED
+  runtime: 0.00005
+  monetary_cost:
+    amount: 0.000002
+    currency: USD
+  compute_environment: Illustrative single-core statevector simulation of the same six-qubit circuit.
+  hardware_description: Illustrative commodity CPU core.
+  solution_quality:
+    metric: exact output distribution
+    value: 1
+    lower_is_better: false
+  workload_size: Six qubits, twenty-two gates. Demonstration instance.
+  measured_on: null
+  evidence_url: null
+  evidence_note: >
+    Illustrative figure for the demonstration, not a measurement of any classical
+    system.
+  limitations:
+    - Not a measurement. Every comparison derived from it demonstrates the calculation, not a result.
+
+scenarios:
+  presets:
+    - CONSERVATIVE
+    - BASE
+    - OPTIMISTIC
+  runtime_target: 86400
+  # No economic model. With none supplied, no price for quantum machine time is
+  # invented and the economic thresholds are refused by name.
+  economics: null
+
+sources:
+  - supports: Surface-code threshold and logical-error model
+    title: "Fowler, Mariantoni, Martinis, Cleland -- Surface codes: Towards practical large-scale quantum computation"
+    url: https://arxiv.org/abs/1208.0928
+    published_on: "2012-08-04"
+    retrieved_on: "2026-08-13"
+    confidence: HIGH
+    limitations:
+      - The prefactor in the logical-error expression is fitted, not derived, and published values differ.
+  - supports: Lattice-surgery layout overhead
+    title: Beverland et al. -- Assessing requirements to scale to practical quantum advantage
+    url: https://arxiv.org/abs/2211.07629
+    published_on: "2022-11-14"
+    retrieved_on: "2026-08-13"
+    confidence: HIGH
+    limitations:
+      - The 2n + ceil(sqrt(8n)) + 1 figure is one layout convention among several.

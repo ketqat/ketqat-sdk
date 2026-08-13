@@ -1,0 +1,404 @@
+{
+  "$ref": "#/definitions/resource-estimate-snapshot",
+  "definitions": {
+    "resource-estimate-snapshot": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scenario_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scenario_preset": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scenario_revision": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "workload_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "is_demo": {
+          "type": "boolean"
+        },
+        "feasible": {
+          "type": "boolean"
+        },
+        "infeasibility_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "ABOVE_SURFACE_CODE_THRESHOLD",
+                "NO_DISTANCE_MEETS_BUDGET",
+                "DISTILLATION_FIXED_POINT_EXCEEDED"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "infeasibility_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "logical_qubits": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1
+            },
+            "bound": {
+              "type": "string",
+              "enum": [
+                "POINT",
+                "UPPER_BOUND",
+                "LOWER_BOUND"
+              ]
+            },
+            "evidence": {
+              "type": "string",
+              "enum": [
+                "MEASURED",
+                "USER_PROVIDED",
+                "DERIVED",
+                "MODELLED",
+                "UNKNOWN"
+              ]
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "model_version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "assumptions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "schema_version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uncertainty": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "SENSITIVITY_RANGE",
+                    "MODEL_SPREAD",
+                    "NOT_CHARACTERIZED"
+                  ]
+                },
+                "low": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "high": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "basis": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "kind",
+                "low",
+                "high",
+                "basis"
+              ],
+              "additionalProperties": false
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": [
+            "value",
+            "unit",
+            "bound",
+            "evidence",
+            "source",
+            "model",
+            "model_version",
+            "assumptions",
+            "schema_version",
+            "limitations"
+          ],
+          "additionalProperties": false
+        },
+        "circuit_depth": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "gate_count": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "one_qubit_gate_count": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "two_qubit_gate_count": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "clifford_count": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "t_count": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "toffoli_count": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "unsupported_gate_count": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "measurement_count": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "reset_count": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "conditional_count": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "code_distance": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "logical_cycles": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "magic_state_count": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "raw_magic_state_input_count": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "distillation_levels": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "algorithm_physical_qubits": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "layout_adjusted_physical_qubits": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "factory_physical_qubits": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "total_physical_qubits": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "factory_share": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "occupied_logical_qubits": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "runtime": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "runtime_cycle_limited": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "runtime_factory_limited": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "runtime_limiter": {
+          "type": "string",
+          "enum": [
+            "LOGICAL_CYCLES",
+            "MAGIC_STATE_THROUGHPUT",
+            "NOT_DETERMINED"
+          ]
+        },
+        "magic_state_throughput": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "achieved_logical_error_probability": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "error_budget": {
+          "$ref": "#/definitions/resource-estimate-snapshot/properties/logical_qubits"
+        },
+        "sensitivity": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "parameter": {
+                "type": "string",
+                "enum": [
+                  "PHYSICAL_ERROR_RATE",
+                  "LOGICAL_ERROR_PREFACTOR",
+                  "LAYOUT_MODEL",
+                  "CYCLE_TIME",
+                  "ERROR_BUDGET",
+                  "RAW_MAGIC_STATE_ERROR"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "relative_to_base": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "feasible": {
+                "type": "boolean"
+              },
+              "code_distance": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "total_physical_qubits": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "runtime": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "parameter",
+              "label",
+              "value",
+              "relative_to_base",
+              "feasible",
+              "code_distance",
+              "total_physical_qubits",
+              "runtime"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "exact_arithmetic": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "model_assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "scenario_name",
+        "scenario_preset",
+        "scenario_revision",
+        "workload_name",
+        "is_demo",
+        "feasible",
+        "infeasibility_code",
+        "infeasibility_reason",
+        "logical_qubits",
+        "circuit_depth",
+        "gate_count",
+        "one_qubit_gate_count",
+        "two_qubit_gate_count",
+        "clifford_count",
+        "t_count",
+        "toffoli_count",
+        "unsupported_gate_count",
+        "measurement_count",
+        "reset_count",
+        "conditional_count",
+        "code_distance",
+        "logical_cycles",
+        "magic_state_count",
+        "raw_magic_state_input_count",
+        "distillation_levels",
+        "algorithm_physical_qubits",
+        "layout_adjusted_physical_qubits",
+        "factory_physical_qubits",
+        "total_physical_qubits",
+        "factory_share",
+        "occupied_logical_qubits",
+        "runtime",
+        "runtime_cycle_limited",
+        "runtime_factory_limited",
+        "runtime_limiter",
+        "magic_state_throughput",
+        "achieved_logical_error_probability",
+        "error_budget",
+        "sensitivity",
+        "exact_arithmetic",
+        "model_assumptions",
+        "warnings"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

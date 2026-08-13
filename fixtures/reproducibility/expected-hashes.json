@@ -11,11 +11,13 @@
     "qec_result": "e15000bd534e391f917bfc8715829938e0017f5953d918ebef2d88a8b1adad8a",
     "qec_result_null_metadata": "4a44a2713c80679db7c10b0a540ea9c9086444c6a630a6de6862e45b3c163971",
     "algorithm_result": "3a21fa83c0698eff67ecbafa47be770550c167b28c7ef9fbbf066d8ec976a516",
-    "qec_result_float_edge_cases": "9a5733630ecb4c749d38781d4dfb313aef06b928c29030c3fa044d7dc8b09422"
+    "qec_result_float_edge_cases": "9a5733630ecb4c749d38781d4dfb313aef06b928c29030c3fa044d7dc8b09422",
+    "resource_intelligence_bundle": "dc365fe90658d3b7c95add29f8e8ab50a7871b19f47ba58d82c56fe4f6325a7d"
   },
   "qec_manifest": "583b8d1df9fcca6d797024e34add3fb2d97cef84c96da9e83c3463e99a1f74b4",
   "qec_result": "e15000bd534e391f917bfc8715829938e0017f5953d918ebef2d88a8b1adad8a",
   "qec_result_null_metadata": "4a44a2713c80679db7c10b0a540ea9c9086444c6a630a6de6862e45b3c163971",
   "algorithm_result": "3a21fa83c0698eff67ecbafa47be770550c167b28c7ef9fbbf066d8ec976a516",
-  "qec_result_float_edge_cases": "9a5733630ecb4c749d38781d4dfb313aef06b928c29030c3fa044d7dc8b09422"
+  "qec_result_float_edge_cases": "9a5733630ecb4c749d38781d4dfb313aef06b928c29030c3fa044d7dc8b09422",
+  "resource_intelligence_bundle": "dc365fe90658d3b7c95add29f8e8ab50a7871b19f47ba58d82c56fe4f6325a7d"
 }

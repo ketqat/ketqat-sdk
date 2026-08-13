@@ -8,6 +8,7 @@ import { simulateStatevector } from "../engine/statevector.js";
 import { circuitDepth, transpileForHardware } from "../engine/transpile.js";
 import { optimizeWithZx } from "../engine/zx.js";
 import { NoiseModelSchema } from "../engine/noise.js";
+import { AssessmentSpecSchema, ResourceIntelligenceBundleSchema, buildBundle, buildReport, resolveAssessment, verifyBundle, } from "../intelligence/index.js";
 const CircuitInput = z.object({
     qasm: z.string().min(1).describe("OpenQASM 3 source."),
 });
@@ -235,6 +236,107 @@ export const checkEquivalenceTool = {
     },
 };
 /** Every read-only engine tool. */
+/**
+ * Resource intelligence, as pure calculation (ketqat-sdk#236).
+ *
+ * These belong in this file rather than in `execution.ts` because they change
+ * nothing: no remote project is created or updated, no job is queued, no QPU
+ * time is bought, and no network call is made. They read a document the caller
+ * supplies and compute over it, exactly as the CLI does.
+ *
+ * The boundary this file exists to hold is that `readOnly: true` must be *true*.
+ * A tool that saved an assessment to a registry, or that spent money on a
+ * device, would have to be declared in `execution.ts` behind its own type and
+ * its own confirmation, however convenient it would be to add it here.
+ */
+export const estimateResourceIntelligenceTool = {
+    name: "estimate_resource_intelligence",
+    title: "Estimate quantum resources under stated assumptions",
+    description: "Cost a quantum workload under one or more resource scenarios. Returns logical and physical resource " +
+        "estimates with the algorithm, routing and magic-state-factory footprints kept separate, runtime under " +
+        "whichever limiter binds, sensitivity across six parameters, and a reproducibility hash. Computes nothing " +
+        "about cost or advantage unless a classical baseline and a quantum cost model are both supplied. " +
+        "Purely local: no circuit is executed and no network call is made.",
+    inputSchema: z.object({
+        assessment: AssessmentSpecSchema.describe("An assessment document: workload, optional classical baseline, and which scenarios to run."),
+    }),
+    outputSchema: z.object({
+        reproducibility_hash: z.string(),
+        is_demo: z.boolean(),
+        estimates: z.array(z.unknown()),
+        comparison: z.unknown(),
+    }),
+    readOnly: true,
+    handler: (input) => {
+        const { assessment } = input;
+        const bundle = buildBundle(resolveAssessment(assessment));
+        return {
+            reproducibility_hash: bundle.reproducibility_hash,
+            is_demo: bundle.is_demo,
+            estimates: bundle.estimates,
+            comparison: bundle.comparison,
+        };
+    },
+};
+export const compareResourceScenariosTool = {
+    name: "compare_resource_scenarios",
+    title: "Compare resource scenarios and their advantage thresholds",
+    description: "Place several sets of assumptions side by side and report, for each, the resources required and the " +
+        "conditions hardware would have to satisfy. Refuses to produce an aggregate: results computed under " +
+        "different assumptions are not averaged. Reports why two scenarios are incomparable when they are.",
+    inputSchema: z.object({
+        assessment: AssessmentSpecSchema,
+    }),
+    outputSchema: z.object({
+        reproducibility_hash: z.string(),
+        comparable: z.boolean(),
+        incomparability_reasons: z.array(z.string()),
+        rows: z.array(z.unknown()),
+        thresholds: z.array(z.unknown()),
+        assessments: z.array(z.unknown()),
+        aggregation_policy: z.string(),
+    }),
+    readOnly: true,
+    handler: (input) => {
+        const { assessment } = input;
+        const bundle = buildBundle(resolveAssessment(assessment));
+        return {
+            reproducibility_hash: bundle.reproducibility_hash,
+            comparable: bundle.comparison.comparable,
+            incomparability_reasons: bundle.comparison.incomparability_reasons,
+            rows: bundle.comparison.rows,
+            thresholds: bundle.thresholds,
+            assessments: bundle.assessments,
+            aggregation_policy: bundle.comparison.aggregation_policy,
+        };
+    },
+};
+export const verifyResourceIntelligenceBundleTool = {
+    name: "verify_resource_intelligence_bundle",
+    title: "Verify a resource intelligence bundle",
+    description: "Recompute a bundle's estimates, thresholds and decision assessments from the inputs it carries, and " +
+        "compare them with what it claims, along with its reproducibility hash. A bundle whose conclusions were " +
+        "edited and then re-hashed passes a hash check and fails this one.",
+    inputSchema: z.object({ bundle: z.unknown() }),
+    outputSchema: z.object({
+        valid: z.boolean(),
+        hash_matches: z.boolean(),
+        estimates_match: z.boolean(),
+        decision_matches: z.boolean(),
+        expected_hash: z.string(),
+        actual_hash: z.string(),
+        problems: z.array(z.string()),
+        report: z.unknown().optional(),
+    }),
+    readOnly: true,
+    handler: (input) => {
+        const { bundle } = input;
+        const verification = verifyBundle(bundle);
+        if (!verification.valid)
+            return verification;
+        return { ...verification, report: buildReport(ResourceIntelligenceBundleSchema.parse(bundle)) };
+    },
+};
 export const MCP_TOOLS = [
     inspectCircuitTool,
     convertCircuitTool,
@@ -243,6 +345,9 @@ export const MCP_TOOLS = [
     transpileForHardwareTool,
     optimizeWithZxTool,
     checkEquivalenceTool,
+    estimateResourceIntelligenceTool,
+    compareResourceScenariosTool,
+    verifyResourceIntelligenceBundleTool,
 ];
 /**
  * Invoke a tool by name with validated input and output.

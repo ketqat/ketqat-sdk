@@ -107,9 +107,25 @@ if (oversizedFiles.length > 0) {
       .join("\n- ")}`,
   )
 }
-if (manifest.unpackedSize > 2_000_000) {
+// Raised from 2 MB to 2.5 MB for ketqat-sdk#236, which adds the resource
+// intelligence contracts: ten JSON Schemas and their TypeScript declarations.
+// The measured cost of that addition was ~510 KB against a 1.68 MB baseline,
+// after two reductions made while adding it -- naming the `Quantity` type so
+// declarations reference it instead of expanding it (413 KB of `bundle.d.ts`
+// became 6 KB) and emitting the new schemas with in-document `$ref`s instead of
+// full inlining (216 KB became 61 KB).
+//
+// The limit is a guard against accidental bloat, not a physical constraint, so
+// it moves with a recorded reason rather than silently. Roughly 490 KB of what
+// remains is source maps that point at TypeScript sources the package does not
+// ship, and another large share is declaration expansion in `dist/contracts`
+// and `dist/engine` of exactly the kind #236 fixed in its own module; both are
+// tracked in ketqat-sdk#237 rather than fixed opportunistically here.
+const PACKAGE_SIZE_LIMIT_BYTES = 2_500_000
+if (manifest.unpackedSize > PACKAGE_SIZE_LIMIT_BYTES) {
   failures.push(
-    `Unpacked package size ${manifest.unpackedSize} exceeds the 2 MB policy limit.`,
+    `Unpacked package size ${manifest.unpackedSize} exceeds the ` +
+      `${(PACKAGE_SIZE_LIMIT_BYTES / 1_000_000).toFixed(1)} MB policy limit.`,
   )
 }
 

@@ -1,0 +1,160 @@
+{
+  "$ref": "#/definitions/classical-baseline",
+  "definitions": {
+    "classical-baseline": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "string",
+          "enum": [
+            "MEASURED",
+            "USER_PROVIDED",
+            "DERIVED",
+            "MODELLED",
+            "UNKNOWN"
+          ]
+        },
+        "runtime": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "monetary_cost": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "currency": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "compute_environment": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hardware_description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "solution_quality": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "metric": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "value": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "lower_is_better": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "metric",
+                "value",
+                "lower_is_better"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workload_size": {
+          "type": "string",
+          "minLength": 1
+        },
+        "measured_on": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_url": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uri"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_note": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "evidence",
+        "runtime",
+        "monetary_cost",
+        "compute_environment",
+        "hardware_description",
+        "solution_quality",
+        "workload_size",
+        "measured_on",
+        "evidence_url",
+        "evidence_note",
+        "limitations"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

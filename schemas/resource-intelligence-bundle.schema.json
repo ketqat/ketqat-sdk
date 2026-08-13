@@ -1,0 +1,1839 @@
+{
+  "$ref": "#/definitions/resource-intelligence-bundle",
+  "definitions": {
+    "resource-intelligence-bundle": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bundle_kind": {
+          "type": "string",
+          "const": "RESOURCE_INTELLIGENCE"
+        },
+        "reproducibility_hash_version": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "reproducibility_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "is_demo": {
+          "type": "boolean"
+        },
+        "generator": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "schema_version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "name",
+            "version",
+            "schema_version"
+          ],
+          "additionalProperties": false
+        },
+        "workload": {
+          "type": "object",
+          "properties": {
+            "schema_version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1
+            },
+            "is_demo": {
+              "type": "boolean"
+            },
+            "source": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "OPENQASM3",
+                    "KETQAT_WORKBENCH_CIRCUIT",
+                    "KETQAT_ARTIFACT",
+                    "KETQAT_RUN",
+                    "MANUAL_LOGICAL_COUNTS",
+                    "ALGORITHM_FAMILY"
+                  ]
+                },
+                "reference": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "openqasm3": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source_digest": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "citation": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "kind"
+              ],
+              "additionalProperties": false
+            },
+            "logical": {
+              "type": "object",
+              "properties": {
+                "logical_qubits": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "circuit_depth": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "gate_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "one_qubit_gate_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "two_qubit_gate_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "clifford_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "t_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "toffoli_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unsupported_for_ft_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "measurement_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "reset_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "conditional_count": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "logical_qubits",
+                "circuit_depth",
+                "gate_count",
+                "one_qubit_gate_count",
+                "two_qubit_gate_count",
+                "clifford_count",
+                "t_count",
+                "toffoli_count",
+                "unsupported_for_ft_count",
+                "measurement_count",
+                "reset_count",
+                "conditional_count"
+              ],
+              "additionalProperties": false
+            },
+            "logical_counts_evidence": {
+              "type": "string",
+              "enum": [
+                "MEASURED",
+                "USER_PROVIDED",
+                "DERIVED",
+                "MODELLED",
+                "UNKNOWN"
+              ]
+            },
+            "problem_size": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "value": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "description"
+              ],
+              "additionalProperties": false
+            },
+            "gate_set": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "notes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": [
+            "schema_version",
+            "name",
+            "description",
+            "is_demo",
+            "source",
+            "logical",
+            "logical_counts_evidence",
+            "gate_set",
+            "notes"
+          ],
+          "additionalProperties": false
+        },
+        "classical_baseline": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "schema_version": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "evidence": {
+                  "$ref": "#/definitions/resource-intelligence-bundle/properties/workload/properties/logical_counts_evidence"
+                },
+                "runtime": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "monetary_cost": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "compute_environment": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "hardware_description": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "solution_quality": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "metric": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "lower_is_better": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "metric",
+                        "value",
+                        "lower_is_better"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "workload_size": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "measured_on": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "evidence_url": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "evidence_note": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": [
+                "schema_version",
+                "evidence",
+                "runtime",
+                "monetary_cost",
+                "compute_environment",
+                "hardware_description",
+                "solution_quality",
+                "workload_size",
+                "measured_on",
+                "evidence_url",
+                "evidence_note",
+                "limitations"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "preset": {
+                "type": "string",
+                "enum": [
+                  "CONSERVATIVE",
+                  "BASE",
+                  "OPTIMISTIC",
+                  "CUSTOM"
+                ]
+              },
+              "revision": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "supersedes": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1
+              },
+              "hardware": {
+                "type": "object",
+                "properties": {
+                  "schema_version": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "architecture": {
+                    "type": "string",
+                    "enum": [
+                      "SUPERCONDUCTING",
+                      "TRAPPED_ION",
+                      "NEUTRAL_ATOM",
+                      "PHOTONIC",
+                      "SPIN",
+                      "GENERIC_REFERENCE"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "OBSERVATION",
+                      "ROADMAP",
+                      "USER_ASSUMPTION"
+                    ]
+                  },
+                  "physical_error_rate": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1
+                  },
+                  "cycle_time_ns": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "physical_qubit_capacity": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "operations": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "source": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "source_url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "source_published_on": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "retrieved_on": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "confidence": {
+                    "type": "string",
+                    "enum": [
+                      "HIGH",
+                      "MEDIUM",
+                      "LOW"
+                    ]
+                  },
+                  "limitations": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "snapshot_version": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "schema_version",
+                  "name",
+                  "architecture",
+                  "basis",
+                  "physical_error_rate",
+                  "cycle_time_ns",
+                  "physical_qubit_capacity",
+                  "operations",
+                  "source",
+                  "source_url",
+                  "source_published_on",
+                  "retrieved_on",
+                  "confidence",
+                  "limitations",
+                  "snapshot_version"
+                ],
+                "additionalProperties": false
+              },
+              "qec": {
+                "type": "object",
+                "properties": {
+                  "schema_version": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "scheme": {
+                    "type": "string",
+                    "enum": [
+                      "SURFACE_CODE_ROTATED"
+                    ]
+                  },
+                  "threshold": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1
+                  },
+                  "prefactor": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "prefactor_model": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "qubits_per_logical_d_squared": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "rounds_per_logical_cycle": {
+                    "type": "string",
+                    "enum": [
+                      "DISTANCE"
+                    ]
+                  },
+                  "source": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "limitations": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "required": [
+                  "schema_version",
+                  "scheme",
+                  "threshold",
+                  "prefactor",
+                  "prefactor_model",
+                  "qubits_per_logical_d_squared",
+                  "rounds_per_logical_cycle",
+                  "source",
+                  "limitations"
+                ],
+                "additionalProperties": false
+              },
+              "layout_model": {
+                "type": "string",
+                "enum": [
+                  "BARE_REGISTER",
+                  "LATTICE_SURGERY_2D"
+                ]
+              },
+              "factory": {
+                "type": "object",
+                "properties": {
+                  "protocol": {
+                    "type": "string",
+                    "enum": [
+                      "FIFTEEN_TO_ONE",
+                      "NONE"
+                    ]
+                  },
+                  "raw_state_error": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1
+                  },
+                  "target_state_error": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1
+                  },
+                  "factory_distance": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "parallel_factories": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "rounds_per_distillation": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "protocol",
+                  "raw_state_error",
+                  "target_state_error",
+                  "factory_distance",
+                  "parallel_factories",
+                  "rounds_per_distillation"
+                ],
+                "additionalProperties": false
+              },
+              "decomposition": {
+                "type": "object",
+                "properties": {
+                  "toffoli_t_cost": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "unsupported_gate_policy": {
+                    "type": "string",
+                    "enum": [
+                      "REFUSE",
+                      "REPORT_AS_UNDERESTIMATE"
+                    ]
+                  },
+                  "source": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "toffoli_t_cost",
+                  "unsupported_gate_policy",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              "error_budget": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1
+              },
+              "runtime_target": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "economics": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "schema_version": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "USER_PROVIDED",
+                          "PUBLISHED_QUOTE",
+                          "MODELLED"
+                        ]
+                      },
+                      "machine_cost_per_second": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "physical_qubit_cost_per_second": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "source": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "limitations": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "required": [
+                      "schema_version",
+                      "currency",
+                      "basis",
+                      "machine_cost_per_second",
+                      "physical_qubit_cost_per_second",
+                      "source",
+                      "limitations"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "estimator": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "version": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "name",
+                  "version"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schema_version",
+              "name",
+              "preset",
+              "revision",
+              "supersedes",
+              "rationale",
+              "hardware",
+              "qec",
+              "layout_model",
+              "factory",
+              "decomposition",
+              "error_budget",
+              "runtime_target",
+              "economics",
+              "estimator"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "estimates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scenario_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scenario_preset": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scenario_revision": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "workload_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "is_demo": {
+                "type": "boolean"
+              },
+              "feasible": {
+                "type": "boolean"
+              },
+              "infeasibility_code": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "ABOVE_SURFACE_CODE_THRESHOLD",
+                      "NO_DISTANCE_MEETS_BUDGET",
+                      "DISTILLATION_FIXED_POINT_EXCEEDED"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "infeasibility_reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "logical_qubits": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "unit": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "bound": {
+                    "type": "string",
+                    "enum": [
+                      "POINT",
+                      "UPPER_BOUND",
+                      "LOWER_BOUND"
+                    ]
+                  },
+                  "evidence": {
+                    "$ref": "#/definitions/resource-intelligence-bundle/properties/workload/properties/logical_counts_evidence"
+                  },
+                  "source": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "model": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "model_version": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "assumptions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "schema_version": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uncertainty": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "SENSITIVITY_RANGE",
+                          "MODEL_SPREAD",
+                          "NOT_CHARACTERIZED"
+                        ]
+                      },
+                      "low": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "high": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "low",
+                      "high",
+                      "basis"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "limitations": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "unit",
+                  "bound",
+                  "evidence",
+                  "source",
+                  "model",
+                  "model_version",
+                  "assumptions",
+                  "schema_version",
+                  "limitations"
+                ],
+                "additionalProperties": false
+              },
+              "circuit_depth": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "gate_count": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "one_qubit_gate_count": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "two_qubit_gate_count": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "clifford_count": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "t_count": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "toffoli_count": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "unsupported_gate_count": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "measurement_count": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "reset_count": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "conditional_count": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "code_distance": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "logical_cycles": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "magic_state_count": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "raw_magic_state_input_count": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "distillation_levels": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "algorithm_physical_qubits": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "layout_adjusted_physical_qubits": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "factory_physical_qubits": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "total_physical_qubits": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "factory_share": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "occupied_logical_qubits": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "runtime": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "runtime_cycle_limited": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "runtime_factory_limited": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "runtime_limiter": {
+                "type": "string",
+                "enum": [
+                  "LOGICAL_CYCLES",
+                  "MAGIC_STATE_THROUGHPUT",
+                  "NOT_DETERMINED"
+                ]
+              },
+              "magic_state_throughput": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "achieved_logical_error_probability": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "error_budget": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "sensitivity": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "parameter": {
+                      "type": "string",
+                      "enum": [
+                        "PHYSICAL_ERROR_RATE",
+                        "LOGICAL_ERROR_PREFACTOR",
+                        "LAYOUT_MODEL",
+                        "CYCLE_TIME",
+                        "ERROR_BUDGET",
+                        "RAW_MAGIC_STATE_ERROR"
+                      ]
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "value": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "relative_to_base": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "feasible": {
+                      "type": "boolean"
+                    },
+                    "code_distance": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "total_physical_qubits": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "runtime": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "parameter",
+                    "label",
+                    "value",
+                    "relative_to_base",
+                    "feasible",
+                    "code_distance",
+                    "total_physical_qubits",
+                    "runtime"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "exact_arithmetic": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "model_assumptions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "schema_version",
+              "scenario_name",
+              "scenario_preset",
+              "scenario_revision",
+              "workload_name",
+              "is_demo",
+              "feasible",
+              "infeasibility_code",
+              "infeasibility_reason",
+              "logical_qubits",
+              "circuit_depth",
+              "gate_count",
+              "one_qubit_gate_count",
+              "two_qubit_gate_count",
+              "clifford_count",
+              "t_count",
+              "toffoli_count",
+              "unsupported_gate_count",
+              "measurement_count",
+              "reset_count",
+              "conditional_count",
+              "code_distance",
+              "logical_cycles",
+              "magic_state_count",
+              "raw_magic_state_input_count",
+              "distillation_levels",
+              "algorithm_physical_qubits",
+              "layout_adjusted_physical_qubits",
+              "factory_physical_qubits",
+              "total_physical_qubits",
+              "factory_share",
+              "occupied_logical_qubits",
+              "runtime",
+              "runtime_cycle_limited",
+              "runtime_factory_limited",
+              "runtime_limiter",
+              "magic_state_throughput",
+              "achieved_logical_error_probability",
+              "error_budget",
+              "sensitivity",
+              "exact_arithmetic",
+              "model_assumptions",
+              "warnings"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "thresholds": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scenario_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scenario_revision": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "max_physical_error_rate": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "max_physical_error_rate_within_capacity": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "required_code_distance": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "max_cycle_time_for_runtime_target": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "min_factory_throughput_for_runtime_target": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "required_logical_qubit_capacity": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "required_total_physical_qubit_capacity": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "capacity_headroom": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "max_cycle_time_to_beat_classical_runtime": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "runtime_speedup_over_classical": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "max_machine_cost_per_second": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "max_physical_qubit_second_cost": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "break_even_runtime": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "break_even_machine_cost_per_second": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "projected_quantum_cost": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "cost_ratio_to_classical": {
+                "$ref": "#/definitions/resource-intelligence-bundle/properties/estimates/items/properties/logical_qubits"
+              },
+              "refusals": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "threshold": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "code": {
+                      "type": "string",
+                      "enum": [
+                        "NO_CLASSICAL_BASELINE",
+                        "NO_CLASSICAL_RUNTIME",
+                        "NO_CLASSICAL_COST",
+                        "NO_ECONOMIC_MODEL",
+                        "NO_MACHINE_COST_RATE",
+                        "NO_HARDWARE_CAPACITY",
+                        "NO_RUNTIME_TARGET",
+                        "ESTIMATE_INFEASIBLE",
+                        "FACTORY_NOT_SIZED"
+                      ]
+                    },
+                    "message": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "threshold",
+                    "code",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required_conditions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "limitations": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "schema_version",
+              "scenario_name",
+              "scenario_revision",
+              "max_physical_error_rate",
+              "max_physical_error_rate_within_capacity",
+              "required_code_distance",
+              "max_cycle_time_for_runtime_target",
+              "min_factory_throughput_for_runtime_target",
+              "required_logical_qubit_capacity",
+              "required_total_physical_qubit_capacity",
+              "capacity_headroom",
+              "max_cycle_time_to_beat_classical_runtime",
+              "runtime_speedup_over_classical",
+              "max_machine_cost_per_second",
+              "max_physical_qubit_second_cost",
+              "break_even_runtime",
+              "break_even_machine_cost_per_second",
+              "projected_quantum_cost",
+              "cost_ratio_to_classical",
+              "refusals",
+              "required_conditions",
+              "limitations"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "assessments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scenario_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scenario_revision": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "workload_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "is_demo": {
+                "type": "boolean"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "INFEASIBLE_UNDER_ASSUMPTIONS",
+                  "INSUFFICIENT_EVIDENCE",
+                  "RESEARCH_ONLY",
+                  "CONDITIONALLY_FEASIBLE",
+                  "TECHNICALLY_FEASIBLE",
+                  "POTENTIALLY_ECONOMIC",
+                  "ECONOMICALLY_COMPETITIVE_UNDER_ASSUMPTIONS"
+                ]
+              },
+              "dimensions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "dimension": {
+                      "type": "string",
+                      "enum": [
+                        "SCIENTIFIC_FEASIBILITY",
+                        "ENGINEERING_FEASIBILITY",
+                        "HARDWARE_READINESS",
+                        "ECONOMIC_READINESS",
+                        "EVIDENCE_CONFIDENCE",
+                        "SENSITIVITY_RISK"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "SATISFIED",
+                        "NOT_SATISFIED",
+                        "INSUFFICIENT_EVIDENCE"
+                      ]
+                    },
+                    "grade": {
+                      "type": "string",
+                      "enum": [
+                        "HIGH",
+                        "MEDIUM",
+                        "LOW",
+                        "UNCHARACTERIZED"
+                      ]
+                    },
+                    "reason_codes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "ABOVE_SURFACE_CODE_THRESHOLD",
+                          "NO_DISTANCE_MEETS_BUDGET",
+                          "DISTILLATION_TARGET_UNREACHED",
+                          "FACTORY_NOT_SIZED",
+                          "FACTORY_DOMINATES_DEVICE",
+                          "CLIFFORD_ONLY_CIRCUIT",
+                          "EXCEEDS_STATED_CAPACITY",
+                          "WITHIN_STATED_CAPACITY",
+                          "NO_STATED_CAPACITY",
+                          "RUNTIME_EXCEEDS_TARGET",
+                          "RUNTIME_WITHIN_TARGET",
+                          "NO_RUNTIME_TARGET",
+                          "RUNTIME_LIMITED_BY_FACTORY",
+                          "RUNTIME_LIMITED_BY_LOGICAL_CYCLES",
+                          "NO_CLASSICAL_BASELINE",
+                          "NO_CLASSICAL_RUNTIME",
+                          "NO_CLASSICAL_COST",
+                          "NO_ECONOMIC_MODEL",
+                          "PROJECTED_COST_BELOW_CLASSICAL",
+                          "PROJECTED_COST_ABOVE_CLASSICAL",
+                          "RUNTIME_ADVANTAGE_UNDER_ASSUMPTIONS",
+                          "NO_RUNTIME_ADVANTAGE",
+                          "UNSUPPORTED_GATES_PRESENT",
+                          "T_COUNT_NOT_DETERMINED",
+                          "WORKLOAD_COUNTS_DERIVED_FROM_CIRCUIT",
+                          "WORKLOAD_COUNTS_USER_PROVIDED",
+                          "HARDWARE_BASIS_OBSERVATION",
+                          "HARDWARE_BASIS_ROADMAP",
+                          "HARDWARE_BASIS_USER_ASSUMPTION",
+                          "HARDWARE_CONFIDENCE_LOW",
+                          "BASELINE_MEASURED",
+                          "BASELINE_NOT_MEASURED",
+                          "HIGH_SENSITIVITY_TO_ERROR_RATE",
+                          "HIGH_MODEL_SPREAD",
+                          "HIGH_LAYOUT_SPREAD",
+                          "SENSITIVITY_WITHIN_ONE_ORDER",
+                          "DEMO_FIXTURE"
+                        ]
+                      }
+                    },
+                    "explanation": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "dimension",
+                    "status",
+                    "grade",
+                    "reason_codes",
+                    "explanation"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "reason_codes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/resource-intelligence-bundle/properties/assessments/items/properties/dimensions/items/properties/reason_codes/items"
+                }
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "missing_evidence": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "binding_constraint": {
+                "type": "string",
+                "enum": [
+                  "PHYSICAL_ERROR_RATE",
+                  "CODE_DISTANCE_ERROR_BUDGET",
+                  "MAGIC_STATE_THROUGHPUT",
+                  "FACTORY_FOOTPRINT",
+                  "TOTAL_PHYSICAL_QUBIT_CAPACITY",
+                  "LOGICAL_QUBIT_CAPACITY",
+                  "CYCLE_TIME",
+                  "NOT_DETERMINED"
+                ]
+              },
+              "binding_constraint_explanation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "most_influential_assumptions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "parameter": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "spread_factor": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "note": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "parameter",
+                    "spread_factor",
+                    "note"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "recommended_next_measurement": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "uncertainty_warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "schema_version",
+              "scenario_name",
+              "scenario_revision",
+              "workload_name",
+              "is_demo",
+              "status",
+              "dimensions",
+              "reason_codes",
+              "explanation",
+              "missing_evidence",
+              "binding_constraint",
+              "binding_constraint_explanation",
+              "most_influential_assumptions",
+              "recommended_next_measurement",
+              "uncertainty_warnings"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "comparison": {
+          "type": "object",
+          "properties": {
+            "comparable": {
+              "type": "boolean"
+            },
+            "incomparability_reasons": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "scenario_name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "scenario_preset": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "scenario_revision": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "feasible": {
+                    "type": "boolean"
+                  },
+                  "logical_qubits": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "total_physical_qubits": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "runtime": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "code_distance": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "factory_share": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "achieved_logical_error": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "required_cycle_time_ns": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "required_factory_throughput": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "economic_status": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "evidence_confidence": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "decision_status": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "scenario_name",
+                  "scenario_preset",
+                  "scenario_revision",
+                  "feasible",
+                  "logical_qubits",
+                  "total_physical_qubits",
+                  "runtime",
+                  "code_distance",
+                  "factory_share",
+                  "achieved_logical_error",
+                  "required_cycle_time_ns",
+                  "required_factory_throughput",
+                  "economic_status",
+                  "evidence_confidence",
+                  "decision_status"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "aggregation_policy": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "comparable",
+            "incomparability_reasons",
+            "rows",
+            "aggregation_policy"
+          ],
+          "additionalProperties": false
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "supports": {
+                "type": "string",
+                "minLength": 1
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "published_on": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "retrieved_on": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "confidence": {
+                "type": "string",
+                "enum": [
+                  "HIGH",
+                  "MEDIUM",
+                  "LOW"
+                ]
+              },
+              "limitations": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "supports",
+              "title",
+              "url",
+              "published_on",
+              "retrieved_on",
+              "confidence",
+              "limitations"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "reproduction_command": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "schema_version",
+        "bundle_kind",
+        "reproducibility_hash_version",
+        "reproducibility_hash",
+        "is_demo",
+        "generator",
+        "workload",
+        "classical_baseline",
+        "scenarios",
+        "estimates",
+        "thresholds",
+        "assessments",
+        "comparison",
+        "sources",
+        "limitations",
+        "reproduction_command"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

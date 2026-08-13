@@ -1,0 +1,231 @@
+{
+  "$ref": "#/definitions/decision-assessment",
+  "definitions": {
+    "decision-assessment": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scenario_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scenario_revision": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "workload_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "is_demo": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "INFEASIBLE_UNDER_ASSUMPTIONS",
+            "INSUFFICIENT_EVIDENCE",
+            "RESEARCH_ONLY",
+            "CONDITIONALLY_FEASIBLE",
+            "TECHNICALLY_FEASIBLE",
+            "POTENTIALLY_ECONOMIC",
+            "ECONOMICALLY_COMPETITIVE_UNDER_ASSUMPTIONS"
+          ]
+        },
+        "dimensions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "dimension": {
+                "type": "string",
+                "enum": [
+                  "SCIENTIFIC_FEASIBILITY",
+                  "ENGINEERING_FEASIBILITY",
+                  "HARDWARE_READINESS",
+                  "ECONOMIC_READINESS",
+                  "EVIDENCE_CONFIDENCE",
+                  "SENSITIVITY_RISK"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "SATISFIED",
+                  "NOT_SATISFIED",
+                  "INSUFFICIENT_EVIDENCE"
+                ]
+              },
+              "grade": {
+                "type": "string",
+                "enum": [
+                  "HIGH",
+                  "MEDIUM",
+                  "LOW",
+                  "UNCHARACTERIZED"
+                ]
+              },
+              "reason_codes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "ABOVE_SURFACE_CODE_THRESHOLD",
+                    "NO_DISTANCE_MEETS_BUDGET",
+                    "DISTILLATION_TARGET_UNREACHED",
+                    "FACTORY_NOT_SIZED",
+                    "FACTORY_DOMINATES_DEVICE",
+                    "CLIFFORD_ONLY_CIRCUIT",
+                    "EXCEEDS_STATED_CAPACITY",
+                    "WITHIN_STATED_CAPACITY",
+                    "NO_STATED_CAPACITY",
+                    "RUNTIME_EXCEEDS_TARGET",
+                    "RUNTIME_WITHIN_TARGET",
+                    "NO_RUNTIME_TARGET",
+                    "RUNTIME_LIMITED_BY_FACTORY",
+                    "RUNTIME_LIMITED_BY_LOGICAL_CYCLES",
+                    "NO_CLASSICAL_BASELINE",
+                    "NO_CLASSICAL_RUNTIME",
+                    "NO_CLASSICAL_COST",
+                    "NO_ECONOMIC_MODEL",
+                    "PROJECTED_COST_BELOW_CLASSICAL",
+                    "PROJECTED_COST_ABOVE_CLASSICAL",
+                    "RUNTIME_ADVANTAGE_UNDER_ASSUMPTIONS",
+                    "NO_RUNTIME_ADVANTAGE",
+                    "UNSUPPORTED_GATES_PRESENT",
+                    "T_COUNT_NOT_DETERMINED",
+                    "WORKLOAD_COUNTS_DERIVED_FROM_CIRCUIT",
+                    "WORKLOAD_COUNTS_USER_PROVIDED",
+                    "HARDWARE_BASIS_OBSERVATION",
+                    "HARDWARE_BASIS_ROADMAP",
+                    "HARDWARE_BASIS_USER_ASSUMPTION",
+                    "HARDWARE_CONFIDENCE_LOW",
+                    "BASELINE_MEASURED",
+                    "BASELINE_NOT_MEASURED",
+                    "HIGH_SENSITIVITY_TO_ERROR_RATE",
+                    "HIGH_MODEL_SPREAD",
+                    "HIGH_LAYOUT_SPREAD",
+                    "SENSITIVITY_WITHIN_ONE_ORDER",
+                    "DEMO_FIXTURE"
+                  ]
+                }
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "dimension",
+              "status",
+              "grade",
+              "reason_codes",
+              "explanation"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/decision-assessment/properties/dimensions/items/properties/reason_codes/items"
+          }
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "missing_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "binding_constraint": {
+          "type": "string",
+          "enum": [
+            "PHYSICAL_ERROR_RATE",
+            "CODE_DISTANCE_ERROR_BUDGET",
+            "MAGIC_STATE_THROUGHPUT",
+            "FACTORY_FOOTPRINT",
+            "TOTAL_PHYSICAL_QUBIT_CAPACITY",
+            "LOGICAL_QUBIT_CAPACITY",
+            "CYCLE_TIME",
+            "NOT_DETERMINED"
+          ]
+        },
+        "binding_constraint_explanation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "most_influential_assumptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "parameter": {
+                "type": "string",
+                "minLength": 1
+              },
+              "spread_factor": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "parameter",
+              "spread_factor",
+              "note"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "recommended_next_measurement": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "uncertainty_warnings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "scenario_name",
+        "scenario_revision",
+        "workload_name",
+        "is_demo",
+        "status",
+        "dimensions",
+        "reason_codes",
+        "explanation",
+        "missing_evidence",
+        "binding_constraint",
+        "binding_constraint_explanation",
+        "most_influential_assumptions",
+        "recommended_next_measurement",
+        "uncertainty_warnings"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
