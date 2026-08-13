@@ -1037,3 +1037,19 @@ test("an undetermined demand still reaches INSUFFICIENT_EVIDENCE rather than a f
   assert.ok(assessment.reason_codes.includes("T_COUNT_NOT_DETERMINED"))
   assert.match(assessment.missing_evidence.join(" "), /Clifford\+T synthesis/)
 })
+
+test("the arithmetic display does not print a zero the estimate refused to report", () => {
+  // "0 T + 4 x 0 Toffoli = 0" is technically correct arithmetic that reads as a
+  // finding, and it would have put the zero back on the page that the UNKNOWN
+  // handling above removed it from. Found by re-reading every use of
+  // `magicStates` during review of ketqat-sdk#242.
+  const undetermined = estimateForScenario(undeterminedWorkload(), base)
+  assert.match(undetermined.exact_arithmetic[0], /not computed/)
+  assert.ok(!/= 0\./.test(undetermined.exact_arithmetic[0]))
+
+  const clifford = QuantumWorkloadSchema.parse({
+    ...workload,
+    logical: { ...workload.logical, t_count: 0, toffoli_count: 0, unsupported_for_ft_count: 0 },
+  })
+  assert.match(estimateForScenario(clifford, base).exact_arithmetic[0], /= 0\./)
+})

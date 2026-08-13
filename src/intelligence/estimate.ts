@@ -630,8 +630,15 @@ export function estimateForScenario(
   }
 
   const exactArithmetic: string[] = [
-    `Magic states: ${workload.logical.t_count} T + ${scenario.decomposition.toffoli_t_cost} x ` +
-      `${workload.logical.toffoli_count} Toffoli = ${core.magicStates}.`,
+    // "0 T + 4 x 0 Toffoli = 0" is arithmetic that is technically correct and
+    // reads as a finding. When the gates that would contribute have not been
+    // synthesized, the sum is not zero -- it is unavailable, and printing the
+    // zero puts it back on the page the fix above removed it from.
+    core.magicStatesUndetermined
+      ? `Magic states: not computed. ${workload.logical.unsupported_for_ft_count} gate(s) that would ` +
+        "contribute are neither Clifford nor T and have not been synthesized."
+      : `Magic states: ${workload.logical.t_count} T + ${scenario.decomposition.toffoli_t_cost} x ` +
+        `${workload.logical.toffoli_count} Toffoli = ${core.magicStates}.`,
     `Logical cycles: max(depth ${workload.logical.circuit_depth}, 1) = ${core.logicalCycles}.`,
     `Occupied logical patches under ${scenario.layout_model}: ${core.occupiedLogical} ` +
       `(algorithm register ${workload.logical.logical_qubits}).`,
