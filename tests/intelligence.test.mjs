@@ -1151,3 +1151,57 @@ test("the MCP server states why reviews are not exposed there", () => {
   assert.match(source, /Why the review workflow is not here/)
   assert.ok(!source.includes("KETQAT_API_TOKEN"), "the MCP server must hold no token")
 })
+
+// ------------------------------------------- CLI output integrity
+
+test("the CLI waits for stdout to drain before exiting", () => {
+  // `process.stdout.write(...)` followed by `process.exit(...)` truncated
+  // output at the pipe buffer: Node's stdout is synchronous to a file and
+  // asynchronous to a pipe, so `exit` discarded whatever had not flushed. A
+  // 167 KB bundle arrived as exactly 65,536 bytes ending mid-token, so piping
+  // into `jq` failed on a command that had succeeded.
+  const source = readFileSync(new URL("../src/cli/bin.ts", import.meta.url), "utf8")
+  // Comments stripped first: the docstring above the fix *describes*
+  // `process.exit(...)` as the cause, and matching prose would fail a test
+  // whose subject is the code.
+  const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "")
+  assert.doesNotMatch(code, /process\.exit\(/, "process.exit() reintroduces the truncation")
+  assert.match(source, /process\.exitCode = result\.exitCode/)
+  // The write is awaited, not fired and forgotten.
+  assert.match(source, /await write\(process\.stdout/)
+})
+
+test("a string result passes through unquoted", () => {
+  // CSV is not JSON. Running it through JSON.stringify would quote and escape
+  // the whole document, which defeats the reason the format is offered.
+  const source = readFileSync(new URL("../src/cli/bin.ts", import.meta.url), "utf8")
+  assert.match(source, /typeof result\.stdout === "string" \? result\.stdout/)
+})
+
+test("the intelligence client records what it deliberately does not expose", () => {
+  // Drafts, reference cloning and hardware gaps have no client surface, and
+  // each absence is a decision rather than a gap. Recorded so the next reader
+  // does not add an endpoint to close a hole that was deliberate.
+  const source = readFileSync(new URL("../src/client/index.ts", import.meta.url), "utf8")
+  const block = source.slice(source.indexOf("readonly intelligence ="))
+  assert.ok(source.includes("**Drafts.**"), "the drafts decision must be recorded")
+  assert.ok(source.includes("**Reference cloning.**"), "the cloning decision must be recorded")
+  assert.ok(source.includes("**Hardware gaps.**"), "the hardware-gap decision must be recorded")
+  assert.ok(block.length > 0)
+})
+
+test("the intelligence client branches on nothing", () => {
+  // Same rule as the reviews namespace: every scientific decision lives in the
+  // contracts and on the server, and a client that reimplemented one would
+  // eventually disagree with the thing that decides.
+  const source = readFileSync(new URL("../src/client/index.ts", import.meta.url), "utf8")
+  const start = source.indexOf("readonly intelligence =")
+  const end = source.indexOf("readonly reviews =")
+  assert.ok(start >= 0 && end > start, "the intelligence namespace must be findable")
+  const code = source
+    .slice(start, end)
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/[^\n]*/g, "")
+  assert.ok(!/\bthrow\b/.test(code), "the client must not refuse what the server would accept")
+  assert.ok(!/\bswitch\s*\(/.test(code), "the client must not switch on server state")
+})
