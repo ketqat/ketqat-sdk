@@ -1097,3 +1097,43 @@ test("an undetermined demand is not also described as an underestimate", () => {
   assert.match(partial.warnings.join(" "), /is an underestimate/)
   assert.match(partial.t_count.limitations.join(" "), /are an underestimate/)
 })
+
+// --------------------------------------------------- review client and CLI
+
+test("the client carries no review policy of its own", () => {
+  // A client that enforced the self-review rule, the one-open-review rule, or
+  // the stale-hash check would let a caller appear to satisfy a rule the server
+  // then applies differently -- and these decisions gate the strongest claim
+  // this platform makes. Asserted against the source because the guarantee is
+  // an absence.
+  const source = readFileSync(new URL("../src/client/index.ts", import.meta.url), "utf8")
+  const reviews = source.slice(source.indexOf("readonly reviews ="), source.indexOf("private async reviewAction"))
+
+  // The precise claim is that the block *branches on nothing*: it is transport.
+  // Checking for state names was the first attempt and it was wrong --
+  // `CHANGES_REQUESTED` is a value in the API contract, not a rule the client
+  // applies, and matching it as policy would have forced the contract to be
+  // hidden to satisfy the test.
+  const code = reviews.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "")
+  assert.ok(!/\bif\s*\(/.test(code), "the client must not branch on review state")
+  assert.ok(!/\bswitch\s*\(/.test(code), "the client must not switch on review state")
+  assert.ok(!/\bthrow\b/.test(code), "the client must not refuse what the server would accept")
+})
+
+test("the CLI requires a decision reason before the request leaves", () => {
+  const source = readFileSync(new URL("../src/cli/index.ts", import.meta.url), "utf8")
+  assert.match(source, /requires a review id and a reason/)
+  // And it is a registry command, not filed beside the local intelligence ones,
+  // whose help promises nothing is sent anywhere.
+  assert.match(source, /Review commands \(need --registry <url> or KETQAT_URL, and a token\)/)
+})
+
+test("the MCP server states why reviews are not exposed there", () => {
+  // Every tool in that server is local, holds no credential and reaches no
+  // network. Reviews are registry mutations, so adding them would break the
+  // property `readOnly: true` exists to promise. The decision is recorded so a
+  // later reader does not read the absence as an oversight.
+  const source = readFileSync(new URL("../src/mcp/index.ts", import.meta.url), "utf8")
+  assert.match(source, /Why the review workflow is not here/)
+  assert.ok(!source.includes("KETQAT_API_TOKEN"), "the MCP server must hold no token")
+})

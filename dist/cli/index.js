@@ -44,6 +44,19 @@ Execution commands (need --registry <url> or KETQAT_URL, and a token):
   job cancel <id>                        Request cancellation
   job bundle <id>                        Download the result bundle as JSON
 
+Review commands (need --registry <url> or KETQAT_URL, and a token):
+  review list <assessment>               Reviews of one assessment (no token needed if public)
+  review queue                           Open reviews you may decide
+  review request <assessment> <text>     Ask for a review of the current inputs
+  review claim <id>                      Take an open request
+  review note <id> <text>                Add a durable note
+  review approve <id> <reason>           Approve; the reason is required
+  review changes <id> <reason>           Request changes; the reason is required
+
+No rule is enforced here. A CLI that refused a self-review locally would let a
+caller appear to satisfy a rule the server then applies differently, and these
+decisions gate the strongest claim this platform makes.
+
 The local "simulate" command runs on this machine. "job submit" runs the same
 engine in a sandboxed container with enforced limits and an audit trail, and is
 what to use for anything whose result will be published.
@@ -403,6 +416,80 @@ export async function runCli(argv) {
                     client.artifactRelations.list(slug),
                 ]);
                 return { exitCode: 0, stdout: { command: "pull", artifact, versions, relations } };
+            }
+            case "review": {
+                // Registry commands, deliberately not under "intelligence": every other
+                // intelligence subcommand is local and sends nothing anywhere, and
+                // filing these beside them would make that promise ambiguous.
+                //
+                // No rule is enforced here. A CLI that refused a self-review locally
+                // would let a caller appear to satisfy a rule the server then applies
+                // differently, and these decisions gate the strongest claim this
+                // platform makes.
+                const action = positional[1];
+                // `list` is readable without a token when the assessment is public, so
+                // demanding one would be stricter than the API and would refuse a
+                // command that works. Everything else writes or is owner-scoped.
+                // Found by running the built CLI against production, not by reading it.
+                const client = registryClient(flags, { requireToken: action !== "list" });
+                const need = (value) => value && value.trim().length > 0 ? value : null;
+                switch (action) {
+                    case "list": {
+                        const slug = need(positional[2]);
+                        if (!slug)
+                            return { exitCode: 2, stderr: "review list requires an assessment slug." };
+                        return { exitCode: 0, stdout: { command: "review list", reviews: await client.reviews.list(slug) } };
+                    }
+                    case "queue":
+                        return { exitCode: 0, stdout: { command: "review queue", reviews: await client.reviews.queue() } };
+                    case "request": {
+                        const slug = need(positional[2]);
+                        const text = need(positional.slice(3).join(" "));
+                        if (!slug || !text) {
+                            return { exitCode: 2, stderr: "review request requires an assessment slug and what to review." };
+                        }
+                        return {
+                            exitCode: 0,
+                            stdout: { command: "review request", review: await client.reviews.request(slug, { request: text }) },
+                        };
+                    }
+                    case "claim": {
+                        const id = need(positional[2]);
+                        if (!id)
+                            return { exitCode: 2, stderr: "review claim requires a review id." };
+                        return { exitCode: 0, stdout: { command: "review claim", review: await client.reviews.claim(id) } };
+                    }
+                    case "note": {
+                        const id = need(positional[2]);
+                        const body = need(positional.slice(3).join(" "));
+                        if (!id || !body)
+                            return { exitCode: 2, stderr: "review note requires a review id and note text." };
+                        return { exitCode: 0, stdout: { command: "review note", review: await client.reviews.note(id, body) } };
+                    }
+                    case "approve":
+                    case "changes": {
+                        const id = need(positional[2]);
+                        const reason = need(positional.slice(3).join(" "));
+                        // Required here as well as on the server: finding out from a 400
+                        // that a decision needs a reason is worse than being told before
+                        // the request leaves.
+                        if (!id || !reason) {
+                            return { exitCode: 2, stderr: `review ${action} requires a review id and a reason.` };
+                        }
+                        return {
+                            exitCode: 0,
+                            stdout: {
+                                command: `review ${action}`,
+                                review: await client.reviews.decide(id, action === "approve" ? "APPROVED" : "CHANGES_REQUESTED", reason),
+                            },
+                        };
+                    }
+                    default:
+                        return {
+                            exitCode: 2,
+                            stderr: "Usage: review list|queue|request|claim|note|approve|changes",
+                        };
+                }
             }
             case "job": {
                 // Every path here enqueues; none executes. A CLI that ran the circuit

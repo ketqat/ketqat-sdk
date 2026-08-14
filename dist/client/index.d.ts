@@ -57,6 +57,40 @@ export declare class KetQatClient {
         create: (slug: string, input: Record<string, unknown>) => Promise<unknown>;
     };
     /**
+     * Review requests and decisions (ketqat-sdk#243, ketqat-planning#124).
+     *
+     * Every rule lives on the server. This namespace carries no policy at all —
+     * not the self-review refusal, not the one-open-review rule, not the stale
+     * hash check — because a client that enforced them would let a caller
+     * *appear* to satisfy a rule the server would then apply differently, and the
+     * badge these decisions gate is the platform's strongest claim.
+     *
+     * The subject hash is deliberately not a parameter of `request`. The server
+     * computes it from the stored record; `expectedHash` only lets a caller say
+     * which version they believe they are looking at, so a request made against a
+     * page that has since moved is refused rather than recorded against inputs
+     * nobody read.
+     */
+    readonly reviews: {
+        /** Reviews of one assessment. Visibility follows the assessment. */
+        list: (assessmentSlug: string) => Promise<unknown[]>;
+        /** Open reviews this caller may decide. Never their own requests. */
+        queue: () => Promise<unknown[]>;
+        request: (assessmentSlug: string, input: {
+            request: string;
+            expectedHash?: string;
+        }) => Promise<unknown>;
+        claim: (reviewId: string) => Promise<unknown>;
+        note: (reviewId: string, body: string) => Promise<unknown>;
+        /**
+         * Decide. The reason is required by the server, and required here too — a
+         * decision without one cannot be weighed by whoever reads it next, and
+         * finding that out from a 400 is worse than from a type error.
+         */
+        decide: (reviewId: string, decision: "APPROVED" | "CHANGES_REQUESTED", note: string) => Promise<unknown>;
+    };
+    private reviewAction;
+    /**
      * Sandboxed execution.
      *
      * Every path here enqueues; none of them executes. That is the same rule the

@@ -14,6 +14,23 @@ import { z } from "zod";
  *
  * This module defines the tools and their handlers. Transport -- stdio or
  * authenticated HTTP -- is deliberately left to the server that hosts them.
+ *
+ * ## Why the review workflow is not here (ketqat-planning#124)
+ *
+ * #124 asks for MCP parity across the intelligence surface, and reviews are
+ * deliberately excluded rather than overlooked.
+ *
+ * Every tool in this server is local: it computes from what the caller passes
+ * in, holds no credential, and reaches no network. Reviews are the opposite of
+ * that on both counts — they are registry mutations, and they decide whether
+ * the platform's strongest badge may be shown. Adding them would mean this
+ * process holding an API token and writing to somebody's evidence trail, which
+ * is exactly the property `readOnly: true` on every tool exists to promise.
+ *
+ * The review surface is reachable from the typed client and the CLI, where the
+ * token comes from the environment and the caller is a person who typed the
+ * command. That is parity of *capability*, not parity of transport, and the
+ * difference is the point.
  */
 export interface McpToolDefinition<Input = unknown, Output = unknown> {
     name: string;
