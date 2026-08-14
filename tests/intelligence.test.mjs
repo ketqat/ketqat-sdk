@@ -1107,7 +1107,15 @@ test("the client carries no review policy of its own", () => {
   // this platform makes. Asserted against the source because the guarantee is
   // an absence.
   const source = readFileSync(new URL("../src/client/index.ts", import.meta.url), "utf8")
-  const reviews = source.slice(source.indexOf("readonly reviews ="), source.indexOf("private async reviewAction"))
+  // Both markers asserted before slicing. `indexOf` returning -1 would make
+  // `slice` produce an unrelated substring and every assertion below would pass
+  // while testing nothing -- the worst failure mode for a test whose whole job
+  // is to catch an absence. Raised in review of ketqat-sdk#244.
+  const start = source.indexOf("readonly reviews =")
+  const end = source.indexOf("private async reviewAction")
+  assert.ok(start >= 0, "the reviews namespace must be findable")
+  assert.ok(end > start, "the reviews namespace must end where expected")
+  const reviews = source.slice(start, end)
 
   // The precise claim is that the block *branches on nothing*: it is transport.
   // Checking for state names was the first attempt and it was wrong --
@@ -1126,6 +1134,12 @@ test("the CLI requires a decision reason before the request leaves", () => {
   // And it is a registry command, not filed beside the local intelligence ones,
   // whose help promises nothing is sent anywhere.
   assert.match(source, /Review commands \(need --registry <url> or KETQAT_URL, and a token\)/)
+
+  // An unknown or missing subcommand must reach its usage message rather than
+  // a credential prompt: deriving the token requirement as "anything but list"
+  // made `ketqat review` ask for a token before saying what the command does.
+  assert.match(source, /const TOKENLESS = new Set\(\["list"\]\)/)
+  assert.match(source, /!TOKENLESS\.has\(action\) && !NEEDS_TOKEN\.has\(action\)/)
 })
 
 test("the MCP server states why reviews are not exposed there", () => {

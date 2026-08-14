@@ -489,14 +489,35 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
         // differently, and these decisions gate the strongest claim this
         // platform makes.
         const action = positional[1]
-        // `list` is readable without a token when the assessment is public, so
-        // demanding one would be stricter than the API and would refuse a
-        // command that works. Everything else writes or is owner-scoped.
-        // Found by running the built CLI against production, not by reading it.
-        const client = registryClient(flags, { requireToken: action !== "list" })
 
-        const need = (value: string | undefined) =>
-          value && value.trim().length > 0 ? value : null
+        // Trimmed, not just checked. A slug or id pasted with a trailing space
+        // otherwise reaches the API intact and comes back as a 404 about a
+        // record that does exist, which is a hard thing to diagnose from the
+        // outside. Raised in review of ketqat-sdk#244.
+        const need = (value: string | undefined) => {
+          const trimmed = value?.trim() ?? ""
+          return trimmed.length > 0 ? trimmed : null
+        }
+
+        // Named explicitly rather than derived as "anything but list", so an
+        // unknown or missing subcommand reaches its usage message instead of a
+        // token error. `ketqat review` with no arguments asked for credentials
+        // before telling anybody what the command does. Raised in the same
+        // review.
+        //
+        // `list` is readable without a token when the assessment is public, so
+        // requiring one would be stricter than the API and would refuse a
+        // command that works -- found by running the built CLI against
+        // production rather than by reading it.
+        const TOKENLESS = new Set(["list"])
+        const NEEDS_TOKEN = new Set(["queue", "request", "claim", "note", "approve", "changes"])
+        if (!action || (!TOKENLESS.has(action) && !NEEDS_TOKEN.has(action))) {
+          return {
+            exitCode: 2,
+            stderr: "Usage: review list|queue|request|claim|note|approve|changes",
+          }
+        }
+        const client = registryClient(flags, { requireToken: NEEDS_TOKEN.has(action) })
 
         switch (action) {
           case "list": {
