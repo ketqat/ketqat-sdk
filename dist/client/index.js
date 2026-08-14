@@ -137,7 +137,11 @@ export class KetQatClient {
                     search.set("owner", query.owner);
                 if (query.project)
                     search.set("project", query.project);
-                if (query.limit)
+                // `!== undefined`, not truthiness: `limit: 0` is a value a caller can
+                // legitimately pass, and dropping it silently returns the default page
+                // instead of nothing. `execution.list` already does this. Raised in
+                // review of ketqat-sdk#246.
+                if (query.limit !== undefined)
                     search.set("limit", String(query.limit));
                 const suffix = search.toString() ? `?${search}` : "";
                 const response = await this.getJson(`/api/intelligence/assessments${suffix}`);

@@ -436,6 +436,7 @@ export async function runCli(argv) {
                         stderr: "Usage: case list|get|bundle|report|estimate|save-report",
                     };
                 }
+                const limit = numberFlag(flags, "limit");
                 const client = registryClient(flags, { requireToken: NEEDS_TOKEN.has(action) });
                 const slug = positional[2]?.trim();
                 if (action !== "list" && !slug) {
@@ -450,7 +451,11 @@ export async function runCli(argv) {
                                 assessments: await client.intelligence.list({
                                     ...(flags.get("owner") ? { owner: flags.get("owner") } : {}),
                                     ...(flags.get("project") ? { project: flags.get("project") } : {}),
-                                    ...(flags.get("limit") ? { limit: Number(flags.get("limit")) } : {}),
+                                    // `numberFlag` rather than `Number(...)`: a non-numeric
+                                    // --limit became NaN and was silently ignored, so the caller
+                                    // got a different page than they asked for with no error.
+                                    // Raised in review of ketqat-sdk#246.
+                                    ...(limit !== undefined ? { limit } : {}),
                                 }),
                             },
                         };
