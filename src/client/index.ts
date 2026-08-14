@@ -143,6 +143,74 @@ export class KetQatClient {
   }
 
   /**
+   * Review requests and decisions (ketqat-sdk#243, ketqat-planning#124).
+   *
+   * Every rule lives on the server. This namespace carries no policy at all —
+   * not the self-review refusal, not the one-open-review rule, not the stale
+   * hash check — because a client that enforced them would let a caller
+   * *appear* to satisfy a rule the server would then apply differently, and the
+   * badge these decisions gate is the platform's strongest claim.
+   *
+   * The subject hash is deliberately not a parameter of `request`. The server
+   * computes it from the stored record; `expectedHash` only lets a caller say
+   * which version they believe they are looking at, so a request made against a
+   * page that has since moved is refused rather than recorded against inputs
+   * nobody read.
+   */
+  readonly reviews = {
+    /** Reviews of one assessment. Visibility follows the assessment. */
+    list: async (assessmentSlug: string): Promise<unknown[]> => {
+      const response = await this.getJson(
+        `/api/intelligence/assessments/${encodeURIComponent(assessmentSlug)}/reviews`,
+      )
+      const object = responseObject(response)
+      return Array.isArray(object.reviews) ? object.reviews : []
+    },
+
+    /** Open reviews this caller may decide. Never their own requests. */
+    queue: async (): Promise<unknown[]> => {
+      const response = await this.getJson("/api/intelligence/reviews")
+      const object = responseObject(response)
+      return Array.isArray(object.reviews) ? object.reviews : []
+    },
+
+    request: async (
+      assessmentSlug: string,
+      input: { request: string; expectedHash?: string },
+    ): Promise<unknown> => {
+      const response = await this.postJson(
+        `/api/intelligence/assessments/${encodeURIComponent(assessmentSlug)}/reviews`,
+        { request: input.request, subject_hash: input.expectedHash },
+      )
+      return responseObject(response).review ?? response
+    },
+
+    claim: async (reviewId: string): Promise<unknown> => this.reviewAction(reviewId, { action: "claim" }),
+
+    note: async (reviewId: string, body: string): Promise<unknown> =>
+      this.reviewAction(reviewId, { action: "note", body }),
+
+    /**
+     * Decide. The reason is required by the server, and required here too — a
+     * decision without one cannot be weighed by whoever reads it next, and
+     * finding that out from a 400 is worse than from a type error.
+     */
+    decide: async (
+      reviewId: string,
+      decision: "APPROVED" | "CHANGES_REQUESTED",
+      note: string,
+    ): Promise<unknown> => this.reviewAction(reviewId, { action: "decide", decision, note }),
+  }
+
+  private async reviewAction(reviewId: string, body: Record<string, unknown>): Promise<unknown> {
+    const response = await this.postJson(
+      `/api/intelligence/reviews/${encodeURIComponent(reviewId)}`,
+      body,
+    )
+    return responseObject(response).review ?? response
+  }
+
+  /**
    * Sandboxed execution.
    *
    * Every path here enqueues; none of them executes. That is the same rule the
