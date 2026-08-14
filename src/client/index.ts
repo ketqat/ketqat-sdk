@@ -143,6 +143,151 @@ export class KetQatClient {
   }
 
   /**
+   * Resource intelligence: decision cases and everything attached to one
+   * (ketqat-sdk#245, ketqat-planning#124).
+   *
+   * Thin, like the rest of this client. Every scientific rule — what a
+   * threshold means, when an economic conclusion is refused, whether a gate
+   * count is undetermined — lives in the contracts and on the server. A client
+   * that reimplemented any of them would eventually disagree with the thing
+   * that decides.
+   *
+   * ## What is not here, and why
+   *
+   * **Drafts.** The guided flow is server actions, not REST: a draft is
+   * half-finished state that only means something inside the wizard that owns
+   * it, and exposing it would create a second way to reach a shape whose
+   * validity rules are the wizard's. `create` below takes a complete workload,
+   * which is what an automated caller actually has.
+   *
+   * **Reference cloning.** A server action for the same reason — it mints an
+   * owned record from a public one and belongs to the session that will own it.
+   * Reference *bundles* are readable here, which is the part an automated
+   * caller needs.
+   *
+   * **Hardware gaps.** Computed in the web application from records that live
+   * in its source tree, not behind an endpoint. `capabilityGap` is a pure
+   * function of a published figure and a requirement; a caller with both can
+   * compute it without a round trip, and one without them would only be asking
+   * this client to invent a comparison.
+   *
+   * Recording those three as decisions rather than gaps, so the next reader
+   * does not add an endpoint to close a hole that was deliberate.
+   */
+  readonly intelligence = {
+    list: async (query: { owner?: string; project?: string; limit?: number } = {}): Promise<unknown[]> => {
+      const search = new URLSearchParams()
+      if (query.owner) search.set("owner", query.owner)
+      if (query.project) search.set("project", query.project)
+      // `!== undefined`, not truthiness: `limit: 0` is a value a caller can
+      // legitimately pass, and dropping it silently returns the default page
+      // instead of nothing. `execution.list` already does this. Raised in
+      // review of ketqat-sdk#246.
+      if (query.limit !== undefined) search.set("limit", String(query.limit))
+      const suffix = search.toString() ? `?${search}` : ""
+      const response = await this.getJson(`/api/intelligence/assessments${suffix}`)
+      const object = responseObject(response)
+      return Array.isArray(object.assessments) ? object.assessments : []
+    },
+
+    get: async (slug: string): Promise<unknown> => {
+      const response = await this.getJson(`/api/intelligence/assessments/${encodeURIComponent(slug)}`)
+      return responseObject(response).assessment ?? response
+    },
+
+    /** Create a decision case from a complete workload. */
+    create: async (input: Record<string, unknown>): Promise<unknown> => {
+      const response = await this.postJson("/api/intelligence/assessments", input)
+      return responseObject(response).assessment ?? response
+    },
+
+    /** Record a classical baseline, superseding any earlier revision. */
+    setBaseline: async (slug: string, baseline: unknown): Promise<unknown> => {
+      const response = await this.postJson(
+        `/api/intelligence/assessments/${encodeURIComponent(slug)}/baseline`,
+        { baseline },
+      )
+      return responseObject(response).assessment ?? response
+    },
+
+    /**
+     * Add an assumption set, including its economic model.
+     *
+     * The economic model travels inside the scenario rather than as its own
+     * endpoint, because that is what it is: an assumption, versioned with the
+     * others it has to be read beside. A separate endpoint would let a cost
+     * model be changed without the scenario revision moving, and every figure
+     * derived from it would then be attributed to inputs that did not produce
+     * it.
+     */
+    addScenario: async (slug: string, scenario: unknown): Promise<unknown> => {
+      const response = await this.postJson(
+        `/api/intelligence/assessments/${encodeURIComponent(slug)}/scenarios`,
+        scenario,
+      )
+      return responseObject(response).assessment ?? response
+    },
+
+    /**
+     * Compute estimates, thresholds and decisions for every current scenario.
+     *
+     * POST rather than GET because it writes, and because a crawlable GET
+     * running an estimator is the shape that made an unbounded URL space most
+     * of the service's compute bill. Idempotent: an estimate is unique on the
+     * revisions that produced it, so a repeated call with nothing changed
+     * reuses stored rows.
+     */
+    estimate: async (slug: string): Promise<unknown> => {
+      const response = await this.postJson(
+        `/api/intelligence/assessments/${encodeURIComponent(slug)}/estimate`,
+        {},
+      )
+      return responseObject(response).assessment ?? response
+    },
+
+    /** The current Decision Report, rendered from the assessment's inputs. */
+    report: async (slug: string): Promise<unknown> => {
+      const response = await this.getJson(
+        `/api/intelligence/assessments/${encodeURIComponent(slug)}/report`,
+      )
+      return responseObject(response).report ?? response
+    },
+
+    /** The scenario comparison as CSV, with unknowns written as the word. */
+    reportCsv: async (slug: string): Promise<string> => {
+      const response = await this.request(
+        `/api/intelligence/assessments/${encodeURIComponent(slug)}/report?format=csv`,
+      )
+      return response.text()
+    },
+
+    /** Save a report revision for the current inputs. */
+    saveReport: async (slug: string): Promise<unknown> => {
+      const response = await this.postJson(
+        `/api/intelligence/assessments/${encodeURIComponent(slug)}/report`,
+        {},
+      )
+      return responseObject(response)
+    },
+
+    /** The full bundle: inputs, assumptions and conclusions under one hash. */
+    bundle: async (slug: string): Promise<unknown> => {
+      const response = await this.getJson(
+        `/api/intelligence/assessments/${encodeURIComponent(slug)}/bundle`,
+      )
+      return response
+    },
+
+    /** A published reference case's bundle. Readable without a token. */
+    referenceBundle: async (slug: string): Promise<unknown> => {
+      const response = await this.getJson(
+        `/api/intelligence/reference/${encodeURIComponent(slug)}/bundle`,
+      )
+      return response
+    },
+  }
+
+  /**
    * Review requests and decisions (ketqat-sdk#243, ketqat-planning#124).
    *
    * Every rule lives on the server. This namespace carries no policy at all —

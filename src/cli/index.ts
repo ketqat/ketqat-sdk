@@ -88,6 +88,15 @@ Execution commands (need --registry <url> or KETQAT_URL, and a token):
   job cancel <id>                        Request cancellation
   job bundle <id>                        Download the result bundle as JSON
 
+Decision case commands (need --registry <url> or KETQAT_URL; a token for writes):
+  case list                              Decision cases you can see; --owner, --project, --limit
+  case get <slug>                        One case with its inputs and current estimates
+  case bundle <slug>                     The full bundle as JSON
+  case report <slug>                     The current Decision Report; --csv for the comparison
+  case estimate <slug>                   Recompute estimates for every current scenario
+  case save-report <slug>                Save a report revision for the current inputs
+  reference bundle <slug>                A published reference case's bundle (no token needed)
+
 Review commands (need --registry <url> or KETQAT_URL, and a token):
   review list <assessment>               Reviews of one assessment (no token needed if public)
   review queue                           Open reviews you may decide
@@ -477,6 +486,81 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
           client.artifactRelations.list(slug),
         ])
         return { exitCode: 0, stdout: { command: "pull", artifact, versions, relations } }
+      }
+
+      case "case": {
+        const action = positional[1]
+        const TOKENLESS = new Set(["list", "get", "bundle", "report"])
+        const NEEDS_TOKEN = new Set(["estimate", "save-report"])
+        if (!action || (!TOKENLESS.has(action) && !NEEDS_TOKEN.has(action))) {
+          return {
+            exitCode: 2,
+            stderr: "Usage: case list|get|bundle|report|estimate|save-report",
+          }
+        }
+        const limit = numberFlag(flags, "limit")
+        const client = registryClient(flags, { requireToken: NEEDS_TOKEN.has(action) })
+        const slug = positional[2]?.trim()
+        if (action !== "list" && !slug) {
+          return { exitCode: 2, stderr: `case ${action} requires a decision case slug.` }
+        }
+
+        switch (action) {
+          case "list":
+            return {
+              exitCode: 0,
+              stdout: {
+                command: "case list",
+                assessments: await client.intelligence.list({
+                  ...(flags.get("owner") ? { owner: flags.get("owner") as string } : {}),
+                  ...(flags.get("project") ? { project: flags.get("project") as string } : {}),
+                  // `numberFlag` rather than `Number(...)`: a non-numeric
+                  // --limit became NaN and was silently ignored, so the caller
+                  // got a different page than they asked for with no error.
+                  // Raised in review of ketqat-sdk#246.
+                  ...(limit !== undefined ? { limit } : {}),
+                }),
+              },
+            }
+          case "get":
+            return { exitCode: 0, stdout: { command: "case get", assessment: await client.intelligence.get(slug!) } }
+          case "bundle":
+            return { exitCode: 0, stdout: { command: "case bundle", bundle: await client.intelligence.bundle(slug!) } }
+          case "report":
+            // CSV goes to stdout as text, because piping it into a spreadsheet
+            // is the whole reason the format exists.
+            return flags.has("csv")
+              ? { exitCode: 0, stdout: await client.intelligence.reportCsv(slug!) }
+              : { exitCode: 0, stdout: { command: "case report", report: await client.intelligence.report(slug!) } }
+          case "estimate":
+            return {
+              exitCode: 0,
+              stdout: { command: "case estimate", assessment: await client.intelligence.estimate(slug!) },
+            }
+          case "save-report":
+            return {
+              exitCode: 0,
+              stdout: { command: "case save-report", ...(await client.intelligence.saveReport(slug!) as object) },
+            }
+          default:
+            return { exitCode: 2, stderr: "Usage: case list|get|bundle|report|estimate|save-report" }
+        }
+      }
+
+      case "reference": {
+        if (positional[1] !== "bundle" || !positional[2]?.trim()) {
+          return { exitCode: 2, stderr: "Usage: reference bundle <slug>" }
+        }
+        // No token: a published reference case is public, and demanding one
+        // would be stricter than the API -- the same mistake `review list` made.
+        const client = registryClient(flags)
+        return {
+          exitCode: 0,
+          stdout: {
+            command: "reference bundle",
+            bundle: await client.intelligence.referenceBundle(positional[2].trim()),
+          },
+        }
       }
 
       case "review": {
