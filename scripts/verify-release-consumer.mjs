@@ -31,10 +31,14 @@
  * It is **not** offline. Installing the tarball resolves the package's real
  * dependencies -- `zod` and `zod-to-json-schema` -- from the public npm
  * registry, because a consumer install that stubbed them would not be the
- * thing being verified. What does not happen is any request to a KetQat
- * service, any authenticated request, and any write to a registry. Raised in
- * review of ketqat-sdk#247, where this comment claimed offline outright and
- * was simply wrong.
+ * thing being verified. It also makes one **unauthenticated, read-only**
+ * request to the public reference-bundle endpoint, because #247 asks for the
+ * typed client to be exercised against a real endpoint and a reference bundle
+ * verified end to end -- neither of which a stub would establish.
+ *
+ * What does not happen: any authenticated request, any write to any registry,
+ * and any use of a credential. Raised in review of ketqat-sdk#247, where this
+ * comment claimed offline outright and was simply wrong.
  */
 
 import { execFileSync, spawnSync } from "node:child_process"
@@ -190,6 +194,91 @@ try {
   }
   ok("ketqat-mcp answers initialize from the installed artifact")
 
+  // --- the typed client, against a real endpoint -----------------------
+  //
+  // ketqat-sdk#247 asks for the client to be exercised "against a real
+  // endpoint" and for "reference bundles fetched and verified end to end".
+  // Both are done here in one step, from the *installed* package: a client
+  // constructed from the tarball, reaching production's public read API, and
+  // the bundle it returns verified by recomputing its own hash.
+  //
+  // Read-only and unauthenticated. No token is used, nothing is written, and
+  // the endpoint is the same one any reader can fetch.
+  const endpoint = process.env.KETQAT_URL ?? "https://ketqat.com"
+  const referenceSlug = process.env.KETQAT_REFERENCE_SLUG ?? "measured-statevector-simulation-12q"
+  const clientProbe = join(consumer, "client-probe.mjs")
+  writeFileSync(
+    clientProbe,
+    `import { KetQatClient } from "ketqat-sdk/client"\n` +
+      `import { verifyReproducibilityHash } from "ketqat-sdk/reproducibility"\n` +
+      `const client = new KetQatClient({ baseUrl: ${JSON.stringify(endpoint)} })\n` +
+      `const bundle = await client.intelligence.referenceBundle(${JSON.stringify(referenceSlug)})\n` +
+      `const stated = bundle.reproducibility_hash\n` +
+      // The SDK's own verifier, from the tarball -- not a reimplementation here.
+      `const verdict = verifyReproducibilityHash(bundle)\n` +
+      `console.log(JSON.stringify({ stated, verdict, kind: bundle.bundle_kind, isDemo: bundle.is_demo }))\n`,
+  )
+  // The probe can fail by fetching, by parsing, or inside the verifier, and
+  // saying "could not fetch" for all three sends the next person debugging CI
+  // to the wrong place. Report what actually happened.
+  let clientResult = null
+  let raw = null
+  try {
+    raw = execFileSync(process.execPath, [clientProbe], {
+      cwd: consumer,
+      encoding: "utf8",
+      timeout: 60_000,
+    })
+  } catch (error) {
+    throw new Error(
+      `The client probe failed while running against ${endpoint} (slug ${referenceSlug}). ` +
+        `This covers the fetch, the SDK's verifier, and anything else the probe does:\n` +
+        `${error.stderr || error.message}`,
+    )
+  }
+  try {
+    clientResult = JSON.parse(raw.trim().split("\n").pop())
+  } catch (error) {
+    throw new Error(
+      `The client probe ran but its output could not be parsed as JSON: ${error.message}\n` +
+        `Output was: ${String(raw).slice(0, 400)}`,
+    )
+  }
+
+  if (!clientResult?.stated) {
+    throw new Error("The fetched reference bundle carries no reproducibility_hash")
+  }
+  ok(`the installed typed client fetched a reference bundle from ${endpoint}`)
+
+  // End to end means recomputed, not merely received. A bundle whose stated
+  // hash does not match its own contents is the failure this catches -- and it
+  // is a claim about the *shipped* hashing code, since both the client and the
+  // hasher come from the tarball.
+  const verdict = clientResult.verdict ?? {}
+  const verified = verdict.valid ?? verdict.matches ?? verdict.ok
+  if (verified !== true) {
+    throw new Error(
+      `The reference bundle does not verify against its own contents: ${JSON.stringify(verdict).slice(0, 300)}`,
+    )
+  }
+  ok(`the bundle verifies against its own contents (${clientResult.stated.slice(0, 16)}…)`)
+
+  // A reference case is not customer evidence, and it is not demo data
+  // either. Both mislabellings matter, so both are enforced -- an earlier
+  // version printed `is_demo` beside a comment saying it must not be true and
+  // asserted nothing, which is the shape of every check that passes while the
+  // thing it names is wrong. Raised in review of ketqat-sdk#250.
+  if (clientResult.kind !== "RESOURCE_INTELLIGENCE") {
+    throw new Error(`Unexpected bundle_kind ${clientResult.kind}`)
+  }
+  if (clientResult.isDemo !== false) {
+    throw new Error(
+      `The reference bundle reports is_demo=${clientResult.isDemo}. A reference case is published as ` +
+        `real worked evidence; shipping one flagged as demo data would misrepresent what it is.`,
+    )
+  }
+  ok(`the bundle declares kind ${clientResult.kind} and is_demo=false`)
+
   const secretish = /(?:api[_-]?key|secret|password|token)\s*[:=]\s*["'][^"']{8,}/i
   const offenders = manifest.files
     .map(({ path }) => path)
@@ -208,7 +297,8 @@ try {
 
   process.stdout.write(
     `\nPASS: ${checks.length} checks against ${manifest.filename} as an installed consumer. ` +
-      `Nothing was published, no credential was read, and no KetQat service was contacted.\n`,
+      `Nothing was published, no credential was read, and the only KetQat request was an ` +
+      `unauthenticated public read.\n`,
   )
 } finally {
   rmSync(temporaryRoot, { recursive: true, force: true })
