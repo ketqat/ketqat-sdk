@@ -142,15 +142,42 @@ if (existsSync(sdist)) {
 }
 
 // --------------------------------------------------------------------- versions
-const pythonVersion = /^version\s*=\s*"([^"]+)"/m.exec(readFileSync(join(ROOT, "python", "pyproject.toml"), "utf8"))?.[1]
-const citationVersion = /^version:\s*(\S+)/m.exec(readFileSync(join(ROOT, "CITATION.cff"), "utf8"))?.[1]
-if (pythonVersion !== version || citationVersion !== version) {
+// Every local place the version is written -- all five.
+//
+// This checked three, and passed while `ketqat_runner.__version__` and
+// `runner_version.SDK_VERSION` still said 0.2.0. CI caught it in the
+// `distributions` job, which had been checking all five all along. So the
+// local gate was quietly weaker than the remote one, and the failure mode is
+// the worst kind: a green "version agrees" that agrees about a subset.
+//
+// `scripts/check-release-version.mjs` also covers these, but it is a
+// publish-time preflight -- it requires a release tag and queries npm and
+// PyPI. This check must work offline against local artifacts, so it reads the
+// same files rather than calling that script. Raised in ketqat-sdk#247.
+const readAssignment = (path, name) => {
+  const source = readFileSync(join(ROOT, path), "utf8")
+  return new RegExp(`^\\s*${name}\\s*=\\s*["']([^"']+)["']`, "m").exec(source)?.[1]
+}
+const versions = {
+  "package.json": version,
+  "python/pyproject.toml": /^version\s*=\s*"([^"]+)"/m.exec(
+    readFileSync(join(ROOT, "python", "pyproject.toml"), "utf8"),
+  )?.[1],
+  "CITATION.cff": /^version:\s*(\S+)/m.exec(readFileSync(join(ROOT, "CITATION.cff"), "utf8"))?.[1],
+  "ketqat_runner.__version__": readAssignment("python/src/ketqat_runner/__init__.py", "__version__"),
+  "runner SDK_VERSION": readAssignment("python/src/ketqat_runner/runner_version.py", "SDK_VERSION"),
+}
+const disagreeing = Object.entries(versions).filter(([, found]) => found !== version)
+if (disagreeing.length > 0) {
   fail(
-    `versions disagree: package.json ${version}, pyproject.toml ${pythonVersion}, CITATION.cff ${citationVersion}. ` +
-      "A citation naming one release while the artifact is another points a reader at different hashing behaviour.",
+    `versions disagree: ${Object.entries(versions)
+      .map(([source, found]) => `${source} ${found ?? "unreadable"}`)
+      .join(", ")}. ` +
+      "A citation naming one release while the artifact is another points a reader at different hashing behaviour, " +
+      "and a runner reporting a version it is not is a wrong provenance record on every run it writes.",
   )
 } else {
-  notes.push(`ok   version ${version} agrees across package.json, pyproject.toml and CITATION.cff`)
+  notes.push(`ok   version ${version} agrees across all ${Object.keys(versions).length} sources`)
 }
 
 // ------------------------------------------------- reproducibility and provenance
