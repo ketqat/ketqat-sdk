@@ -132,5 +132,9 @@
   "bin": {
     "ketqat-engine": "./dist/cli/bin.js",
     "ketqat-mcp": "./dist/mcp/bin.js"
+  },
+  "overrides": {
+    "hono": "^4.12.34",
+    "fast-uri": "^3.1.5"
   }
 }
