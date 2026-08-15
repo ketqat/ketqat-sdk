@@ -1,6 +1,6 @@
 [project]
 name = "ketqat"
-version = "0.2.0"
+version = "0.3.0"
 description = "Local benchmark runner for KetQat QEC and quantum-algorithm experiments. Run 'ketqat run <manifest>' to reproduce or submit results to ketqat.com."
 readme = "README.md"
 license = "Apache-2.0"
