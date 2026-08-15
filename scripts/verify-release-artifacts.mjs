@@ -15,7 +15,7 @@
  *   - every artifact carries CITATION.cff, so an installed copy can be cited
  *   - the npm tarball carries dist/, schemas/ and examples/
  *   - the wheel carries the runner, its examples and its entry point
- *   - the version agrees across package.json, pyproject.toml and CITATION.cff
+ *   - the version agrees across every local file that states it (currently six)
  *   - reproducibility.json reports every artifact rebuilding byte-identically
  *   - provenance.json records that nothing was published
  *
@@ -142,13 +142,19 @@ if (existsSync(sdist)) {
 }
 
 // --------------------------------------------------------------------- versions
-// Every local place the version is written -- all five.
+// Every local place the version is written.
 //
-// This checked three, and passed while `ketqat_runner.__version__` and
-// `runner_version.SDK_VERSION` still said 0.2.0. CI caught it in the
-// `distributions` job, which had been checking all five all along. So the
-// local gate was quietly weaker than the remote one, and the failure mode is
-// the worst kind: a green "version agrees" that agrees about a subset.
+// This checked three of six, and reported "version agrees" while
+// `ketqat_runner.__version__`, `runner_version.SDK_VERSION` and
+// `python/CITATION.cff` still said 0.2.0. Each was caught by a *different* CI
+// job, one bump at a time, because no single check knew the whole set. A green
+// line that agrees about a subset is worse than no line: it is the one a
+// person reads before deciding they are done.
+//
+// So the set lives here, in one object, and every entry is named in the
+// failure message. Adding a seventh place the version is written means adding
+// it here, and the way you will find out is this check passing when it should
+// not.
 //
 // `scripts/check-release-version.mjs` also covers these, but it is a
 // publish-time preflight -- it requires a release tag and queries npm and
@@ -164,6 +170,11 @@ const versions = {
     readFileSync(join(ROOT, "python", "pyproject.toml"), "utf8"),
   )?.[1],
   "CITATION.cff": /^version:\s*(\S+)/m.exec(readFileSync(join(ROOT, "CITATION.cff"), "utf8"))?.[1],
+  // The Python package ships its own copy. Two copies of one fact fail by
+  // going stale in the half nobody looks at, which is what happened here.
+  "python/CITATION.cff": /^version:\s*(\S+)/m.exec(
+    readFileSync(join(ROOT, "python", "CITATION.cff"), "utf8"),
+  )?.[1],
   "ketqat_runner.__version__": readAssignment("python/src/ketqat_runner/__init__.py", "__version__"),
   "runner SDK_VERSION": readAssignment("python/src/ketqat_runner/runner_version.py", "SDK_VERSION"),
 }
