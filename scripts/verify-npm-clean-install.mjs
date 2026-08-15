@@ -7,6 +7,40 @@ const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm"
 const root = process.cwd()
 const temporaryRoot = mkdtempSync(join(tmpdir(), "ketqat-sdk-clean-install-"))
 
+/**
+ * The engine this check is *running on*, not the one the package declares.
+ *
+ * npm treats `engines` as advisory: installing on an excluded version prints
+ * EBADENGINE and carries on exiting 0. So this script would clean-install,
+ * type-check, exercise the CLI and report PASS from a Node it has just been
+ * told the package does not support -- proving only that it happens to work
+ * there, under a heading that reads as proof it works where it is supported.
+ *
+ * That is the same shape as the `postcss@unknown` defect in ketqat-web#333: a
+ * green check measuring something adjacent to the claim it appears to make.
+ * A release gate is exactly where that is least affordable, so this refuses
+ * rather than warns -- a warning in a passing run is a warning nobody reads.
+ */
+function assertHostSatisfiesEngine(declared) {
+  const floor = /^>=\s*(\d+)/.exec(declared ?? "")
+  if (!floor) {
+    throw new Error(
+      `Cannot read a major-version floor from engines.node ${JSON.stringify(declared)}. ` +
+        `This guard understands ">=N" only; widen it deliberately rather than dropping it.`,
+    )
+  }
+  const required = Number(floor[1])
+  const actual = Number(process.versions.node.split(".")[0])
+  if (actual < required) {
+    throw new Error(
+      `This check is running on Node ${process.versions.node}, below the >=${required} the package ` +
+        `declares. npm only warns about that, so the run would have reported PASS without ` +
+        `establishing anything about a supported engine. Re-run on Node ${required} or newer.`,
+    )
+  }
+  return { required, actual }
+}
+
 const run = (command, args, options = {}) =>
   execFileSync(command, args, {
     cwd: root,
@@ -16,6 +50,9 @@ const run = (command, args, options = {}) =>
   })
 
 try {
+  const sourceEngine = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).engines?.node
+  const engine = assertHostSatisfiesEngine(sourceEngine)
+
   const pack = spawnSync(
     npmCommand,
     ["pack", "--json", "--ignore-scripts", "--pack-destination", temporaryRoot],
@@ -92,8 +129,13 @@ try {
   if (installedPackage.name !== "ketqat-sdk" || installedPackage.version !== sourcePackage.version) {
     throw new Error("Installed npm package name or version does not match the source package")
   }
-  if (installedPackage.engines?.node !== ">=22") {
-    throw new Error(`Unexpected Node.js engine policy: ${installedPackage.engines?.node}`)
+  // The shipped tarball must carry the same policy the host was checked
+  // against, or the guard above validated a floor this artifact does not state.
+  if (installedPackage.engines?.node !== sourceEngine) {
+    throw new Error(
+      `Installed engine policy ${JSON.stringify(installedPackage.engines?.node)} does not match ` +
+        `the source policy ${JSON.stringify(sourceEngine)}`,
+    )
   }
 
   for (const [subpath, target] of Object.entries(installedPackage.exports)) {
@@ -120,7 +162,9 @@ try {
   }
 
   console.log(
-    `Clean-installed and verified ${manifest.filename}: ${manifest.entryCount} files, ${manifest.unpackedSize} unpacked bytes.`,
+    `Clean-installed and verified ${manifest.filename} on Node ${process.versions.node} ` +
+      `(declared engine ${sourceEngine}, floor ${engine.required}): ` +
+      `${manifest.entryCount} files, ${manifest.unpackedSize} unpacked bytes.`,
   )
 } finally {
   rmSync(temporaryRoot, { recursive: true, force: true })

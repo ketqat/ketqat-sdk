@@ -1,6 +1,6 @@
 {
   "name": "ketqat-sdk",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Typed contracts, schemas, reproducibility hashing, and a REST client for KetQat -- the vendor-neutral registry for reproducible quantum error-correction and quantum-algorithm research.",
   "keywords": [
     "quantum-computing",
@@ -101,6 +101,7 @@
     "test": "npm run build && node tests/sdk.test.mjs && node --test tests/intelligence.test.mjs && node tests/zod4-incompatibility.test.mjs && node tests/mcp-conformance.test.mjs && npm run verify:package-contents && npm run verify:dist-tracked && npm run verify:schema-sync && npm run verify:license && npm run verify:citation && npm run verify:workflows && npm run verify:outreach",
     "test:python": "python3.11 -m pytest python/tests",
     "verify:clean-install": "node scripts/verify-npm-clean-install.mjs",
+    "verify:release-consumer": "node scripts/verify-release-consumer.mjs",
     "verify:package-contents": "node scripts/verify-package-contents.mjs",
     "verify:quickstart": "bash scripts/verify-quickstart.sh",
     "prepublishOnly": "npm run build",

@@ -34,3 +34,10 @@ jobs:
 
       - name: Clean-install and type-check the tarball
         run: npm run verify:clean-install
+
+      # `dist/` is this checkout's build output; the tarball is what a stranger
+      # installs. This drives the artifact as a consumer -- bin links, the
+      # exports map resolved by node, the MCP server, and the piped stdout path
+      # where the #246 truncation hid.
+      - name: Exercise the tarball as an installed consumer
+        run: npm run verify:release-consumer

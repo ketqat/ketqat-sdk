@@ -15,7 +15,7 @@
  *   - every artifact carries CITATION.cff, so an installed copy can be cited
  *   - the npm tarball carries dist/, schemas/ and examples/
  *   - the wheel carries the runner, its examples and its entry point
- *   - the version agrees across package.json, pyproject.toml and CITATION.cff
+ *   - the version agrees across every local file that states it (currently six)
  *   - reproducibility.json reports every artifact rebuilding byte-identically
  *   - provenance.json records that nothing was published
  *
@@ -142,15 +142,53 @@ if (existsSync(sdist)) {
 }
 
 // --------------------------------------------------------------------- versions
-const pythonVersion = /^version\s*=\s*"([^"]+)"/m.exec(readFileSync(join(ROOT, "python", "pyproject.toml"), "utf8"))?.[1]
-const citationVersion = /^version:\s*(\S+)/m.exec(readFileSync(join(ROOT, "CITATION.cff"), "utf8"))?.[1]
-if (pythonVersion !== version || citationVersion !== version) {
+// Every local place the version is written.
+//
+// This checked three of six, and reported "version agrees" while
+// `ketqat_runner.__version__`, `runner_version.SDK_VERSION` and
+// `python/CITATION.cff` still said 0.2.0. Each was caught by a *different* CI
+// job, one bump at a time, because no single check knew the whole set. A green
+// line that agrees about a subset is worse than no line: it is the one a
+// person reads before deciding they are done.
+//
+// So the set lives here, in one object, and every entry is named in the
+// failure message. Adding a seventh place the version is written means adding
+// it here, and the way you will find out is this check passing when it should
+// not.
+//
+// `scripts/check-release-version.mjs` also covers these, but it is a
+// publish-time preflight -- it requires a release tag and queries npm and
+// PyPI. This check must work offline against local artifacts, so it reads the
+// same files rather than calling that script. Raised in ketqat-sdk#247.
+const readAssignment = (path, name) => {
+  const source = readFileSync(join(ROOT, path), "utf8")
+  return new RegExp(`^\\s*${name}\\s*=\\s*["']([^"']+)["']`, "m").exec(source)?.[1]
+}
+const versions = {
+  "package.json": version,
+  "python/pyproject.toml": /^version\s*=\s*"([^"]+)"/m.exec(
+    readFileSync(join(ROOT, "python", "pyproject.toml"), "utf8"),
+  )?.[1],
+  "CITATION.cff": /^version:\s*(\S+)/m.exec(readFileSync(join(ROOT, "CITATION.cff"), "utf8"))?.[1],
+  // The Python package ships its own copy. Two copies of one fact fail by
+  // going stale in the half nobody looks at, which is what happened here.
+  "python/CITATION.cff": /^version:\s*(\S+)/m.exec(
+    readFileSync(join(ROOT, "python", "CITATION.cff"), "utf8"),
+  )?.[1],
+  "ketqat_runner.__version__": readAssignment("python/src/ketqat_runner/__init__.py", "__version__"),
+  "runner SDK_VERSION": readAssignment("python/src/ketqat_runner/runner_version.py", "SDK_VERSION"),
+}
+const disagreeing = Object.entries(versions).filter(([, found]) => found !== version)
+if (disagreeing.length > 0) {
   fail(
-    `versions disagree: package.json ${version}, pyproject.toml ${pythonVersion}, CITATION.cff ${citationVersion}. ` +
-      "A citation naming one release while the artifact is another points a reader at different hashing behaviour.",
+    `versions disagree: ${Object.entries(versions)
+      .map(([source, found]) => `${source} ${found ?? "unreadable"}`)
+      .join(", ")}. ` +
+      "A citation naming one release while the artifact is another points a reader at different hashing behaviour, " +
+      "and a runner reporting a version it is not is a wrong provenance record on every run it writes.",
   )
 } else {
-  notes.push(`ok   version ${version} agrees across package.json, pyproject.toml and CITATION.cff`)
+  notes.push(`ok   version ${version} agrees across all ${Object.keys(versions).length} sources`)
 }
 
 // ------------------------------------------------- reproducibility and provenance

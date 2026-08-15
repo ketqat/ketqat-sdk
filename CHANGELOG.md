@@ -13,11 +13,21 @@ this project: **any change to hashed payloads, the exclusion set, the canonical 
 number formatting is breaking**, whatever it looks like in the diff. It changes every
 future hash and silently breaks comparison with every stored run.
 
-## Unreleased
+## Unreleased — will be 0.3.0
 
 Nothing has been published. `ketqat-sdk` on npm and `ketqat` on PyPI both return 404, and
 first publication is gated by [`docs/first-release-checklist.md`](docs/first-release-checklist.md),
 which is a human decision.
+
+The version files say 0.3.0 because that is the version this release *will* carry; the heading
+still says Unreleased because it has not been released. Both statements are true at once, and
+collapsing them into a dated heading would be the untrue one.
+
+**Why 0.3.0 and not 1.0.0** is recorded in [`docs/release/versioning.md`](docs/release/versioning.md).
+Briefly: 1.0.0 promises API stability, and a contract with one internal consumer and no external
+feedback has no evidence it can keep that promise. Two of the entries below are corrections to
+scientific output, which is exactly the class of change that keeps appearing early in a contract's
+life.
 
 ### Added
 
