@@ -24,7 +24,17 @@
  * correct on screen and truncated in `> file` is the failure this exists to
  * catch.
  *
- * Nothing here publishes, and nothing reaches the network.
+ * ## What this does and does not touch
+ *
+ * Nothing here publishes, and nothing reads a credential.
+ *
+ * It is **not** offline. Installing the tarball resolves the package's real
+ * dependencies -- `zod` and `zod-to-json-schema` -- from the public npm
+ * registry, because a consumer install that stubbed them would not be the
+ * thing being verified. What does not happen is any request to a KetQat
+ * service, any authenticated request, and any write to a registry. Raised in
+ * review of ketqat-sdk#247, where this comment claimed offline outright and
+ * was simply wrong.
  */
 
 import { execFileSync, spawnSync } from "node:child_process"
@@ -70,7 +80,12 @@ try {
     process.stderr.write(pack.stderr)
     process.exit(pack.status ?? 1)
   }
+  // Mirror the clean-install check: a malformed or reshaped `npm pack --json`
+  // should fail here saying so, not as a TypeError forty lines later.
   const manifest = JSON.parse(pack.stdout)[0]
+  if (!manifest?.filename || !Array.isArray(manifest.files)) {
+    throw new Error("npm pack did not return a tarball manifest")
+  }
   const tarball = resolve(temporaryRoot, manifest.filename)
 
   // A consumer with nothing cached, installing only the tarball.
@@ -80,16 +95,22 @@ try {
     join(consumer, "package.json"),
     `${JSON.stringify({ name: "ketqat-consumer", version: "0.0.0", private: true, type: "module" }, null, 2)}\n`,
   )
-  execFileSync(npmCommand, ["install", "--no-audit", "--no-fund", tarball], {
+  // `--ignore-scripts` because this is a release gate: running dependency
+  // lifecycle scripts here would execute third-party code to prove a
+  // packaging property that does not depend on it. Nothing below needs them --
+  // bin linking and exports resolution are npm's own work, not a script's.
+  execFileSync(npmCommand, ["install", "--no-audit", "--no-fund", "--ignore-scripts", tarball], {
     cwd: consumer,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   })
   ok(`installed ${manifest.filename} into a clean consumer`)
 
-  const binary = join(consumer, "node_modules/.bin/ketqat-engine")
+  // npm writes `<name>.cmd` and `<name>.ps1` on Windows, not a bare name.
+  const binaryFor = (name) => join(consumer, "node_modules/.bin", process.platform === "win32" ? `${name}.cmd` : name)
+  const binary = binaryFor("ketqat-engine")
   statSync(binary)
-  ok("ketqat-engine is linked into node_modules/.bin")
+  ok(`ketqat-engine is linked into node_modules/.bin as ${process.platform === "win32" ? "ketqat-engine.cmd" : "ketqat-engine"}`)
 
   const example = join(root, "examples/intelligence/demo-assessment.yaml")
 
@@ -150,7 +171,7 @@ try {
   ok(`all ${subpaths.length} export subpaths resolve through the installed package and export bindings`)
 
   // --- the MCP server still holds no credential ------------------------
-  const mcpBinary = join(consumer, "node_modules/.bin/ketqat-mcp")
+  const mcpBinary = binaryFor("ketqat-mcp")
   statSync(mcpBinary)
   const mcp = spawnSync(mcpBinary, [], {
     cwd: consumer,
@@ -187,7 +208,7 @@ try {
 
   process.stdout.write(
     `\nPASS: ${checks.length} checks against ${manifest.filename} as an installed consumer. ` +
-      `Nothing was published and nothing left this machine.\n`,
+      `Nothing was published, no credential was read, and no KetQat service was contacted.\n`,
   )
 } finally {
   rmSync(temporaryRoot, { recursive: true, force: true })

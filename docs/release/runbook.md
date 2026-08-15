@@ -108,5 +108,12 @@ not recorded is a verification nobody can check.
   build; it does not authorize anything.
 - **No credentials.** Nothing in this runbook reads a token, and nothing needs one. If a step ever
   appears to, that is the thing to question, not to satisfy.
-- **No network dependency for verification.** Every check above runs offline against local
-  artifacts, so a green result does not depend on a registry being reachable or honest.
+- **No KetQat service, and no authenticated request.** Steps 2, 3 and 5 are genuinely offline —
+  they read local files and re-hash them, so a green result there does not depend on any registry
+  being reachable or honest.
+
+  Step 4 is **not** offline, and the earlier draft of this document said it was. Installing the
+  tarball resolves `zod` and `zod-to-json-schema` from the public npm registry, because a consumer
+  install that stubbed its real dependencies would not be the thing under test. What still does not
+  happen anywhere in this runbook: a request to a KetQat service, an authenticated request, or a
+  write to any registry.
