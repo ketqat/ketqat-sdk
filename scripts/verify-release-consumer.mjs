@@ -218,18 +218,30 @@ try {
       `const verdict = verifyReproducibilityHash(bundle)\n` +
       `console.log(JSON.stringify({ stated, verdict, kind: bundle.bundle_kind, isDemo: bundle.is_demo }))\n`,
   )
+  // The probe can fail by fetching, by parsing, or inside the verifier, and
+  // saying "could not fetch" for all three sends the next person debugging CI
+  // to the wrong place. Report what actually happened.
   let clientResult = null
+  let raw = null
   try {
-    const raw = execFileSync(process.execPath, [clientProbe], {
+    raw = execFileSync(process.execPath, [clientProbe], {
       cwd: consumer,
       encoding: "utf8",
       timeout: 60_000,
     })
+  } catch (error) {
+    throw new Error(
+      `The client probe failed while running against ${endpoint} (slug ${referenceSlug}). ` +
+        `This covers the fetch, the SDK's verifier, and anything else the probe does:\n` +
+        `${error.stderr || error.message}`,
+    )
+  }
+  try {
     clientResult = JSON.parse(raw.trim().split("\n").pop())
   } catch (error) {
     throw new Error(
-      `The installed typed client could not fetch ${referenceSlug} from ${endpoint}: ` +
-        `${(error).stderr || (error).message}`,
+      `The client probe ran but its output could not be parsed as JSON: ${error.message}\n` +
+        `Output was: ${String(raw).slice(0, 400)}`,
     )
   }
 
@@ -251,12 +263,21 @@ try {
   }
   ok(`the bundle verifies against its own contents (${clientResult.stated.slice(0, 16)}…)`)
 
-  // A reference case is not customer evidence, and the artifact must not
-  // present one as a demo either -- both mislabellings matter.
+  // A reference case is not customer evidence, and it is not demo data
+  // either. Both mislabellings matter, so both are enforced -- an earlier
+  // version printed `is_demo` beside a comment saying it must not be true and
+  // asserted nothing, which is the shape of every check that passes while the
+  // thing it names is wrong. Raised in review of ketqat-sdk#250.
   if (clientResult.kind !== "RESOURCE_INTELLIGENCE") {
     throw new Error(`Unexpected bundle_kind ${clientResult.kind}`)
   }
-  ok(`the bundle declares kind ${clientResult.kind}, is_demo=${clientResult.isDemo}`)
+  if (clientResult.isDemo !== false) {
+    throw new Error(
+      `The reference bundle reports is_demo=${clientResult.isDemo}. A reference case is published as ` +
+        `real worked evidence; shipping one flagged as demo data would misrepresent what it is.`,
+    )
+  }
+  ok(`the bundle declares kind ${clientResult.kind} and is_demo=false`)
 
   const secretish = /(?:api[_-]?key|secret|password|token)\s*[:=]\s*["'][^"']{8,}/i
   const offenders = manifest.files
