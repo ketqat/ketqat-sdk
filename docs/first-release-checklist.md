@@ -2,6 +2,27 @@
 
 This checklist is the authorization boundary for the first public `ketqat-sdk` npm release and `ketqat` PyPI release. Completing the engineering workflow does **not** prove registry ownership and does not authorize a publish. Every unchecked item below is a hard stop.
 
+## Verified snapshot (2026-08-15 UTC)
+
+Re-run against SDK `main` at `da8c5d0bb37c`, at version **0.3.0**. Every claim in the
+2026-07-13 snapshot below still holds; this supersedes it rather than replacing it, so a
+reader can see that the state has been re-checked rather than assumed to have persisted.
+
+| Check | Verified result | Meaning |
+| --- | --- | --- |
+| `https://registry.npmjs.org/ketqat-sdk` | HTTP 404 | No public npm package. The name is not reserved. |
+| `https://registry.npmjs.org/ketqat-sdk/0.3.0` | HTTP 404 | The intended version is available. |
+| `https://pypi.org/pypi/ketqat/json` | HTTP 404 | No public PyPI project. |
+| `https://pypi.org/pypi/ketqat/0.3.0/json` | HTTP 404 | The intended version is available. |
+| GitHub Environments | Only `copilot` | `npm-release`, `pypi-release` and `github-release` are still absent. |
+| GitHub Actions secrets | 0 | No release credential is stored. |
+| GitHub Actions variables | 0 | `RELEASE_PUBLISHING_ENABLED` is absent, so every publish job is disabled. |
+| Git tags / GitHub Releases | 0 / 0 | No release tag or Release exists. |
+| Default `GITHUB_TOKEN` permission | Read | Unchanged. |
+
+**Nothing was created.** These are read-only checks; performing them does not begin the
+release, and the setup steps below remain a human decision.
+
 ## Verified snapshot (2026-07-13 UTC)
 
 The following read-only checks were performed against SDK `main` at `42c062c88393eddec2074af7bd16df5b0e6ca924`:
