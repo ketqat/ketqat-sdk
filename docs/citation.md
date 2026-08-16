@@ -6,7 +6,7 @@ own instructions lead nowhere. That is the shape of problem this page is about.
 ## Cite the version you ran
 
 ```
-KetQat SDK, version 0.2.0. https://github.com/ketqat/ketqat-sdk
+KetQat SDK, version 0.3.0. https://github.com/ketqat/ketqat-sdk
 ```
 
 `CITATION.cff` at the repository root is the machine-readable form; GitHub renders a

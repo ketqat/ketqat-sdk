@@ -191,6 +191,50 @@ if (disagreeing.length > 0) {
   notes.push(`ok   version ${version} agrees across all ${Object.keys(versions).length} sources`)
 }
 
+// --------------------------------------------------- docs that instruct a human
+//
+// The version also appears in prose a person follows, and that is the copy
+// with the worst failure mode: `docs/first-release-checklist.md` said
+// `git tag -s v0.2.0` while every machine-readable source said 0.3.0, so
+// somebody working carefully through the checklist would have signed the wrong
+// tag. `docs/citation.md` told readers to cite a version that was never
+// released. Found in ketqat-sdk#247 follow-up.
+//
+// Dated records are deliberately excluded. `docs/reproduction-pack-rc1.md`
+// names 0.2.0 because that is the version it reproduced; rewriting it would
+// falsify a historical record to satisfy a checker, which is the opposite of
+// what these checks exist for.
+const INSTRUCTIONAL_DOCS = ["docs/first-release-checklist.md", "docs/citation.md"]
+const DATED_RECORDS = ["docs/reproduction-pack-rc1.md"]
+const wrongVersionDocs = []
+for (const relative of INSTRUCTIONAL_DOCS) {
+  const path = join(ROOT, relative)
+  if (!existsSync(path)) {
+    fail(`${relative} is listed as instructional but does not exist`)
+    continue
+  }
+  const source = readFileSync(path, "utf8")
+  // Any semver-shaped string that is not the current version, ignoring
+  // third-party pins such as `beliefmatching==0.2.0`.
+  const mentioned = new Set(
+    [...source.matchAll(/(?<![\w.=-])v?(\d+\.\d+\.\d+)(?![\w.-])/g)].map((match) => match[1]),
+  )
+  const wrong = [...mentioned].filter((found) => found !== version)
+  if (wrong.length > 0) wrongVersionDocs.push(`${relative} names ${wrong.join(", ")}`)
+}
+if (wrongVersionDocs.length > 0) {
+  fail(
+    `a document instructing a human names a version other than ${version}: ${wrongVersionDocs.join("; ")}. ` +
+      "This is the copy that signs the tag and tells a reader what to cite, so a stale one is acted on " +
+      "rather than merely read.",
+  )
+} else {
+  notes.push(
+    `ok   ${INSTRUCTIONAL_DOCS.length} human-facing doc(s) name ${version}; ` +
+      `${DATED_RECORDS.length} dated record(s) left as history`,
+  )
+}
+
 // ------------------------------------------------- reproducibility and provenance
 const reproducibilityPath = join(OUTPUT, "reproducibility.json")
 if (!existsSync(reproducibilityPath)) {

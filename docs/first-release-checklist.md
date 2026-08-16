@@ -167,15 +167,15 @@ Do not execute these commands while any earlier checkbox is open.
 
 - [ ] Pull the reviewed `main` commit and confirm a clean worktree.
 - [ ] Confirm `package.json`, `python/pyproject.toml`, `ketqat_runner.__version__`, and runner `SDK_VERSION` all equal the intended version.
-- [ ] Recheck the exact version endpoints `https://registry.npmjs.org/ketqat-sdk/0.2.0` and `https://pypi.org/pypi/ketqat/0.2.0/json`; both must return 404, while any package/project-level 200 response must match the authenticated ownership decision.
-- [ ] Run `scripts/release-preflight.sh v0.2.0` and retain the non-sensitive output plus commit SHA.
+- [ ] Recheck the exact version endpoints `https://registry.npmjs.org/ketqat-sdk/0.3.0` and `https://pypi.org/pypi/ketqat/0.3.0/json`; both must return 404, while any package/project-level 200 response must match the authenticated ownership decision.
+- [ ] Run `scripts/release-preflight.sh v0.3.0` and retain the non-sensitive output plus commit SHA.
 - [ ] Review `npm pack --dry-run --json --ignore-scripts`, wheel/sdist verification, and all current CI checks.
 - [ ] Confirm release notes state scientific limitations and do not claim registry success before readback.
 - [ ] Have the release operator create a signed, immutable tag from the reviewed commit and push only that tag:
 
 ```bash
-git tag -s v0.2.0 -m "KetQat SDK 0.2.0"
-git push origin v0.2.0
+git tag -s v0.3.0 -m "KetQat SDK 0.3.0"
+git push origin v0.3.0
 ```
 
 - [ ] Open the resulting **Publish release** workflow. Approve `npm-release` and `pypi-release` only after confirming preflight passed for the expected tag/SHA.
