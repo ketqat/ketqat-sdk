@@ -222,6 +222,21 @@ for (const relative of INSTRUCTIONAL_DOCS) {
   const wrong = [...mentioned].filter((found) => found !== version)
   if (wrong.length > 0) wrongVersionDocs.push(`${relative} names ${wrong.join(", ")}`)
 }
+// The exclusion list must name files that exist. Otherwise a renamed or
+// deleted record leaves a stale entry here, and the note below still reports
+// it as "left as history" -- a count printed rather than a fact checked, which
+// is exactly the failure this file exists to prevent. Raised in review of
+// ketqat-sdk#251.
+for (const relative of DATED_RECORDS) {
+  if (!existsSync(join(ROOT, relative))) {
+    fail(
+      `${relative} is excluded from the version check as a dated record, but no such file exists. ` +
+        "Either the record was renamed and the exclusion is now silently protecting nothing, or it " +
+        "was deleted and a historical record is gone.",
+    )
+  }
+}
+
 if (wrongVersionDocs.length > 0) {
   fail(
     `a document instructing a human names a version other than ${version}: ${wrongVersionDocs.join("; ")}. ` +
