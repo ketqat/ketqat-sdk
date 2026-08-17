@@ -1,9 +1,11 @@
 {
   "name": "ketqat-sdk",
   "version": "0.3.0",
-  "description": "Typed contracts, schemas, reproducibility hashing, and a REST client for KetQat -- the vendor-neutral registry for reproducible quantum error-correction and quantum-algorithm research.",
+  "description": "Typed contracts, schemas, reproducibility hashing, and a REST client for KetQat -- Quantum Decision Intelligence for fault-tolerant quantum resource estimation, and the vendor-neutral research registry beneath it.",
   "keywords": [
     "quantum-computing",
+    "quantum-resource-estimation",
+    "fault-tolerance",
     "quantum-error-correction",
     "qec",
     "reproducibility",
@@ -98,7 +100,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.json && node scripts/generate-schemas.mjs",
     "clean": "rm -rf dist",
     "generate:schemas": "npm run build",
-    "test": "npm run build && node tests/sdk.test.mjs && node --test tests/intelligence.test.mjs && node tests/zod4-incompatibility.test.mjs && node tests/mcp-conformance.test.mjs && node --test tests/dependency-advisory-floors.test.mjs && node --test tests/reproduction-path.test.mjs && npm run verify:package-contents && npm run verify:dist-tracked && npm run verify:schema-sync && npm run verify:license && npm run verify:citation && npm run verify:workflows && npm run verify:outreach",
+    "test": "npm run build && node tests/sdk.test.mjs && node --test tests/intelligence.test.mjs && node tests/zod4-incompatibility.test.mjs && node tests/mcp-conformance.test.mjs && node --test tests/dependency-advisory-floors.test.mjs && node --test tests/reproduction-path.test.mjs && node --test tests/copy-alignment.test.mjs && npm run verify:package-contents && npm run verify:dist-tracked && npm run verify:schema-sync && npm run verify:license && npm run verify:citation && npm run verify:workflows && npm run verify:outreach",
     "test:python": "python3.11 -m pytest python/tests",
     "verify:clean-install": "node scripts/verify-npm-clean-install.mjs",
     "verify:release-consumer": "node scripts/verify-release-consumer.mjs",
