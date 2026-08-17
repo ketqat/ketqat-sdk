@@ -1,0 +1,52 @@
+name: Scientific disagreement
+description: You think a figure, method or conclusion of ours is wrong
+labels: ["scientific-disagreement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is not a bug report and should not be filed as one. A bug is behaviour that
+        contradicts its own specification. This is for when the behaviour is exactly as
+        specified and the specification is what you dispute.
+
+        We would rather hear this early and publicly than have it be right and unsaid.
+
+        Please do not include your name, employer or contact details.
+  - type: input
+    id: figure
+    attributes:
+      label: The specific figure or claim you dispute
+      description: Quote it, and say where it appears. "The methodology is wrong" is not actionable.
+      placeholder: "The 0.03 surface-code prefactor used on /intelligence/methodology"
+    validations:
+      required: true
+  - type: textarea
+    id: basis
+    attributes:
+      label: What you rely on instead
+      description: |
+        A citation with a date, a derivation, or a measurement. If your basis is experience
+        rather than a source, say that — it is still worth reading, and mislabelling it as a
+        citation is what we are trying to avoid everywhere else.
+    validations:
+      required: true
+  - type: textarea
+    id: consequence
+    attributes:
+      label: What changes if you are right
+      description: |
+        Which outputs move, and by roughly how much? A disagreement that changes no
+        conclusion is still worth recording, and knowing that up front helps us prioritise
+        honestly rather than by who asked loudest.
+    validations:
+      required: true
+  - type: textarea
+    id: falsifier
+    attributes:
+      label: What would change your mind
+      description: |
+        Required, and asked of ourselves too. A position stated with no condition under
+        which it would be abandoned is not a scientific position, and we will hold our own
+        answer to the same standard.
+    validations:
+      required: true
