@@ -1,7 +1,7 @@
 [project]
 name = "ketqat"
 version = "0.3.0"
-description = "Local benchmark runner for KetQat QEC and quantum-algorithm experiments. Run 'ketqat run <manifest>' to reproduce or submit results to ketqat.com."
+description = "Local runner for KetQat -- Quantum Decision Intelligence. Run 'ketqat run <manifest>' to reproduce a published result or produce your own, with a canonical reproducibility hash."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"

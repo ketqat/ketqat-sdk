@@ -3,12 +3,26 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/ketqat/ketqat-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/ketqat/ketqat-sdk/actions)
 
-**[KetQat](https://ketqat.com) is an open, vendor-neutral registry for reproducible quantum error-correction and quantum-algorithm research** -- run a real benchmark locally, publish the result with a server-verified reproducibility hash, and see it compared apples-to-apples on the [decoder leaderboard](https://ketqat.com/leaderboard).
+**[KetQat](https://ketqat.com) is Quantum Decision Intelligence: it estimates what a
+computation would require on a fault-tolerant quantum computer, and refuses to answer
+where the evidence does not support one.** No dates, no prices, no vendor rankings --
+see [what it will not tell you](https://ketqat.com/intelligence/limitations).
+
+Underneath that sits an open, vendor-neutral registry for reproducible quantum
+error-correction and quantum-algorithm research: run a real benchmark locally, publish the
+result with a server-verified reproducibility hash, and see it compared apples-to-apples on
+the [decoder leaderboard](https://ketqat.com/leaderboard). That is still here and still
+works -- it is the evidence layer the estimates rest on rather than the headline.
 
 This repository contains everything you need to participate:
 
 - **`ketqat` (Python)** -- the local runner: executes benchmark manifests against real dependencies (Stim + PyMatching for QEC) and produces results with canonical reproducibility hashes. A PyPI release is being prepared; install from source today or use the package command after publication.
 - **`ketqat-sdk` (TypeScript)** -- the contract layer: typed schemas, validators, hashing, scientific-compatibility helpers, and a REST client for [ketqat.com](https://ketqat.com). An npm release is being prepared alongside.
+
+**You can check a published result yourself**, with no account and no checkout:
+[verify a published result](docs/verify-a-published-result.md). If your hash does not
+match ours, [tell us](docs/independent-reproduction.md) -- that is a finding, not a failed
+attempt.
 
 **Before you rely on any number from this project**, read
 [what it covers and what it does not](docs/scope-and-limits.md). The short
