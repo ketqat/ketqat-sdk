@@ -1,0 +1,95 @@
+name: Reproduction report
+description: You re-ran something of ours and are reporting what you got
+labels: ["reproduction"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. This is the most useful thing anyone outside the project can send us.
+
+        **Please read this before filling the form in.** A matching hash proves the bytes
+        are unchanged. It does **not** prove the experiment ran, and it is not attestation.
+        A fabricated result hashes just as consistently as a real one, and our contract
+        rejects `HASH_VERIFICATION` combined with a `REPRODUCED` status for exactly that
+        reason.
+
+        So this form records **what you did and what you observed**. Whether it constitutes
+        independent verification is a judgement a named person makes afterwards — not
+        something submitting this form confers. A report where the hash *differs* is just as
+        valuable as one where it matches, and often more so.
+
+        Please do not include your name, employer, email address or anything else personal.
+        We do not ask for it and will not use it. Be aware that **we cannot unsee or reliably
+        erase it**: this is a public GitHub issue, stored by GitHub, and edits leave a
+        revision history. If you post something personal by accident, edit the issue and tell
+        us, and we will delete it -- but copies may already exist. Your GitHub handle is
+        attached automatically and that is enough for us to credit you.
+  - type: input
+    id: subject
+    attributes:
+      label: What did you reproduce?
+      description: A bundle hash, a reference case slug, a release artifact, or a URL.
+      placeholder: "measured-statevector-simulation-12q, or ketqat-sdk-0.3.0.tgz"
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: The exact command you ran
+      description: Copy it verbatim, including flags. An approximation cannot be re-run.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        Operating system, Node and/or Python version, and how you obtained the artifact.
+        "Latest" is not a version — a future reader cannot resolve it.
+      placeholder: |
+        macOS 15.3 arm64
+        Node 22.23.1 / Python 3.12.12
+        Installed from the published tarball, not a checkout
+    validations:
+      required: true
+  - type: input
+    id: expected-hash
+    attributes:
+      label: The hash we published
+      placeholder: "0befaaf67793ece41ed346846774aa8f0dd2ac42b0fd8a9582509b09383fe06d"
+    validations:
+      required: true
+  - type: input
+    id: observed-hash
+    attributes:
+      label: The hash you got
+      description: If it differs, say so plainly — that is a finding, not a failed submission.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence a third party could check
+      description: |
+        A durable link, a log, a transcript, or a commit. Something that does not depend on
+        us taking your word for it — which is the whole point of an independent report.
+    validations:
+      required: true
+  - type: textarea
+    id: caveats
+    attributes:
+      label: What you are NOT claiming
+      description: |
+        Optional, and genuinely useful. For example: you re-ran the tooling but did not check
+        the physics; or you matched the hash but could not obtain the original hardware.
+        Stating the limits of your own check is what makes the rest of it trustworthy.
+  - type: checkboxes
+    id: understanding
+    attributes:
+      label: Before you submit
+      options:
+        - label: I understand a matching hash proves the bytes are unchanged, not that the science is right
+          required: true
+        - label: I have not included personal information about myself or anyone else
+          required: true
