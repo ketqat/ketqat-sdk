@@ -23,6 +23,17 @@ import { fileURLToPath } from "node:url"
 const ROOT = fileURLToPath(new URL("..", import.meta.url))
 const TEMPLATE_DIR = `${ROOT}.github/ISSUE_TEMPLATE`
 
+/**
+ * Prose with its line breaks removed.
+ *
+ * Markdown and YAML block scalars wrap mid-sentence, so a literal match against
+ * raw file text depends on where a line happened to break. That is testing the
+ * formatter, not the claim. I hit this twice in this file before extracting it.
+ */
+function prose(path) {
+  return readFileSync(path, "utf8").replace(/\s+/g, " ")
+}
+
 function templates() {
   return readdirSync(TEMPLATE_DIR)
     .filter((name) => name.endsWith(".yml") && name !== "config.yml")
@@ -104,7 +115,7 @@ test("the retention promise is one we can actually keep", () => {
 })
 
 test("the contribution path is documented, and says a report confers no badge", () => {
-  const doc = readFileSync(`${ROOT}docs/independent-reproduction.md`, "utf8")
+  const doc = prose(`${ROOT}docs/independent-reproduction.md`)
   assert.match(doc, /not attestation/i)
   assert.match(doc, /named person/i, "somebody must own the judgement")
   assert.match(
@@ -114,4 +125,36 @@ test("the contribution path is documented, and says a report confers no badge", 
   )
   // Superseding rather than editing, the rule applied everywhere else.
   assert.match(doc, /superseding record/i)
+})
+
+test("the clean-room tutorial needs no credential and no checkout", () => {
+  const doc = prose(`${ROOT}docs/verify-a-published-result.md`)
+
+  // The install must come from somewhere a stranger can reach today. The SDK is
+  // not on PyPI -- first publication is human-gated -- so a tutorial saying
+  // `pip install ketqat` would be untrue until somebody publishes.
+  assert.match(doc, /git\+https:\/\/github\.com\/ketqat\/ketqat-sdk/, "the install route must be public")
+  assert.match(doc, /not on PyPI yet/i, "the tutorial must say why it installs from Git")
+
+  assert.ok(
+    !/KETQAT_API_TOKEN|kq_/.test(doc),
+    "a clean-room tutorial that needs a token is not clean-room",
+  )
+})
+
+test("the tutorial warns about the two traps that actually cost time", () => {
+  const doc = prose(`${ROOT}docs/verify-a-published-result.md`)
+
+  // Both were hit while writing it, which is the only reason they are known.
+  assert.match(doc, /error code: 1010/i, "the CDN refusal is opaque and must be explained")
+  assert.match(doc, /User-Agent/i)
+  assert.match(doc, /hand-roll/i, "reimplementing canonicalization fails on number formatting")
+  assert.match(doc, /1\.0/, "the JavaScript/Python float-rendering difference is the trap")
+})
+
+test("the tutorial states what a hash match does not prove", () => {
+  const doc = prose(`${ROOT}docs/verify-a-published-result.md`)
+  assert.match(doc, /not attestation/i)
+  assert.match(doc, /fabricated result hashes/i, "the reason, not just the claim")
+  assert.match(doc, /HASH_VERIFICATION/, "and that it is enforced rather than hoped")
 })
