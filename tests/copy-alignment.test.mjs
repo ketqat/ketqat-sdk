@@ -48,11 +48,31 @@ test("the README points a stranger at the check they can run themselves", () => 
   assert.match(readme, /that is a finding, not a failed attempt/i)
 })
 
+/**
+ * The `description` under `[project]`, not the phrase anywhere in the file.
+ *
+ * The first version of this test matched `Quantum Decision Intelligence`
+ * anywhere in pyproject.toml, so a comment mentioning it would have satisfied a
+ * check about what PyPI displays. Raised in review of ketqat-sdk#257 -- the same
+ * shape as every other defect this repository keeps finding: a green assertion
+ * measuring something adjacent to its claim.
+ */
+function pyprojectDescription() {
+  const source = readFileSync(`${ROOT}python/pyproject.toml`, "utf8")
+  const project = /^\[project\]$([\s\S]*?)(?=^\[|\Z)/m.exec(source)
+  assert.ok(project, "pyproject.toml has no [project] table")
+  const stripped = project[1].replace(/^\s*#.*$/gm, "")
+  const match = /^description\s*=\s*"((?:[^"\\]|\\.)*)"/m.exec(stripped)
+  assert.ok(match, "[project] has no description field")
+  return match[1]
+}
+
 test("the npm and Python descriptions say the same thing as the site", () => {
   const npm = JSON.parse(readFileSync(`${ROOT}package.json`, "utf8")).description
-  const python = prose("python/pyproject.toml")
   assert.match(npm, IDENTITY, `npm description still describes the old product: ${npm}`)
-  assert.match(python, IDENTITY, "the Python description is what a PyPI visitor reads")
+
+  const python = pyprojectDescription()
+  assert.match(python, IDENTITY, `the Python description is what a PyPI visitor reads: ${python}`)
 })
 
 test("resource estimation appears in the npm keywords a searcher would use", () => {
