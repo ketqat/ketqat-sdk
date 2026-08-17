@@ -22,7 +22,7 @@ import json, urllib.request
 from ketqat_runner.hashing import calculate_reproducibility_hash, hash_version_of
 
 url = "https://ketqat.com/api/intelligence/reference/measured-statevector-simulation-12q/bundle"
-req = urllib.request.Request(url, headers={"user-agent": "ketqat-reproduction-check"})
+req = urllib.request.Request(url, headers={"User-Agent": "ketqat-reproduction-check"})
 bundle = json.load(urllib.request.urlopen(req))
 
 stated = bundle["reproducibility_hash"]
