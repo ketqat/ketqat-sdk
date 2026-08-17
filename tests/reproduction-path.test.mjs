@@ -88,12 +88,18 @@ test("the retention promise is one we can actually keep", () => {
   // posting something they cannot take back. Raised in review of ketqat-sdk#254.
   for (const name of ["reproduction_report.yml", "scientific_disagreement.yml"]) {
     const source = readFileSync(`${TEMPLATE_DIR}/${name}`, "utf8")
+    // Whitespace-tolerant: these are YAML block scalars, so a sentence wraps
+    // mid-phrase with indentation. Matching the literal string passed on the
+    // first template and failed on the second purely because the line broke
+    // between "GitHub" and "issue" -- a test that depends on where a line wraps
+    // is testing the formatter, not the promise.
+    const prose = source.replace(/\s+/g, " ")
     assert.ok(
-      !/will not store it/i.test(source),
+      !/will not store it/i.test(prose),
       `${name} promises not to store data in a public issue, which is not something we can do`,
     )
-    assert.match(source, /public GitHub issue/i, `${name} must say where the data actually goes`)
-    assert.match(source, /revision history/i, `${name} must say that editing does not erase`)
+    assert.match(prose, /public GitHub issue/i, `${name} must say where the data actually goes`)
+    assert.match(prose, /revision history/i, `${name} must say that editing does not erase`)
   }
 })
 
