@@ -69,9 +69,15 @@ same rule the platform applies to its own attestations.
 ## What we do not want
 
 **Anything personal.** Not your name, employer, email address or affiliation. Your GitHub
-handle is already attached to the issue and that is enough. We do not collect contact
-details anywhere in the product either — see [the beta status
-page](https://ketqat.com/intelligence/beta).
+handle is attached automatically and that is enough for us to credit you.
+
+Be clear about what we can and cannot promise here. In the **product** we collect no
+contact details at all — see [the beta status
+page](https://ketqat.com/intelligence/beta). A **GitHub issue is different**: it is public,
+stored by GitHub rather than by us, and editing it leaves a revision history. So we can say
+we will not ask for personal data and will not use it; we cannot say we will erase it. If
+you post something by accident, edit the issue and tell us and we will delete it, but
+copies may already exist.
 
 If your reproduction concerns work you cannot discuss publicly, do not put it in a public
 issue. That is a different conversation and a public form is the wrong instrument for it.

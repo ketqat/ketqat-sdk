@@ -11,7 +11,8 @@ body:
 
         We would rather hear this early and publicly than have it be right and unsaid.
 
-        Please do not include your name, employer or contact details.
+        Please do not include your name, employer or contact details. This is a public GitHub
+        issue: we cannot reliably erase what is posted, and edits leave a revision history.
   - type: input
     id: figure
     attributes:

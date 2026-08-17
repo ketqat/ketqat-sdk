@@ -80,6 +80,23 @@ test("both new templates tell the submitter not to send personal data", () => {
   }
 })
 
+test("the retention promise is one we can actually keep", () => {
+  // "We will not store it" was false: a GitHub issue is public, stored by
+  // GitHub, and edits leave a revision history. Promising erasure we cannot
+  // perform is the same class of overclaim this project refuses everywhere
+  // else -- and it is worse here, because somebody might rely on it before
+  // posting something they cannot take back. Raised in review of ketqat-sdk#254.
+  for (const name of ["reproduction_report.yml", "scientific_disagreement.yml"]) {
+    const source = readFileSync(`${TEMPLATE_DIR}/${name}`, "utf8")
+    assert.ok(
+      !/will not store it/i.test(source),
+      `${name} promises not to store data in a public issue, which is not something we can do`,
+    )
+    assert.match(source, /public GitHub issue/i, `${name} must say where the data actually goes`)
+    assert.match(source, /revision history/i, `${name} must say that editing does not erase`)
+  }
+})
+
 test("the contribution path is documented, and says a report confers no badge", () => {
   const doc = readFileSync(`${ROOT}docs/independent-reproduction.md`, "utf8")
   assert.match(doc, /not attestation/i)

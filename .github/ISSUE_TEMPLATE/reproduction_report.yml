@@ -19,8 +19,11 @@ body:
         valuable as one where it matches, and often more so.
 
         Please do not include your name, employer, email address or anything else personal.
-        We do not want it and will not store it. Your GitHub handle is already attached and
-        that is enough.
+        We do not ask for it and will not use it. Be aware that **we cannot unsee or reliably
+        erase it**: this is a public GitHub issue, stored by GitHub, and edits leave a
+        revision history. If you post something personal by accident, edit the issue and tell
+        us, and we will delete it -- but copies may already exist. Your GitHub handle is
+        attached automatically and that is enough for us to credit you.
   - type: input
     id: subject
     attributes:
