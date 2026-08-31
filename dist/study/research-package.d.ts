@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { type Citation, type Environment } from "../contracts/common.js";
+import { type Citation } from "../contracts/common.js";
 import { type Contract } from "../intelligence/measurement.js";
-import { type RevisionRef } from "./common.js";
+import { type RevisionRef, type StudyEnvironment } from "./common.js";
 import { type EvidenceEdge, type EvidenceNode } from "./evidence.js";
 import type { StudyRefusal } from "./refusals.js";
 /**
@@ -42,9 +42,13 @@ export declare const ResultRowSchema: z.ZodObject<{
      * The node the value is read from. There is deliberately no `value` field
      * beside it: a row that carried its own copy of the number could disagree with
      * the node, and the copy is what would end up in the slide.
+     *
+     * A result row's node has to carry a quantity, which is checked at the build
+     * and verify boundaries rather than here -- the schema sees one row at a time
+     * and the node it names lives elsewhere in the package.
      */
     node_hash: z.ZodString;
-}, "strip", z.ZodTypeAny, {
+}, "strict", z.ZodTypeAny, {
     label: string;
     node_hash: string;
 }, {
@@ -56,7 +60,7 @@ export declare const FigureSchema: z.ZodObject<{
     label: z.ZodString;
     /** Inline SVG, so a figure cannot resolve to a different picture later. */
     svg: z.ZodString;
-}, "strip", z.ZodTypeAny, {
+}, "strict", z.ZodTypeAny, {
     label: string;
     svg: string;
 }, {
@@ -79,7 +83,7 @@ export declare const ClaimEvidenceEntrySchema: z.ZodObject<{
     evidence_node_hashes: z.ZodArray<z.ZodString, "many">;
     /** The edges that carry the relation, so a reader can read the rationale rather than guess it. */
     edge_hashes: z.ZodArray<z.ZodString, "many">;
-}, "strip", z.ZodTypeAny, {
+}, "strict", z.ZodTypeAny, {
     claim_node_hash: string;
     evidence_node_hashes: string[];
     edge_hashes: string[];
@@ -103,7 +107,7 @@ export interface ResearchPackage {
     figures: Figure[];
     references: Citation[];
     bundle_refs: string[];
-    environment: Environment;
+    environment: StudyEnvironment;
     reproduction_command: string;
     nodes: EvidenceNode[];
     edges: EvidenceEdge[];
@@ -127,7 +131,7 @@ export interface ResearchPackageInput {
     figures?: Figure[];
     references?: Citation[];
     bundleRefs?: string[];
-    environment: Environment;
+    environment: StudyEnvironment;
     reproductionCommand: string;
     nodes: EvidenceNode[];
     edges: EvidenceEdge[];
@@ -143,11 +147,21 @@ export interface ResearchPackageInput {
  * Assemble a package, or say why there is nothing to assemble.
  *
  * The order is `buildBundle`'s and the order is the contract. Inputs are parsed
- * first so that anything the schemas normalise -- an omitted citation author
- * list, an environment's empty package map -- is normalised *before* it is
- * hashed; hashing first and parsing afterwards would stamp a digest onto a
- * record the final parse then quietly changes, and the package would fail its
- * own verifier the moment it was written.
+ * first, so that a record refused by a schema is refused before anything is
+ * hashed, and the record that gets hashed is the record that gets written.
+ *
+ * There is nothing left for that parse to normalise. `StudyCitationSchema`
+ * requires its author list where the shared `CitationSchema` defaults it, and
+ * that default was the last one a study record still met: a citation written
+ * without `authors` hashed one way here and another way once parsed, so this
+ * builder and `verifyResearchPackage` addressed two different nodes for one
+ * file, and Python -- which fills in nothing -- agreed with neither.
+ *
+ * That is the writer's half of one invariant: **a package's hash is over the
+ * package as it appears in the file.** The builder holds it by writing exactly
+ * what it hashed; `verifyResearchPackage` holds it by hashing exactly what it
+ * read. Only both halves together make the digest something the Python verifier
+ * can recompute from the same bytes.
  *
  * Everything structural is then checked before the hash exists, because a
  * refusal is meant to be the ordinary outcome here rather than the error case. A
@@ -165,7 +179,12 @@ export declare const StudyVerificationSchema: z.ZodObject<{
     valid: z.ZodBoolean;
     /** The file is unedited: its contents canonicalize to the hash it carries. */
     hash_matches: z.ZodBoolean;
-    /** Every row and every claim-map entry resolves to something the package carries. */
+    /**
+     * Every row resolves to a node the package carries, every result row's node
+     * carries a value, and every claim's cited evidence is joined to it by an edge
+     * that asserts the relation. Resolution alone was the weaker half: a claim
+     * citing itself resolved perfectly and rested on nothing.
+     */
     claims_resolve: z.ZodBoolean;
     /** Node and edge identities are their own contents, and every edge joins two nodes that are here. */
     graph_valid: z.ZodBoolean;
@@ -173,7 +192,7 @@ export declare const StudyVerificationSchema: z.ZodObject<{
     actual_hash: z.ZodString;
     /** Every discrepancy found, named. Empty when `valid`. */
     problems: z.ZodArray<z.ZodString, "many">;
-}, "strip", z.ZodTypeAny, {
+}, "strict", z.ZodTypeAny, {
     valid: boolean;
     hash_matches: boolean;
     claims_resolve: boolean;
@@ -208,11 +227,20 @@ export type StudyVerification = z.infer<typeof StudyVerificationSchema>;
  * graph consistently, and a graph rewritten consistently is a different study
  * that says different things -- visibly, to a reader.
  *
+ * `claims_resolve` asks the graph as well as the map, and the same checks run
+ * here as at the build boundary. A recipient is the party the checks are for: a
+ * package assembled by something other than `buildResearchPackage` -- by hand, by
+ * an older build, by a service with its own idea of what a claim map is -- gets
+ * exactly the reading the builder would have refused to write.
+ *
  * What this does not do is recompute the science. Nothing here re-derives an
  * estimate from a scenario or re-runs a decision rule; `verifyBundle` does that
  * for the intelligence tier, and a package that carries `bundle_refs` is
- * pointing at bundles that can be verified that way. A valid result here means
- * the package is internally consistent and unedited, and no more than that.
+ * pointing at bundles that can be verified that way. Nor does the graph check
+ * weigh the evidence: an edge asserting that a result supports a claim is the
+ * study's assertion, checked for being present, joined up and attributed, never
+ * for being right. A valid result here means the package is internally
+ * consistent and unedited, and no more than that.
  */
 export declare function verifyResearchPackage(candidate: unknown): StudyVerification;
 //# sourceMappingURL=research-package.d.ts.map

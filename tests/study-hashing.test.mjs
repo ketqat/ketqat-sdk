@@ -1,10 +1,11 @@
 import assert from "node:assert/strict"
 import fs from "node:fs"
-import { calculateReproducibilityHash } from "../dist/index.js"
+import { IDENTITY_KEYS, TIMING_KEYS, calculateReproducibilityHash } from "../dist/index.js"
 import {
   STUDY_EXCLUDED_KEYS,
   STUDY_HASH_RULES_ID,
   STUDY_HASH_RULES_KEY,
+  assertNoNestedExcludedKeys,
   calculateStudyHash,
   canonicalStudyJson,
   studyRulesIdOf,
@@ -24,6 +25,17 @@ const studyFixtures = {
   study_float_edge_cases: floatEdgeCases,
   study_plan_revision: fixture("study-plan-revision.json"),
   study_capsule: fixture("study-capsule.json"),
+  // A package hashed exactly as its bytes read. Its one citation now *carries*
+  // its author list: `CitationSchema.authors` defaulted to `[]`, which was the
+  // last default any study record met, so a verifier that hashed the parsed value
+  // digested a list the file does not contain while Python digested the file.
+  // `StudyCitationSchema` requires the list instead. One digest here means the
+  // two read the same bytes.
+  study_research_package_as_written: fixture("study-research-package-as-written.json"),
+  // `seed` and `max_memory_bytes` at exactly Number.MAX_SAFE_INTEGER, which is the
+  // last integer both languages hold exactly. One past it they hold two different
+  // numbers, which is why the contract stops here rather than there.
+  study_capsule_max_safe_integers: fixture("study-capsule-max-safe-integers.json"),
 }
 for (const [key, payload] of Object.entries(studyFixtures)) {
   assert.equal(calculateStudyHash(payload), studyHashes[STUDY_HASH_RULES_ID][key], `study hash drifted for ${key}`)
@@ -177,7 +189,10 @@ for (const scientific of [
   { title: "Is it affordable in 2029?" },
   { is_demo: false },
   { max_credits: 2501 },
-  { attestation_level: "signed" },
+  // A string this family does not define, on purpose: ADR 0014 reserves no name
+  // and pre-names no future level, so "signed" in a test would put the word the
+  // family declines to promise where a reader could mistake it for a candidate.
+  { attestation_level: "level-this-family-does-not-define" },
   { claim: { ...studyRecord.claim, value: 4200001 } },
 ]) {
   assert.notEqual(
@@ -214,6 +229,16 @@ assert.equal(verifyStudyRecordHash({ ...stamped, content_hash: undefined }).actu
 const capsuleShaped = { ...studyRecord, content_hash: undefined, reproducibility_hash: studyRecordHash }
 assert.equal(verifyStudyRecordHash(capsuleShaped).valid, true, "a capsule names its self-hash reproducibility_hash")
 
+// One record, one self-hash. Both field names are excluded from the digest, so a
+// second one costs nothing to add to a finished record -- and this verifier runs
+// before any schema has seen the record, and is the only verifier a Python
+// caller has. It preferred `content_hash`, so editing a capsule and adding a
+// `content_hash` over the edited contents produced a record it reported intact.
+const editedCapsule = { ...studyRecord, content_hash: undefined, max_credits: 9999, reproducibility_hash: studyRecordHash }
+assert.equal(verifyStudyRecordHash(editedCapsule).valid, false, "the edit is visible while one self-hash is carried")
+const spoofed = { ...editedCapsule, content_hash: calculateStudyHash(editedCapsule) }
+assert.throws(() => verifyStudyRecordHash(spoofed), /one self-hash field/)
+
 // The exclusion set is inherited from `src/reproducibility` rather than copied,
 // and this is the assertion that says so: the identity and timing keys every
 // published hash was computed under are all present, alongside the four the
@@ -242,6 +267,16 @@ for (const key of [
   assert.equal(STUDY_EXCLUDED_KEYS.has(key), true, `${key} must be excluded from study-v1`)
 }
 
+// "Inherited rather than copied" is worth nothing if the inherited list can be
+// written to. `as const` is a compile-time promise, so both exports are frozen,
+// and this is the assertion that says so: a consumer able to push onto
+// IDENTITY_KEYS could add a name to the exclusion list every published hash was
+// computed under, from plain JavaScript or from TypeScript with one cast.
+for (const list of [IDENTITY_KEYS, TIMING_KEYS]) {
+  assert.equal(Object.isFrozen(list), true)
+  assert.throws(() => list.push("not-an-exclusion"), TypeError)
+}
+
 // --- Legacy isolation. -------------------------------------------------------
 //
 // The two rule sets are genuinely different, so the same payload hashes
@@ -267,5 +302,87 @@ assert.equal(calculateReproducibilityHash(qecManifest, 2), expectedHashes.v2.qec
 
 // A legacy record has no rules id, and this family will not invent one for it.
 assert.throws(() => calculateStudyHash(qecResult), /refused, not defaulted/)
+
+// The exclusion set cannot be added to at run time. "Must stay identical to the
+// Python mirror" was a claim about a Set whose members live in an internal slot
+// `Object.freeze` does not reach, so `add` worked: any consumer could put a name
+// on the exclusion list every study-v1 digest was computed under.
+assert.equal(Object.isFrozen(STUDY_EXCLUDED_KEYS), true)
+for (const mutate of [
+  () => STUDY_EXCLUDED_KEYS.add("not-an-exclusion"),
+  () => STUDY_EXCLUDED_KEYS.delete("id"),
+  () => STUDY_EXCLUDED_KEYS.clear(),
+]) {
+  assert.throws(mutate, TypeError)
+}
+assert.equal(STUDY_EXCLUDED_KEYS.has("not-an-exclusion"), false)
+assert.equal(STUDY_EXCLUDED_KEYS.has("id"), true)
+
+// --- Excluded keys below a record's own top level. ---------------------------
+//
+// The canonicalizer drops the exclusion set at every depth, which is what a
+// record's own `created_at` needs and what a key chosen at run time cannot
+// survive. A dependency genuinely named "id" vanished before the digest, so two
+// capsules recording different environments hashed identically. No study record
+// can carry such a key any more -- `StudyEnvironment` puts the dependency name
+// in a field -- but this walk is what a caller hashing a hand-assembled dict
+// gets, and it is the only check the Python-only reader has.
+const hidden = {
+  [STUDY_HASH_RULES_KEY]: STUDY_HASH_RULES_ID,
+  environment: { packages: { id: "1.0.0" } },
+}
+assert.throws(() => calculateStudyHash(hidden), /environment\.packages\.id/)
+assert.throws(() => canonicalStudyJson(hidden), /must not carry an excluded key below its own top level/)
+assert.throws(() => verifyStudyRecordHash(hidden), /must not carry an excluded key below its own top level/)
+assert.throws(() => assertNoNestedExcludedKeys(hidden), /environment\.packages\.id/)
+
+// And the two exemptions the walk has to keep, or every study record in the
+// family would refuse itself: a record's own top level, and the top level of an
+// embedded record -- one that names its hash rules, or a Quantity envelope
+// pairing a value with the evidence class that qualifies it.
+assert.doesNotThrow(() => assertNoNestedExcludedKeys(floatEdgeCases))
+assert.doesNotThrow(() => calculateStudyHash(fixture("study-evidence-graph.json"), STUDY_HASH_RULES_ID))
+assert.doesNotThrow(() =>
+  assertNoNestedExcludedKeys({
+    [STUDY_HASH_RULES_KEY]: STUDY_HASH_RULES_ID,
+    id: "volatile",
+    node: { [STUDY_HASH_RULES_KEY]: STUDY_HASH_RULES_ID, content_hash: "b".repeat(64) },
+    measurement: { value: 3, evidence: "MODELLED", created_at: "2026-01-01T00:00:00.000Z" },
+  }),
+)
+
+// The exemption is per-key, and these three are the whole of it: a marker whose
+// value is one fixed known id, a timestamp excluded everywhere by design, and an
+// identity the graph checks recompute from the record's own contents. Every
+// other excluded name stays refused inside an embedded record -- otherwise an
+// object that carried a marker, or merely a `value` beside an `evidence`, could
+// hold an `id` and two records differing only there would be content-addressed
+// identically.
+for (const [label, embedded] of [
+  ["a marked record", { [STUDY_HASH_RULES_KEY]: STUDY_HASH_RULES_ID, id: "gpu-0" }],
+  ["a Quantity envelope", { value: 1, evidence: "MEASURED", id: "gpu-0" }],
+  ["a marked record's slug", { [STUDY_HASH_RULES_KEY]: STUDY_HASH_RULES_ID, slug: "rack-a" }],
+  ["a Quantity envelope's status", { value: 1, evidence: "MEASURED", status: "DRAFT" }],
+]) {
+  assert.throws(
+    () => assertNoNestedExcludedKeys({ [STUDY_HASH_RULES_KEY]: STUDY_HASH_RULES_ID, embedded }),
+    /must not carry an excluded key below its own top level/,
+    `${label} must not hide an excluded key it does not declare`,
+  )
+}
+
+// And a marker naming no known rule set is not a marker. `studyRulesIdOf` refuses
+// such an id at a record's own root, so an arbitrary string one level down must
+// not buy the exemption a real record has -- which is the route by which
+// `hardware.accelerator = { hash_rules_id: "junk", id }` once hashed two
+// different accelerators identically.
+assert.throws(
+  () =>
+    assertNoNestedExcludedKeys({
+      [STUDY_HASH_RULES_KEY]: STUDY_HASH_RULES_ID,
+      accelerator: { [STUDY_HASH_RULES_KEY]: "junk", content_hash: "b".repeat(64) },
+    }),
+  /must not carry an excluded key below its own top level/,
+)
 
 console.log("study hashing checks passed")

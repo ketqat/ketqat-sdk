@@ -174,14 +174,24 @@ true.
 ran (`StudyTask`, `ExecutionCapsule`), and what may be claimed afterwards
 (`EvidenceNode`, `EvidenceEdge`, `ResearchPackage`). A `Study` carries only its creation
 core; everything that changes flows through an append-only, hash-chained `StudyEvent` trail.
+Each event names its predecessor's hash, so no event inside a trail can be reordered, spliced
+in or replayed without breaking the next link. Whether the trail is the *whole* trail is a
+different question: a truncated trail is still a valid chain, so `verifyStudyEventChain` takes
+an optional expected head hash — held by whoever read the events out of the store — and only
+then can it say that nothing was dropped from the end.
 
 Three things are enforced by the types rather than by convention:
 
 - **A number in a report is a node in the graph.** Every result row in a `ResearchPackage`
-  names the `EvidenceNode` its value is read from, so a figure with nothing behind it
-  cannot be written down. `buildResearchPackage` refuses — a claim with no evidence node, a
-  row naming a node the package does not carry, an edge with a dangling endpoint — rather
-  than exporting with a warning attached.
+  names the `EvidenceNode` its value is read from, and that node has to carry a value — a row
+  pointing at a claim or at a reference has no number to read out. Every claim has to be
+  joined to the evidence it cites by a `supports` or `contradicts` edge the package carries,
+  which is where the relation is written down with its rationale and its asserter, so a claim
+  cannot be its own evidence and a citation the graph does not corroborate is refused.
+  `buildResearchPackage` refuses rather than exporting with a warning attached, and
+  `verifyResearchPackage` makes the same checks on a file it did not write. What none of this
+  weighs is whether the evidence supports the conclusion: the edges are the study's own
+  assertions, checked for being present, joined up and attributed — never for being right.
 - **A confirmation is a hash, not an intention.** Plan revisions are immutable and
   content-addressed, so a changed plan needs a new confirmation by construction: its hash
   moved. `verifyPlanConfirmation` recomputes the hash, so a plan edited and re-stamped with

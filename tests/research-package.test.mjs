@@ -142,6 +142,18 @@ const supportsEdge = stampEdge(
   }),
 )
 
+// The claim map cites the snapshot as well as the number, so the graph has to
+// carry an edge saying the snapshot supports the claim. `derived_from` below is
+// provenance -- where the number came from -- and provenance is not support.
+const resultSupportsEdge = stampEdge(
+  edgeBody({
+    kind: "supports",
+    from_node_hash: resultNode.content_hash,
+    to_node_hash: claimNode.content_hash,
+    rationale: "The claimed ceiling is read out of this estimate snapshot, which is the run that produced it.",
+  }),
+)
+
 const derivedEdge = stampEdge(
   edgeBody({
     kind: "derived_from",
@@ -169,20 +181,27 @@ const packageInput = (changes = {}) => ({
   resultRows: [{ label: "Total physical qubits", node_hash: quantityNode.content_hash }],
   csv: "label,node_hash\nTotal physical qubits," + quantityNode.content_hash + "\n",
   figures: [{ label: "Physical qubits by code distance", svg: "<svg viewBox='0 0 1 1'></svg>" }],
-  // Deliberately written without an author list: `CitationSchema` fills one in,
-  // and the builder has to normalise before it hashes or the package would fail
-  // its own verifier the moment the final parse added the empty array.
-  references: [{ title: "Surface codes: towards practical large-scale quantum computation", year: 2012 }],
+  // The author list is written down rather than defaulted. `StudyCitationSchema` requires it
+  // where the shared `CitationSchema` fills one in, because a container the parser materialises
+  // is a container the file does not contain -- and that was the last split left between what
+  // this builder hashed and what a verifier reading the file hashes.
+  references: [
+    {
+      title: "Surface codes: towards practical large-scale quantum computation",
+      authors: [],
+      year: 2012,
+    },
+  ],
   bundleRefs: ["f".repeat(64)],
-  environment: { operating_system: "linux", architecture: "arm64", packages: {}, hardware: {} },
+  environment: { operating_system: "linux", architecture: "arm64", packages: [], hardware: [] },
   reproductionCommand: "ketqat-engine study verify <this-file>",
   nodes: [claimNode, quantityNode, resultNode, inputNode],
-  edges: [supportsEdge, derivedEdge, usedInputEdge],
+  edges: [supportsEdge, resultSupportsEdge, derivedEdge, usedInputEdge],
   claimEvidenceMap: [
     {
       claim_node_hash: claimNode.content_hash,
       evidence_node_hashes: [quantityNode.content_hash, resultNode.content_hash],
-      edge_hashes: [supportsEdge.content_hash],
+      edge_hashes: [supportsEdge.content_hash, resultSupportsEdge.content_hash],
     },
   ],
   limitations: ["Modelled, not measured. No device was run."],
@@ -209,7 +228,7 @@ test("a package whose rows, claims and edges all resolve is built and verifies",
   // The graph travels with the report; a recipient resolves the rows from the
   // file rather than from a store they were never given.
   assert.equal(pkg.nodes.length, 4)
-  assert.equal(pkg.edges.length, 3)
+  assert.equal(pkg.edges.length, 4)
   assert.equal(pkg.result_rows[0].node_hash, quantityNode.content_hash)
 
   const verification = verifyResearchPackage(pkg)
@@ -306,7 +325,7 @@ test("an edge whose endpoint is not in the graph is refused", () => {
     }),
   )
   const built = buildResearchPackage(
-    packageInput({ edges: [supportsEdge, derivedEdge, usedInputEdge, dangling] }),
+    packageInput({ edges: [supportsEdge, resultSupportsEdge, derivedEdge, usedInputEdge, dangling] }),
   )
 
   assert.equal(built.ok, false)
@@ -328,6 +347,183 @@ test("a claim map citing an edge the package does not carry is refused", () => {
 
   assert.equal(built.ok, false)
   assert.ok(codesOf(built.refusals).includes("EVIDENCE_EDGE_ENDPOINT_UNRESOLVED"))
+})
+
+// ------------------------------------------- the map is checked against the graph
+
+// Resolution was the weaker half of this check, and these are the three packages
+// that got through it. Every hash in them resolves; what none of them has is a
+// graph that says the evidence bears on the claim. The relation lives on an
+// edge, with a rationale and an asserter on it, and an entry the edges do not
+// corroborate is the map and the graph disagreeing -- which the module docstring
+// calls a finding rather than a rounding error.
+
+test("a claim citing itself as its own evidence is refused", () => {
+  const selfCiting = packageInput({
+    edges: [],
+    claimEvidenceMap: [
+      {
+        claim_node_hash: claimNode.content_hash,
+        evidence_node_hashes: [claimNode.content_hash],
+        edge_hashes: [],
+      },
+    ],
+  })
+  const built = buildResearchPackage(selfCiting)
+
+  assert.equal(built.ok, false)
+  const codes = codesOf(built.refusals)
+  assert.ok(codes.includes("CLAIM_EVIDENCE_SELF_REFERENTIAL"))
+  // Nothing supports it in the graph either, and the entry cites no edge at all.
+  // Three findings rather than one, because they take three different fixes.
+  assert.ok(codes.includes("CLAIM_WITHOUT_EVIDENCE_NODE"))
+  assert.ok(codes.includes("CLAIM_EVIDENCE_UNLINKED"))
+})
+
+test("a claim citing a node no edge joins to it is refused", () => {
+  const unrelated = stampNode(
+    nodeBody({ kind: "quantity", label: "An unrelated number nobody wired up", quantity: knownQuantity(17) }),
+  )
+  const built = buildResearchPackage(
+    packageInput({
+      nodes: [claimNode, quantityNode, resultNode, inputNode, unrelated],
+      claimEvidenceMap: [
+        {
+          claim_node_hash: claimNode.content_hash,
+          evidence_node_hashes: [unrelated.content_hash],
+          edge_hashes: [supportsEdge.content_hash],
+        },
+      ],
+    }),
+  )
+
+  assert.equal(built.ok, false)
+  assert.ok(codesOf(built.refusals).includes("CLAIM_EVIDENCE_UNLINKED"))
+})
+
+test("provenance is not support: a derived_from chain does not join evidence to a claim", () => {
+  // The snapshot really is behind the number, and `derived_from` says where the
+  // number came from. It does not say anyone claims the snapshot backs the
+  // sentence -- that is a separate assertion, with its own rationale and its own
+  // asserter, and this is the package that leaves it unmade.
+  const built = buildResearchPackage(packageInput({ edges: [supportsEdge, derivedEdge, usedInputEdge] }))
+
+  assert.equal(built.ok, false)
+  assert.ok(codesOf(built.refusals).includes("CLAIM_EVIDENCE_UNLINKED"))
+})
+
+test("a claim map citing evidence and no edge at all is refused", () => {
+  const built = buildResearchPackage(
+    packageInput({
+      claimEvidenceMap: [
+        {
+          claim_node_hash: claimNode.content_hash,
+          evidence_node_hashes: [quantityNode.content_hash],
+          edge_hashes: [],
+        },
+      ],
+    }),
+  )
+
+  assert.equal(built.ok, false)
+  assert.ok(codesOf(built.refusals).includes("CLAIM_EVIDENCE_UNLINKED"))
+})
+
+test("evidence that argues with a claim is joined by a contradicts edge, read either way round", () => {
+  // Support is directional and contradiction is not, so both orientations are
+  // accepted here: an objection written from the claim towards the objecting
+  // node is the same objection, and a reader who saw it only when somebody wrote
+  // it the other way round would be shown a filtered disagreement.
+  const objection = stampNode(
+    nodeBody({ kind: "quantity", label: "A second estimate that disagrees", quantity: knownQuantity(9100000) }),
+  )
+  for (const [from, to] of [
+    [objection.content_hash, claimNode.content_hash],
+    [claimNode.content_hash, objection.content_hash],
+  ]) {
+    const contradicts = stampEdge(
+      edgeBody({
+        kind: "contradicts",
+        from_node_hash: from,
+        to_node_hash: to,
+        rationale: "A second estimate under the same scenario lands well above the claimed ceiling.",
+      }),
+    )
+    const built = buildResearchPackage(
+      packageInput({
+        nodes: [claimNode, quantityNode, resultNode, inputNode, objection],
+        edges: [supportsEdge, resultSupportsEdge, derivedEdge, usedInputEdge, contradicts],
+        claimEvidenceMap: [
+          {
+            claim_node_hash: claimNode.content_hash,
+            evidence_node_hashes: [quantityNode.content_hash, resultNode.content_hash, objection.content_hash],
+            edge_hashes: [supportsEdge.content_hash, resultSupportsEdge.content_hash, contradicts.content_hash],
+          },
+        ],
+      }),
+    )
+    assert.equal(built.ok, true, built.ok ? "" : codesOf(built.refusals).join(", "))
+  }
+})
+
+test("a result row naming a node that carries no value is refused", () => {
+  // The claim node is the tempting one: it holds a number, inside a sentence.
+  // A table row reading from it would print the assertion as a measurement.
+  const built = buildResearchPackage(
+    packageInput({ resultRows: [{ label: "Total physical qubits", node_hash: claimNode.content_hash }] }),
+  )
+
+  assert.equal(built.ok, false)
+  assert.deepEqual(codesOf(built.refusals), ["RESULT_ROW_WITHOUT_VALUE"])
+
+  // An assumption row may name a node of any kind: an assumption is a stated
+  // input, not a number read out of one.
+  assert.equal(
+    buildResearchPackage(packageInput({ assumptionRows: [{ label: "Base scenario", node_hash: inputNode.content_hash }] }))
+      .ok,
+    true,
+  )
+})
+
+test("the verifier makes the same checks as the builder, on a package the builder never wrote", () => {
+  // A recipient is who the checks are for. This package was assembled by
+  // something other than `buildResearchPackage` -- by hand here, by an older
+  // build or a different service in the field -- and it is cryptographically
+  // perfect: every node is its own hash, and the package's digest is its own
+  // contents. What it has lost is the edge that carried the relation.
+  const forged = clone(buildOrThrow())
+  forged.edges = forged.edges.filter((edge) => edge.kind !== "supports")
+  forged.claim_evidence_map[0].edge_hashes = []
+  forged.reproducibility_hash = calculateStudyHash(forged)
+
+  const verification = verifyResearchPackage(forged)
+
+  assert.equal(verification.hash_matches, true)
+  assert.equal(verification.claims_resolve, false)
+  assert.equal(verification.valid, false)
+  const codes = new Set(verification.problems.map((problem) => problem.split(" (")[0]))
+  assert.ok(codes.has("CLAIM_WITHOUT_EVIDENCE_NODE"))
+  assert.ok(codes.has("CLAIM_EVIDENCE_UNLINKED"))
+})
+
+test("a self-citing package is refused by the verifier too, not only by the builder", () => {
+  const forged = clone(buildOrThrow())
+  forged.claim_evidence_map = [
+    {
+      claim_node_hash: claimNode.content_hash,
+      evidence_node_hashes: [claimNode.content_hash],
+      edge_hashes: [supportsEdge.content_hash],
+    },
+  ]
+  forged.reproducibility_hash = calculateStudyHash(forged)
+
+  const verification = verifyResearchPackage(forged)
+
+  assert.equal(verification.hash_matches, true)
+  assert.equal(verification.valid, false)
+  assert.ok(
+    verification.problems.some((problem) => problem.startsWith("CLAIM_EVIDENCE_SELF_REFERENTIAL")),
+  )
 })
 
 test("a claim asserting an unknown value is refused rather than thrown", () => {
@@ -488,4 +684,128 @@ test("a candidate that is not a research package is refused with named problems"
   assert.equal(verification.claims_resolve, false)
   assert.equal(verification.graph_valid, false)
   assert.ok(verification.problems.length > 0)
+})
+
+// A package's digest is over the file, and there is no longer a second reading of the file.
+//
+// `CitationSchema.authors` carries `.default([])`, and that was the last default any study record
+// hashed. The two halves of this module disagreed because of it: `buildResearchPackage` parsed
+// its inputs and then hashed, so it hashed a list the caller never wrote, while
+// `verifyResearchPackage` hashed what it read. One logical citation therefore had two content
+// addresses depending on which side of the parse you stood, and `verify_research_package` in
+// Python -- which fills in nothing at all -- agreed with whichever of them had happened to write
+// the file. `StudyCitationSchema` requires the list instead, so the build path and the verify
+// path address one record.
+test("one record has one digest through the build path and the verify path alike", () => {
+  const pkg = buildOrThrow()
+  assert.deepEqual(pkg.references[0].authors, [], "the builder writes what it hashed")
+  assert.deepEqual(pkg.environment.packages, [])
+
+  // The two paths, asked the same question about the same bytes.
+  const asWritten = JSON.parse(JSON.stringify(pkg))
+  const built = pkg.reproducibility_hash
+  const verified = verifyResearchPackage(asWritten)
+  assert.equal(verified.expected_hash, built, "the verifier recomputes the digest the builder wrote")
+  assert.deepEqual(verified.problems, [])
+  assert.equal(verified.valid, true)
+
+  // And parsing the file changes nothing about it, which is the property that makes those two the
+  // same digest: no schema in this family materialises a field at parse time any more.
+  const parsed = ResearchPackageSchema.parse(asWritten)
+  assert.deepEqual(parsed, asWritten, "the parse must not rewrite its own subject")
+  assert.equal(calculateStudyHash(parsed), built)
+
+  // A file that omits the list is refused rather than filled in. Previously it parsed, gained an
+  // empty array nobody wrote, and was reported valid against a digest of a record it was not.
+  const omitted = clone(pkg)
+  delete omitted.references[0].authors
+  assert.equal(ResearchPackageSchema.safeParse(omitted).success, false)
+  const stale = verifyResearchPackage(omitted)
+  assert.equal(stale.valid, false)
+  assert.equal(
+    stale.problems.some((problem) => problem.includes("references.0.authors")),
+    true,
+    stale.problems.join(" "),
+  )
+})
+
+// An environment recording a dependency named `id` was dropped before hashing, and two packages
+// differing only there were content-addressed identically. The map that made that possible is
+// gone -- `StudyEnvironment` puts the dependency name in a declared field -- so the shape is now
+// refused by the schema rather than by the hashing walk, which is a refusal one level earlier.
+test("an environment shaped as a map of run-time keys is no longer a package at all", () => {
+  assert.throws(
+    () =>
+      buildResearchPackage(
+        packageInput({ environment: { operating_system: "linux", packages: { id: "1.0.0" }, hardware: {} } }),
+      ),
+    /Expected array, received object/,
+  )
+})
+
+// A key hidden inside a `Quantity` envelope, refused twice over.
+//
+// `Quantity` comes from `src/intelligence` and used to strip what it did not declare, so a key
+// named after an exclusion survived the parse and only the hashing walk stopped it; the envelope
+// is also an embedded record, whose top level the exclusions deliberately do not bite at. It is
+// now read through `StudyQuantitySchema`, which refuses an undeclared key one step earlier -- and
+// the hashing walk stays underneath as the backstop, because it is the whole check a caller who
+// hand-assembles a dict, or who only has Python, ever runs.
+test("a package whose graph hides an excluded key is refused, not hashed", () => {
+  const forged = clone(buildOrThrow())
+  const node = forged.nodes.find((candidate) => candidate.quantity !== null)
+  node.quantity.id = "smuggled"
+
+  const verification = verifyResearchPackage(forged)
+  assert.equal(verification.valid, false)
+  assert.equal(
+    verification.problems.some((problem) => /[Uu]nrecognized key/.test(problem)),
+    true,
+    verification.problems.join(" "),
+  )
+
+  // The backstop, on the same record with no schema in the way: the digest is refused rather than
+  // taken over contents the canonicalizer would silently drop.
+  assert.throws(
+    () => calculateStudyHash(node),
+    /quantity\.id/,
+    "two nodes differing only there would otherwise be content-addressed identically",
+  )
+})
+
+// The same key, caught at the build boundary, where the parts a builder passes through
+// unvalidated meet the record it assembles. A refusal is the ordinary outcome here, not an
+// exception a caller has to catch.
+test("a row hiding an excluded key is refused before the package is assembled", () => {
+  const built = buildResearchPackage(
+    packageInput({
+      assumptionRows: [{ label: "Physical error rate", node_hash: inputNode.content_hash, id: "smuggled" }],
+    }),
+  )
+  assert.equal(built.ok, false)
+  assert.deepEqual(codesOf(built.refusals), ["STUDY_EXCLUDED_KEY_NESTED"])
+  assert.equal(built.refusals[0].message.includes("assumption_rows[0].id"), true, built.refusals[0].message)
+})
+
+// Undeclared keys are refused rather than stripped, so the two languages give one answer for one
+// file. Zod's default is to strip, while the generated JSON Schema has always said
+// `additionalProperties: false`: a package carrying `owner_username` parsed here, kept its hash --
+// the key is excluded from the digest -- and was reported `valid: true, problems: []`, while
+// `validate_study_record` in Python raised "Additional properties are not allowed".
+test("a package carrying a key no schema declares is refused, not stripped", () => {
+  for (const undeclared of [{ owner_username: "somebody-else" }, { smuggled_root_key: "not declared" }]) {
+    const verification = verifyResearchPackage({ ...buildOrThrow(), ...undeclared })
+    assert.equal(verification.valid, false, `${Object.keys(undeclared)[0]} must not pass as a package`)
+    assert.equal(
+      verification.problems.some((problem) => /[Uu]nrecognized key/.test(problem)),
+      true,
+      verification.problems.join(" "),
+    )
+  }
+
+  // And one level down, in the citation the shared contracts declare: `.strict()` derives a
+  // stricter reading for this family without moving the schema every legacy record uses.
+  const withStrayCitationKey = clone(buildOrThrow())
+  withStrayCitationKey.references[0].publisher = "not a citation field"
+  assert.equal(verifyResearchPackage(withStrayCitationKey).valid, false)
 })

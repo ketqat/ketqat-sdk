@@ -1,0 +1,134 @@
+{
+  "schema_version": "1.0",
+  "hash_rules_id": "study-v1",
+  "package_kind": "KETQAT_RESEARCH_PACKAGE",
+  "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+  "plan_ref": {
+    "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "revision": 2
+  },
+  "report_markdown": "# Shor-2048 feasibility\n\nOne claim, one number, one source.",
+  "methods": "Resource estimation under the base scenario; no device was run.",
+  "assumption_rows": [],
+  "result_rows": [
+    {
+      "label": "Total physical qubits",
+      "node_hash": "e0c20c587d38d8885786ea1dfc74a482a0992b8c640425dfdb4e9ee8f2f1ea95"
+    }
+  ],
+  "csv": "label,node_hash\nTotal physical qubits,e0c20c587d38d8885786ea1dfc74a482a0992b8c640425dfdb4e9ee8f2f1ea95\n",
+  "figures": [],
+  "references": [
+    {
+      "title": "Surface codes: towards practical large-scale quantum computation",
+      "authors": [],
+      "year": 2012
+    }
+  ],
+  "bundle_refs": [],
+  "environment": {
+    "operating_system": "Linux",
+    "architecture": "x86_64",
+    "python_version": "3.11.9",
+    "packages": [],
+    "hardware": []
+  },
+  "reproduction_command": "ketqat study reproduce --package research-package.json",
+  "nodes": [
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+      "kind": "quantity",
+      "label": "Total physical qubits, base scenario",
+      "claim": null,
+      "quantity": {
+        "value": 4200000,
+        "unit": "physical qubits",
+        "bound": "UPPER_BOUND",
+        "evidence": "MODELLED",
+        "source": "Resource estimate under the base scenario.",
+        "model": "ketqat-resource-intelligence",
+        "model_version": "0.1.0",
+        "assumptions": [
+          "Physical error rate 0.001."
+        ],
+        "schema_version": "0.1",
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ]
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "content_hash": "e0c20c587d38d8885786ea1dfc74a482a0992b8c640425dfdb4e9ee8f2f1ea95"
+    },
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+      "kind": "claim",
+      "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+      "claim": {
+        "subject": "shor-2048",
+        "metric": "total_physical_qubits",
+        "comparator": "AT_MOST",
+        "value": {
+          "value": 4200000,
+          "unit": "physical qubits",
+          "bound": "UPPER_BOUND",
+          "evidence": "MODELLED",
+          "source": "Resource estimate under the base scenario.",
+          "model": "ketqat-resource-intelligence",
+          "model_version": "0.1.0",
+          "assumptions": [
+            "Physical error rate 0.001."
+          ],
+          "schema_version": "0.1",
+          "limitations": [
+            "Modelled, not measured. No device was run."
+          ]
+        }
+      },
+      "quantity": null,
+      "reference": null,
+      "citation": null,
+      "limitations": [],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "content_hash": "d2a3ba3178d40b1eb9d79270d4895607419d868ad7433976d472f5d701f65240"
+    }
+  ],
+  "edges": [
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+      "kind": "supports",
+      "from_node_hash": "e0c20c587d38d8885786ea1dfc74a482a0992b8c640425dfdb4e9ee8f2f1ea95",
+      "to_node_hash": "d2a3ba3178d40b1eb9d79270d4895607419d868ad7433976d472f5d701f65240",
+      "asserted_by": "ketqat-resource-intelligence",
+      "rationale": "The claim reads its bound off this estimate rather than restating it.",
+      "content_hash": "bf3e35c19cb2f2bd3c6fc8b0976f3e2feec24222412d6752ad88bcb1fd9e56e8"
+    }
+  ],
+  "claim_evidence_map": [
+    {
+      "claim_node_hash": "d2a3ba3178d40b1eb9d79270d4895607419d868ad7433976d472f5d701f65240",
+      "evidence_node_hashes": [
+        "e0c20c587d38d8885786ea1dfc74a482a0992b8c640425dfdb4e9ee8f2f1ea95"
+      ],
+      "edge_hashes": [
+        "bf3e35c19cb2f2bd3c6fc8b0976f3e2feec24222412d6752ad88bcb1fd9e56e8"
+      ]
+    }
+  ],
+  "limitations": [
+    "Modelled, not measured. No device was run."
+  ],
+  "failed_checks": [],
+  "is_demo": true,
+  "reproducibility_hash": "bc1a720b1946847f590802284026defa0e2fd2081600856826a6c94517df1f5e"
+}

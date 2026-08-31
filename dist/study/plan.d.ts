@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type Contract, type Quantity } from "../intelligence/measurement.js";
+import type { Contract, Quantity } from "../intelligence/measurement.js";
 import { type RevisionRef } from "./common.js";
 import type { StudyRefusal } from "./refusals.js";
 /**
@@ -41,7 +41,7 @@ export declare const PlannedBaselineSchema: z.ZodObject<{
      */
     source_class: z.ZodEnum<["measured", "user_provided", "approved_adapter", "cited_primary_source", "unknown"]>;
     note: z.ZodNullable<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
+}, "strict", z.ZodTypeAny, {
     baseline_ref: string;
     source_class: "approved_adapter" | "cited_primary_source" | "measured" | "unknown" | "user_provided";
     note: string | null;
@@ -57,7 +57,7 @@ export declare const CandidateWorkflowSchema: z.ZodObject<{
     workload_ref: z.ZodNullable<z.ZodString>;
     /** Why this candidate is worth spending the run on. An unargued candidate is a preference. */
     rationale: z.ZodString;
-}, "strip", z.ZodTypeAny, {
+}, "strict", z.ZodTypeAny, {
     name: string;
     workload_ref: string | null;
     rationale: string;
@@ -80,7 +80,7 @@ export declare const PinnedVersionsSchema: z.ZodObject<{
     adapter: z.ZodNullable<z.ZodObject<{
         name: z.ZodString;
         version: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
+    }, "strict", z.ZodTypeAny, {
         name: string;
         version: string;
     }, {
@@ -90,7 +90,7 @@ export declare const PinnedVersionsSchema: z.ZodObject<{
     model: z.ZodObject<{
         name: z.ZodString;
         version: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
+    }, "strict", z.ZodTypeAny, {
         name: string;
         version: string;
     }, {
@@ -100,14 +100,14 @@ export declare const PinnedVersionsSchema: z.ZodObject<{
     engine: z.ZodObject<{
         name: z.ZodString;
         version: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
+    }, "strict", z.ZodTypeAny, {
         name: string;
         version: string;
     }, {
         name: string;
         version: string;
     }>;
-}, "strip", z.ZodTypeAny, {
+}, "strict", z.ZodTypeAny, {
     adapter: {
         name: string;
         version: string;

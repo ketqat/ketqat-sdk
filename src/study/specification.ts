@@ -134,6 +134,7 @@ export const ProblemSpecificationSchema: Contract<ProblemSpecification> = z
     created_at: IsoDateTimeSchema.optional(),
     content_hash: ContentHashSchema,
   })
+  .strict()
   .superRefine((specification, context) => {
     // The revision pairing, in the wording `scenario.ts` already uses. Two
     // families phrasing the same invariant two ways would read as two

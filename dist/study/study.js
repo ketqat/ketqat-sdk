@@ -20,13 +20,29 @@ import { STUDY_HASH_RULES_ID, calculateStudyHash } from "./hashing.js";
  * moves lives in the append-only `StudyEvent` trail, and the status field on the
  * study is a projection of that trail rather than a source of truth.
  *
- * **The trail is hash-chained.** ADR 0010 requires the history to be append-only
- * but leaves the mechanism open, and "append-only" enforced only by a database
- * grant is a property that does not survive an export, a backup restore, or a
- * migration. Each event names the hash of the event before it, so a rewritten
- * history is detectable offline by anyone holding the events -- and detectable in
- * the middle, not just at the end, because rewriting event two breaks the link
- * event three carries.
+ * **The trail is hash-chained, and the chain proves one thing.** ADR 0010
+ * requires the history to be append-only but leaves the mechanism open, and
+ * "append-only" enforced only by a database grant is a property that does not
+ * survive an export, a backup restore, or a migration. Each event names the hash
+ * of the event before it, so the trail somebody hands you is internally
+ * consistent or it is not: no event can be reordered, spliced in, replayed from
+ * another trail, or rewritten in the middle without breaking the link the next
+ * event carries. That much is checkable offline by anyone holding the events.
+ *
+ * **What it cannot prove is that the trail you were given is the whole trail.**
+ * Drop the last two events and the remainder is a valid five-event chain that
+ * verifies; append a fabricated event onto that stub and it verifies too, because
+ * the forger holds the same hash the honest writer would have. Nothing in the
+ * `Study` record anchors the head: `status`, `latest_specification` and
+ * `latest_plan` are excluded from its hash by design -- that exclusion is what
+ * keeps a study's identity from moving every time its state does -- so the study
+ * a trail belongs to says nothing about how long that trail should be.
+ *
+ * Closing that needs one hash from outside the trail. `verifyStudyEventChain`
+ * takes the head a caller holds -- from the store, from a receipt, from an
+ * earlier export -- and refuses a trail that does not end there. Held by the
+ * party being audited it proves nothing, which is exactly why the parameter is
+ * the caller's and not the record's.
  */
 export const StudyTypeSchema = z.enum([
     /** Could a fault-tolerant machine do this at all, and what would it have to reach. */
@@ -121,7 +137,7 @@ export const StudySchema = z.object({
     created_at: IsoDateTimeSchema.optional(),
     /** SHA-256 over the creation core. Excluded from its own digest. */
     content_hash: ContentHashSchema,
-});
+}).strict();
 export const StudyEventSchema = z
     .object({
     schema_version: z.string().min(1),
@@ -149,6 +165,7 @@ export const StudyEventSchema = z
     created_at: IsoDateTimeSchema.optional(),
     content_hash: ContentHashSchema,
 })
+    .strict()
     .superRefine((event, context) => {
     if (event.sequence === 1 && event.previous_event_hash !== null) {
         context.addIssue({
@@ -281,16 +298,31 @@ export function appendStudyEvent(study, events, input) {
 /**
  * Recompute a whole trail: every hash, every link, every transition.
  *
- * Checking only the last event would catch a truncation and nothing else. The
- * interesting tampering is in the middle -- an event rewritten to say the plan
- * was confirmed, or the actor was someone else -- and it is caught here twice
- * over: the rewritten event no longer hashes to what it claims, and if it is
- * re-hashed to repair that, the event after it now names a hash nobody has.
+ * What this establishes, stated exactly: **the trail passed in is internally
+ * consistent.** No event was reordered, spliced in, replayed from another study,
+ * or rewritten -- the interesting tampering is in the middle, an event edited to
+ * say the plan was confirmed or the actor was someone else, and it is caught
+ * twice over. The rewritten event no longer hashes to what it claims, and if it
+ * is re-hashed to repair that, the event after it now names a hash nobody has.
+ *
+ * What it does not establish, without `expectedHeadHash`, is that the trail is
+ * the whole trail. A trail cut short is a shorter valid chain, and an event
+ * fabricated onto the cut end links to it exactly as an honest one would: the
+ * chain runs forward from an unanchored beginning, so only its far end can be
+ * questioned, and nothing inside the trail can question it. `Study.status` and
+ * the `latest_*` pointers are excluded from the study's hash, so the record the
+ * trail belongs to cannot serve as the anchor either.
+ *
+ * `expectedHeadHash` is that anchor, and it has to come from somewhere the
+ * trail's author does not control -- the store the events were read from, a
+ * receipt, a hash published earlier. Given one, a truncated trail and a forged
+ * continuation both fail here rather than reading as history. Given none, the
+ * head is not checked and this function says so by not claiming otherwise.
  *
  * Problems are returned as coded refusals rather than prose, so a caller can
  * branch on what went wrong without matching English.
  */
-export function verifyStudyEventChain(events) {
+export function verifyStudyEventChain(events, expectedHeadHash = null) {
     const problems = [];
     let previous = null;
     for (let index = 0; index < events.length; index += 1) {
@@ -345,6 +377,31 @@ export function verifyStudyEventChain(events) {
             });
         }
         previous = event;
+    }
+    // The anchor, checked last: everything above is about the trail's own
+    // consistency, and this is the one question it cannot ask itself. A caller
+    // that holds no head passes none and is told nothing about completeness --
+    // silence rather than a check that would have passed for a trail with its
+    // last two events removed.
+    if (expectedHeadHash !== null) {
+        const head = events.length === 0 ? null : events[events.length - 1].content_hash;
+        if (head !== expectedHeadHash) {
+            const position = events.findIndex((event) => event.content_hash === expectedHeadHash);
+            problems.push({
+                subject: "study event trail",
+                code: "EVENT_CHAIN_BROKEN",
+                message: head === null
+                    ? `The trail is empty, and the head it is checked against is ${expectedHeadHash}. Every event this ` +
+                        "study recorded is missing, which a chain running forward from nothing cannot notice on its own."
+                    : position === -1
+                        ? `The trail ends at ${head}, and the expected head ${expectedHeadHash} is not in it at all. Either ` +
+                            "events were removed from the end and the remainder re-presented as the history, or this trail " +
+                            "continues a different one."
+                        : `The trail ends at ${head}, and the expected head ${expectedHeadHash} is event ` +
+                            `${position + 1} of ${events.length}. The trail continues past the head it was checked against: ` +
+                            "either that head is stale, or events were appended to a history somebody else has already read.",
+            });
+        }
     }
     return { valid: problems.length === 0, problems };
 }

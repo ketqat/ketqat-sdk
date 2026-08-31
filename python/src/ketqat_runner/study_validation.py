@@ -28,7 +28,10 @@ from typing import Any
 from jsonschema import Draft7Validator
 
 from .study_hashing import (
+    JS_MAX_SAFE_INTEGER,
     STUDY_HASH_RULES_KEY,
+    assert_no_nested_excluded_keys,
+    assert_no_unrepresentable_values,
     calculate_study_hash,
     study_rules_id_of,
 )
@@ -60,6 +63,24 @@ STUDY_SCHEMA_FILES: dict[str, str] = {
 }
 
 
+#: Where the safe-integer enumeration went.
+#:
+#: `JS_SAFE_INTEGER_FIELDS` used to list the two paths -- ``seed`` and
+#: ``resource_limits.max_memory_bytes`` -- that `src/study/capsule.ts` bounded,
+#: on the reasoning that a blanket rule would also refuse a large float "which
+#: both languages hold as the same double and render identically". Two things
+#: were wrong with that. Every other hashed number was left unguarded, including
+#: ``Quantity.value``, which is every number a study reports. And a large
+#: integral float is exactly as ambiguous as a large integer: JavaScript holds
+#: one double where the file may have meant any of half a million integers, so
+#: refusing it is not over-refusal but the same refusal.
+#:
+#: The rule now lives once, in `study_hashing.assert_no_unrepresentable_values`,
+#: and applies to every study record at every depth. `JS_MAX_SAFE_INTEGER` is
+#: re-exported from here because that is where callers and tests already import
+#: it from.
+
+
 def _load_study_schema(kind: str) -> dict[str, Any]:
     """The packaged schema for one record kind, or a refusal that names the file.
 
@@ -89,7 +110,7 @@ def _load_study_schema(kind: str) -> dict[str, Any]:
 def validate_study_record(value: dict[str, Any], kind: str) -> None:
     """Check one study record against its packaged schema.
 
-    Three gates, in this order, because the order is what makes the failures
+    Five gates, in this order, because the order is what makes the failures
     readable.
 
     The schema version comes first: a record from a future version of the family
@@ -101,11 +122,23 @@ def validate_study_record(value: dict[str, Any], kind: str) -> None:
     predate versioning; this family has none, so silence is a malformed record
     rather than an old one, and it is refused rather than defaulted.
 
+    Then the two refusals that are about *hashing* rather than about shape, and
+    that a JSON Schema cannot express: an excluded key hidden below a record's
+    own top level, and a value the two languages would not agree about -- an
+    integer above `JS_MAX_SAFE_INTEGER` at any depth, or a string carrying an
+    unpaired UTF-16 surrogate. Both are cases of the same thing -- a record the
+    two languages would hash differently, or would hash into a digest missing
+    part of itself -- and both are given before the schema gate so that "this
+    record cannot be hashed" is never reported as "this record is the wrong
+    shape". Both are asked of every record kind: enumerating which kinds could
+    carry which is how the second one came to be checked on two fields of one
+    kind and on nothing else.
+
     The schema comes last -- it is also the only gate that needs a file on disk,
-    so the two cheap refusals are given before anything can fail for the
-    unrelated reason that this build does not carry the schema -- and it reports
-    every error it found rather than the first, because a record with four
-    problems otherwise takes four rounds to fix.
+    so the cheap refusals are given before anything can fail for the unrelated
+    reason that this build does not carry the schema -- and it reports every
+    error it found rather than the first, because a record with four problems
+    otherwise takes four rounds to fix.
     """
     if not isinstance(value, dict):
         raise KetQatValidationError(
@@ -124,6 +157,16 @@ def validate_study_record(value: dict[str, Any], kind: str) -> None:
         raise KetQatValidationError(
             f"Invalid study {kind} record: {STUDY_HASH_RULES_KEY}: {exc}"
         ) from exc
+
+    try:
+        assert_no_nested_excluded_keys(value)
+    except ValueError as exc:
+        raise KetQatValidationError(f"Invalid study {kind} record: {exc}") from exc
+
+    try:
+        assert_no_unrepresentable_values(value)
+    except ValueError as exc:
+        raise KetQatValidationError(f"Invalid study {kind} record: {exc}") from exc
 
     validator = Draft7Validator(_load_study_schema(kind))
     errors = sorted(validator.iter_errors(value), key=lambda error: list(error.path))
@@ -150,13 +193,48 @@ def _nodes_by_hash(nodes: list[Any]) -> dict[str, dict[str, Any]]:
     return index
 
 
+def _asserts_relation(edge: Any, evidence_hash: Any, claim_hash: Any) -> bool:
+    """Whether one edge asserts that this evidence bears on this claim.
+
+    `supports` is read directionally -- evidence points at the claim, never the
+    other way -- because "the claim supports the measurement" is not a statement
+    anyone means, and accepting it would let a claim manufacture its own backing.
+    `contradicts` is read both ways: a disagreement is symmetric however the
+    asserter happened to orient it. Every other kind relates records rather than
+    speaking about a claim, so a chain of `derived_from` edges is provenance and
+    not support.
+
+    This must stay identical to `assertsRelation` in src/study/research-package.ts.
+    """
+    if not isinstance(edge, dict):
+        return False
+    kind = edge.get("kind")
+    origin = edge.get("from_node_hash")
+    target = edge.get("to_node_hash")
+    if kind == "supports":
+        return origin == evidence_hash and target == claim_hash
+    if kind != "contradicts":
+        return False
+    return (origin == evidence_hash and target == claim_hash) or (
+        origin == claim_hash and target == evidence_hash
+    )
+
+
 def _claim_map_problems(value: dict[str, Any]) -> list[str]:
-    """Whether every number in the package still resolves to a node it carries.
+    """Whether the claim map, the tables and the graph say the same thing.
 
     Pure dict walking, and deliberately so: this asks whether the package joins
     up, never whether its numbers are right. A row naming a node the file does
     not contain is a figure a reader cannot open, and that is checkable here. A
     figure that is wrong is not.
+
+    Two questions, and resolution alone answers only the first. *Does every hash
+    name something the package carries*, and *does the graph assert the relation
+    the map claims*. A map checked only for resolution accepted a claim citing
+    itself as its own evidence with no edges at all: every hash resolved, and
+    nothing anywhere said that anything supported anything. The relation checks
+    below are the same ones `claimMapRefusals` makes in TypeScript, under the same
+    codes, so a recipient gets one answer in either language.
     """
     problems: list[str] = []
     nodes = value.get("nodes") or []
@@ -178,6 +256,21 @@ def _claim_map_problems(value: dict[str, Any]) -> list[str]:
                 f"{node_hash}, and the package does not carry it."
             )
 
+    # A result row is a number in a table, so the node under it has to be one.
+    # A row pointing at a claim, a reference or a citation has no value to read
+    # out, and the label would render beside whatever the renderer chose to show.
+    # An UNKNOWN quantity passes: it is a value that says it is missing.
+    for row in value.get("result_rows") or []:
+        if not isinstance(row, dict):
+            continue
+        node = index.get(row.get("node_hash"))
+        if node is None or node.get("quantity") is not None:
+            continue
+        problems.append(
+            f"RESULT_ROW_WITHOUT_VALUE (result_rows: {row.get('label')}): the row reads its value "
+            f"from the {node.get('kind')} node {node.get('label')!r}, which carries no quantity."
+        )
+
     claim_map = value.get("claim_evidence_map") or []
     mapped = {
         entry.get("claim_node_hash") for entry in claim_map if isinstance(entry, dict)
@@ -190,6 +283,21 @@ def _claim_map_problems(value: dict[str, Any]) -> list[str]:
             problems.append(
                 f"CLAIM_WITHOUT_EVIDENCE_NODE ({node.get('label')}): the claim node has no entry "
                 "in the claim evidence map, so nothing states what it rests on."
+            )
+        elif not any(
+            isinstance(edge, dict)
+            and edge.get("kind") == "supports"
+            and edge.get("to_node_hash") == node.get("content_hash")
+            and edge.get("from_node_hash") in index
+            for edge in edges
+        ):
+            # The graph's own answer to the question the map answers. The map is
+            # the export's assertion and the edges are the study's, and a claim
+            # the map wires up while no supports edge points at it rests on
+            # nothing however confident the map is.
+            problems.append(
+                f"CLAIM_WITHOUT_EVIDENCE_NODE ({node.get('label')}): no supports edge in this "
+                "package points at the claim, so nothing in the graph backs it."
             )
         claim = node.get("claim")
         if isinstance(claim, dict):
@@ -216,12 +324,32 @@ def _claim_map_problems(value: dict[str, Any]) -> list[str]:
                 f"CLAIM_WITHOUT_EVIDENCE_NODE ({subject}): the claim is mapped to an empty evidence "
                 "list, which records a claim that was walked back to nothing."
             )
+        elif not (entry.get("edge_hashes") or []):
+            # An entry that names evidence and cites no edge asserts a relation it
+            # does not carry: the edge is where "this supports that" is written
+            # down, with a rationale and an asserter beside it.
+            problems.append(
+                f"CLAIM_EVIDENCE_UNLINKED ({subject}): the claim evidence map cites evidence for this "
+                "claim and names no edge at all, so the relation it asserts cannot be read."
+            )
         for node_hash in evidence:
-            if node_hash in index:
+            if node_hash == claim_hash:
+                problems.append(
+                    f"CLAIM_EVIDENCE_SELF_REFERENTIAL ({subject}): the claim is cited as its own "
+                    "evidence, and restating an assertion establishes nothing."
+                )
+                continue
+            if node_hash not in index:
+                problems.append(
+                    f"EVIDENCE_NODE_UNRESOLVED ({subject}): the claim is said to rest on node "
+                    f"{node_hash}, and the package does not carry it."
+                )
+                continue
+            if any(_asserts_relation(edge, node_hash, claim_hash) for edge in edges):
                 continue
             problems.append(
-                f"EVIDENCE_NODE_UNRESOLVED ({subject}): the claim is said to rest on node {node_hash}, "
-                "and the package does not carry it."
+                f"CLAIM_EVIDENCE_UNLINKED ({subject}): the claim is said to rest on node {node_hash}, "
+                "and no edge in this package joins the two."
             )
         for edge_hash in entry.get("edge_hashes") or []:
             if edge_hash in edge_hashes:
@@ -323,8 +451,35 @@ def verify_research_package(
         validate_study_record(value, "research_package")
 
     rules_id = study_rules_id_of(value)
-    expected = calculate_study_hash(value, rules_id)
     actual = value.get("reproducibility_hash")
+
+    # The two hashing-layer refusals -- a key the digest would drop, hidden below
+    # the package's own top level, and a value the two languages would not agree
+    # about -- are reported rather than raised, the way `verifyResearchPackage`
+    # reports them: a recipient checking a file they were sent needs the finding
+    # beside the others, not an exception that stops them learning whether the
+    # rest of the package joins up. Two codes rather than one, because they send
+    # a reader to different places: one is fixed by renaming a field, the other
+    # by changing the value.
+    for check, code in (
+        (assert_no_nested_excluded_keys, "STUDY_EXCLUDED_KEY_NESTED"),
+        (assert_no_unrepresentable_values, "STUDY_VALUE_NOT_REPRESENTABLE"),
+    ):
+        try:
+            check(value, rules_id)
+        except ValueError as exc:
+            return {
+                "valid": False,
+                "hash_matches": False,
+                "claims_resolve": False,
+                "graph_valid": False,
+                "expected_hash": "",
+                "actual_hash": actual if isinstance(actual, str) else None,
+                "problems": [f"{code} (research_package): {exc}"],
+                "decision_recompute": False,
+            }
+
+    expected = calculate_study_hash(value, rules_id)
     hash_matches = isinstance(actual, str) and actual == expected
     if not hash_matches:
         problems.append(

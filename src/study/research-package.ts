@@ -1,26 +1,30 @@
 import { z } from "zod"
-import {
-  CitationSchema,
-  EnvironmentSchema,
-  IsoDateTimeSchema,
-  type Citation,
-  type Environment,
-} from "../contracts/common.js"
+import { IsoDateTimeSchema, type Citation } from "../contracts/common.js"
 import { isKnown, type Contract } from "../intelligence/measurement.js"
 import {
   ContentHashSchema,
   RevisionRefSchema,
   STUDY_SCHEMA_VERSION,
+  StudyCitationSchema,
+  StudyEnvironmentSchema,
   type RevisionRef,
+  type StudyEnvironment,
 } from "./common.js"
 import {
   EvidenceEdgeSchema,
   EvidenceNodeSchema,
+  resolveClaimEvidence,
   verifyEvidenceGraph,
   type EvidenceEdge,
   type EvidenceNode,
 } from "./evidence.js"
-import { STUDY_HASH_RULES_ID, calculateStudyHash, studyRulesIdOf } from "./hashing.js"
+import {
+  STUDY_HASH_RULES_ID,
+  assertNoNestedExcludedKeys,
+  assertNoUnrepresentableValues,
+  calculateStudyHash,
+  studyRulesIdOf,
+} from "./hashing.js"
 import type { StudyRefusal } from "./refusals.js"
 
 /**
@@ -62,16 +66,20 @@ export const ResultRowSchema = z.object({
    * The node the value is read from. There is deliberately no `value` field
    * beside it: a row that carried its own copy of the number could disagree with
    * the node, and the copy is what would end up in the slide.
+   *
+   * A result row's node has to carry a quantity, which is checked at the build
+   * and verify boundaries rather than here -- the schema sees one row at a time
+   * and the node it names lives elsewhere in the package.
    */
   node_hash: ContentHashSchema,
-})
+}).strict()
 export type ResultRow = z.infer<typeof ResultRowSchema>
 
 export const FigureSchema = z.object({
   label: z.string().min(1),
   /** Inline SVG, so a figure cannot resolve to a different picture later. */
   svg: z.string().min(1),
-})
+}).strict()
 export type Figure = z.infer<typeof FigureSchema>
 
 /**
@@ -89,7 +97,7 @@ export const ClaimEvidenceEntrySchema = z.object({
   evidence_node_hashes: z.array(ContentHashSchema).min(1),
   /** The edges that carry the relation, so a reader can read the rationale rather than guess it. */
   edge_hashes: z.array(ContentHashSchema),
-})
+}).strict()
 export type ClaimEvidenceEntry = z.infer<typeof ClaimEvidenceEntrySchema>
 
 export interface ResearchPackage {
@@ -106,7 +114,7 @@ export interface ResearchPackage {
   figures: Figure[]
   references: Citation[]
   bundle_refs: string[]
-  environment: Environment
+  environment: StudyEnvironment
   reproduction_command: string
   nodes: EvidenceNode[]
   edges: EvidenceEdge[]
@@ -135,10 +143,14 @@ export const ResearchPackageSchema: Contract<ResearchPackage> = z.object({
   result_rows: z.array(ResultRowSchema),
   csv: z.string(),
   figures: z.array(FigureSchema),
-  references: z.array(CitationSchema),
+  references: z.array(StudyCitationSchema),
   /** Hashes of the `ResourceIntelligenceBundle` records behind this package. Referenced, never inlined. */
   bundle_refs: z.array(ContentHashSchema),
-  environment: EnvironmentSchema,
+  /**
+   * Study-local, and array-shaped where the shared `EnvironmentSchema` is a map.
+   * A map's keys are data, and `study-v1` drops excluded names at every depth.
+   */
+  environment: StudyEnvironmentSchema,
   /** The command that regenerates this package from itself. */
   reproduction_command: z.string().min(1),
   /**
@@ -161,7 +173,7 @@ export const ResearchPackageSchema: Contract<ResearchPackage> = z.object({
   created_at: IsoDateTimeSchema.optional(),
   /** SHA-256 over the canonical form of this package under `study-v1`. Excluded from itself. */
   reproducibility_hash: ContentHashSchema,
-})
+}).strict()
 
 /** Constructor input: camelCase, and no hash -- the builder computes that. */
 export interface ResearchPackageInput {
@@ -175,7 +187,7 @@ export interface ResearchPackageInput {
   figures?: Figure[]
   references?: Citation[]
   bundleRefs?: string[]
-  environment: Environment
+  environment: StudyEnvironment
   reproductionCommand: string
   nodes: EvidenceNode[]
   edges: EvidenceEdge[]
@@ -233,13 +245,50 @@ function unknownClaimRefusals(nodes: readonly EvidenceNode[]): StudyRefusal[] {
 }
 
 /**
- * Whether every number in the package can be walked back to a node in it.
+ * Whether one edge asserts that this evidence bears on this claim.
  *
- * Four different ways the walk can fail, kept as four codes because they need
- * four different fixes: a row naming a node that was never included, a claim
- * nobody wired up at all, an entry whose evidence list is empty, and an entry
- * citing an edge the package does not carry. Collapsing them into one "export
- * failed" would leave the author guessing which of their tables is the problem.
+ * `supports` is read directionally -- evidence points at the claim, never the
+ * other way -- for `resolveClaimEvidence`'s reason: "the claim supports the
+ * measurement" is not a statement anyone means, and accepting it would let a
+ * claim manufacture its own backing. `contradicts` is read in both directions,
+ * because a disagreement is symmetric however the asserter happened to orient
+ * it, and a claim map that cites what argues with it is citing something a
+ * reader should see rather than something it should be refused for.
+ *
+ * Every other edge kind is a relation between records rather than a statement
+ * about a claim: `derived_from` and `used_input` say where a number came from,
+ * and a chain of them is provenance, not support. If a study means "this backs
+ * that", it says so with an edge that says so -- and then the rationale is on
+ * the edge where a reviewer can read it.
+ */
+function assertsRelation(edge: EvidenceEdge, evidenceHash: string, claimHash: string): boolean {
+  if (edge.kind === "supports") {
+    return edge.from_node_hash === evidenceHash && edge.to_node_hash === claimHash
+  }
+  if (edge.kind !== "contradicts") return false
+  return (
+    (edge.from_node_hash === evidenceHash && edge.to_node_hash === claimHash) ||
+    (edge.from_node_hash === claimHash && edge.to_node_hash === evidenceHash)
+  )
+}
+
+/**
+ * Whether the claim map, the tables and the graph say the same thing.
+ *
+ * Two questions, and the second is the one a resolution check cannot answer.
+ * *Does every hash name something the package carries* -- a row, a claim, a
+ * cited node, a cited edge -- and *does the graph assert the relation the map
+ * claims*. A map checked only for resolution accepted a claim citing itself as
+ * its own evidence with no edges in the package at all: every hash resolved,
+ * and nothing anywhere said that anything supported anything.
+ *
+ * So the codes stay separate, because they need separate fixes: a row naming a
+ * node that was never included, a row naming a node with no value to read, a
+ * claim nobody wired up, an entry whose evidence list is empty, an entry citing
+ * an edge the package does not carry, an entry citing evidence no edge joins to
+ * the claim, and an entry citing the claim itself. Collapsing them into one
+ * "export failed" would leave the author guessing which of their tables is the
+ * problem.
  */
 function claimMapRefusals(body: PackageBody): StudyRefusal[] {
   const refusals: StudyRefusal[] = []
@@ -263,21 +312,58 @@ function claimMapRefusals(body: PackageBody): StudyRefusal[] {
     }
   }
 
+  // A result row is a number in a table, so the node under it has to be one. A
+  // `quantity` block is what carries a value in this family -- envelope, unit,
+  // evidence class and all -- and a row pointing at a claim, a reference or a
+  // citation has nothing to read out: the label would render beside whatever the
+  // renderer chose to show, which is how a sentence becomes a figure. An UNKNOWN
+  // quantity passes: it is a value that says it is missing, which is the one
+  // honest way for a table to have a gap in it.
+  for (const row of body.result_rows) {
+    const node = index.get(row.node_hash)
+    if (!node || node.quantity !== null) continue
+    refusals.push({
+      subject: `result_rows: ${row.label}`,
+      code: "RESULT_ROW_WITHOUT_VALUE",
+      message:
+        `The row reads its value from the ${node.kind} node '${node.label}', which carries no quantity. A result ` +
+        "row is a number in a table, and a row whose node has no number is a label a reader will still quote.",
+    })
+  }
+
   const mapped = new Set(body.claim_evidence_map.map((entry) => entry.claim_node_hash))
   for (const node of body.nodes) {
     if (node.kind !== "claim") continue
-    if (mapped.has(node.content_hash)) continue
-    refusals.push({
-      subject: node.label,
-      code: "CLAIM_WITHOUT_EVIDENCE_NODE",
-      message:
-        "This claim node appears in the package with no entry in the claim evidence map, so nothing states what it " +
-        "rests on. The export refuses rather than shipping the sentence with the reasons left behind.",
-    })
+    if (!mapped.has(node.content_hash)) {
+      refusals.push({
+        subject: node.label,
+        code: "CLAIM_WITHOUT_EVIDENCE_NODE",
+        message:
+          "This claim node appears in the package with no entry in the claim evidence map, so nothing states what " +
+          "it rests on. The export refuses rather than shipping the sentence with the reasons left behind.",
+      })
+      continue
+    }
+    // The graph's own answer to the question the map answers, from the function
+    // that exists to give it. The map is the export's assertion and the edges are
+    // the study's, and a claim the map wires up while no `supports` edge points at
+    // it is a claim with nothing behind it however confident the map is.
+    //
+    // Only that finding is taken. `resolveClaimEvidence` also reports a supports
+    // edge whose source node is missing, and both callers of this function run
+    // `verifyEvidenceGraph`, which reports every unresolved endpoint already:
+    // one defect, one finding is what keeps the refusal list a list of things to
+    // fix rather than a transcript of who noticed.
+    refusals.push(
+      ...resolveClaimEvidence(body.nodes, body.edges, node.content_hash).refusals.filter(
+        (refusal) => refusal.code === "CLAIM_WITHOUT_EVIDENCE_NODE",
+      ),
+    )
   }
 
   for (const entry of body.claim_evidence_map) {
     const claim = index.get(entry.claim_node_hash)
+    const subject = claim?.label ?? entry.claim_node_hash
     if (!claim) {
       refusals.push({
         subject: entry.claim_node_hash,
@@ -290,22 +376,56 @@ function claimMapRefusals(body: PackageBody): StudyRefusal[] {
 
     if (entry.evidence_node_hashes.length === 0) {
       refusals.push({
-        subject: claim?.label ?? entry.claim_node_hash,
+        subject,
         code: "CLAIM_WITHOUT_EVIDENCE_NODE",
         message:
           "The claim evidence map lists this claim with no evidence nodes at all. An empty list is a claim that was " +
           "walked back to nothing, recorded as though it had been checked.",
       })
+    } else if (entry.edge_hashes.length === 0) {
+      // An entry that names evidence and cites no edge asserts a relation it
+      // does not carry. The edge is where "this supports that" is written down
+      // with a rationale and an asserter beside it, and without one the entry is
+      // an opinion the package cannot show the basis for.
+      refusals.push({
+        subject,
+        code: "CLAIM_EVIDENCE_UNLINKED",
+        message:
+          "The claim evidence map cites evidence for this claim and names no edge at all. The relation lives on the " +
+          "edge, together with who asserted it and why, so an entry without one states a belief a reader cannot check.",
+      })
     }
 
     for (const hash of entry.evidence_node_hashes) {
-      if (index.has(hash)) continue
+      if (hash === entry.claim_node_hash) {
+        refusals.push({
+          subject,
+          code: "CLAIM_EVIDENCE_SELF_REFERENTIAL",
+          message:
+            "The claim is cited as its own evidence. Restating an assertion establishes nothing, and the edge that " +
+            "would carry the relation cannot exist -- an edge must join two different nodes -- so this entry can " +
+            "never be joined up in the graph.",
+        })
+        continue
+      }
+      if (!index.has(hash)) {
+        refusals.push({
+          subject,
+          code: "EVIDENCE_NODE_UNRESOLVED",
+          message:
+            `The claim is said to rest on node ${hash}, and the package does not carry it. Evidence that cannot be ` +
+            "opened supports a claim exactly as much as no evidence does.",
+        })
+        continue
+      }
+      if (body.edges.some((edge) => assertsRelation(edge, hash, entry.claim_node_hash))) continue
       refusals.push({
-        subject: claim?.label ?? entry.claim_node_hash,
-        code: "EVIDENCE_NODE_UNRESOLVED",
+        subject,
+        code: "CLAIM_EVIDENCE_UNLINKED",
         message:
-          `The claim is said to rest on node ${hash}, and the package does not carry it. Evidence that cannot be ` +
-          "opened supports a claim exactly as much as no evidence does.",
+          `The claim is said to rest on node ${hash}, and no edge in this package joins the two. The map and the ` +
+          "graph are two statements about one relation, and this is them disagreeing: the node is carried, and " +
+          "nothing in the study asserts that it backs this claim.",
       })
     }
 
@@ -315,7 +435,7 @@ function claimMapRefusals(body: PackageBody): StudyRefusal[] {
       // is that failure seen from the map's side: the relation the entry cites
       // has no edge in the package, so its rationale and its asserter are gone.
       refusals.push({
-        subject: claim?.label ?? entry.claim_node_hash,
+        subject,
         code: "EVIDENCE_EDGE_ENDPOINT_UNRESOLVED",
         message:
           `The claim evidence map cites edge ${hash}, and no edge in this package has that hash. The relation it ` +
@@ -365,14 +485,53 @@ function identityRefusals(nodes: readonly EvidenceNode[], edges: readonly Eviden
 }
 
 /**
+ * The hashing layer's two refusals, in this module's vocabulary.
+ *
+ * `assertNoNestedExcludedKeys` and `assertNoUnrepresentableValues` throw, which
+ * is right for a hashing primitive and wrong at an export boundary: a caller
+ * assembling a package deserves these beside the other refusals rather than as
+ * an exception it has to catch to discover that one of its evidence nodes
+ * carries a key the digest drops, or a figure the two languages read as two
+ * different numbers.
+ *
+ * They stay two codes rather than one because they send a reader to different
+ * places: `STUDY_EXCLUDED_KEY_NESTED` is fixed by renaming a field, and
+ * `STUDY_VALUE_NOT_REPRESENTABLE` by changing the value itself.
+ */
+function hashingRefusals(record: object): StudyRefusal[] {
+  const checks: readonly [(input: object, rulesId: string) => void, StudyRefusal["code"]][] = [
+    [assertNoNestedExcludedKeys, "STUDY_EXCLUDED_KEY_NESTED"],
+    [assertNoUnrepresentableValues, "STUDY_VALUE_NOT_REPRESENTABLE"],
+  ]
+  for (const [assert, code] of checks) {
+    try {
+      assert(record, STUDY_HASH_RULES_ID)
+    } catch (error) {
+      return [{ subject: "research_package", code, message: (error as Error).message }]
+    }
+  }
+  return []
+}
+
+/**
  * Assemble a package, or say why there is nothing to assemble.
  *
  * The order is `buildBundle`'s and the order is the contract. Inputs are parsed
- * first so that anything the schemas normalise -- an omitted citation author
- * list, an environment's empty package map -- is normalised *before* it is
- * hashed; hashing first and parsing afterwards would stamp a digest onto a
- * record the final parse then quietly changes, and the package would fail its
- * own verifier the moment it was written.
+ * first, so that a record refused by a schema is refused before anything is
+ * hashed, and the record that gets hashed is the record that gets written.
+ *
+ * There is nothing left for that parse to normalise. `StudyCitationSchema`
+ * requires its author list where the shared `CitationSchema` defaults it, and
+ * that default was the last one a study record still met: a citation written
+ * without `authors` hashed one way here and another way once parsed, so this
+ * builder and `verifyResearchPackage` addressed two different nodes for one
+ * file, and Python -- which fills in nothing -- agreed with neither.
+ *
+ * That is the writer's half of one invariant: **a package's hash is over the
+ * package as it appears in the file.** The builder holds it by writing exactly
+ * what it hashed; `verifyResearchPackage` holds it by hashing exactly what it
+ * read. Only both halves together make the digest something the Python verifier
+ * can recompute from the same bytes.
  *
  * Everything structural is then checked before the hash exists, because a
  * refusal is meant to be the ordinary outcome here rather than the error case. A
@@ -387,8 +546,8 @@ export function buildResearchPackage(
 
   const nodes = input.nodes.map((node) => EvidenceNodeSchema.parse(node))
   const edges = input.edges.map((edge) => EvidenceEdgeSchema.parse(edge))
-  const environment = EnvironmentSchema.parse(input.environment)
-  const references = (input.references ?? []).map((citation) => CitationSchema.parse(citation))
+  const environment = StudyEnvironmentSchema.parse(input.environment)
+  const references = (input.references ?? []).map((citation) => StudyCitationSchema.parse(citation))
 
   const assumptionRows = input.assumptionRows ?? []
   const resultRows = input.resultRows ?? []
@@ -400,14 +559,6 @@ export function buildResearchPackage(
     result_rows: resultRows,
     claim_evidence_map: input.claimEvidenceMap,
   }
-
-  // The shared graph verifier reports an edge whose endpoint is missing; the
-  // identity check names the node that lied about its own hash. Neither answers
-  // for the other, and a package that would fail verification must not be
-  // writable in the first place.
-  const graph = verifyEvidenceGraph(nodes, edges)
-  const refusals = [...identityRefusals(nodes, edges), ...graph.refusals, ...claimMapRefusals(body)]
-  if (refusals.length > 0) return { ok: false, refusals }
 
   const withoutHash = {
     schema_version: STUDY_SCHEMA_VERSION,
@@ -434,6 +585,22 @@ export function buildResearchPackage(
     ...(input.createdAt ? { created_at: input.createdAt } : {}),
   }
 
+  // Asked before anything hashes, over the assembled record rather than over its
+  // parts, because everything below this line takes a digest: `identityRefusals`
+  // recomputes every node's, and a node carrying a key the canonicalizer drops --
+  // or a number the two languages read differently -- would throw out of an
+  // export boundary whose whole contract is to return refusals instead.
+  const unhashable = hashingRefusals(withoutHash)
+  if (unhashable.length > 0) return { ok: false, refusals: unhashable }
+
+  // The shared graph verifier reports an edge whose endpoint is missing; the
+  // identity check names the node that lied about its own hash. Neither answers
+  // for the other, and a package that would fail verification must not be
+  // writable in the first place.
+  const graph = verifyEvidenceGraph(nodes, edges)
+  const refusals = [...identityRefusals(nodes, edges), ...graph.refusals, ...claimMapRefusals(body)]
+  if (refusals.length > 0) return { ok: false, refusals }
+
   const hash = calculateStudyHash(withoutHash, STUDY_HASH_RULES_ID)
 
   return {
@@ -446,7 +613,12 @@ export const StudyVerificationSchema = z.object({
   valid: z.boolean(),
   /** The file is unedited: its contents canonicalize to the hash it carries. */
   hash_matches: z.boolean(),
-  /** Every row and every claim-map entry resolves to something the package carries. */
+  /**
+   * Every row resolves to a node the package carries, every result row's node
+   * carries a value, and every claim's cited evidence is joined to it by an edge
+   * that asserts the relation. Resolution alone was the weaker half: a claim
+   * citing itself resolved perfectly and rested on nothing.
+   */
   claims_resolve: z.boolean(),
   /** Node and edge identities are their own contents, and every edge joins two nodes that are here. */
   graph_valid: z.boolean(),
@@ -454,7 +626,7 @@ export const StudyVerificationSchema = z.object({
   actual_hash: z.string(),
   /** Every discrepancy found, named. Empty when `valid`. */
   problems: z.array(z.string().min(1)),
-})
+}).strict()
 export type StudyVerification = z.infer<typeof StudyVerificationSchema>
 
 /**
@@ -474,11 +646,20 @@ export type StudyVerification = z.infer<typeof StudyVerificationSchema>
  * graph consistently, and a graph rewritten consistently is a different study
  * that says different things -- visibly, to a reader.
  *
+ * `claims_resolve` asks the graph as well as the map, and the same checks run
+ * here as at the build boundary. A recipient is the party the checks are for: a
+ * package assembled by something other than `buildResearchPackage` -- by hand, by
+ * an older build, by a service with its own idea of what a claim map is -- gets
+ * exactly the reading the builder would have refused to write.
+ *
  * What this does not do is recompute the science. Nothing here re-derives an
  * estimate from a scenario or re-runs a decision rule; `verifyBundle` does that
  * for the intelligence tier, and a package that carries `bundle_refs` is
- * pointing at bundles that can be verified that way. A valid result here means
- * the package is internally consistent and unedited, and no more than that.
+ * pointing at bundles that can be verified that way. Nor does the graph check
+ * weigh the evidence: an edge asserting that a result supports a claim is the
+ * study's assertion, checked for being present, joined up and attributed, never
+ * for being right. A valid result here means the package is internally
+ * consistent and unedited, and no more than that.
  */
 export function verifyResearchPackage(candidate: unknown): StudyVerification {
   const parsed = ResearchPackageSchema.safeParse(candidate)
@@ -494,13 +675,41 @@ export function verifyResearchPackage(candidate: unknown): StudyVerification {
     })
   }
 
-  const pkg = parsed.data
+  // Everything below reads the package *as written*, never `parsed.data`. The
+  // parse above answers "is this shaped like a research package" and nothing
+  // else; no schema in this family carries a `.default()` any more, so the two
+  // values are the same one -- and this order is what keeps them the same if a
+  // default is ever added back. A verifier that hashed a materialised container
+  // would be answering about a record the file does not contain, and disagreeing
+  // with the Python verifier, which reads the same bytes and fills in nothing.
+  // The same applies to the node and edge identities below: they are recomputed
+  // from the graph the recipient received.
+  const pkg = candidate as ResearchPackage
   const problems: string[] = []
 
   // The literal on `hash_rules_id` has already refused a missing or unknown id,
   // so this reads the rules the record names rather than assuming the current
   // ones: a future `study-v2` package must be hashed the way it says it was.
   const rulesId = studyRulesIdOf(pkg)
+
+  // A record the digest cannot represent honestly is refused rather than hashed,
+  // here as at the build boundary. A key the canonicalizer drops lets a package's
+  // contents be swapped for somebody else's while its hash still checks out; an
+  // integer above 2**53 lets two packages reporting figures half a million apart
+  // share one digest, one node identity and one clean verification.
+  const hidden = hashingRefusals(pkg)
+  if (hidden.length > 0) {
+    return StudyVerificationSchema.parse({
+      valid: false,
+      hash_matches: false,
+      claims_resolve: false,
+      graph_valid: false,
+      expected_hash: "",
+      actual_hash: pkg.reproducibility_hash,
+      problems: hidden.map((refusal) => `${refusal.code} (${refusal.subject}): ${refusal.message}`),
+    })
+  }
+
   const expected = calculateStudyHash(pkg, rulesId)
   const hashMatches = expected === pkg.reproducibility_hash
   if (!hashMatches) {

@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { IsoDateTimeSchema } from "../contracts/common.js";
-import { QuantitySchema } from "../intelligence/measurement.js";
-import { BaselineSourceClassSchema, ContentHashSchema, RevisionRefSchema, STUDY_SCHEMA_VERSION, } from "./common.js";
+import { BaselineSourceClassSchema, ContentHashSchema, RevisionRefSchema, STUDY_SCHEMA_VERSION, StudyQuantitySchema, } from "./common.js";
 import { STUDY_HASH_RULES_ID, calculateStudyHash } from "./hashing.js";
 /**
  * What the study intends to do, and the exact thing a user confirms
@@ -42,15 +41,15 @@ export const PlannedBaselineSchema = z.object({
      */
     source_class: BaselineSourceClassSchema,
     note: z.string().min(1).nullable(),
-});
+}).strict();
 export const CandidateWorkflowSchema = z.object({
     name: z.string().min(1),
     /** Hash of a record carrying the `QuantumWorkload`, where one exists yet. */
     workload_ref: ContentHashSchema.nullable(),
     /** Why this candidate is worth spending the run on. An unargued candidate is a preference. */
     rationale: z.string().min(1),
-});
-const namedVersion = z.object({ name: z.string().min(1), version: z.string().min(1) });
+}).strict();
+const namedVersion = z.object({ name: z.string().min(1), version: z.string().min(1) }).strict();
 /**
  * The versions this plan is pinned to.
  *
@@ -64,7 +63,7 @@ export const PinnedVersionsSchema = z.object({
     adapter: namedVersion.nullable(),
     model: namedVersion,
     engine: namedVersion,
-});
+}).strict();
 /**
  * How exactly a rerun is expected to match.
  *
@@ -95,8 +94,8 @@ export const StudyPlanSchema = z
     scenario_refs: z.array(ContentHashSchema).min(1),
     pinned_versions: PinnedVersionsSchema,
     /** An estimate, so it wears the envelope with its evidence class and its assumptions. */
-    expected_runtime: QuantitySchema,
-    expected_credits: QuantitySchema,
+    expected_runtime: StudyQuantitySchema,
+    expected_credits: StudyQuantitySchema,
     /** The user's hard ceiling. Their decision, exact, not an estimate of anything. */
     max_credits: z.number().positive(),
     /** What happens to the inputs and the outputs. Never blank on a plan somebody signs. */
@@ -113,6 +112,7 @@ export const StudyPlanSchema = z
     /** The confirmation target. Excluded from its own digest. */
     content_hash: ContentHashSchema,
 })
+    .strict()
     .superRefine((plan, context) => {
     if (plan.revision > 1 && plan.supersedes === null) {
         context.addIssue({

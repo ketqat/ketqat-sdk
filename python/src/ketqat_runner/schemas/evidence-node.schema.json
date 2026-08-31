@@ -253,8 +253,7 @@
                   "items": {
                     "type": "string",
                     "minLength": 1
-                  },
-                  "default": []
+                  }
                 },
                 "year": {
                   "type": "integer",
@@ -273,7 +272,8 @@
                 }
               },
               "required": [
-                "title"
+                "title",
+                "authors"
               ],
               "additionalProperties": false
             },

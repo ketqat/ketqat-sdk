@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type Citation } from "../contracts/common.js";
+import type { Citation } from "../contracts/common.js";
 import { type Contract, type Quantity } from "../intelligence/measurement.js";
 import type { StudyRefusal } from "./refusals.js";
 /**

@@ -1,7 +1,7 @@
 import { z } from "zod"
-import { CitationSchema, type Citation } from "../contracts/common.js"
-import { isKnown, QuantitySchema, type Contract, type Quantity } from "../intelligence/measurement.js"
-import { ContentHashSchema } from "./common.js"
+import type { Citation } from "../contracts/common.js"
+import { isKnown, type Contract, type Quantity } from "../intelligence/measurement.js"
+import { ContentHashSchema, StudyCitationSchema, StudyQuantitySchema } from "./common.js"
 import { calculateStudyHash, STUDY_HASH_RULES_ID } from "./hashing.js"
 import type { StudyRefusal } from "./refusals.js"
 
@@ -113,8 +113,9 @@ export const ClaimStatementSchema: Contract<ClaimStatement> = z
     /** Which quantity of the subject is being claimed: "total_physical_qubits", "runtime". */
     metric: z.string().min(1),
     comparator: ClaimComparatorSchema,
-    value: QuantitySchema,
+    value: StudyQuantitySchema,
   })
+  .strict()
   .superRefine((claim, context) => {
     if (!isKnown(claim.value)) {
       context.addIssue({
@@ -156,6 +157,7 @@ export const EvidenceReferenceSchema: Contract<EvidenceReference> = z
      */
     record_slug: z.string().min(1).nullable(),
   })
+  .strict()
   .superRefine((reference, context) => {
     if (reference.hash === null && reference.record_slug === null) {
       context.addIssue({
@@ -218,9 +220,9 @@ export const EvidenceNodeSchema: Contract<EvidenceNode> = z
     label: z.string().min(1),
     claim: ClaimStatementSchema.nullable(),
     /** The one place an UNKNOWN value belongs: a number the study looked for and did not find. */
-    quantity: QuantitySchema.nullable(),
+    quantity: StudyQuantitySchema.nullable(),
     reference: EvidenceReferenceSchema.nullable(),
-    citation: CitationSchema.nullable(),
+    citation: StudyCitationSchema.nullable(),
     /** What this node does not account for. Travels with the node, not with the report. */
     limitations: z.array(z.string().min(1)),
     /** ISO date the underlying source was published, where there is one. */
@@ -232,6 +234,7 @@ export const EvidenceNodeSchema: Contract<EvidenceNode> = z
     /** A node's identity is the hash of its content. Excluded from its own digest. */
     content_hash: ContentHashSchema,
   })
+  .strict()
   .superRefine((node, context) => {
     const required = NODE_PAYLOAD_KEY[node.kind]
     for (const key of EVIDENCE_PAYLOAD_KEYS) {
@@ -295,6 +298,7 @@ export const EvidenceEdgeSchema: Contract<EvidenceEdge> = z
     created_at: z.string().datetime({ offset: true }).optional(),
     content_hash: ContentHashSchema,
   })
+  .strict()
   .superRefine((edge, context) => {
     if (edge.from_node_hash === edge.to_node_hash) {
       context.addIssue({

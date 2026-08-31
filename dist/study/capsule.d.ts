@@ -1,5 +1,6 @@
-import { type Environment, type ExecutionClass } from "../contracts/common.js";
+import { type ExecutionClass } from "../contracts/common.js";
 import type { Contract } from "../intelligence/measurement.js";
+import { type StudyEnvironment } from "./common.js";
 import type { StudyRefusal } from "./refusals.js";
 /**
  * One execution, recorded so it can be argued with (ketqat-sdk#259, ADR 0014).
@@ -24,6 +25,24 @@ import type { StudyRefusal } from "./refusals.js";
  * capsule stays small enough to store per run, and a referenced blob that
  * changed after the fact stops resolving instead of quietly disagreeing with the
  * record that names it.
+ */
+/**
+ * Where the safe-integer bound went.
+ *
+ * `seed` and `resource_limits.max_memory_bytes` used to carry
+ * `.max(Number.MAX_SAFE_INTEGER)` each, and they were the only two fields in the
+ * family that did. That was the bug rather than the fix: every other hashed
+ * number was unbounded, `Quantity.value` above all -- which is every number a
+ * study reports -- so two research packages whose reported figure differed by
+ * 524286 took one digest and both verified clean, while Python refused the
+ * honest file this builder had just written because its mirror of the bound
+ * named the same two fields.
+ *
+ * The rule now lives once, in the hashing layer, as
+ * `assertNoUnrepresentableValues`: no study record may carry an integer outside
+ * ±`Number.MAX_SAFE_INTEGER` at any depth, whatever field it sits in and
+ * whatever record kind is added next. A capsule's seed is still refused, and so
+ * is everything the enumeration used to miss.
  */
 /** What the run was allowed to spend. Null where no limit was set, never zero standing in for one. */
 export interface ResourceLimits {
@@ -59,7 +78,7 @@ export interface ExecutionCapsule {
     image_digest: string | null;
     dependency_lock_ref: string | null;
     seed: number | null;
-    environment: Environment;
+    environment: StudyEnvironment;
     resource_limits: ResourceLimits;
     input_hashes: string[];
     output_hashes: string[];
@@ -90,7 +109,7 @@ export interface ExecutionCapsuleInput {
     imageDigest?: string | null;
     dependencyLockRef?: string | null;
     seed?: number | null;
-    environment: Environment;
+    environment: StudyEnvironment;
     resourceLimits?: ResourceLimits;
     inputHashes?: string[];
     outputHashes?: string[];
@@ -134,6 +153,15 @@ export interface CapsuleVerification {
  * answers, and reporting the second when the first is true would send a reader
  * looking for a schema bug in a record that simply predates -- or postdates --
  * the rule set this build knows.
+ *
+ * The hash is then taken over the candidate as it arrived, not over the parsed
+ * value. Schema validation is a question asked *about* the record, and a
+ * question that rewrites its subject -- filling in an omitted container, or
+ * stripping a key it does not declare -- would make this verifier answer about a
+ * record the file does not contain, and disagree with the Python verifier, which
+ * reads the same bytes and fills in nothing. No schema in this family carries a
+ * `.default()` any more, which is what makes the two readings the same one; the
+ * order here is what keeps them the same if one ever does.
  *
  * Unlike `verifyBundle` there is nothing here to recompute from inputs. A
  * capsule records what happened rather than deriving anything, so a matching

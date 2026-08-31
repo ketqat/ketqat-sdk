@@ -65,7 +65,7 @@ export const StudyTaskSchema: Contract<StudyTask> = z.object({
   /** Excluded from the hash by name, like every other timestamp in this family. */
   created_at: IsoDateTimeSchema.optional(),
   content_hash: ContentHashSchema,
-})
+}).strict()
 
 export interface StudyTaskInput {
   plan: StudyPlan

@@ -47,7 +47,7 @@ export const StudyTaskSchema = z.object({
     /** Excluded from the hash by name, like every other timestamp in this family. */
     created_at: IsoDateTimeSchema.optional(),
     content_hash: ContentHashSchema,
-});
+}).strict();
 /**
  * Build a task, or say why there is nothing to build.
  *

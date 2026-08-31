@@ -41,25 +41,85 @@ life.
   `fixtures/reproducibility/expected-hashes.json` is byte-identical — the family's own pins
   live in a separate `study-expected-hashes.json` sidecar.
 
-  Four properties are structural rather than documented:
+  Eight properties are structural rather than documented:
 
   - **A number in a report is a node in a graph.** A `ResearchPackage` reads every result
-    row's value out of an `EvidenceNode` it carries, so a figure with nothing behind it is
-    unrepresentable rather than discouraged. Export **refuses** — a claim with no evidence
-    node, a row naming a node the package does not contain, or an edge with a dangling
-    endpoint fails the build with a named code instead of a warning.
+    row's value out of an `EvidenceNode` it carries, and that node has to carry a value: a row
+    naming a claim or a reference has no number to read out. A claim's cited evidence has to be
+    joined to it by a `supports` or `contradicts` edge the package carries — the edge is where
+    the relation is asserted, with its rationale and its asserter — so a claim citing itself,
+    or citing a node no edge connects to it, fails with a named code instead of a warning, at
+    build and again at verification. What is *not* checked is whether the evidence supports the
+    conclusion: the edges are the study's own assertions, checked for being present, joined up
+    and attributed, never for being right.
   - **A confirmation names one plan revision by its hash.** `StudyPlan` revisions are
     immutable and content-addressed, so editing a plan moves its hash and the old
     confirmation stops applying by construction. `verifyPlanConfirmation` recomputes:
     a plan edited by hand and re-stamped with its previous hash is refused.
-  - **History is hash-chained.** Each `StudyEvent` names its predecessor's hash and its own
-    sequence number, so a rewritten middle event is detectable offline by
-    `verifyStudyEventChain` rather than only by database discipline.
+  - **History is hash-chained, and the chain is honest about its limit.** Each `StudyEvent`
+    names its predecessor's hash and its own sequence number, so reordering, splicing, replay
+    and a rewritten middle event are all detectable offline by `verifyStudyEventChain` rather
+    than only by database discipline. Truncation is not: a trail cut short is a shorter valid
+    chain, and `Study.status` and the `latest_*` pointers are excluded from the study's hash
+    by design, so no record anchors the head. `verifyStudyEventChain` therefore takes an
+    optional expected head hash from the caller, which is what makes a dropped suffix — or an
+    event fabricated onto one — detectable offline.
   - **The family names its own hash rules, and nothing is inferred.** Study records carry
     `hash_rules_id: "study-v1"` and are refused without it. This is a *different field* from
     `reproducibility_hash_version` on purpose: the legacy marker reads as version 1 for any
     non-integer value, so a rules id written there would have verified silently under the
-    wrong rules — a wrong answer where a refusal belongs.
+    wrong rules — a wrong answer where a refusal belongs. The registry of known rule sets is a
+    `Map`, not an object literal, so `hash_rules_id: "toString"` is an unknown id rather than
+    `Function.prototype.toString` arriving where an exclusion set was expected.
+  - **A record's hash is over the record as it appears in the file.** Builders write exactly
+    what they hashed; `verifyExecutionCapsule` and `verifyResearchPackage` hash exactly what
+    they read, normalising nothing. Schema validation stays a separate, reported step, because
+    a validator that filled in a container before hashing would answer about a record the file
+    does not contain — and disagree with the Python verifier, which reads the same bytes and
+    fills in nothing. **No study schema carries a `.default()`**: `StudyCitationSchema`
+    requires the author list the shared `CitationSchema` defaults, which was the last one left
+    and the last way the build path and the verify path could address two different records for
+    one file. A producer with nothing to record writes `[]`.
+  - **No key in a study record is data.** A study record's environment is
+    `StudyEnvironment`, not the shared `Environment`: the same four scalars, and then
+    `packages: { name, version }[]` and `hardware: { name, value }[]` where the shared
+    contract has two free-form maps. A map's keys arrive at run time, `study-v1` drops its
+    excluded names at every nesting level, and a canonicalizer that drops keys by name cannot
+    be safe over keys that are data — a dependency genuinely called `id`, or a hardware key
+    called `visibility`, vanished before the digest, so two capsules recording different
+    environments hashed identically and one could be handed the other's environment while
+    still verifying. Both lists are required and neither is defaulted. The shared
+    `Environment` in `ketqat-sdk/contracts` is unchanged, and so is every hash computed
+    under it.
+  - **An undeclared key is refused, not stripped.** Every object in the family is
+    `.strict()`. Zod's default is to strip, while the generated JSON Schemas have always
+    emitted `additionalProperties: false`, so the two validators gave two answers for one
+    file: a package carrying an undeclared root key parsed in TypeScript and was refused in
+    Python. Stripping is the worse half of that, because these verifiers hash the record as
+    written — a key the parser discards is a key the digest still sees. The row metadata a
+    store wraps around a record (`id`, `slug`, `owner_username`, `visibility`, `updated_at`
+    and the rest) is therefore not part of a study record, as the schemas already said.
+    That now includes the objects the family embeds and does not own: `src/study/common.ts`
+    derives `StudyQuantitySchema`, `StudyUncertaintySchema` and `StudyCitationSchema` from the
+    shared ones, so a `smuggled_note` inside an `expected_credits` envelope can no longer be
+    stripped by the parse and hashed by the digest. `src/intelligence` and `src/contracts` are
+    unchanged, and no schema outside the study family changes.
+  - **A record the two languages would hash differently is refused, not hashed.** Three cases,
+    one rule, and all three in the hashing layer rather than on the fields that met them first.
+    An excluded key below a record's own top level is dropped at every depth, so it is
+    refused (`STUDY_EXCLUDED_KEY_NESTED`) rather than silently left out of the digest — at
+    the hashing layer, which takes any object and is the whole check a Python-only caller
+    has. An embedded record keeps the exemption its own top level needs, and keeps it per
+    key: `hash_rules_id`, `content_hash` and `created_at`, the three excluded names the
+    schemas declare below a root, and nothing else. And a value the two canonicalizers do not
+    agree about is refused in the hashing layer (`STUDY_VALUE_NOT_REPRESENTABLE`), over every
+    study record at every depth rather than on named fields: an integer outside
+    ±`Number.MAX_SAFE_INTEGER` — the ordinary 64-bit seed Stim and NumPy hand out, and near
+    4.2e21 one double standing for 524287 distinct integers — because nothing on the
+    JavaScript side can tell which of them was written; and a string carrying an unpaired
+    UTF-16 surrogate, because JavaScript hashes the escape while Python cannot encode it as
+    UTF-8 at all. Refusing is the honest answer in both cases: a digest that could stand for
+    either value identifies neither.
 
   What is verified in Python is validation, hashing and structural resolution of the claim
   map and graph. It does not recompute the science, and `verify_research_package` reports

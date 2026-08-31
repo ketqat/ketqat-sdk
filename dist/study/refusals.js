@@ -20,6 +20,22 @@ export const StudyRefusalCodeSchema = z.enum([
     "STUDY_HASH_RULES_ID_MISSING",
     /** The record names rules this build does not have. Never treated as current. */
     "STUDY_HASH_RULES_ID_UNKNOWN",
+    /**
+     * Something below the record's own top level is named after a key the digest
+     * drops, so hashing it would omit the value. Free-form maps -- an environment's
+     * package and hardware dictionaries -- are where this arrives, because their
+     * keys are run-time data no schema declares.
+     */
+    "STUDY_EXCLUDED_KEY_NESTED",
+    /**
+     * The record carries a value the two canonicalizers do not agree about: an
+     * integer outside ±`Number.MAX_SAFE_INTEGER`, which JavaScript reads as a
+     * double that stands for many distinct integers, or a string carrying an
+     * unpaired UTF-16 surrogate, which Python cannot encode as UTF-8 at all.
+     * Either way the same file takes two digests -- or one digest and one crash --
+     * so it is refused rather than hashed under whichever language read it first.
+     */
+    "STUDY_VALUE_NOT_REPRESENTABLE",
     /** The requested status is not reachable from the current one. */
     "INVALID_STATUS_TRANSITION",
     /** An event does not follow the hash of the event before it. History was rewritten. */
@@ -34,6 +50,16 @@ export const StudyRefusalCodeSchema = z.enum([
     "PLAN_DEPENDS_ON_UNKNOWN",
     /** A claim is asserted with no evidence node behind it. The export refuses; it does not warn. */
     "CLAIM_WITHOUT_EVIDENCE_NODE",
+    /**
+     * The claim map cites evidence that no edge in the package joins to the claim.
+     * Resolving a hash proves the record is carried; only an edge asserts that it
+     * backs anything, and the edge is where the rationale and the asserter live.
+     */
+    "CLAIM_EVIDENCE_UNLINKED",
+    /** A node is cited as its own evidence. Restating a claim establishes nothing. */
+    "CLAIM_EVIDENCE_SELF_REFERENTIAL",
+    /** A result row names a node that carries no value, so the row has no number to read. */
+    "RESULT_ROW_WITHOUT_VALUE",
     /** A claim asserts an unknown value. An unknown belongs in a quantity node, not in an assertion. */
     "CLAIM_VALUE_UNKNOWN",
     /** A hash in a row or a claim map names a node the package does not carry. */
@@ -51,5 +77,5 @@ export const StudyRefusalSchema = z.object({
     code: StudyRefusalCodeSchema,
     /** What would have to be true instead, in words a reader can act on. */
     message: z.string().min(1),
-});
+}).strict();
 //# sourceMappingURL=refusals.js.map

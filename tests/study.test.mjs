@@ -168,7 +168,11 @@ test("a study cannot start running without passing through confirmation", () => 
   })
   assert.equal(skipped.ok, false)
   assert.equal(skipped.refusal.code, "INVALID_STATUS_TRANSITION")
-  assert.match(skipped.refusal.message, /AWAITING_CONFIRMATION/)
+  // The step that was skipped is read off the transition table, not out of the
+  // refusal's prose: codes are the contract and messages are for people
+  // (src/study/refusals.ts), so a test that matched the sentence would break the
+  // day somebody improved it.
+  assert.deepEqual(STUDY_STATUS_TRANSITIONS.PLANNED, ["AWAITING_CONFIRMATION", "REFUSED"])
 })
 
 test("the terminal statuses accept nothing", () => {
@@ -246,7 +250,10 @@ test("an event edited after it was written no longer hashes to what it claims", 
   const verdict = verifyStudyEventChain(tampered)
   assert.equal(verdict.valid, false)
   assert.equal(verdict.problems[0].code, "EVENT_CHAIN_BROKEN")
-  assert.match(verdict.problems[0].message, /edited after it was written/)
+  // The finding itself rather than the sentence reporting it: the event's
+  // contents no longer canonicalize to the hash it carries.
+  assert.notEqual(calculateStudyHash(tampered[2]), tampered[2].content_hash)
+  assert.equal(verdict.problems[0].subject, "study event 3")
 })
 
 test("a rewritten middle event is caught by the event that follows it, even after re-hashing", () => {
@@ -264,6 +271,68 @@ test("a rewritten middle event is caught by the event that follows it, even afte
   const codes = verdict.problems.map((problem) => problem.code)
   assert.ok(codes.includes("EVENT_CHAIN_BROKEN"))
   assert.equal(verdict.problems[0].subject, "study event 4")
+})
+
+// The honest limit of a forward-linked chain, pinned so the docstring cannot
+// quietly outgrow it again. Each event names the one before it, so nothing
+// inside a trail can be moved, spliced or replayed without breaking the next
+// link -- and nothing inside a trail can say how long the trail should be.
+// `Study.status` and the `latest_*` pointers are excluded from the study's hash
+// by design, so the record the trail belongs to is not an anchor either.
+test("a truncated trail still verifies, and a forgery appended to it verifies too", () => {
+  const truncated = confirmedTrail.slice(0, 4)
+  assert.equal(verifyStudyEventChain(truncated).valid, true, "a chain cut short is still a chain")
+
+  const previous = truncated[truncated.length - 1]
+  const forged = {
+    schema_version: STUDY_SCHEMA_VERSION,
+    hash_rules_id: STUDY_HASH_RULES_ID,
+    study_ref: study.content_hash,
+    sequence: 5,
+    previous_event_hash: previous.content_hash,
+    from_status: previous.to_status,
+    to_status: "REFUSED",
+    actor: "somebody who was never there",
+    reason: "Fabricated: this study never refused.",
+    plan_ref: null,
+  }
+  const continued = [...truncated, StudyEventSchema.parse({ ...forged, content_hash: calculateStudyHash(forged) })]
+
+  assert.equal(
+    verifyStudyEventChain(continued).valid,
+    true,
+    "the forger holds the same hash the honest writer would have, so the link is real",
+  )
+})
+
+test("a caller holding the store's head detects both, offline", () => {
+  const head = confirmedTrail[confirmedTrail.length - 1].content_hash
+  assert.equal(verifyStudyEventChain(confirmedTrail, head).valid, true)
+
+  const truncated = confirmedTrail.slice(0, 4)
+  const cut = verifyStudyEventChain(truncated, head)
+  assert.equal(cut.valid, false)
+  assert.deepEqual(
+    cut.problems.map((problem) => problem.code),
+    ["EVENT_CHAIN_BROKEN"],
+  )
+
+  // An empty trail is the whole history missing, which the same anchor catches.
+  assert.equal(verifyStudyEventChain([], head).valid, false)
+
+  // And a stale anchor is not silently accepted either: the head the caller
+  // holds is in the trail, and events were added after it.
+  const stale = verifyStudyEventChain(confirmedTrail, confirmedTrail[2].content_hash)
+  assert.equal(stale.valid, false)
+  assert.equal(stale.problems[0].code, "EVENT_CHAIN_BROKEN")
+})
+
+test("without an anchor the head is not checked, and nothing pretends otherwise", () => {
+  // The default is silence rather than a check that would pass for a trail with
+  // its last two events removed. A caller with no head to check against learns
+  // that the trail is internally consistent, which is what it asked.
+  assert.equal(verifyStudyEventChain(confirmedTrail.slice(0, 2)).valid, true)
+  assert.equal(verifyStudyEventChain([]).valid, true)
 })
 
 test("a trail that does not verify is not extended", () => {
@@ -369,7 +438,9 @@ test("a plan edited after confirmation fails even when the confirmed hash is the
   const verdict = verifyPlanConfirmation(tampered, tampered.content_hash)
   assert.equal(verdict.ok, false)
   assert.equal(verdict.refusal.code, "CONFIRMATION_HASH_MISMATCH")
-  assert.match(verdict.refusal.message, /edited after it was written/)
+  // What the refusal is about, asserted directly: the confirmed hash is not what
+  // the plan now canonicalizes to.
+  assert.notEqual(calculateStudyHash(tampered), tampered.content_hash)
 })
 
 test("a confirmation naming some other record is a mismatch, not a stale approval", () => {
@@ -520,10 +591,30 @@ test("the stored plan revision verifies against its own contents", () => {
   assert.equal(calculateStudyHash(fixture), fixture.content_hash)
   assert.equal(calculateStudyHash(fixture), "a29381c39e2f15ccb1669ab1f6f787e7214bf67cefa9bd96903852b5c3384eb0")
 
-  // Parsing drops the volatile keys the fixture carries; the digest ignored them
-  // already, so the record and its parsed form are the same record.
-  const parsed = StudyPlanSchema.parse(fixture)
-  assert.equal(calculateStudyHash(parsed), fixture.content_hash)
+  // The fixture is written as a store would hand the record back, wrapped in the
+  // row metadata `study-v1` drops. The digest ignores every one of those keys --
+  // which is what the loop below pins -- and the contract declares none of them,
+  // so parsing refuses rather than strips. The generated JSON Schema has said
+  // `additionalProperties: false` all along; stripping was the reading that
+  // disagreed with it, and with the Python validator reading the same file.
+  const ROW_METADATA = [
+    "id",
+    "slug",
+    "owner_username",
+    "visibility",
+    "status",
+    "ui_metadata",
+    "updated_at",
+    "submitted_at",
+    "started_at",
+    "finished_at",
+    "runtime_seconds",
+  ]
+  assert.throws(() => StudyPlanSchema.parse(fixture), /Unrecognized key/)
+
+  const declared = Object.fromEntries(Object.entries(fixture).filter(([key]) => !ROW_METADATA.includes(key)))
+  const parsed = StudyPlanSchema.parse(declared)
+  assert.equal(calculateStudyHash(parsed), fixture.content_hash, "what the digest ignores is not part of the record")
   assert.equal(verifyPlanConfirmation(parsed, fixture.content_hash).ok, true)
 
   for (const volatileChange of [

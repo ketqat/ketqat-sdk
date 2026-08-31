@@ -23,6 +23,8 @@ import {
   buildExecutionCapsule,
   verifyExecutionCapsule,
 } from "../dist/study/capsule.js"
+import { AttestationLevelSchema } from "../dist/study/common.js"
+import { verifyResearchPackage } from "../dist/study/research-package.js"
 
 /**
  * Tests for the Evidence Graph and the execution capsule (ketqat-sdk#259, WP3).
@@ -84,7 +86,14 @@ const PAYLOADS = {
   claim: () => claimStatement(),
   quantity: () => unknownRuntime(),
   reference: () => ({ record_kind: "benchmark_result", hash: OTHER_HASH, record_slug: null }),
-  citation: () => ({ title: "Surface codes: towards practical large-scale quantum computation", year: 2012 }),
+  // `authors` is required rather than defaulted: `StudyCitationSchema` drops the shared
+  // `.default([])`, because a container the parser materialises is a container the file does
+  // not contain, and the build path and the verify path then address two different nodes.
+  citation: () => ({
+    title: "Surface codes: towards practical large-scale quantum computation",
+    authors: [],
+    year: 2012,
+  }),
 }
 const KIND_PAYLOAD = {
   claim: "claim",
@@ -429,7 +438,11 @@ const capsuleInput = {
   sourceHash: "3".repeat(64),
   imageDigest: `sha256:${"4".repeat(64)}`,
   seed: 20260101,
-  environment: { operating_system: "Linux", packages: { stim: "1.14.0" }, hardware: {} },
+  environment: {
+    operating_system: "Linux",
+    packages: [{ name: "stim", version: "1.14.0" }],
+    hardware: [],
+  },
   resourceLimits: { max_runtime: 3600, max_memory_bytes: 8589934592, max_credits: 250 },
   inputHashes: ["5".repeat(64)],
   outputHashes: ["6".repeat(64)],
@@ -450,9 +463,25 @@ test("a built capsule verifies against its own contents", () => {
 
 test("a capsule claims one attestation level, and it is hashed", () => {
   const capsule = buildExecutionCapsule(capsuleInput)
-  assert.throws(() => ExecutionCapsuleSchema.parse({ ...capsule, attestation_level: "signed" }), /Invalid enum value/)
+  // Deliberately a nonsense string. ADR 0014 reserves no name and pre-names no
+  // future level -- writing "signed" here would put the word this family
+  // declines to promise into the test suite as though it were a candidate.
+  const other = "level-this-family-does-not-define"
+
+  const refused = ExecutionCapsuleSchema.safeParse({ ...capsule, attestation_level: other })
+  assert.equal(refused.success, false)
+  // The issue's own code and path, not Zod's English: "Invalid enum value" is
+  // wording internal to a dependency, and matching it made this test a hostage
+  // to somebody else's release notes.
+  assert.ok(
+    refused.error.issues.some(
+      (issue) => issue.path.join(".") === "attestation_level" && issue.code === "invalid_enum_value",
+    ),
+  )
+  assert.deepEqual(AttestationLevelSchema.options, ["hash_only"])
+
   assert.notEqual(
-    calculateStudyHash({ ...capsule, attestation_level: "signed" }),
+    calculateStudyHash({ ...capsule, attestation_level: other }),
     capsule.reproducibility_hash,
     "the level a capsule claims cannot be edited without breaking its hash",
   )
@@ -541,4 +570,209 @@ test("the pinned capsule verifies as written", () => {
   assert.equal(verification.valid, true, verification.problems.join(" "))
   assert.equal(verification.expected_hash, capsule.reproducibility_hash)
   assert.equal(verifyStudyRecordHash(capsule).valid, true, "the family verifier reads reproducibility_hash too")
+})
+
+// A capsule's digest is over the file, not over what the parser makes of it.
+//
+// The disagreement this holds shut used to be reachable through `.default({})` on two
+// environment maps: `safeParse` invented the keys for a producer that wrote neither, and hashing
+// the parsed value made this verifier answer about a record the file does not contain while
+// `python/tests/test_study_hashing.py` read the same bytes and invented nothing. Neither side had
+// an error message for it -- TypeScript reported the file valid and Python reported it
+// unverifiable. `StudyEnvironment` requires both lists and defaults neither, so a capsule the
+// parser would complete is now unrepresentable; what this pins is that the verifier still reads
+// the file rather than its parse.
+test("a capsule is hashed as it was written, not as it parses", () => {
+  const omitted = { ...capsuleInput, environment: { operating_system: "Linux", architecture: "x86_64" } }
+  assert.throws(() => buildExecutionCapsule(omitted), /packages/, "no list is defaulted into existence")
+
+  const built = buildExecutionCapsule(capsuleInput)
+  const edited = { ...built, environment: { ...built.environment, hardware: [{ name: "cores", value: "8" }] } }
+  const editedHash = calculateStudyHash(edited)
+  assert.notEqual(editedHash, built.reproducibility_hash, "an environment entry is content")
+
+  const stale = verifyExecutionCapsule(edited)
+  assert.equal(stale.valid, false, "the file carries the digest of a record it is not")
+  assert.equal(stale.expected_hash, editedHash)
+
+  const honest = verifyExecutionCapsule({ ...edited, reproducibility_hash: editedHash })
+  assert.equal(honest.valid, true, honest.problems.join(" "))
+  assert.equal(honest.expected_hash, editedHash)
+})
+
+// Undeclared keys are refused rather than stripped, and the two languages therefore give one
+// answer for one file. Zod's default is to strip, while the generated JSON Schema has always said
+// `additionalProperties: false`, so a capsule carrying a key no schema declares parsed here and
+// was refused by `validate_study_record` in Python. `owner_username` is the case that hid best:
+// it is excluded from the digest, so the hash did not move either and nothing objected at all.
+test("a capsule carrying a key no schema declares is refused, not stripped", () => {
+  const capsule = buildExecutionCapsule(capsuleInput)
+  for (const undeclared of [{ owner_username: "somebody-else" }, { smuggled: "not declared" }]) {
+    const verification = verifyExecutionCapsule({ ...capsule, ...undeclared })
+    assert.equal(verification.valid, false, `${Object.keys(undeclared)[0]} must not pass as a capsule`)
+    assert.equal(
+      verification.problems.some((problem) => /[Uu]nrecognized key/.test(problem)),
+      true,
+      verification.problems.join(" "),
+    )
+  }
+})
+
+test("the pinned package verifies as written in both languages", () => {
+  // Pinned in study-expected-hashes.json and asserted from Python by
+  // test_python_study_hashes_match_shared_expected_fixtures. Its one citation now *carries* its
+  // author list rather than relying on a default to supply one: an empty array is a statement a
+  // reader can see and a byte the digest covers, where an omitted key was a container only one of
+  // the two languages invented.
+  const pkg = fixture("study-research-package-as-written.json")
+  assert.deepEqual(pkg.references[0].authors, [], "the file says what it hashes")
+  assert.equal(calculateStudyHash(pkg), pkg.reproducibility_hash)
+  assert.equal(
+    calculateStudyHash(pkg),
+    fixture("study-expected-hashes.json")[STUDY_HASH_RULES_ID].study_research_package_as_written,
+  )
+  // And it holds together structurally, which is the half a digest cannot check:
+  // its one claim is joined to its evidence by an edge the file carries, and its
+  // one result row reads a node that has a value. Asserted from Python too, in
+  // test_a_package_written_without_its_optional_maps_verifies_here_too.
+  const verification = verifyResearchPackage(pkg)
+  assert.deepEqual(verification.problems, [])
+  assert.equal(verification.valid, true)
+})
+
+// An integer above 2**53 is not the same number in the two languages.
+//
+// Python emits `str(int)` exactly; JavaScript reads the same JSON as a double. A 64-bit seed --
+// what Stim and NumPy hand out, so the ordinary case rather than the pathological one -- came out
+// as 13835058055282164000 here and 13835058055282163712 there, from the same bytes, and the two
+// digests differed. There is no rendering rule that reconciles them, so the contract refuses the
+// value instead of producing two answers for one record.
+//
+// The refusal used to be a `.max()` on `seed` and on `resource_limits.max_memory_bytes`, and on
+// nothing else in the family. It now lives in the hashing layer, over every number a study record
+// hashes at every depth, which is why the schema below no longer bounds the field and the
+// verifier reports `STUDY_VALUE_NOT_REPRESENTABLE` instead. A capsule is still refused; so is
+// everything the two-field enumeration used to miss.
+test("an integer JavaScript cannot hold exactly is refused, not silently rounded", () => {
+  const unsafe = 13835058055282163712
+  assert.notEqual(unsafe, 13835058055282163712n, "this literal is already not the number that was written")
+
+  assert.throws(
+    () => buildExecutionCapsule({ ...capsuleInput, seed: unsafe }),
+    /cannot be represented exactly in JavaScript/,
+  )
+  assert.throws(
+    () =>
+      buildExecutionCapsule({
+        ...capsuleInput,
+        resourceLimits: { max_runtime: null, max_memory_bytes: unsafe, max_credits: null },
+      }),
+    /cannot be represented exactly in JavaScript/,
+  )
+
+  // A capsule that arrives with one is refused by name, before the shape is even asked about:
+  // "this cannot be hashed" and "this is not a capsule" send a reader to different places.
+  const verification = verifyExecutionCapsule({ ...buildExecutionCapsule(capsuleInput), seed: unsafe })
+  assert.equal(verification.valid, false)
+  assert.deepEqual(
+    verification.refusals.map((refusal) => refusal.code),
+    ["STUDY_VALUE_NOT_REPRESENTABLE"],
+  )
+  // The message says why rather than only that: a caller reading it can tell that renaming or
+  // retrying will not help, and that the value itself is what has to change.
+  assert.equal(verification.problems[0].includes("two different digests"), true, verification.problems[0])
+  assert.equal(verification.problems[0].includes("seed"), true, verification.problems[0])
+  // Reported as a hashing refusal rather than as a mismatch: the digest was never taken.
+  assert.equal(verification.expected_hash, "")
+
+  // And the schema deliberately no longer answers for it. Leaving the bound here as well would be
+  // a second rule free to drift from the first, and the first is the one both languages run.
+  assert.equal(ExecutionCapsuleSchema.safeParse({ ...buildExecutionCapsule(capsuleInput), seed: unsafe }).success, true)
+})
+
+// The half of the same finding that no enumeration reached: `Quantity.value` is every number a
+// study reports, and it was unguarded.
+//
+// Near 4.2e21 one double stands for 524287 distinct integers, so two evidence nodes reporting
+// figures 524286 apart took one content hash, one package digest, and `valid: true` with no
+// problems -- while every row, edge and claim-map entry went on resolving, because the node's
+// identity had not moved either. Python, holding the integers as written, computed two different
+// digests and matched neither.
+test("a reported figure JavaScript cannot hold exactly is refused wherever it sits", () => {
+  // The widest such pair: the lowest and highest integers this one double stands for.
+  const LOW = 4199999999999999737857n
+  const HIGH = 4200000000000000262143n
+  assert.equal(Number(LOW), Number(HIGH), "one double, two integers 524286 apart")
+
+  const nodeWith = (literal) =>
+    JSON.parse(
+      `{"schema_version":"1.0","hash_rules_id":"study-v1","study_ref":"${STUDY_REF}","kind":"quantity",` +
+        `"label":"total physical-qubit-seconds","claim":null,"quantity":{"value":${literal},` +
+        `"unit":"qubit_seconds","bound":"UPPER_BOUND","evidence":"MODELLED","source":"s","model":"m",` +
+        `"model_version":"1","assumptions":[],"schema_version":"0.1","limitations":[]},"reference":null,` +
+        `"citation":null,"limitations":[],"source_published_on":null,"retrieved_on":null}`,
+    )
+
+  for (const literal of [LOW.toString(), HIGH.toString(), "4.2e21"]) {
+    assert.throws(
+      () => calculateStudyHash(nodeWith(literal)),
+      /quantity\.value is 4\.2e\+21/,
+      `${literal} must not be given a content address JavaScript cannot tell from another value's`,
+    )
+  }
+
+  // The bound is inclusive and the refusal is about ambiguity, not size: the last integer both
+  // languages hold exactly is still hashed, and so is a non-integral number of any magnitude,
+  // because no second value canonicalizes onto it.
+  assert.equal(typeof calculateStudyHash(nodeWith(String(Number.MAX_SAFE_INTEGER))), "string")
+  assert.equal(typeof calculateStudyHash(nodeWith("1.5e-9")), "string")
+})
+
+// A byte sequence neither language can round-trip cannot be hashed identically in both.
+//
+// A lone `\ud800` in a node label is legal in a JavaScript string and legal in JSON. This side
+// escaped it and hashed the escape; Python held the same lone surrogate and raised
+// `UnicodeEncodeError` out of `calculate_study_hash`, so the recipient could not check the file
+// at all. Refusing beats diverging, exactly as with the integers.
+test("a string carrying an unpaired UTF-16 surrogate is refused rather than hashed here alone", () => {
+  const withLabel = (label) => ({
+    schema_version: STUDY_SCHEMA_VERSION,
+    [STUDY_HASH_RULES_KEY]: STUDY_HASH_RULES_ID,
+    kind: "quantity",
+    label,
+  })
+
+  for (const half of ["\uD800", "total qubits \uD800", "\uDC00 total qubits"]) {
+    assert.throws(() => calculateStudyHash(withLabel(half)), /unpaired UTF-16 surrogate/)
+  }
+
+  // A well-formed pair is one character and hashes normally. Refusing it would be refusing an
+  // emoji, which is not what either language struggles with.
+  assert.equal(typeof calculateStudyHash(withLabel("total qubits \uD83D\uDE00")), "string")
+
+  // And a key is encoded exactly as a value is, so the walk asks about keys too.
+  assert.throws(
+    () => calculateStudyHash({ [STUDY_HASH_RULES_KEY]: STUDY_HASH_RULES_ID, notes: { "\uD800": "half a key" } }),
+    /unpaired UTF-16 surrogate/,
+  )
+})
+
+test("exactly Number.MAX_SAFE_INTEGER is accepted, and hashes the same in both languages", () => {
+  const capsule = buildExecutionCapsule({
+    ...capsuleInput,
+    seed: Number.MAX_SAFE_INTEGER,
+    resourceLimits: { max_runtime: null, max_memory_bytes: Number.MAX_SAFE_INTEGER, max_credits: null },
+  })
+  assert.equal(capsule.seed, Number.MAX_SAFE_INTEGER)
+  assert.equal(verifyExecutionCapsule(capsule).valid, true)
+
+  // Pinned, and recomputed from the same file by python/tests/test_study_hashing.py.
+  const pinned = fixture("study-capsule-max-safe-integers.json")
+  assert.equal(pinned.seed, Number.MAX_SAFE_INTEGER)
+  assert.equal(pinned.resource_limits.max_memory_bytes, Number.MAX_SAFE_INTEGER)
+  assert.equal(verifyExecutionCapsule(pinned).valid, true)
+  assert.equal(
+    calculateStudyHash(pinned),
+    fixture("study-expected-hashes.json")[STUDY_HASH_RULES_ID].study_capsule_max_safe_integers,
+  )
 })

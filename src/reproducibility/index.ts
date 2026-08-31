@@ -99,7 +99,12 @@ function canonicalize(value: unknown, excluded: Set<string>): unknown {
   }
   if (value && typeof value === "object") {
     const source = value as Record<string, unknown>
-    const result: Record<string, unknown> = {}
+    // A null prototype, because `{}` inherits a `__proto__` setter. `JSON.parse`
+    // makes `__proto__` an ordinary own key that `Object.keys` reports, but
+    // assigning it on a plain object calls that setter instead of creating the
+    // property -- so the key and everything under it vanished from the digest here
+    // while Python, which has no such setter, hashed it. One payload, two answers.
+    const result = Object.create(null) as Record<string, unknown>
     for (const key of Object.keys(source).sort()) {
       if (!excluded.has(key) && source[key] !== undefined) {
         result[key] = canonicalize(source[key], excluded)
@@ -154,10 +159,16 @@ export function verifyReproducibilityHash(input: HashableInput): {
  * record's `created_at` is exactly as volatile as a benchmark result's, and a
  * run duration is an artifact of running rather than a result in either family.
  * Exported by reference rather than copied, so a second list cannot drift away
- * from the one every published hash was computed under.
+ * from the one every published hash was computed under -- and frozen, because
+ * until it was, "cannot drift" was a claim about copies only. `as const` is a
+ * compile-time promise and nothing more: any consumer holding the array could
+ * push a key onto the exclusion list every published hash was computed under,
+ * from JavaScript, or from TypeScript with one cast. Freezing costs nothing here
+ * -- both lists are read and spread, never written -- and makes the sentence
+ * above true at run time as well.
  */
-export const IDENTITY_KEYS = identityKeys
-export const TIMING_KEYS = timingKeys
+export const IDENTITY_KEYS = Object.freeze(identityKeys)
+export const TIMING_KEYS = Object.freeze(timingKeys)
 
 /**
  * The canonical form, for a caller that brings its own exclusion set.

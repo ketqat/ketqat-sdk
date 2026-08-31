@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { type Contract, type EvidenceClass, type Quantity } from "../intelligence/measurement.js";
+import { type Citation } from "../contracts/common.js";
+import { type Contract, type EvidenceClass, type Quantity, type Uncertainty } from "../intelligence/measurement.js";
 /**
  * The vocabulary every record in the `study` family shares (ketqat-sdk#259,
  * ADR 0010).
@@ -19,6 +20,19 @@ import { type Contract, type EvidenceClass, type Quantity } from "../intelligenc
  * have. Both are hashed, which is the point -- an inferred specification and a
  * confirmed one are different records with different hashes, and no display
  * layer has to be trusted to keep them apart.
+ *
+ * **Every object in this family is `.strict()`.** Zod's default is to strip an
+ * undeclared key, and the generated JSON Schemas have always emitted
+ * `additionalProperties: false`, so the two validators disagreed about the same
+ * file: a package carrying an undeclared root key parsed here and was refused by
+ * `python/src/ketqat_runner/study_validation.py`. Stripping is worse than
+ * accepting, because this family's verifiers hash the record *as written* -- a
+ * key the parser discards is a key the digest still sees. Refusing is the only
+ * reading under which the schema, the parser and the digest describe one record.
+ *
+ * That now includes the objects the family embeds and does not own. `Quantity`,
+ * `Uncertainty` and `Citation` were the three exceptions, and being exceptions
+ * is what made them the way in: see `StudyQuantitySchema` below.
  */
 /**
  * The family enters at 1.0 rather than continuing the 0.1 line of the
@@ -27,6 +41,32 @@ import { type Contract, type EvidenceClass, type Quantity } from "../intelligenc
  * compatibility that does not exist.
  */
 export declare const STUDY_SCHEMA_VERSION = "1.0";
+/** `Uncertainty`, refusing a key it does not declare. */
+export declare const StudyUncertaintySchema: Contract<Uncertainty>;
+/**
+ * `Quantity`, refusing a key it does not declare, and carrying the strict
+ * `Uncertainty` in place of the permissive one.
+ *
+ * The shared schema's own refinements -- the two directions of the UNKNOWN
+ * pairing, and the finiteness check -- are re-run rather than re-declared. A
+ * second copy of "a quantity with no value must be classified UNKNOWN" is a
+ * second copy free to drift from the first, and the invariant belongs to
+ * `Quantity` rather than to this family's reading of it. The strict object above
+ * answers the one question the shared contract does not, and everything else is
+ * still answered by the shared contract itself.
+ */
+export declare const StudyQuantitySchema: Contract<Quantity>;
+/**
+ * `Citation`, refusing a key it does not declare and requiring its author list.
+ *
+ * `authors` loses its `.default([])`, which was the last default any study
+ * record hashed. A default is materialised at parse time, so the same citation
+ * had two content addresses depending on which side of the parse the digest was
+ * taken -- the builder parsed and then hashed, the verifier hashed what it read,
+ * and Python fills in nothing at all. A producer with no author list writes
+ * `[]`, which is a statement a reader can see and a byte a hash can cover.
+ */
+export declare const StudyCitationSchema: Contract<Citation>;
 /**
  * A 64-character lowercase hex digest: the only way one study record names
  * another.
@@ -103,4 +143,52 @@ export type BaselineSourceClass = z.infer<typeof BaselineSourceClassSchema>;
  */
 export declare const AttestationLevelSchema: z.ZodEnum<["hash_only"]>;
 export type AttestationLevel = z.infer<typeof AttestationLevelSchema>;
+/** One dependency the run had installed, named in a field rather than in a key. */
+export interface StudyPackage {
+    name: string;
+    version: string;
+}
+/** One property of the machine the run happened on, named the same way. */
+export interface StudyHardwareEntry {
+    name: string;
+    value: string;
+}
+/**
+ * What ran where, recorded so that every key in it is a field name this schema
+ * declares.
+ *
+ * The shared `EnvironmentSchema` records the same four scalars and then two
+ * free-form maps, and a map's keys are *data*: a dependency name, a hardware
+ * component name, both chosen by whatever captured the environment. `study-v1`
+ * drops its excluded names at every nesting level -- which is what a record's
+ * own `created_at` and `status` need -- so a dependency genuinely called `id`,
+ * or a hardware key called `visibility`, was gone before the digest was taken.
+ * Two capsules recording different environments then hash identically, and one
+ * can be handed the other's environment while still verifying against its own
+ * digest. A canonicalizer that drops keys by name cannot be safe over keys that
+ * are data, and `src/reproducibility` is deliberately the only canonicalizer, so
+ * the data moves out of the keys instead: a package name is a value here, and no
+ * value is ever dropped.
+ *
+ * `src/contracts/common.ts` keeps its map-shaped `EnvironmentSchema` unchanged.
+ * Every hash published under the legacy rules was computed over that shape, and
+ * this family is the one that content-addresses its records.
+ *
+ * Both lists are required and neither carries a `.default()`. A producer with
+ * nothing to record writes `[]`, which is a statement a reader can see; a
+ * default materialised at parse time is a container the file does not contain,
+ * and hashing one is how two languages come to disagree about what a record
+ * says while reading the same bytes.
+ */
+export interface StudyEnvironment {
+    operating_system?: string;
+    architecture?: string;
+    python_version?: string;
+    node_version?: string;
+    packages: StudyPackage[];
+    hardware: StudyHardwareEntry[];
+}
+export declare const StudyPackageSchema: Contract<StudyPackage>;
+export declare const StudyHardwareEntrySchema: Contract<StudyHardwareEntry>;
+export declare const StudyEnvironmentSchema: Contract<StudyEnvironment>;
 //# sourceMappingURL=common.d.ts.map

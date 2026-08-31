@@ -1,11 +1,12 @@
 import { z } from "zod"
 import { IsoDateTimeSchema } from "../contracts/common.js"
-import { QuantitySchema, type Contract, type Quantity } from "../intelligence/measurement.js"
+import type { Contract, Quantity } from "../intelligence/measurement.js"
 import {
   BaselineSourceClassSchema,
   ContentHashSchema,
   RevisionRefSchema,
   STUDY_SCHEMA_VERSION,
+  StudyQuantitySchema,
   type RevisionRef,
 } from "./common.js"
 import { STUDY_HASH_RULES_ID, calculateStudyHash } from "./hashing.js"
@@ -51,7 +52,7 @@ export const PlannedBaselineSchema = z.object({
    */
   source_class: BaselineSourceClassSchema,
   note: z.string().min(1).nullable(),
-})
+}).strict()
 export type PlannedBaseline = z.infer<typeof PlannedBaselineSchema>
 
 export const CandidateWorkflowSchema = z.object({
@@ -60,10 +61,10 @@ export const CandidateWorkflowSchema = z.object({
   workload_ref: ContentHashSchema.nullable(),
   /** Why this candidate is worth spending the run on. An unargued candidate is a preference. */
   rationale: z.string().min(1),
-})
+}).strict()
 export type CandidateWorkflow = z.infer<typeof CandidateWorkflowSchema>
 
-const namedVersion = z.object({ name: z.string().min(1), version: z.string().min(1) })
+const namedVersion = z.object({ name: z.string().min(1), version: z.string().min(1) }).strict()
 
 /**
  * The versions this plan is pinned to.
@@ -78,7 +79,7 @@ export const PinnedVersionsSchema = z.object({
   adapter: namedVersion.nullable(),
   model: namedVersion,
   engine: namedVersion,
-})
+}).strict()
 export type PinnedVersions = z.infer<typeof PinnedVersionsSchema>
 
 /**
@@ -136,8 +137,8 @@ export const StudyPlanSchema: Contract<StudyPlan> = z
     scenario_refs: z.array(ContentHashSchema).min(1),
     pinned_versions: PinnedVersionsSchema,
     /** An estimate, so it wears the envelope with its evidence class and its assumptions. */
-    expected_runtime: QuantitySchema,
-    expected_credits: QuantitySchema,
+    expected_runtime: StudyQuantitySchema,
+    expected_credits: StudyQuantitySchema,
     /** The user's hard ceiling. Their decision, exact, not an estimate of anything. */
     max_credits: z.number().positive(),
     /** What happens to the inputs and the outputs. Never blank on a plan somebody signs. */
@@ -154,6 +155,7 @@ export const StudyPlanSchema: Contract<StudyPlan> = z
     /** The confirmation target. Excluded from its own digest. */
     content_hash: ContentHashSchema,
   })
+  .strict()
   .superRefine((plan, context) => {
     if (plan.revision > 1 && plan.supersedes === null) {
       context.addIssue({

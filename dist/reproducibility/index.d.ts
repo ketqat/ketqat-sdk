@@ -43,7 +43,13 @@ export declare function verifyReproducibilityHash(input: HashableInput): {
  * record's `created_at` is exactly as volatile as a benchmark result's, and a
  * run duration is an artifact of running rather than a result in either family.
  * Exported by reference rather than copied, so a second list cannot drift away
- * from the one every published hash was computed under.
+ * from the one every published hash was computed under -- and frozen, because
+ * until it was, "cannot drift" was a claim about copies only. `as const` is a
+ * compile-time promise and nothing more: any consumer holding the array could
+ * push a key onto the exclusion list every published hash was computed under,
+ * from JavaScript, or from TypeScript with one cast. Freezing costs nothing here
+ * -- both lists are read and spread, never written -- and makes the sentence
+ * above true at run time as well.
  */
 export declare const IDENTITY_KEYS: readonly ["id", "slug", "started_at", "finished_at", "created_at", "updated_at", "submitted_at", "ui_metadata", "reproducibility_hash", "owner_username", "visibility"];
 export declare const TIMING_KEYS: readonly ["runtime_seconds", "decoder_latency_ms", "decoder_latency_ms_per_shot", "sampling_runtime_seconds", "circuit_generation_seconds", "decode_runtime_seconds", "decoder_construction_seconds"];

@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { EvidenceClassSchema, QuantitySchema, } from "../intelligence/measurement.js";
+import { CitationSchema } from "../contracts/common.js";
+import { EvidenceClassSchema, QuantitySchema, UncertaintySchema, } from "../intelligence/measurement.js";
 /**
  * The vocabulary every record in the `study` family shares (ketqat-sdk#259,
  * ADR 0010).
@@ -19,6 +20,19 @@ import { EvidenceClassSchema, QuantitySchema, } from "../intelligence/measuremen
  * have. Both are hashed, which is the point -- an inferred specification and a
  * confirmed one are different records with different hashes, and no display
  * layer has to be trusted to keep them apart.
+ *
+ * **Every object in this family is `.strict()`.** Zod's default is to strip an
+ * undeclared key, and the generated JSON Schemas have always emitted
+ * `additionalProperties: false`, so the two validators disagreed about the same
+ * file: a package carrying an undeclared root key parsed here and was refused by
+ * `python/src/ketqat_runner/study_validation.py`. Stripping is worse than
+ * accepting, because this family's verifiers hash the record *as written* -- a
+ * key the parser discards is a key the digest still sees. Refusing is the only
+ * reading under which the schema, the parser and the digest describe one record.
+ *
+ * That now includes the objects the family embeds and does not own. `Quantity`,
+ * `Uncertainty` and `Citation` were the three exceptions, and being exceptions
+ * is what made them the way in: see `StudyQuantitySchema` below.
  */
 /**
  * The family enters at 1.0 rather than continuing the 0.1 line of the
@@ -27,6 +41,79 @@ import { EvidenceClassSchema, QuantitySchema, } from "../intelligence/measuremen
  * compatibility that does not exist.
  */
 export const STUDY_SCHEMA_VERSION = "1.0";
+/**
+ * The three objects this family embeds and does not own, read strictly.
+ *
+ * `Quantity`, `Uncertainty` and `Citation` are declared in `src/intelligence`
+ * and `src/contracts`, where they are permissive: zod strips a key they do not
+ * declare, and `Citation.authors` carries a `.default([])`. Neither reading is
+ * wrong there -- those modules validate stored records that predate this family
+ * and may legitimately carry keys it has never heard of -- and making the shared
+ * schemas strict could start refusing intelligence records that already exist.
+ *
+ * Both readings are wrong *here*, for the same reason and in two directions.
+ * This family's verifiers hash the record as written, so a key the parser
+ * silently strips is a key the digest still sees: two plans differing only by a
+ * `smuggled_note` inside an `expected_credits` envelope parsed to one value, and
+ * a consumer that parsed before verifying got one digest for two files while a
+ * consumer that hashed the file got two. And a field the parser silently
+ * materialises is a field the file does not contain: a citation written without
+ * `authors` hashed one way as written and another way once parsed, so the build
+ * path and the verify path addressed two different nodes.
+ *
+ * So the study family derives its own variants, the way
+ * `StudyEnvironmentSchema` below derives an array-shaped environment from the
+ * shared map-shaped one. `src/intelligence/measurement.ts` and
+ * `src/contracts/common.ts` are untouched, every hash published under them still
+ * verifies under exactly the schema that produced it, and no generated schema
+ * outside this family changes.
+ *
+ * The casts are the price of the shared modules annotating their schemas with
+ * `Contract<T>`: that annotation exists to keep the emitted `.d.ts` from
+ * expanding one structural type per occurrence, and it hides the `ZodObject`
+ * underneath. Re-narrowing it here is the whole of the cast -- nothing is
+ * reinterpreted, and the shared refinements are re-run rather than restated.
+ */
+const sharedUncertaintyObject = UncertaintySchema;
+/** `Uncertainty`, refusing a key it does not declare. */
+export const StudyUncertaintySchema = sharedUncertaintyObject.strict();
+const sharedQuantityObject = QuantitySchema.innerType();
+/**
+ * `Quantity`, refusing a key it does not declare, and carrying the strict
+ * `Uncertainty` in place of the permissive one.
+ *
+ * The shared schema's own refinements -- the two directions of the UNKNOWN
+ * pairing, and the finiteness check -- are re-run rather than re-declared. A
+ * second copy of "a quantity with no value must be classified UNKNOWN" is a
+ * second copy free to drift from the first, and the invariant belongs to
+ * `Quantity` rather than to this family's reading of it. The strict object above
+ * answers the one question the shared contract does not, and everything else is
+ * still answered by the shared contract itself.
+ */
+export const StudyQuantitySchema = sharedQuantityObject
+    .extend({ uncertainty: StudyUncertaintySchema.optional() })
+    .strict()
+    .superRefine((value, context) => {
+    const shared = QuantitySchema.safeParse(value);
+    if (shared.success)
+        return;
+    for (const issue of shared.error.issues)
+        context.addIssue(issue);
+});
+/**
+ * `Citation`, refusing a key it does not declare and requiring its author list.
+ *
+ * `authors` loses its `.default([])`, which was the last default any study
+ * record hashed. A default is materialised at parse time, so the same citation
+ * had two content addresses depending on which side of the parse the digest was
+ * taken -- the builder parsed and then hashed, the verifier hashed what it read,
+ * and Python fills in nothing at all. A producer with no author list writes
+ * `[]`, which is a statement a reader can see and a byte a hash can cover.
+ */
+export const StudyCitationSchema = CitationSchema.extend({
+    authors: z.array(z.string().min(1)),
+})
+    .strict();
 /**
  * A 64-character lowercase hex digest: the only way one study record names
  * another.
@@ -37,7 +124,8 @@ export const STUDY_SCHEMA_VERSION = "1.0";
  * plan nobody approved.
  */
 export const ContentHashSchema = z.string().regex(/^[0-9a-f]{64}$/);
-export const RevisionRefSchema = z.object({
+export const RevisionRefSchema = z
+    .object({
     /**
      * Deliberately not named `content_hash`. A record's own `content_hash` is excluded from its
      * own hash, and the canonicalizer drops excluded keys at every nesting level -- so a reference
@@ -47,7 +135,8 @@ export const RevisionRefSchema = z.object({
      */
     revision_hash: ContentHashSchema,
     revision: z.number().int().positive(),
-});
+})
+    .strict();
 /**
  * Who put this value here.
  *
@@ -56,10 +145,12 @@ export const RevisionRefSchema = z.object({
  * fine": a field nobody has looked at is inferred, however plausible it reads.
  */
 export const FieldOriginSchema = z.enum(["INFERRED", "CONFIRMED"]);
-export const QuantityFieldSchema = z.object({
-    quantity: QuantitySchema,
+export const QuantityFieldSchema = z
+    .object({
+    quantity: StudyQuantitySchema,
     origin: FieldOriginSchema,
-});
+})
+    .strict();
 export const TextFieldSchema = z
     .object({
     /** Null when nobody has supplied this yet. Never an empty string standing in for one. */
@@ -67,6 +158,7 @@ export const TextFieldSchema = z
     evidence: EvidenceClassSchema,
     origin: FieldOriginSchema,
 })
+    .strict()
     .superRefine((field, context) => {
     if (field.value === null && field.evidence !== "UNKNOWN") {
         context.addIssue({
@@ -112,4 +204,35 @@ export const BaselineSourceClassSchema = z.enum([
  * capsule claims cannot be edited after the fact without breaking its hash.
  */
 export const AttestationLevelSchema = z.enum(["hash_only"]);
+export const StudyPackageSchema = z
+    .object({
+    name: z.string().min(1),
+    version: z.string().min(1),
+})
+    .strict();
+export const StudyHardwareEntrySchema = z
+    .object({
+    name: z.string().min(1),
+    /**
+     * A string, never a nested object. An object here would be a map one level
+     * down -- its keys data again, its excluded names dropped again before the
+     * digest -- which is exactly what this shape exists to prevent. A core count
+     * is recorded as "8": the information survives, the data-shaped key does not.
+     */
+    value: z.string().min(1),
+})
+    .strict();
+export const StudyEnvironmentSchema = z
+    .object({
+    // The four scalars are the shared `EnvironmentSchema`'s, name for name and
+    // constraint for constraint: they are already field names rather than data,
+    // so the same information is recorded under the same keys.
+    operating_system: z.string().optional(),
+    architecture: z.string().optional(),
+    python_version: z.string().optional(),
+    node_version: z.string().optional(),
+    packages: z.array(StudyPackageSchema),
+    hardware: z.array(StudyHardwareEntrySchema),
+})
+    .strict();
 //# sourceMappingURL=common.js.map

@@ -55,11 +55,58 @@ export declare const STUDY_EXCLUDED_KEYS: ReadonlySet<string>;
  */
 export declare function studyRulesIdOf(input: object): string;
 /**
+ * Refuse a record whose contents hide something the digest would drop.
+ *
+ * `tests/study-exclusion-collisions.test.mjs` walks the generated *schemas* and
+ * fails on any declared property, below a record's root, named after an excluded
+ * key. That answers for the fields this family declares, and a schema can only
+ * answer for those: it says nothing about a key chosen at run time. No study
+ * record has such a key any more -- `StudyEnvironment` records a package name in
+ * a field rather than in a key precisely so that none does -- but this function
+ * takes an `object`, not a parsed record, and it is the only check a caller who
+ * hand-assembles a dict ever runs. `calculateStudyHash` is public, and its
+ * Python counterpart is the whole verifier some readers have.
+ *
+ * A canonicalizer that kept an excluded key below a root would be a second
+ * canonical form, and `src/reproducibility` is deliberately the only one. So the
+ * record is refused instead: this walks the actual data, and any excluded key
+ * found below a record's own top level -- or below an embedded record's, beyond
+ * the three that record legitimately carries -- stops the hash before it is
+ * taken. Refusing costs a caller a rename; hashing would cost a reader the
+ * ability to tell two different runs apart.
+ */
+export declare function assertNoNestedExcludedKeys(input: object, rulesId?: string): void;
+/**
+ * Refuse a record carrying a value the two languages would hash differently.
+ *
+ * The rule lives here, in the class, rather than on the fields that happened to
+ * meet it first. `seed` and `resource_limits.max_memory_bytes` were bounded
+ * individually and every other hashed number was not -- including
+ * `Quantity.value`, which is every number a study reports -- so a package could
+ * report a figure 524286 apart from another one, take the same digest, verify
+ * `valid: true` with no problems, and keep every node identity, row, edge and
+ * claim-map entry resolving. Meanwhile Python refused the honest file the
+ * TypeScript builder had just written, because its mirror of the bound listed
+ * the same two fields.
+ *
+ * One rule in one place is what fixes that: every study digest is taken over
+ * `canonicalStudyJson`, so a record kind added tomorrow, and a field added to
+ * one that exists today, are covered without anybody remembering to bound them.
+ * `python/src/ketqat_runner/study_hashing.py` carries the same walk, so the two
+ * languages refuse the same files.
+ */
+export declare function assertNoUnrepresentableValues(input: object, rulesId?: string): void;
+/**
  * The canonical form of a study record.
  *
  * The rules id defaults to the one the record itself declares rather than to the
  * current id: hashing a record under rules it does not name is how a verifier
  * ends up comparing two different algorithms and blaming the record.
+ *
+ * Both refusals live here rather than at each call site because every study
+ * digest is taken over this string: `calculateStudyHash` and the build and
+ * verify paths above it inherit them by construction, and a family that gains a
+ * tenth record kind cannot forget to ask.
  */
 export declare function canonicalStudyJson(input: object, rulesId?: string): string;
 export declare function calculateStudyHash(input: object, rulesId?: string): string;
@@ -71,6 +118,15 @@ export declare function calculateStudyHash(input: object, rulesId?: string): str
  * while an execution capsule and a research package carry a
  * `reproducibility_hash` with recompute semantics. Both are excluded from the
  * digest, so which one a record uses cannot change the answer.
+ *
+ * **A record carrying both is refused.** That is the same fact turned against
+ * this function: because neither field is hashed, a second one can be added to a
+ * finished record for nothing, and a verifier that preferred one and ignored the
+ * other would read the added field and report the record intact. This is the
+ * low-level verifier -- no schema has been applied when it runs, and its Python
+ * counterpart is the only verifier some callers have -- so the ambiguity is
+ * refused here rather than assumed away. One record, one self-hash; which name
+ * it uses is the record kind's business, having two is nobody's.
  */
 export declare function verifyStudyRecordHash(input: object): {
     valid: boolean;
