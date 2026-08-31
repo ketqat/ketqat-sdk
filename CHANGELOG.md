@@ -31,6 +31,40 @@ life.
 
 ### Added
 
+- **The `study` contract family and the Evidence Graph**
+  ([#259](https://github.com/ketqat/ketqat-sdk/issues/259)). A new `ketqat-sdk/study`
+  export: `Study` and its append-only `StudyEvent` trail, `ProblemSpecification` and
+  `StudyPlan` as immutable revisions, `StudyTask`, `EvidenceNode`, `EvidenceEdge`,
+  `ExecutionCapsule` and `ResearchPackage`, with nine generated JSON Schemas.
+
+  Additive throughout. No existing contract gains a field, no exclusion set is edited, and
+  `fixtures/reproducibility/expected-hashes.json` is byte-identical — the family's own pins
+  live in a separate `study-expected-hashes.json` sidecar.
+
+  Four properties are structural rather than documented:
+
+  - **A number in a report is a node in a graph.** A `ResearchPackage` reads every result
+    row's value out of an `EvidenceNode` it carries, so a figure with nothing behind it is
+    unrepresentable rather than discouraged. Export **refuses** — a claim with no evidence
+    node, a row naming a node the package does not contain, or an edge with a dangling
+    endpoint fails the build with a named code instead of a warning.
+  - **A confirmation names one plan revision by its hash.** `StudyPlan` revisions are
+    immutable and content-addressed, so editing a plan moves its hash and the old
+    confirmation stops applying by construction. `verifyPlanConfirmation` recomputes:
+    a plan edited by hand and re-stamped with its previous hash is refused.
+  - **History is hash-chained.** Each `StudyEvent` names its predecessor's hash and its own
+    sequence number, so a rewritten middle event is detectable offline by
+    `verifyStudyEventChain` rather than only by database discipline.
+  - **The family names its own hash rules, and nothing is inferred.** Study records carry
+    `hash_rules_id: "study-v1"` and are refused without it. This is a *different field* from
+    `reproducibility_hash_version` on purpose: the legacy marker reads as version 1 for any
+    non-integer value, so a rules id written there would have verified silently under the
+    wrong rules — a wrong answer where a refusal belongs.
+
+  What is verified in Python is validation, hashing and structural resolution of the claim
+  map and graph. It does not recompute the science, and `verify_research_package` reports
+  that in its result rather than only in prose.
+
 - **Quantum Resource Intelligence: contracts, threshold engine, decision assessment and
   reproducible bundles** ([#236](https://github.com/ketqat/ketqat-sdk/issues/236)).
   A new `ketqat-sdk/intelligence` export, additive throughout: no existing schema, hash,
@@ -89,6 +123,12 @@ life.
 
 ### Changed
 
+- The npm package size policy moved again, from 2.5 MB to 2.8 MB, for the study family
+  above. The measured cost was ~287 KB against a 2.40 MB baseline, with the nine schemas
+  already emitted as in-document `$ref`s and each large record given a hand-written
+  interface so its declarations stay flat. The reason is recorded next to the constant in
+  `scripts/verify-package-contents.mjs`; the limit is a guard against accidental bloat, and
+  it moves with a measurement rather than silently.
 - The npm package size policy moved from 2 MB to 2.5 MB, with the reason recorded in
   `scripts/verify-package-contents.mjs`. The measured cost of #236 was ~510 KB against a
   1.68 MB baseline, after two reductions made while adding it: naming the `Quantity` type

@@ -27,6 +27,15 @@ import {
   AdvantageThresholdSchema,
   DecisionAssessmentSchema,
   ResourceIntelligenceBundleSchema,
+  StudySchema,
+  StudyEventSchema,
+  ProblemSpecificationSchema,
+  StudyPlanSchema,
+  StudyTaskSchema,
+  EvidenceNodeSchema,
+  EvidenceEdgeSchema,
+  ExecutionCapsuleSchema,
+  ResearchPackageSchema,
 } from "../dist/index.js"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
@@ -47,6 +56,19 @@ const PYTHON_VALIDATED_SCHEMAS = new Set([
   "algorithm-experiment-manifest.schema.json",
   "qec-benchmark-result.schema.json",
   "algorithm-benchmark-result.schema.json",
+  // The whole study family ships, not the subset Python happens to validate
+  // today: `study_validation.py` resolves any of the nine by kind, and a schema
+  // present in a checkout but absent from the wheel validates for maintainers
+  // and for nobody who installed the package.
+  "study.schema.json",
+  "study-event.schema.json",
+  "problem-specification.schema.json",
+  "study-plan.schema.json",
+  "study-task.schema.json",
+  "evidence-node.schema.json",
+  "evidence-edge.schema.json",
+  "execution-capsule.schema.json",
+  "research-package.schema.json",
 ])
 
 const schemas = {
@@ -74,6 +96,18 @@ const schemas = {
   "advantage-threshold.schema.json": AdvantageThresholdSchema,
   "decision-assessment.schema.json": DecisionAssessmentSchema,
   "resource-intelligence-bundle.schema.json": ResourceIntelligenceBundleSchema,
+  // The study contract family (ketqat-sdk#259). Additive: no existing schema
+  // changes, and every one of these enters at schema_version 1.0 under the
+  // study-v1 hash rules rather than inheriting the legacy versioning.
+  "study.schema.json": StudySchema,
+  "study-event.schema.json": StudyEventSchema,
+  "problem-specification.schema.json": ProblemSpecificationSchema,
+  "study-plan.schema.json": StudyPlanSchema,
+  "study-task.schema.json": StudyTaskSchema,
+  "evidence-node.schema.json": EvidenceNodeSchema,
+  "evidence-edge.schema.json": EvidenceEdgeSchema,
+  "execution-capsule.schema.json": ExecutionCapsuleSchema,
+  "research-package.schema.json": ResearchPackageSchema,
 }
 
 // The QEC code catalog is data, not a schema, and is emitted to both locations
@@ -199,6 +233,18 @@ const REFERENCED_SCHEMAS = new Set([
   "advantage-threshold.schema.json",
   "decision-assessment.schema.json",
   "resource-intelligence-bundle.schema.json",
+  // The study family repeats the same envelopes just as heavily -- a `Quantity`
+  // inside every typed field, a `RevisionRef` at every pointer, and a research
+  // package that carries a whole evidence graph inline.
+  "study.schema.json",
+  "study-event.schema.json",
+  "problem-specification.schema.json",
+  "study-plan.schema.json",
+  "study-task.schema.json",
+  "evidence-node.schema.json",
+  "evidence-edge.schema.json",
+  "execution-capsule.schema.json",
+  "research-package.schema.json",
 ])
 
 for (const [filename, schema] of Object.entries(schemas)) {

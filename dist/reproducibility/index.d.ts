@@ -34,5 +34,30 @@ export declare function verifyReproducibilityHash(input: HashableInput): {
     expected: string;
     actual: string | null;
 };
+/**
+ * The identity and timing exclusions, published for rule sets declared outside
+ * this module.
+ *
+ * The `study` contract family (ADR 0010) hashes under its own rules id and its
+ * own exclusion set, but it inherits both of these lists wholesale: a study
+ * record's `created_at` is exactly as volatile as a benchmark result's, and a
+ * run duration is an artifact of running rather than a result in either family.
+ * Exported by reference rather than copied, so a second list cannot drift away
+ * from the one every published hash was computed under.
+ */
+export declare const IDENTITY_KEYS: readonly ["id", "slug", "started_at", "finished_at", "created_at", "updated_at", "submitted_at", "ui_metadata", "reproducibility_hash", "owner_username", "visibility"];
+export declare const TIMING_KEYS: readonly ["runtime_seconds", "decoder_latency_ms", "decoder_latency_ms_per_shot", "sampling_runtime_seconds", "circuit_generation_seconds", "decode_runtime_seconds", "decoder_construction_seconds"];
+/**
+ * The canonical form, for a caller that brings its own exclusion set.
+ *
+ * `canonicalResearchJson` picks its set from a numeric version, and that
+ * registry is closed -- adding a family to it would mean a new version number,
+ * and a new version number invalidates nothing but confuses everything already
+ * stored. A family with different rules therefore brings its own set and reuses
+ * this canonicalizer: recursive key sort, `undefined` dropped, `null` kept,
+ * `JSON.stringify` float rendering. One implementation of the canonical form,
+ * rather than two that agree until the day they do not.
+ */
+export declare function canonicalJsonForExcludedKeys(input: unknown, excluded: ReadonlySet<string>): string;
 export {};
 //# sourceMappingURL=index.d.ts.map

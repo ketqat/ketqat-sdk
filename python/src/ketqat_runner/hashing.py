@@ -190,3 +190,17 @@ def verify_reproducibility_hash(value: dict[str, Any]) -> dict[str, Any]:
         "expected": expected,
         "actual": actual if isinstance(actual, str) else None,
     }
+
+
+def canonical_json_for_excluded_keys(value: Any, excluded: frozenset[str]) -> str:
+    """The canonical form, for a rule set declared outside this module.
+
+    `canonical_research_json` picks its exclusions from a numeric version, and
+    that registry is closed: adding a contract family to it would mean a new
+    version number, and a new version number would confuse every record already
+    stored under the old ones. A family with different rules therefore brings its
+    own exclusion set and reuses the encoder here, so the float rendering
+    reconciled with JavaScript above is reconciled once rather than once per
+    family. Mirrors `canonicalJsonForExcludedKeys` in src/reproducibility/index.ts.
+    """
+    return _encode(_canonicalize(value, excluded))

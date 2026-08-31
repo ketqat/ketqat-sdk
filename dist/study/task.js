@@ -1,0 +1,94 @@
+import { z } from "zod";
+import { IsoDateTimeSchema } from "../contracts/common.js";
+import { ContentHashSchema, RevisionRefSchema, STUDY_SCHEMA_VERSION } from "./common.js";
+import { STUDY_HASH_RULES_ID, calculateStudyHash } from "./hashing.js";
+import { verifyPlanConfirmation } from "./plan.js";
+/**
+ * One unit of work a confirmed plan authorises (ketqat-sdk#259, ADR 0010).
+ *
+ * A task is thin on purpose. Everything about *running* it -- queueing,
+ * retries, the job's own status vocabulary -- belongs to the execution system,
+ * and persisting a task as an `ExecutionJob` with an extended kind is Phase 2
+ * work. What has to exist now is the binding: a task names the exact plan
+ * revision that authorised it, by hash, so "why was this run" has an answer that
+ * does not depend on anyone's memory of a conversation.
+ *
+ * `buildStudyTask` refuses rather than constructing an unbound task. That is the
+ * one thing this module exists to make impossible: a task with no confirmation,
+ * or with a confirmation for a plan that has since changed, would spend credits
+ * against an approval nobody gave for the work that actually ran.
+ */
+export const StudyTaskKindSchema = z.enum([
+    /** Measure the classical method the study compares against. */
+    "STUDY_BASELINE_RUN",
+    /** Estimate quantum resources under the plan's pinned scenarios. */
+    "STUDY_RESOURCE_ESTIMATE",
+    /** Run the benchmark the plan names. */
+    "STUDY_BENCHMARK_RUN",
+    /** Re-run a previous execution from its capsule and compare. */
+    "STUDY_REPRODUCTION",
+]);
+export const StudyTaskSchema = z.object({
+    schema_version: z.string().min(1),
+    hash_rules_id: z.literal(STUDY_HASH_RULES_ID),
+    study_ref: ContentHashSchema,
+    kind: StudyTaskKindSchema,
+    /** The confirmed plan revision this work is authorised by. Never null: an unbound task is refused at build. */
+    plan_ref: RevisionRefSchema,
+    /** Hash of the `ExecutionCapsule`, once an execution exists to point at. */
+    capsule_ref: ContentHashSchema.nullable(),
+    /**
+     * Denormalized from the execution job. A free string rather than an enum
+     * because the vocabulary belongs to the job system, not to this family, and a
+     * closed copy of someone else's states drifts silently. Excluded from the hash
+     * under `study-v1`, so a task that progressed is the same task.
+     */
+    status: z.string().min(1),
+    /** Excluded from the hash by name, like every other timestamp in this family. */
+    created_at: IsoDateTimeSchema.optional(),
+    content_hash: ContentHashSchema,
+});
+/**
+ * Build a task, or say why there is nothing to build.
+ *
+ * The confirmation is checked before the record exists, so an unauthorised task
+ * is never a value anyone can hold. A missing confirmation and a stale one are
+ * different refusals because they need different fixes: one asks somebody to
+ * approve the plan, the other tells them the plan they approved is not the plan
+ * in front of them.
+ */
+export function buildStudyTask(input) {
+    const subject = `study plan revision ${input.plan.revision}`;
+    if (input.confirmedPlanHash === null || input.confirmedPlanHash.length === 0) {
+        return {
+            ok: false,
+            refusal: {
+                subject,
+                code: "PLAN_NOT_CONFIRMED",
+                message: "No confirmation was supplied for this plan, so no work is authorised. A run costs credits and produces " +
+                    "numbers somebody will quote; both need an approval that names what was approved.",
+            },
+        };
+    }
+    const confirmation = verifyPlanConfirmation(input.plan, input.confirmedPlanHash, input.latestPlanRevision);
+    if (!confirmation.ok) {
+        return confirmation;
+    }
+    const withoutHash = {
+        schema_version: STUDY_SCHEMA_VERSION,
+        hash_rules_id: STUDY_HASH_RULES_ID,
+        study_ref: input.plan.study_ref,
+        kind: input.kind,
+        plan_ref: { revision_hash: input.plan.content_hash, revision: input.plan.revision },
+        capsule_ref: null,
+        // Nothing has been submitted yet. The execution system owns every state
+        // after this one, and overwrites this field as the job moves.
+        status: input.status ?? "PENDING",
+        ...(input.createdAt ? { created_at: input.createdAt } : {}),
+    };
+    return {
+        ok: true,
+        task: StudyTaskSchema.parse({ ...withoutHash, content_hash: calculateStudyHash(withoutHash) }),
+    };
+}
+//# sourceMappingURL=task.js.map

@@ -1,0 +1,279 @@
+{
+  "$ref": "#/definitions/execution-capsule",
+  "definitions": {
+    "execution-capsule": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash_rules_id": {
+          "type": "string",
+          "const": "study-v1"
+        },
+        "study_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "task_ref": {
+          "$ref": "#/definitions/execution-capsule/properties/study_ref"
+        },
+        "manifest_hash": {
+          "$ref": "#/definitions/execution-capsule/properties/study_ref"
+        },
+        "versions": {
+          "type": "object",
+          "properties": {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "adapter": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "version": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "engine": {
+              "$ref": "#/definitions/execution-capsule/properties/versions/properties/adapter/anyOf/0"
+            }
+          },
+          "required": [
+            "schema",
+            "adapter",
+            "engine"
+          ],
+          "additionalProperties": false
+        },
+        "source_hash": {
+          "$ref": "#/definitions/execution-capsule/properties/study_ref"
+        },
+        "image_digest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dependency_lock_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/execution-capsule/properties/study_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "environment": {
+          "type": "object",
+          "properties": {
+            "operating_system": {
+              "type": "string"
+            },
+            "architecture": {
+              "type": "string"
+            },
+            "python_version": {
+              "type": "string"
+            },
+            "node_version": {
+              "type": "string"
+            },
+            "packages": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "default": {}
+            },
+            "hardware": {
+              "type": "object",
+              "additionalProperties": {},
+              "default": {}
+            }
+          },
+          "additionalProperties": false
+        },
+        "resource_limits": {
+          "type": "object",
+          "properties": {
+            "max_runtime": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "max_memory_bytes": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "max_credits": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "max_runtime",
+            "max_memory_bytes",
+            "max_credits"
+          ],
+          "additionalProperties": false
+        },
+        "input_hashes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/execution-capsule/properties/study_ref"
+          }
+        },
+        "output_hashes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/execution-capsule/properties/study_ref"
+          }
+        },
+        "logs_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/execution-capsule/properties/study_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "execution_class": {
+          "type": "string",
+          "enum": [
+            "DEMO",
+            "SIMULATION",
+            "HARDWARE",
+            "ANALYTICAL"
+          ]
+        },
+        "cancellation": {
+          "type": "object",
+          "properties": {
+            "cancelled": {
+              "type": "boolean"
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "cancelled",
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        "attestation_level": {
+          "type": "string",
+          "enum": [
+            "hash_only"
+          ]
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reproducibility_hash": {
+          "$ref": "#/definitions/execution-capsule/properties/study_ref"
+        }
+      },
+      "required": [
+        "schema_version",
+        "hash_rules_id",
+        "study_ref",
+        "task_ref",
+        "manifest_hash",
+        "versions",
+        "source_hash",
+        "image_digest",
+        "dependency_lock_ref",
+        "seed",
+        "environment",
+        "resource_limits",
+        "input_hashes",
+        "output_hashes",
+        "logs_ref",
+        "execution_class",
+        "cancellation",
+        "attestation_level",
+        "reproducibility_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "hash_rules_id": "study-v1",
+  "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+  "task_ref": "2971a56ad76a051450f464fe6a3b345eadb7e562c9988a2693bc5ec2ac89635f",
+  "manifest_hash": "be783cbd348189a0415c0ac94a67276a803ccaa24ca54e8d62b3deeca5a8769c",
+  "versions": {
+    "schema": "1.0",
+    "adapter": {
+      "name": "stim-pymatching",
+      "version": "1.14.0"
+    },
+    "engine": {
+      "name": "ketqat-engine",
+      "version": "0.3.0"
+    }
+  },
+  "source_hash": "489411c005d3b7e54ebed1ee0d39b823f4eaa80121cda982b62a3548fa8e255b",
+  "image_digest": "sha256:7287ebcb1547f17d3d4dd71e0a22f2573a0196730de0c33eb5d438ac83806e0d",
+  "dependency_lock_ref": "51805ea268bfd0475abfbc6c290bae1a01d1750cf7a8a2432c770a8688ee47de",
+  "seed": 20260101,
+  "environment": {
+    "operating_system": "Linux",
+    "architecture": "x86_64",
+    "python_version": "3.11.9",
+    "node_version": "22.14.0",
+    "packages": {
+      "stim": "1.14.0",
+      "pymatching": "2.2.1"
+    },
+    "hardware": {
+      "cpu": "AMD EPYC 7763",
+      "cores": 8
+    }
+  },
+  "resource_limits": {
+    "max_runtime": 3600,
+    "max_memory_bytes": 8589934592,
+    "max_credits": 250
+  },
+  "input_hashes": [
+    "c8bdc362e6c50b7c7177445e379017a1df308237b5790f1c7952b0d91677ba93",
+    "3ad84976df47454dec5c0d54504e79eb23a5670ec14886b5d4237f959dc04194"
+  ],
+  "output_hashes": [
+    "7da26b413554ad453721c5dad9f349d73b0d1dd12acb92795d28b41e18493df2"
+  ],
+  "logs_ref": "c64f84f779d5c108e966b8b220c2247d939f2eb74ec1047a2f1e0a466aef5128",
+  "execution_class": "SIMULATION",
+  "cancellation": {
+    "cancelled": false,
+    "reason": null
+  },
+  "attestation_level": "hash_only",
+  "started_at": "2026-01-01T00:00:00.000Z",
+  "finished_at": "2026-01-01T00:41:30.000Z",
+  "created_at": "2026-01-01T00:41:31.000Z",
+  "reproducibility_hash": "d6004e0872890fbdc6f33749193678188fc8a3622d6ecfc6fb0181306153a767"
+}

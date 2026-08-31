@@ -1,0 +1,81 @@
+{
+  "$ref": "#/definitions/study-task",
+  "definitions": {
+    "study-task": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash_rules_id": {
+          "type": "string",
+          "const": "study-v1"
+        },
+        "study_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "STUDY_BASELINE_RUN",
+            "STUDY_RESOURCE_ESTIMATE",
+            "STUDY_BENCHMARK_RUN",
+            "STUDY_REPRODUCTION"
+          ]
+        },
+        "plan_ref": {
+          "type": "object",
+          "properties": {
+            "revision_hash": {
+              "$ref": "#/definitions/study-task/properties/study_ref"
+            },
+            "revision": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "revision_hash",
+            "revision"
+          ],
+          "additionalProperties": false
+        },
+        "capsule_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/study-task/properties/study_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content_hash": {
+          "$ref": "#/definitions/study-task/properties/study_ref"
+        }
+      },
+      "required": [
+        "schema_version",
+        "hash_rules_id",
+        "study_ref",
+        "kind",
+        "plan_ref",
+        "capsule_ref",
+        "status",
+        "content_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

@@ -1,0 +1,360 @@
+{
+  "$ref": "#/definitions/study-plan",
+  "definitions": {
+    "study-plan": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash_rules_id": {
+          "type": "string",
+          "const": "study-v1"
+        },
+        "study_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "specification_ref": {
+          "type": "object",
+          "properties": {
+            "revision_hash": {
+              "$ref": "#/definitions/study-plan/properties/study_ref"
+            },
+            "revision": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "revision_hash",
+            "revision"
+          ],
+          "additionalProperties": false
+        },
+        "revision": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/study-plan/properties/study_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "baselines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "baseline_ref": {
+                "$ref": "#/definitions/study-plan/properties/study_ref"
+              },
+              "source_class": {
+                "type": "string",
+                "enum": [
+                  "measured",
+                  "user_provided",
+                  "approved_adapter",
+                  "cited_primary_source",
+                  "unknown"
+                ]
+              },
+              "note": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "baseline_ref",
+              "source_class",
+              "note"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "workload_ref": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/study-plan/properties/study_ref"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "name",
+              "workload_ref",
+              "rationale"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "scenario_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/study-plan/properties/study_ref"
+          },
+          "minItems": 1
+        },
+        "pinned_versions": {
+          "type": "object",
+          "properties": {
+            "adapter": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "version": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "model": {
+              "$ref": "#/definitions/study-plan/properties/pinned_versions/properties/adapter/anyOf/0"
+            },
+            "engine": {
+              "$ref": "#/definitions/study-plan/properties/pinned_versions/properties/adapter/anyOf/0"
+            }
+          },
+          "required": [
+            "adapter",
+            "model",
+            "engine"
+          ],
+          "additionalProperties": false
+        },
+        "expected_runtime": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1
+            },
+            "bound": {
+              "type": "string",
+              "enum": [
+                "POINT",
+                "UPPER_BOUND",
+                "LOWER_BOUND"
+              ]
+            },
+            "evidence": {
+              "type": "string",
+              "enum": [
+                "MEASURED",
+                "USER_PROVIDED",
+                "DERIVED",
+                "MODELLED",
+                "UNKNOWN"
+              ]
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "model_version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "assumptions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "schema_version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uncertainty": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "SENSITIVITY_RANGE",
+                    "MODEL_SPREAD",
+                    "NOT_CHARACTERIZED"
+                  ]
+                },
+                "low": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "high": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "basis": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "kind",
+                "low",
+                "high",
+                "basis"
+              ],
+              "additionalProperties": false
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": [
+            "value",
+            "unit",
+            "bound",
+            "evidence",
+            "source",
+            "model",
+            "model_version",
+            "assumptions",
+            "schema_version",
+            "limitations"
+          ],
+          "additionalProperties": false
+        },
+        "expected_credits": {
+          "$ref": "#/definitions/study-plan/properties/expected_runtime"
+        },
+        "max_credits": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "data_handling": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reproducibility_level": {
+          "type": "string",
+          "enum": [
+            "EXACT",
+            "STATISTICAL",
+            "BEST_EFFORT"
+          ]
+        },
+        "success_criteria": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "refusal_criteria": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "execution_limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "created_at": {
+          "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/created_at"
+        },
+        "content_hash": {
+          "$ref": "#/definitions/study-plan/properties/study_ref"
+        }
+      },
+      "required": [
+        "schema_version",
+        "hash_rules_id",
+        "study_ref",
+        "specification_ref",
+        "revision",
+        "supersedes",
+        "baselines",
+        "candidates",
+        "scenario_refs",
+        "pinned_versions",
+        "expected_runtime",
+        "expected_credits",
+        "max_credits",
+        "data_handling",
+        "reproducibility_level",
+        "success_criteria",
+        "refusal_criteria",
+        "execution_limitations",
+        "content_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

@@ -57,3 +57,16 @@ export {
   EvidenceSourceSchema,
 } from "../intelligence/bundle.js"
 export { QuantitySchema } from "../intelligence/measurement.js"
+export {
+  StudySchema,
+  StudyEventSchema,
+} from "../study/study.js"
+export { ProblemSpecificationSchema } from "../study/specification.js"
+export { StudyPlanSchema } from "../study/plan.js"
+export { StudyTaskSchema } from "../study/task.js"
+export {
+  EvidenceNodeSchema,
+  EvidenceEdgeSchema,
+} from "../study/evidence.js"
+export { ExecutionCapsuleSchema } from "../study/capsule.js"
+export { ResearchPackageSchema } from "../study/research-package.js"

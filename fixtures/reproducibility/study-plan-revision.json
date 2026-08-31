@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0",
+  "hash_rules_id": "study-v1",
+  "study_ref": "3f1c0a8b6d5e4f2a9c7b8e0d1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+  "specification_ref": {
+    "revision_hash": "9a8b7c6d5e4f30211f2e3d4c5b6a798887766554433221100ffeeddccbbaa998",
+    "revision": 2
+  },
+  "revision": 2,
+  "supersedes": "1122334455667788990011223344556677889900aabbccddeeff001122334455",
+  "id": "volatile-plan-id",
+  "slug": "volatile-plan-slug",
+  "owner_username": "volatile-owner",
+  "visibility": "private",
+  "status": "AWAITING_CONFIRMATION",
+  "ui_metadata": {
+    "pinned": true
+  },
+  "created_at": "2026-02-01T09:00:00.000Z",
+  "updated_at": "2026-02-03T11:30:00.000Z",
+  "submitted_at": "2026-02-03T11:31:00.000Z",
+  "started_at": "2026-02-03T11:32:00.000Z",
+  "finished_at": "2026-02-03T11:47:00.000Z",
+  "runtime_seconds": 900,
+  "baselines": [
+    {
+      "baseline_ref": "aa11bb22cc33dd44ee55ff6677889900aabbccddeeff00112233445566778899",
+      "source_class": "measured",
+      "note": "Timed on the customer's own cluster; the run log is attached to the baseline record."
+    },
+    {
+      "baseline_ref": "bb22cc33dd44ee55ff6677889900aabbccddeeff001122334455667788990011",
+      "source_class": "cited_primary_source",
+      "note": null
+    }
+  ],
+  "candidates": [
+    {
+      "name": "Qubitized quantum phase estimation",
+      "workload_ref": "cc33dd44ee55ff6677889900aabbccddeeff0011223344556677889900112233",
+      "rationale": "The only candidate with a published resource analysis for an instance of this size."
+    }
+  ],
+  "scenario_refs": [
+    "dd44ee55ff6677889900aabbccddeeff00112233445566778899001122334455",
+    "ee55ff6677889900aabbccddeeff001122334455667788990011223344556677"
+  ],
+  "pinned_versions": {
+    "adapter": null,
+    "model": {
+      "name": "ketqat-resource-intelligence",
+      "version": "0.1.0"
+    },
+    "engine": {
+      "name": "ketqat-engine",
+      "version": "0.3.0"
+    }
+  },
+  "expected_runtime": {
+    "value": 0.432,
+    "unit": "seconds",
+    "bound": "POINT",
+    "evidence": "MODELLED",
+    "source": "Surface-code runtime model at the plan's pinned scenarios.",
+    "model": "ketqat-resource-intelligence",
+    "model_version": "0.1.0",
+    "assumptions": [
+      "One microsecond surface-code cycle.",
+      "No queueing delay is charged to the run."
+    ],
+    "created_at": "2026-02-03T11:30:00.000Z",
+    "schema_version": "0.1",
+    "limitations": [
+      "Modelled, not measured. No device was run to produce this figure."
+    ]
+  },
+  "expected_credits": {
+    "value": 1800,
+    "unit": "credits",
+    "bound": "UPPER_BOUND",
+    "evidence": "DERIVED",
+    "source": "Expected runtime at the tariff pinned in this plan.",
+    "model": "ketqat-resource-intelligence",
+    "model_version": "0.1.0",
+    "assumptions": [
+      "The tariff in force on the plan date applies for the whole run."
+    ],
+    "created_at": "2026-02-03T11:30:00.000Z",
+    "schema_version": "0.1",
+    "limitations": [
+      "An estimate. The ceiling that actually binds the run is max_credits."
+    ]
+  },
+  "max_credits": 2500,
+  "data_handling": "Inputs and outputs stay in the customer's tenancy; only hashes leave it.",
+  "reproducibility_level": "STATISTICAL",
+  "success_criteria": [
+    "A physical-qubit count for each pinned scenario, with its assumptions stated.",
+    "A stated condition under which the quantum workflow would beat the measured baseline."
+  ],
+  "refusal_criteria": [
+    "No classical baseline survives review, so no economic comparison can be drawn.",
+    "The estimate is infeasible at every pinned scenario, so there is no condition to state."
+  ],
+  "execution_limitations": [
+    "One QEC scheme is modelled. Other codes are not costed by this plan.",
+    "A fixture. It pins the study-v1 exclusion set and float rendering, and describes no real study."
+  ],
+  "content_hash": "a29381c39e2f15ccb1669ab1f6f787e7214bf67cefa9bd96903852b5c3384eb0"
+}

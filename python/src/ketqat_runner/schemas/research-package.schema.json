@@ -1,0 +1,629 @@
+{
+  "$ref": "#/definitions/research-package",
+  "definitions": {
+    "research-package": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash_rules_id": {
+          "type": "string",
+          "const": "study-v1"
+        },
+        "package_kind": {
+          "type": "string",
+          "const": "KETQAT_RESEARCH_PACKAGE"
+        },
+        "study_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "plan_ref": {
+          "type": "object",
+          "properties": {
+            "revision_hash": {
+              "$ref": "#/definitions/research-package/properties/study_ref"
+            },
+            "revision": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "revision_hash",
+            "revision"
+          ],
+          "additionalProperties": false
+        },
+        "report_markdown": {
+          "type": "string",
+          "minLength": 1
+        },
+        "methods": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assumption_rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "node_hash": {
+                "$ref": "#/definitions/research-package/properties/study_ref"
+              }
+            },
+            "required": [
+              "label",
+              "node_hash"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "result_rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/research-package/properties/assumption_rows/items"
+          }
+        },
+        "csv": {
+          "type": "string"
+        },
+        "figures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "svg": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "label",
+              "svg"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "authors": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "default": []
+              },
+              "year": {
+                "type": "integer",
+                "minimum": 1900,
+                "maximum": 2200
+              },
+              "doi": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "bibtex": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "bundle_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/research-package/properties/study_ref"
+          }
+        },
+        "environment": {
+          "type": "object",
+          "properties": {
+            "operating_system": {
+              "type": "string"
+            },
+            "architecture": {
+              "type": "string"
+            },
+            "python_version": {
+              "type": "string"
+            },
+            "node_version": {
+              "type": "string"
+            },
+            "packages": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "default": {}
+            },
+            "hardware": {
+              "type": "object",
+              "additionalProperties": {},
+              "default": {}
+            }
+          },
+          "additionalProperties": false
+        },
+        "reproduction_command": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "hash_rules_id": {
+                "type": "string",
+                "const": "study-v1"
+              },
+              "study_ref": {
+                "$ref": "#/definitions/research-package/properties/study_ref"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "claim",
+                  "quantity",
+                  "input",
+                  "model_ref",
+                  "result",
+                  "source",
+                  "dataset_ref",
+                  "snapshot_ref"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "claim": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "subject": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "metric": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "comparator": {
+                        "type": "string",
+                        "enum": [
+                          "LESS_THAN",
+                          "AT_MOST",
+                          "EQUAL",
+                          "AT_LEAST",
+                          "GREATER_THAN"
+                        ]
+                      },
+                      "value": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "unit": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "bound": {
+                            "type": "string",
+                            "enum": [
+                              "POINT",
+                              "UPPER_BOUND",
+                              "LOWER_BOUND"
+                            ]
+                          },
+                          "evidence": {
+                            "type": "string",
+                            "enum": [
+                              "MEASURED",
+                              "USER_PROVIDED",
+                              "DERIVED",
+                              "MODELLED",
+                              "UNKNOWN"
+                            ]
+                          },
+                          "source": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "model": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "model_version": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "assumptions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "schema_version": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uncertainty": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "SENSITIVITY_RANGE",
+                                  "MODEL_SPREAD",
+                                  "NOT_CHARACTERIZED"
+                                ]
+                              },
+                              "low": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "high": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "basis": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "low",
+                              "high",
+                              "basis"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "limitations": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "unit",
+                          "bound",
+                          "evidence",
+                          "source",
+                          "model",
+                          "model_version",
+                          "assumptions",
+                          "schema_version",
+                          "limitations"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "subject",
+                      "metric",
+                      "comparator",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "quantity": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/research-package/properties/nodes/items/properties/claim/anyOf/0/properties/value"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reference": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "record_kind": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "hash": {
+                        "anyOf": [
+                          {
+                            "$ref": "#/definitions/research-package/properties/study_ref"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "record_slug": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "record_kind",
+                      "hash",
+                      "record_slug"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "citation": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/research-package/properties/references/items"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "limitations": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "source_published_on": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "retrieved_on": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "content_hash": {
+                "$ref": "#/definitions/research-package/properties/study_ref"
+              }
+            },
+            "required": [
+              "schema_version",
+              "hash_rules_id",
+              "study_ref",
+              "kind",
+              "label",
+              "claim",
+              "quantity",
+              "reference",
+              "citation",
+              "limitations",
+              "source_published_on",
+              "retrieved_on",
+              "content_hash"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "hash_rules_id": {
+                "type": "string",
+                "const": "study-v1"
+              },
+              "study_ref": {
+                "$ref": "#/definitions/research-package/properties/study_ref"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "derived_from",
+                  "used_model",
+                  "used_input",
+                  "supports",
+                  "contradicts",
+                  "supersedes",
+                  "reproduces",
+                  "reviewed_by"
+                ]
+              },
+              "from_node_hash": {
+                "$ref": "#/definitions/research-package/properties/study_ref"
+              },
+              "to_node_hash": {
+                "$ref": "#/definitions/research-package/properties/study_ref"
+              },
+              "asserted_by": {
+                "type": "string",
+                "minLength": 1
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "content_hash": {
+                "$ref": "#/definitions/research-package/properties/study_ref"
+              }
+            },
+            "required": [
+              "schema_version",
+              "hash_rules_id",
+              "study_ref",
+              "kind",
+              "from_node_hash",
+              "to_node_hash",
+              "asserted_by",
+              "rationale",
+              "content_hash"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "claim_evidence_map": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "claim_node_hash": {
+                "$ref": "#/definitions/research-package/properties/study_ref"
+              },
+              "evidence_node_hashes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/research-package/properties/study_ref"
+                },
+                "minItems": 1
+              },
+              "edge_hashes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/research-package/properties/study_ref"
+                }
+              }
+            },
+            "required": [
+              "claim_node_hash",
+              "evidence_node_hashes",
+              "edge_hashes"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "failed_checks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "is_demo": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "$ref": "#/definitions/research-package/properties/nodes/items/properties/claim/anyOf/0/properties/value/properties/created_at"
+        },
+        "reproducibility_hash": {
+          "$ref": "#/definitions/research-package/properties/study_ref"
+        }
+      },
+      "required": [
+        "schema_version",
+        "hash_rules_id",
+        "package_kind",
+        "study_ref",
+        "plan_ref",
+        "report_markdown",
+        "methods",
+        "assumption_rows",
+        "result_rows",
+        "csv",
+        "figures",
+        "references",
+        "bundle_refs",
+        "environment",
+        "reproduction_command",
+        "nodes",
+        "edges",
+        "claim_evidence_map",
+        "limitations",
+        "failed_checks",
+        "is_demo",
+        "reproducibility_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

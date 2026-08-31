@@ -1,0 +1,120 @@
+{
+  "$ref": "#/definitions/study-event",
+  "definitions": {
+    "study-event": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash_rules_id": {
+          "type": "string",
+          "const": "study-v1"
+        },
+        "study_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "sequence": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "previous_event_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/study-event/properties/study_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "from_status": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "SPECIFIED",
+                "PLANNED",
+                "AWAITING_CONFIRMATION",
+                "RUNNING",
+                "CONCLUDED",
+                "REFUSED",
+                "SUPERSEDED"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "to_status": {
+          "$ref": "#/definitions/study-event/properties/from_status/anyOf/0"
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "plan_ref": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "revision_hash": {
+                  "$ref": "#/definitions/study-event/properties/study_ref"
+                },
+                "revision": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": [
+                "revision_hash",
+                "revision"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content_hash": {
+          "$ref": "#/definitions/study-event/properties/study_ref"
+        }
+      },
+      "required": [
+        "schema_version",
+        "hash_rules_id",
+        "study_ref",
+        "sequence",
+        "previous_event_hash",
+        "from_status",
+        "to_status",
+        "actor",
+        "reason",
+        "plan_ref",
+        "content_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

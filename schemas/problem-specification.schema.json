@@ -1,0 +1,259 @@
+{
+  "$ref": "#/definitions/problem-specification",
+  "definitions": {
+    "problem-specification": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash_rules_id": {
+          "type": "string",
+          "const": "study-v1"
+        },
+        "study_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "revision": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/problem-specification/properties/study_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "objective": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "evidence": {
+              "type": "string",
+              "enum": [
+                "MEASURED",
+                "USER_PROVIDED",
+                "DERIVED",
+                "MODELLED",
+                "UNKNOWN"
+              ]
+            },
+            "origin": {
+              "type": "string",
+              "enum": [
+                "INFERRED",
+                "CONFIRMED"
+              ]
+            }
+          },
+          "required": [
+            "value",
+            "evidence",
+            "origin"
+          ],
+          "additionalProperties": false
+        },
+        "success_criteria": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/problem-specification/properties/objective"
+          },
+          "minItems": 1
+        },
+        "accuracy_requirement": {
+          "type": "object",
+          "properties": {
+            "quantity": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "bound": {
+                  "type": "string",
+                  "enum": [
+                    "POINT",
+                    "UPPER_BOUND",
+                    "LOWER_BOUND"
+                  ]
+                },
+                "evidence": {
+                  "$ref": "#/definitions/problem-specification/properties/objective/properties/evidence"
+                },
+                "source": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "model": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "model_version": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "assumptions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "schema_version": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uncertainty": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "SENSITIVITY_RANGE",
+                        "MODEL_SPREAD",
+                        "NOT_CHARACTERIZED"
+                      ]
+                    },
+                    "low": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "high": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "basis": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "low",
+                    "high",
+                    "basis"
+                  ],
+                  "additionalProperties": false
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": [
+                "value",
+                "unit",
+                "bound",
+                "evidence",
+                "source",
+                "model",
+                "model_version",
+                "assumptions",
+                "schema_version",
+                "limitations"
+              ],
+              "additionalProperties": false
+            },
+            "origin": {
+              "$ref": "#/definitions/problem-specification/properties/objective/properties/origin"
+            }
+          },
+          "required": [
+            "quantity",
+            "origin"
+          ],
+          "additionalProperties": false
+        },
+        "runtime_constraint": {
+          "$ref": "#/definitions/problem-specification/properties/accuracy_requirement"
+        },
+        "budget_constraint": {
+          "$ref": "#/definitions/problem-specification/properties/accuracy_requirement"
+        },
+        "problem_size": {
+          "$ref": "#/definitions/problem-specification/properties/accuracy_requirement"
+        },
+        "current_classical_method": {
+          "$ref": "#/definitions/problem-specification/properties/objective"
+        },
+        "why_quantum": {
+          "$ref": "#/definitions/problem-specification/properties/objective"
+        },
+        "open_questions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "created_at": {
+          "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/created_at"
+        },
+        "content_hash": {
+          "$ref": "#/definitions/problem-specification/properties/study_ref"
+        }
+      },
+      "required": [
+        "schema_version",
+        "hash_rules_id",
+        "study_ref",
+        "revision",
+        "supersedes",
+        "objective",
+        "success_criteria",
+        "accuracy_requirement",
+        "runtime_constraint",
+        "budget_constraint",
+        "problem_size",
+        "current_classical_method",
+        "why_quantum",
+        "open_questions",
+        "limitations",
+        "content_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

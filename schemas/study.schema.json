@@ -1,0 +1,112 @@
+{
+  "$ref": "#/definitions/study",
+  "definitions": {
+    "study": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash_rules_id": {
+          "type": "string",
+          "const": "study-v1"
+        },
+        "study_type": {
+          "type": "string",
+          "enum": [
+            "FTQC_FEASIBILITY",
+            "QEC_LOGICAL_BENCHMARK"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "project_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "is_demo": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "DRAFT",
+            "SPECIFIED",
+            "PLANNED",
+            "AWAITING_CONFIRMATION",
+            "RUNNING",
+            "CONCLUDED",
+            "REFUSED",
+            "SUPERSEDED"
+          ]
+        },
+        "latest_specification": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "revision_hash": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "revision": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": [
+                "revision_hash",
+                "revision"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "latest_plan": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/study/properties/latest_specification/anyOf/0"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content_hash": {
+          "$ref": "#/definitions/study/properties/latest_specification/anyOf/0/properties/revision_hash"
+        }
+      },
+      "required": [
+        "schema_version",
+        "hash_rules_id",
+        "study_type",
+        "title",
+        "project_ref",
+        "is_demo",
+        "status",
+        "latest_specification",
+        "latest_plan",
+        "content_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

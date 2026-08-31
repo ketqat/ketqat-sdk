@@ -44,6 +44,10 @@ const requiredFiles = [
   "dist/schemas/index.d.ts",
   "dist/reproducibility/index.js",
   "dist/reproducibility/index.d.ts",
+  // The `ketqat-sdk/study` subpath. Declared in `exports` but absent from the
+  // tarball, it would resolve in this repository and fail at install time.
+  "dist/study/index.js",
+  "dist/study/index.d.ts",
   "dist/compatibility/index.js",
   "dist/compatibility/index.d.ts",
   "dist/demo/index.js",
@@ -121,7 +125,16 @@ if (oversizedFiles.length > 0) {
 // ship, and another large share is declaration expansion in `dist/contracts`
 // and `dist/engine` of exactly the kind #236 fixed in its own module; both are
 // tracked in ketqat-sdk#237 rather than fixed opportunistically here.
-const PACKAGE_SIZE_LIMIT_BYTES = 2_500_000
+//
+// Raised again from 2.5 MB to 2.8 MB for ketqat-sdk#259, which adds the study
+// contract family: nine JSON Schemas and the `dist/study` module. The measured
+// cost was ~287 KB against a 2.40 MB baseline, with the schemas already emitted
+// as in-document `$ref`s and the large records already given hand-written
+// interfaces so their declarations stay flat. The headroom this leaves is the
+// same order as before, which is the point: the limit tracks what the package
+// actually costs today, so the next unplanned 300 KB still has to argue for
+// itself here.
+const PACKAGE_SIZE_LIMIT_BYTES = 2_800_000
 if (manifest.unpackedSize > PACKAGE_SIZE_LIMIT_BYTES) {
   failures.push(
     `Unpacked package size ${manifest.unpackedSize} exceeds the ` +

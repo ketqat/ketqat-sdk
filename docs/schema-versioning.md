@@ -69,6 +69,37 @@ than an artifact of running it — and that failure would be invisible. Every ex
 key was found by running the same experiment twice and diffing the payloads, not by reading
 the schema.
 
+## A second rule set, for a family that has no history: `study-v1`
+
+The escape hatch above adds a version to one registry. The `study` contract family
+([ketqat-sdk#259](https://github.com/ketqat/ketqat-sdk/issues/259)) instead declares a
+**separate** rule set, `study-v1`, in `src/study/hashing.ts` and
+`python/src/ketqat_runner/study_hashing.py`. The legacy registry, its exclusion sets and
+`hashVersionOf` are untouched, so every published hash still verifies under the rules it was
+written with, and the frozen fixture corpus is byte-identical.
+
+Two differences from the versioned registry, both deliberate:
+
+- **The marker is a different field.** A study record names its rules in `hash_rules_id`,
+  not in `reproducibility_hash_version`. The legacy inference reports version 1 for any
+  marker that is not an integer, so writing `"study-v1"` into the legacy field would not
+  fail — it would verify the record under version 1 rules and report success. A silent
+  wrong answer is the one outcome worth adding a field to avoid.
+- **Nothing is inferred.** "No marker means version 1" is right for records that predate
+  versioning. This family has none, so a record without a rules id is not old but
+  malformed, and it is refused rather than defaulted. An unknown id is refused too, never
+  treated as the current one.
+
+`study-v1` inherits the version 2 identity and timing keys by reference rather than by
+copying them, and adds four exclusions of its own: `hash_rules_id` (a marker never hashes
+itself), `content_hash` (a record's own digest), and `status` plus `latest_specification` /
+`latest_plan`, which are projections of the event trail and the revision chain rather than
+sources of truth. Everything a decision rests on — the plan's contents, `max_credits`, the
+`attestation_level` a capsule claims, a claim's value — is inside the digest.
+
+Study pins live in `fixtures/reproducibility/study-expected-hashes.json`, a separate sidecar,
+so `expected-hashes.json` stays part of the frozen corpus. Both languages reproduce all four.
+
 ## What a breaking change requires
 
 1. A planning ADR recording why the incompatibility is worth its cost.
@@ -86,6 +117,7 @@ the schema.
 |---|---|---|
 | `schema_version` on a record | the shape of that contract | a contract change |
 | `reproducibility_hash_version` | which exclusion set and canonical form produced the hash | a hashing change; adding a version is safe, editing one is not |
+| `hash_rules_id` on a `study` record | which rule set produced the hash, stated rather than inferred | a new rule set in the study family; the legacy registry is untouched |
 | package version (`ketqat-sdk`, `ketqat`) | the release | every release |
 | benchmark suite version | the experiment definition a run is compared under | a change to what is measured |
 

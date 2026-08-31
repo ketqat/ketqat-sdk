@@ -167,6 +167,38 @@ Above the code threshold the estimator reports infeasible with the reason, never
 large number -- a large number reads as "expensive but possible", which is the opposite of
 true.
 
+## Studies and the Evidence Graph
+
+`ketqat-sdk/study` holds a whole investigation rather than a single run: what was asked
+(`ProblemSpecification`), what was going to be done about it (`StudyPlan`), what actually
+ran (`StudyTask`, `ExecutionCapsule`), and what may be claimed afterwards
+(`EvidenceNode`, `EvidenceEdge`, `ResearchPackage`). A `Study` carries only its creation
+core; everything that changes flows through an append-only, hash-chained `StudyEvent` trail.
+
+Three things are enforced by the types rather than by convention:
+
+- **A number in a report is a node in the graph.** Every result row in a `ResearchPackage`
+  names the `EvidenceNode` its value is read from, so a figure with nothing behind it
+  cannot be written down. `buildResearchPackage` refuses — a claim with no evidence node, a
+  row naming a node the package does not carry, an edge with a dangling endpoint — rather
+  than exporting with a warning attached.
+- **A confirmation is a hash, not an intention.** Plan revisions are immutable and
+  content-addressed, so a changed plan needs a new confirmation by construction: its hash
+  moved. `verifyPlanConfirmation` recomputes the hash, so a plan edited and re-stamped with
+  the confirmed value is refused too.
+- **Nothing is inferred about how a record was hashed.** Study records name their rule set
+  in `hash_rules_id` (`study-v1`) and are refused without it — see
+  [Schema Versioning](#schema-versioning) for why that is a different field from
+  `reproducibility_hash_version`.
+
+Unknowns stay representable everywhere the family carries a value, with one exception: a
+claim asserts something, so a claim whose quantity is `UNKNOWN` is refused at parse. The
+unknown belongs in a `quantity` node or in the specification's open questions, where a
+reader can see that the question was asked and not answered.
+
+Python validates, hashes, and resolves the claim map and graph structurally. It does not
+recompute the science, and `verify_research_package` says so in its own result.
+
 ## Schema Versioning
 
 The npm package version and research schema version are separate. `SDK_VERSION` is currently `0.2.0`; `SCHEMA_VERSION` is currently `0.1`.

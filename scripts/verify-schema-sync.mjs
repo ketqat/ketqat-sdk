@@ -26,6 +26,15 @@ const PYTHON_VALIDATED_SCHEMAS = [
   "qec-benchmark-result.schema.json",
   "algorithm-benchmark-result.schema.json",
   "qec-code-catalog.json",
+  "study.schema.json",
+  "study-event.schema.json",
+  "problem-specification.schema.json",
+  "study-plan.schema.json",
+  "study-task.schema.json",
+  "evidence-node.schema.json",
+  "evidence-edge.schema.json",
+  "execution-capsule.schema.json",
+  "research-package.schema.json",
 ]
 
 const drifted = []
