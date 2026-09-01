@@ -18,14 +18,13 @@ import {
   type EvidenceEdge,
   type EvidenceNode,
 } from "./evidence.js"
+import { studySelfHash } from "./hash.js"
 import {
-  STUDY_HASH_RULES_ID,
-  assertNoNestedExcludedKeys,
-  assertNoUnrepresentableValues,
-  calculateStudyHash,
-  studyRulesIdOf,
-} from "./hashing.js"
-import type { StudyRefusal } from "./refusals.js"
+  studyNotHashableRefusal,
+  studyRulesIdRefusal,
+  type StudyRefusal,
+} from "./refusals.js"
+import { STUDY_HASH_RULES_ID, STUDY_HASH_RULES_KEY } from "./rules.js"
 
 /**
  * The bundle a study leaves the building in (ketqat-sdk#259, ADR 0010, RFC 0008 §7).
@@ -148,7 +147,9 @@ export const ResearchPackageSchema: Contract<ResearchPackage> = z.object({
   bundle_refs: z.array(ContentHashSchema),
   /**
    * Study-local, and array-shaped where the shared `EnvironmentSchema` is a map.
-   * A map's keys are data, and `study-v1` drops excluded names at every depth.
+   * A map's keys arrive at run time and are declared by nobody, so the
+   * projection would have to read one wholesale or refuse it. A list of
+   * `{name, value}` pairs is neither.
    */
   environment: StudyEnvironmentSchema,
   /** The command that regenerates this package from itself. */
@@ -169,7 +170,7 @@ export const ResearchPackageSchema: Contract<ResearchPackage> = z.object({
    */
   failed_checks: z.array(z.string().min(1)),
   is_demo: z.boolean(),
-  /** Excluded from the hash by name, like every other timestamp in this family. */
+  /** `RECEIPT_ONLY`: the moment the server observed this record, not part of what it says. */
   created_at: IsoDateTimeSchema.optional(),
   /** SHA-256 over the canonical form of this package under `study-v1`. Excluded from itself. */
   reproducibility_hash: ContentHashSchema,
@@ -196,7 +197,12 @@ export interface ResearchPackageInput {
   /** Recorded, never omitted. Absent means no check failed, not that none was run. */
   failedChecks?: string[]
   isDemo: boolean
-  /** Recorded but excluded from the hash. Omit for a byte-stable artifact. */
+  /**
+   * `RECEIPT_ONLY`: the moment the server observed this package, not part of
+   * what it reports. Outside `semanticHash`, inside `recordHash` -- which is the
+   * digest a package's `reproducibility_hash` is -- so omit it for a
+   * byte-stable artifact.
+   */
   createdAt?: string
 }
 
@@ -460,7 +466,7 @@ function claimMapRefusals(body: PackageBody): StudyRefusal[] {
 function identityRefusals(nodes: readonly EvidenceNode[], edges: readonly EvidenceEdge[]): StudyRefusal[] {
   const refusals: StudyRefusal[] = []
   for (const node of nodes) {
-    const expected = calculateStudyHash(node)
+    const expected = studySelfHash("evidence_node", node)
     if (expected === node.content_hash) continue
     refusals.push({
       subject: node.label,
@@ -471,7 +477,7 @@ function identityRefusals(nodes: readonly EvidenceNode[], edges: readonly Eviden
     })
   }
   for (const edge of edges) {
-    const expected = calculateStudyHash(edge)
+    const expected = studySelfHash("evidence_edge", edge)
     if (expected === edge.content_hash) continue
     refusals.push({
       subject: edge.content_hash,
@@ -485,32 +491,31 @@ function identityRefusals(nodes: readonly EvidenceNode[], edges: readonly Eviden
 }
 
 /**
- * The hashing layer's two refusals, in this module's vocabulary.
+ * The package's own digest, or the reason there is not one.
  *
- * `assertNoNestedExcludedKeys` and `assertNoUnrepresentableValues` throw, which
- * is right for a hashing primitive and wrong at an export boundary: a caller
- * assembling a package deserves these beside the other refusals rather than as
- * an exception it has to catch to discover that one of its evidence nodes
- * carries a key the digest drops, or a figure the two languages read as two
- * different numbers.
+ * The hashing core throws, which is right for a primitive and wrong at an
+ * export boundary: a caller assembling a package deserves "one of your evidence
+ * nodes carries a field nobody declared" beside the other refusals, rather than
+ * as an exception it has to catch to find out.
  *
- * They stay two codes rather than one because they send a reader to different
- * places: `STUDY_EXCLUDED_KEY_NESTED` is fixed by renaming a field, and
- * `STUDY_VALUE_NOT_REPRESENTABLE` by changing the value itself.
+ * Computing the digest *is* the check. Under the retired rules there were two
+ * separate walks to run first -- one hunting for a key the canonicalizer would
+ * silently drop, one for a number the two languages would read differently --
+ * and each was a denylist that had to be right about every name and every field
+ * in advance. A projection has no such walk: it reads the fields the record kind
+ * declares and refuses everything else, so the only way to ask whether a package
+ * can be hashed honestly is to hash it.
  */
-function hashingRefusals(record: object): StudyRefusal[] {
-  const checks: readonly [(input: object, rulesId: string) => void, StudyRefusal["code"]][] = [
-    [assertNoNestedExcludedKeys, "STUDY_EXCLUDED_KEY_NESTED"],
-    [assertNoUnrepresentableValues, "STUDY_VALUE_NOT_REPRESENTABLE"],
-  ]
-  for (const [assert, code] of checks) {
-    try {
-      assert(record, STUDY_HASH_RULES_ID)
-    } catch (error) {
-      return [{ subject: "research_package", code, message: (error as Error).message }]
-    }
+function selfHashOrRefusals(
+  record: object,
+): { ok: true; hash: string } | { ok: false; refusals: StudyRefusal[] } {
+  const rulesRefusal = studyRulesIdRefusal("research_package", record)
+  if (rulesRefusal !== null) return { ok: false, refusals: [rulesRefusal] }
+  try {
+    return { ok: true, hash: studySelfHash("research_package", record) }
+  } catch (error) {
+    return { ok: false, refusals: [studyNotHashableRefusal("research_package", error)] }
   }
-  return []
 }
 
 /**
@@ -585,13 +590,13 @@ export function buildResearchPackage(
     ...(input.createdAt ? { created_at: input.createdAt } : {}),
   }
 
-  // Asked before anything hashes, over the assembled record rather than over its
-  // parts, because everything below this line takes a digest: `identityRefusals`
-  // recomputes every node's, and a node carrying a key the canonicalizer drops --
-  // or a number the two languages read differently -- would throw out of an
-  // export boundary whose whole contract is to return refusals instead.
-  const unhashable = hashingRefusals(withoutHash)
-  if (unhashable.length > 0) return { ok: false, refusals: unhashable }
+  // Asked before anything else hashes, over the assembled record rather than
+  // over its parts, because everything below this line takes a digest:
+  // `identityRefusals` recomputes every node's, and a node the projection
+  // refuses would throw out of an export boundary whose whole contract is to
+  // return refusals instead.
+  const selfHash = selfHashOrRefusals(withoutHash)
+  if (!selfHash.ok) return { ok: false, refusals: selfHash.refusals }
 
   // The shared graph verifier reports an edge whose endpoint is missing; the
   // identity check names the node that lied about its own hash. Neither answers
@@ -601,11 +606,9 @@ export function buildResearchPackage(
   const refusals = [...identityRefusals(nodes, edges), ...graph.refusals, ...claimMapRefusals(body)]
   if (refusals.length > 0) return { ok: false, refusals }
 
-  const hash = calculateStudyHash(withoutHash, STUDY_HASH_RULES_ID)
-
   return {
     ok: true,
-    package: ResearchPackageSchema.parse({ ...withoutHash, reproducibility_hash: hash }),
+    package: ResearchPackageSchema.parse({ ...withoutHash, reproducibility_hash: selfHash.hash }),
   }
 }
 
@@ -687,18 +690,15 @@ export function verifyResearchPackage(candidate: unknown): StudyVerification {
   const pkg = candidate as ResearchPackage
   const problems: string[] = []
 
-  // The literal on `hash_rules_id` has already refused a missing or unknown id,
-  // so this reads the rules the record names rather than assuming the current
-  // ones: a future `study-v2` package must be hashed the way it says it was.
-  const rulesId = studyRulesIdOf(pkg)
-
-  // A record the digest cannot represent honestly is refused rather than hashed,
-  // here as at the build boundary. A key the canonicalizer drops lets a package's
-  // contents be swapped for somebody else's while its hash still checks out; an
-  // integer above 2**53 lets two packages reporting figures half a million apart
-  // share one digest, one node identity and one clean verification.
-  const hidden = hashingRefusals(pkg)
-  if (hidden.length > 0) {
+  // A record the digest cannot represent honestly is refused rather than
+  // hashed, here as at the build boundary, and the rules id is asked for first:
+  // a future `study-v2` package must be hashed the way it says it was, and "we
+  // do not implement those rules" is a different finding from "this package
+  // does not join up". The literal on `hash_rules_id` has already refused both
+  // at the parse above; this is the answer for a caller that reaches the
+  // hashing layer with a record no schema has seen.
+  const selfHash = selfHashOrRefusals(pkg)
+  if (!selfHash.ok) {
     return StudyVerificationSchema.parse({
       valid: false,
       hash_matches: false,
@@ -706,11 +706,14 @@ export function verifyResearchPackage(candidate: unknown): StudyVerification {
       graph_valid: false,
       expected_hash: "",
       actual_hash: pkg.reproducibility_hash,
-      problems: hidden.map((refusal) => `${refusal.code} (${refusal.subject}): ${refusal.message}`),
+      problems: selfHash.refusals.map(
+        (refusal) => `${refusal.code} (${refusal.subject}): ${refusal.message}`,
+      ),
     })
   }
 
-  const expected = calculateStudyHash(pkg, rulesId)
+  const rulesId = (pkg as unknown as Record<string, string>)[STUDY_HASH_RULES_KEY]
+  const expected = selfHash.hash
   const hashMatches = expected === pkg.reproducibility_hash
   if (!hashMatches) {
     problems.push(

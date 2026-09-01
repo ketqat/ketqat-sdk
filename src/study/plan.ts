@@ -6,11 +6,14 @@ import {
   ContentHashSchema,
   RevisionRefSchema,
   STUDY_SCHEMA_VERSION,
+  StudyPositionSchema,
   StudyQuantitySchema,
   type RevisionRef,
 } from "./common.js"
-import { STUDY_HASH_RULES_ID, calculateStudyHash } from "./hashing.js"
+import { studySelfHash } from "./hash.js"
 import type { StudyRefusal } from "./refusals.js"
+import { STUDY_HASH_RULES_ID } from "./rules.js"
+import { FiniteFloatSchema } from "./values.js"
 
 /**
  * What the study intends to do, and the exact thing a user confirms
@@ -123,7 +126,7 @@ export const StudyPlanSchema: Contract<StudyPlan> = z
     study_ref: ContentHashSchema,
     /** The specification revision this plan answers. A plan for an older question is a different plan. */
     specification_ref: RevisionRefSchema,
-    revision: z.number().int().positive(),
+    revision: StudyPositionSchema,
     supersedes: ContentHashSchema.nullable(),
     /**
      * May be empty. A study with no classical baseline is a legitimate study; it
@@ -140,7 +143,7 @@ export const StudyPlanSchema: Contract<StudyPlan> = z
     expected_runtime: StudyQuantitySchema,
     expected_credits: StudyQuantitySchema,
     /** The user's hard ceiling. Their decision, exact, not an estimate of anything. */
-    max_credits: z.number().positive(),
+    max_credits: FiniteFloatSchema.positive(),
     /** What happens to the inputs and the outputs. Never blank on a plan somebody signs. */
     data_handling: z.string().min(1),
     reproducibility_level: ReproducibilityLevelSchema,
@@ -150,7 +153,7 @@ export const StudyPlanSchema: Contract<StudyPlan> = z
     refusal_criteria: z.array(z.string().min(1)).min(1),
     /** What this plan already knows it will not establish. */
     execution_limitations: z.array(z.string().min(1)),
-    /** Excluded from the hash by name, like every other timestamp in this family. */
+    /** `RECEIPT_ONLY`: the moment the server observed this record, not part of what it says. */
     created_at: IsoDateTimeSchema.optional(),
     /** The confirmation target. Excluded from its own digest. */
     content_hash: ContentHashSchema,
@@ -207,7 +210,7 @@ export function verifyPlanConfirmation(
   latestRevision?: RevisionRef | null,
 ): { ok: true } | { ok: false; refusal: StudyRefusal } {
   const subject = `study plan revision ${plan.revision}`
-  const actual = calculateStudyHash(plan)
+  const actual = studySelfHash("study_plan", plan)
 
   if (actual !== plan.content_hash) {
     return {
@@ -289,5 +292,5 @@ export function revisePlan(
     created_at: changes.created_at,
     content_hash: undefined,
   }
-  return StudyPlanSchema.parse({ ...withoutHash, content_hash: calculateStudyHash(withoutHash) })
+  return StudyPlanSchema.parse({ ...withoutHash, content_hash: studySelfHash("study_plan", withoutHash) })
 }

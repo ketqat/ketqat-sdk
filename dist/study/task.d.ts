@@ -39,9 +39,9 @@ export interface StudyTaskInput {
     kind: StudyTaskKind;
     /** The newest plan revision, when the caller knows it. Catches a stale confirmation at any depth. */
     latestPlanRevision?: RevisionRef | null;
-    /** Initial job status. Denormalized and excluded from the hash. */
+    /** Initial job status. Denormalized, and outside the digest this task's identity is. */
     status?: string;
-    /** Recorded on the task but excluded from its hash. Omit for a byte-stable record. */
+    /** Recorded on the task, and outside its identity. Omit for a byte-stable record. */
     createdAt?: string;
 }
 /**

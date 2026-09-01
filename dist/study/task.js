@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { IsoDateTimeSchema } from "../contracts/common.js";
 import { ContentHashSchema, RevisionRefSchema, STUDY_SCHEMA_VERSION } from "./common.js";
-import { STUDY_HASH_RULES_ID, calculateStudyHash } from "./hashing.js";
+import { studySelfHash } from "./hash.js";
 import { verifyPlanConfirmation } from "./plan.js";
+import { STUDY_HASH_RULES_ID } from "./rules.js";
 /**
  * One unit of work a confirmed plan authorises (ketqat-sdk#259, ADR 0010).
  *
@@ -40,11 +41,17 @@ export const StudyTaskSchema = z.object({
     /**
      * Denormalized from the execution job. A free string rather than an enum
      * because the vocabulary belongs to the job system, not to this family, and a
-     * closed copy of someone else's states drifts silently. Excluded from the hash
-     * under `study-v1`, so a task that progressed is the same task.
+     * closed copy of someone else's states drifts silently.
+     *
+     * Classified `RECORD_ONLY`, and it is why a task's `content_hash` is the
+     * *semantic* digest of the four (see the self-hash purpose table in
+     * `registry.ts`): the execution system overwrites this field as the job moves,
+     * so an identity that covered it would stop matching itself between two reads
+     * of the same row. `recordHash("study_task", task)` still covers it, and
+     * answers the other question -- whether anything about the row was edited.
      */
     status: z.string().min(1),
-    /** Excluded from the hash by name, like every other timestamp in this family. */
+    /** `RECEIPT_ONLY`: the moment the server observed this task, not a property of the work. */
     created_at: IsoDateTimeSchema.optional(),
     content_hash: ContentHashSchema,
 }).strict();
@@ -88,7 +95,7 @@ export function buildStudyTask(input) {
     };
     return {
         ok: true,
-        task: StudyTaskSchema.parse({ ...withoutHash, content_hash: calculateStudyHash(withoutHash) }),
+        task: StudyTaskSchema.parse({ ...withoutHash, content_hash: studySelfHash("study_task", withoutHash) }),
     };
 }
 //# sourceMappingURL=task.js.map

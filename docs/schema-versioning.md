@@ -73,12 +73,26 @@ the schema.
 
 The escape hatch above adds a version to one registry. The `study` contract family
 ([ketqat-sdk#259](https://github.com/ketqat/ketqat-sdk/issues/259)) instead declares a
-**separate** rule set, `study-v1`, in `src/study/hashing.ts` and
-`python/src/ketqat_runner/study_hashing.py`. The legacy registry, its exclusion sets and
-`hashVersionOf` are untouched, so every published hash still verifies under the rules it was
-written with, and the frozen fixture corpus is byte-identical.
+**separate** rule set, `study-v1`, in `src/study/` and `python/src/ketqat_runner/study_*.py`.
+The legacy registry, its exclusion sets and `hashVersionOf` are untouched, so every published
+hash still verifies under the rules it was written with, and the frozen fixture corpus is
+byte-identical.
 
-Two differences from the versioned registry, both deliberate:
+**`study-v1` does not have an exclusion set at all**, and that is the substantive difference
+from everything above. The legacy registry decides what to leave out by matching key names at
+every nesting level. That rule has to be right about every name that can ever appear at every
+depth, including names an attacker picks, and five rounds of probing found five holes in it —
+a nested `slug`, a nested `content_hash`, a free-map key chosen by whatever captured an
+environment, unguarded numbers, `__proto__`. They are one bug reported five times.
+
+So each study record kind declares every field it has as `SEMANTIC`, `RECORD_ONLY`,
+`RECEIPT_ONLY` or `DERIVED` (`src/study/registry.ts`), and the digest is built from those
+declarations rather than from the record's keys. A key nobody declared is never read, and is
+refused rather than skipped. `tests/study-field-completeness.test.mjs` walks each Zod schema
+against the tables and fails on any field they do not classify, in either direction, so a new
+field is a decision a reviewer sees in a diff rather than a silent default.
+
+Three more differences from the versioned registry, all deliberate:
 
 - **The marker is a different field.** A study record names its rules in `hash_rules_id`,
   not in `reproducibility_hash_version`. The legacy inference reports version 1 for any
@@ -89,16 +103,28 @@ Two differences from the versioned registry, both deliberate:
   versioning. This family has none, so a record without a rules id is not old but
   malformed, and it is refused rather than defaulted. An unknown id is refused too, never
   treated as the current one.
+- **The canonical form is a published specification.** RFC 8785 (JCS), implemented against
+  the RFC in each language and pinned to the RFC's own vectors in
+  `fixtures/jcs/rfc8785-vectors.json`, so a divergence fails against the spec rather than
+  against the other implementation.
 
-`study-v1` inherits the version 2 identity and timing keys by reference rather than by
-copying them, and adds four exclusions of its own: `hash_rules_id` (a marker never hashes
-itself), `content_hash` (a record's own digest), and `status` plus `latest_specification` /
-`latest_plan`, which are projections of the event trail and the revision chain rather than
-sources of truth. Everything a decision rests on — the plan's contents, `max_credits`, the
-`attestation_level` a capsule claims, a claim's value — is inside the digest.
+Which of the four digests a record kind writes into its own hash field is declared per kind,
+in the same tables. `Study` and `StudyTask` carry denormalized state that moves under them —
+a status, the pointers at the newest revisions — so their `content_hash` is the *semantic*
+digest and does not move when that state does. Every other kind is immutable once written, so
+its self-hash is the *record* digest and answers "was this file edited after it was written",
+which is the question its verifier actually reports on.
+
+**`study-v1` changed once, before publication, and that is why it kept its name.** Nothing has
+ever been released under it — npm 404, PyPI 404, no GitHub releases, no study surface in the
+live API — so there is no stored digest to be compatible with. The rules behind the name were
+replaced rather than versioned around. A future change, once anything is published, is a new
+id and never a reinterpretation of this one.
 
 Study pins live in `fixtures/reproducibility/study-expected-hashes.json`, a separate sidecar,
-so `expected-hashes.json` stays part of the frozen corpus. Both languages reproduce all four.
+so `expected-hashes.json` stays part of the frozen corpus. Each entry names the record kind
+its digest was taken under, because the kind is a preimage header component and there is no
+hash of an object in the abstract. Both languages reproduce every entry.
 
 ## What a breaking change requires
 

@@ -27,14 +27,9 @@ from typing import Any
 
 from jsonschema import Draft7Validator
 
-from .study_hashing import (
-    JS_MAX_SAFE_INTEGER,
-    STUDY_HASH_RULES_KEY,
-    assert_no_nested_excluded_keys,
-    assert_no_unrepresentable_values,
-    calculate_study_hash,
-    study_rules_id_of,
-)
+from .study_hash import study_self_hash
+from .study_limits import StudyHashRefusal
+from .study_rules import STUDY_HASH_RULES_KEY, STUDY_KNOWN_HASH_RULES_IDS
 from .validation import KetQatValidationError, load_schema
 
 #: The version the family enters at.
@@ -63,22 +58,29 @@ STUDY_SCHEMA_FILES: dict[str, str] = {
 }
 
 
-#: Where the safe-integer enumeration went.
-#:
-#: `JS_SAFE_INTEGER_FIELDS` used to list the two paths -- ``seed`` and
-#: ``resource_limits.max_memory_bytes`` -- that `src/study/capsule.ts` bounded,
-#: on the reasoning that a blanket rule would also refuse a large float "which
-#: both languages hold as the same double and render identically". Two things
-#: were wrong with that. Every other hashed number was left unguarded, including
-#: ``Quantity.value``, which is every number a study reports. And a large
-#: integral float is exactly as ambiguous as a large integer: JavaScript holds
-#: one double where the file may have meant any of half a million integers, so
-#: refusing it is not over-refusal but the same refusal.
-#:
-#: The rule now lives once, in `study_hashing.assert_no_unrepresentable_values`,
-#: and applies to every study record at every depth. `JS_MAX_SAFE_INTEGER` is
-#: re-exported from here because that is where callers and tests already import
-#: it from.
+def _study_rules_id_problem(value: dict[str, Any]) -> str | None:
+    """The reason a record names no rules this build has, or None.
+
+    Nothing is inferred from silence (ADR 0010): a study record without a rules
+    id is malformed rather than old. The two cases are separate messages because
+    they need separate fixes -- one asks a producer to mark the record, the other
+    says this build cannot verify it at all.
+
+    Mirrors `studyRulesIdRefusal` in src/study/refusals.ts.
+    """
+    recorded = value.get(STUDY_HASH_RULES_KEY)
+    if not isinstance(recorded, str) or recorded == "":
+        return (
+            f"A study-family record must name its hash rules in {STUDY_HASH_RULES_KEY}; nothing is "
+            "inferred from silence. A record without one is refused, not defaulted (ADR 0010)."
+        )
+    if recorded not in STUDY_KNOWN_HASH_RULES_IDS:
+        known = ", ".join(STUDY_KNOWN_HASH_RULES_IDS)
+        return (
+            f"This build does not know the hash rules id {recorded!r}. Known ids: {known}. A future "
+            "study-v2 is a new rule set, never a reinterpretation of this one."
+        )
+    return None
 
 
 def _load_study_schema(kind: str) -> dict[str, Any]:
@@ -122,17 +124,16 @@ def validate_study_record(value: dict[str, Any], kind: str) -> None:
     predate versioning; this family has none, so silence is a malformed record
     rather than an old one, and it is refused rather than defaulted.
 
-    Then the two refusals that are about *hashing* rather than about shape, and
-    that a JSON Schema cannot express: an excluded key hidden below a record's
-    own top level, and a value the two languages would not agree about -- an
-    integer above `JS_MAX_SAFE_INTEGER` at any depth, or a string carrying an
-    unpaired UTF-16 surrogate. Both are cases of the same thing -- a record the
-    two languages would hash differently, or would hash into a digest missing
-    part of itself -- and both are given before the schema gate so that "this
-    record cannot be hashed" is never reported as "this record is the wrong
-    shape". Both are asked of every record kind: enumerating which kinds could
-    carry which is how the second one came to be checked on two fields of one
-    kind and on nothing else.
+    Then the refusal that is about *hashing* rather than about shape, and that a
+    JSON Schema cannot express: the record cannot be projected and canonicalized
+    at all. Computing the digest is what asks that question -- a field nobody
+    declared, a field of the wrong shape, a non-finite number, a lone surrogate,
+    a document past the structural bounds -- and it is asked before the schema
+    gate so that "this record cannot be hashed" is never reported as "this
+    record is the wrong shape". It is asked of every record kind, because
+    enumerating which kinds could carry which problem is how the retired
+    version of this check came to be applied to two fields of one kind and to
+    nothing else.
 
     The schema comes last -- it is also the only gate that needs a file on disk,
     so the cheap refusals are given before anything can fail for the unrelated
@@ -151,22 +152,18 @@ def validate_study_record(value: dict[str, Any], kind: str) -> None:
             f"Unsupported study schema_version {recorded_version!r}; expected {STUDY_SCHEMA_VERSION!r}."
         )
 
-    try:
-        study_rules_id_of(value)
-    except ValueError as exc:
+    rules_problem = _study_rules_id_problem(value)
+    if rules_problem is not None:
         raise KetQatValidationError(
-            f"Invalid study {kind} record: {STUDY_HASH_RULES_KEY}: {exc}"
+            f"Invalid study {kind} record: {STUDY_HASH_RULES_KEY}: {rules_problem}"
+        )
+
+    try:
+        study_self_hash(kind, value)
+    except StudyHashRefusal as exc:
+        raise KetQatValidationError(
+            f"Invalid study {kind} record: {exc.code}: {exc}"
         ) from exc
-
-    try:
-        assert_no_nested_excluded_keys(value)
-    except ValueError as exc:
-        raise KetQatValidationError(f"Invalid study {kind} record: {exc}") from exc
-
-    try:
-        assert_no_unrepresentable_values(value)
-    except ValueError as exc:
-        raise KetQatValidationError(f"Invalid study {kind} record: {exc}") from exc
 
     validator = Draft7Validator(_load_study_schema(kind))
     errors = sorted(validator.iter_errors(value), key=lambda error: list(error.path))
@@ -380,7 +377,7 @@ def _graph_problems(value: dict[str, Any]) -> list[str]:
     for node in nodes:
         if not isinstance(node, dict):
             continue
-        expected = calculate_study_hash(node)
+        expected = study_self_hash("evidence_node", node)
         recorded = node.get("content_hash")
         if expected != recorded:
             problems.append(
@@ -393,7 +390,7 @@ def _graph_problems(value: dict[str, Any]) -> list[str]:
     for edge in edges:
         if not isinstance(edge, dict):
             continue
-        expected = calculate_study_hash(edge)
+        expected = study_self_hash("evidence_edge", edge)
         recorded = edge.get("content_hash")
         if expected != recorded:
             problems.append(
@@ -450,36 +447,47 @@ def verify_research_package(
     if validate_schema:
         validate_study_record(value, "research_package")
 
-    rules_id = study_rules_id_of(value)
+    rules_id = value.get(STUDY_HASH_RULES_KEY)
     actual = value.get("reproducibility_hash")
 
-    # The two hashing-layer refusals -- a key the digest would drop, hidden below
-    # the package's own top level, and a value the two languages would not agree
-    # about -- are reported rather than raised, the way `verifyResearchPackage`
-    # reports them: a recipient checking a file they were sent needs the finding
-    # beside the others, not an exception that stops them learning whether the
-    # rest of the package joins up. Two codes rather than one, because they send
-    # a reader to different places: one is fixed by renaming a field, the other
-    # by changing the value.
-    for check, code in (
-        (assert_no_nested_excluded_keys, "STUDY_EXCLUDED_KEY_NESTED"),
-        (assert_no_unrepresentable_values, "STUDY_VALUE_NOT_REPRESENTABLE"),
-    ):
-        try:
-            check(value, rules_id)
-        except ValueError as exc:
-            return {
-                "valid": False,
-                "hash_matches": False,
-                "claims_resolve": False,
-                "graph_valid": False,
-                "expected_hash": "",
-                "actual_hash": actual if isinstance(actual, str) else None,
-                "problems": [f"{code} (research_package): {exc}"],
-                "decision_recompute": False,
-            }
+    # A package this build cannot hash is reported rather than raised, the way
+    # `verifyResearchPackage` reports it: a recipient checking a file they were
+    # sent needs the finding beside the others, not an exception that stops them
+    # learning whether the rest of the package joins up.
+    #
+    # One code for the whole class, because the class is one thing -- there is no
+    # digest to compare against. Which refusal fired, and at which path, is
+    # carried in the message, where it names the field a reader has to go and
+    # look at.
+    rules_problem = _study_rules_id_problem(value)
+    if rules_problem is not None:
+        return {
+            "valid": False,
+            "hash_matches": False,
+            "claims_resolve": False,
+            "graph_valid": False,
+            "expected_hash": "",
+            "actual_hash": actual if isinstance(actual, str) else None,
+            "problems": [f"STUDY_HASH_RULES_ID (research_package): {rules_problem}"],
+            "decision_recompute": False,
+        }
 
-    expected = calculate_study_hash(value, rules_id)
+    try:
+        expected = study_self_hash("research_package", value)
+    except StudyHashRefusal as exc:
+        return {
+            "valid": False,
+            "hash_matches": False,
+            "claims_resolve": False,
+            "graph_valid": False,
+            "expected_hash": "",
+            "actual_hash": actual if isinstance(actual, str) else None,
+            "problems": [
+                f"STUDY_RECORD_NOT_HASHABLE (research_package): {exc.code}: {exc}"
+            ],
+            "decision_recompute": False,
+        }
+
     hash_matches = isinstance(actual, str) and actual == expected
     if not hash_matches:
         problems.append(

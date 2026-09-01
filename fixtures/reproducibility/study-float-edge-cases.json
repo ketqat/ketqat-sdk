@@ -1,31 +1,14 @@
 {
-  "schema_version": "1.0",
-  "hash_rules_id": "study-v1",
-  "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
-  "kind": "result",
-  "label": "float notation boundary probe",
-  "id": "volatile-node-id",
-  "slug": "volatile-node-slug",
-  "status": "RECORDED",
-  "latest_plan": { "revision_hash": "2c8df627fa55ab4cfe7b4b9a3f71db4b852a8e909fe750f68a9e695a82239227",
-    "revision": 3
-  },
-  "started_at": "2026-01-01T00:00:00.000Z",
-  "finished_at": "2026-01-01T00:00:01.000Z",
-  "created_at": "2026-01-01T00:00:02.000Z",
-  "updated_at": "2026-01-01T00:00:03.000Z",
-  "runtime_seconds": 12.5,
-  "reference": {
-    "record_kind": "benchmark_result",
-    "hash": "78eb0ae4e26e34e461fd42c013fcd1180f5dc0cf9f722a67d0c072ee744088bb"
-  },
-  "measurements": [
+  "nodes": [
     {
-      "field": "whole_number_float",
-      "origin": "CONFIRMED",
-      "note": null,
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+      "kind": "quantity",
+      "label": "whole-number float",
+      "claim": null,
       "quantity": {
-        "value": 3.0,
+        "value": 3,
         "unit": "logical_qubits",
         "bound": "POINT",
         "evidence": "MEASURED",
@@ -36,11 +19,24 @@
         "created_at": "2026-01-01T00:00:02.000Z",
         "schema_version": "0.1",
         "limitations": []
-      }
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [
+        "A fixture. It pins float rendering across two languages and describes no real study."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "4b6148c1854e12f8373c2919bc321226b3856ee6f49422b6f373dba82b8f0ee3"
     },
     {
-      "field": "inside_python_notation_window",
-      "origin": "INFERRED",
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+      "kind": "quantity",
+      "label": "inside the window where Python switches notation and JavaScript does not",
+      "claim": null,
       "quantity": {
         "value": 0.00005,
         "unit": "probability",
@@ -53,12 +49,24 @@
         "created_at": "2026-01-01T00:00:02.000Z",
         "schema_version": "0.1",
         "limitations": []
-      }
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [
+        "A fixture. It pins float rendering across two languages and describes no real study."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "d0c5609d1b9fffeb3ae8cd90ca673e793f69debf19cdf517611af746056bfc91"
     },
     {
-      "field": "below_both_notation_thresholds",
-      "origin": "INFERRED",
-      "note": null,
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+      "kind": "quantity",
+      "label": "below both notation thresholds",
+      "claim": null,
       "quantity": {
         "value": 1e-7,
         "unit": "probability",
@@ -71,11 +79,24 @@
         "created_at": "2026-01-01T00:00:02.000Z",
         "schema_version": "0.1",
         "limitations": []
-      }
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [
+        "A fixture. It pins float rendering across two languages and describes no real study."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "293774c01003330101c0572fd584edb5440897bb1dd23f7141a830b0c9d82e14"
     },
     {
-      "field": "negative_zero",
-      "origin": "CONFIRMED",
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+      "kind": "quantity",
+      "label": "negative zero",
+      "claim": null,
       "quantity": {
         "value": -0.0,
         "unit": "seconds",
@@ -88,12 +109,24 @@
         "created_at": "2026-01-01T00:00:02.000Z",
         "schema_version": "0.1",
         "limitations": []
-      }
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [
+        "A fixture. It pins float rendering across two languages and describes no real study."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "79eace20fe7e794cbbe976d4e8c63b7e6b88c99da2b1becd01f80a67d11db29e"
     },
     {
-      "field": "not_available",
-      "origin": "INFERRED",
-      "note": null,
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+      "kind": "quantity",
+      "label": "no value at all",
+      "claim": null,
       "quantity": {
         "value": null,
         "unit": "credits",
@@ -105,13 +138,19 @@
         "assumptions": [],
         "created_at": "2026-01-01T00:00:02.000Z",
         "schema_version": "0.1",
-        "limitations": ["No cost model was supplied, so no credit figure was computed."]
-      }
+        "limitations": [
+          "No cost model was supplied, so no credit figure was computed."
+        ]
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [
+        "A fixture. It pins float rendering across two languages and describes no real study."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "78e2bac95a6b26f3e009d2287c794fae5eaf8ecfe2ffa2a94fad0135c68d29ca"
     }
-  ],
-  "source_published_on": "2026-01-01",
-  "retrieved_on": null,
-  "limitations": [
-    "A fixture. It pins float rendering and key exclusion across two languages and describes no real study."
   ]
 }

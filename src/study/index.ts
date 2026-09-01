@@ -8,8 +8,16 @@
  *
  * Barrel order is dependency order.
  */
+export * from "./limits.js"
+export * from "./rules.js"
+export * from "./jcs.js"
+export * from "./values.js"
+export * from "./projection.js"
+export * from "./preimage.js"
+export * from "./registry.js"
+export * from "./hash.js"
+export * from "./file.js"
 export * from "./common.js"
-export * from "./hashing.js"
 export * from "./refusals.js"
 export * from "./study.js"
 export * from "./specification.js"

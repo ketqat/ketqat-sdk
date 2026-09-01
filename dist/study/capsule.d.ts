@@ -1,7 +1,7 @@
 import { type ExecutionClass } from "../contracts/common.js";
 import type { Contract } from "../intelligence/measurement.js";
 import { type StudyEnvironment } from "./common.js";
-import type { StudyRefusal } from "./refusals.js";
+import { type StudyRefusal } from "./refusals.js";
 /**
  * One execution, recorded so it can be argued with (ketqat-sdk#259, ADR 0014).
  *
@@ -27,27 +27,26 @@ import type { StudyRefusal } from "./refusals.js";
  * record that names it.
  */
 /**
- * Where the safe-integer bound went.
+ * Where the safe-integer bound went, and what replaced it.
  *
  * `seed` and `resource_limits.max_memory_bytes` used to carry
- * `.max(Number.MAX_SAFE_INTEGER)` each, and they were the only two fields in the
- * family that did. That was the bug rather than the fix: every other hashed
- * number was unbounded, `Quantity.value` above all -- which is every number a
- * study reports -- so two research packages whose reported figure differed by
- * 524286 took one digest and both verified clean, while Python refused the
- * honest file this builder had just written because its mirror of the bound
- * named the same two fields.
+ * `.max(Number.MAX_SAFE_INTEGER)` each, then briefly nothing at all while a
+ * blanket rule in the hashing layer refused every integer past 2^53 in every
+ * field. Both readings were wrong in the same direction: they treated a 64-bit
+ * seed as a mistake. It is not. It is what Stim and NumPy hand out, and a byte
+ * count is exactly the quantity that outgrows a double.
  *
- * The rule now lives once, in the hashing layer, as
- * `assertNoUnrepresentableValues`: no study record may carry an integer outside
- * ±`Number.MAX_SAFE_INTEGER` at any depth, whatever field it sits in and
- * whatever record kind is added next. A capsule's seed is still refused, and so
- * is everything the enumeration used to miss.
+ * The fix is a contract per field rather than a bound per number (`values.ts`,
+ * goal §11). A seed and a byte count are `exact_integer_string`: recorded as
+ * digits, so the two languages hash what was written rather than two roundings
+ * of it, and validated so that one value has one spelling. A runtime ceiling
+ * and a credit ceiling are `finite_float`, because they are magnitudes rather
+ * than identifiers and 2^53 is not a bound either of them can reach.
  */
 /** What the run was allowed to spend. Null where no limit was set, never zero standing in for one. */
 export interface ResourceLimits {
     max_runtime: number | null;
-    max_memory_bytes: number | null;
+    max_memory_bytes: string | null;
     max_credits: number | null;
 }
 export declare const ResourceLimitsSchema: Contract<ResourceLimits>;
@@ -77,7 +76,7 @@ export interface ExecutionCapsule {
     source_hash: string;
     image_digest: string | null;
     dependency_lock_ref: string | null;
-    seed: number | null;
+    seed: string | null;
     environment: StudyEnvironment;
     resource_limits: ResourceLimits;
     input_hashes: string[];
@@ -108,7 +107,7 @@ export interface ExecutionCapsuleInput {
     sourceHash: string;
     imageDigest?: string | null;
     dependencyLockRef?: string | null;
-    seed?: number | null;
+    seed?: string | null;
     environment: StudyEnvironment;
     resourceLimits?: ResourceLimits;
     inputHashes?: string[];
@@ -116,7 +115,12 @@ export interface ExecutionCapsuleInput {
     logsRef?: string | null;
     executionClass: ExecutionClass;
     cancellation?: Cancellation;
-    /** Recorded but excluded from the hash. Omit all three for a byte-stable artifact. */
+    /**
+     * `RECEIPT_ONLY`: when the server observed this run, not what the run was.
+     * Outside `semanticHash`, so two runs of the same inputs describe the same
+     * computation; inside `recordHash`, which is the digest a capsule's
+     * `reproducibility_hash` is. Omit all three for a byte-stable artifact.
+     */
     startedAt?: string;
     finishedAt?: string;
     createdAt?: string;
@@ -168,6 +172,13 @@ export interface CapsuleVerification {
  * hash means the record is unedited and nothing more. It does not mean the run
  * happened, that the image named is the image that ran, or that the outputs came
  * out of it; `attestation_level` says so in the record itself.
+ *
+ * "Unedited" is the record digest's question, and the record digest is what a
+ * capsule's `reproducibility_hash` is (`registry.ts`). The other question a
+ * reader has about a capsule -- *did this describe the same computation as that
+ * one* -- is `semanticHash("execution_capsule", capsule)`, which ignores when
+ * the run started, whether it was cancelled and where its logs went. Neither
+ * digest answers both, which is why there are four of them.
  */
 export declare function verifyExecutionCapsule(candidate: unknown): CapsuleVerification;
 //# sourceMappingURL=capsule.d.ts.map

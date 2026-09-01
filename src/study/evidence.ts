@@ -2,7 +2,8 @@ import { z } from "zod"
 import type { Citation } from "../contracts/common.js"
 import { isKnown, type Contract, type Quantity } from "../intelligence/measurement.js"
 import { ContentHashSchema, StudyCitationSchema, StudyQuantitySchema } from "./common.js"
-import { calculateStudyHash, STUDY_HASH_RULES_ID } from "./hashing.js"
+import { studySelfHash } from "./hash.js"
+import { STUDY_HASH_RULES_ID } from "./rules.js"
 import type { StudyRefusal } from "./refusals.js"
 
 /**
@@ -150,10 +151,18 @@ export const EvidenceReferenceSchema: Contract<EvidenceReference> = z
     record_kind: z.string().min(1),
     hash: ContentHashSchema.nullable(),
     /**
-     * Deliberately not named `slug`. `slug` is an excluded key, and the canonicalizer drops
-     * excluded keys at every nesting level -- so a field named `slug` here would vanish from
-     * the node's own hash, and two nodes referencing different registry records would be
-     * content-addressed identically. The name carries the invariant.
+     * A human-readable label for the record on the other end, and `RECORD_ONLY`:
+     * a slug may be renamed without the reference changing what it points at,
+     * which is what `hash` beside it is for.
+     *
+     * It is still not named `slug`, and the reason has changed. Under the
+     * retired rules the *name* was the invariant -- `slug` was dropped from the
+     * digest at every nesting level, so two nodes citing two different registry
+     * records were content-addressed identically whenever the hash was absent.
+     * The projection classifies this field instead, and a field's class is a
+     * fact about the field rather than about its spelling, so the binding would
+     * now survive whatever it were called. The name is kept because renaming it
+     * would move every digest in the family for no gain.
      */
     record_slug: z.string().min(1).nullable(),
   })
@@ -229,7 +238,7 @@ export const EvidenceNodeSchema: Contract<EvidenceNode> = z
     source_published_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
     /** ISO date it was read. Distinct from publication: a page can change after it is cited. */
     retrieved_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
-    /** Excluded from the hash by name, at every level, like every other timestamp in this repository. */
+    /** `RECEIPT_ONLY`: the moment the server observed this record, not part of what it says. */
     created_at: z.string().datetime({ offset: true }).optional(),
     /** A node's identity is the hash of its content. Excluded from its own digest. */
     content_hash: ContentHashSchema,
@@ -490,7 +499,7 @@ export function verifyEvidenceGraph(
   let hashesMatch = true
 
   for (const node of nodes) {
-    const expected = calculateStudyHash(node)
+    const expected = studySelfHash("evidence_node", node)
     if (expected !== node.content_hash) {
       hashesMatch = false
       problems.push(
@@ -507,7 +516,7 @@ export function verifyEvidenceGraph(
   }
 
   for (const edge of edges) {
-    const expected = calculateStudyHash(edge)
+    const expected = studySelfHash("evidence_edge", edge)
     if (expected !== edge.content_hash) {
       hashesMatch = false
       problems.push(

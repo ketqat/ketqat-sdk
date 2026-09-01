@@ -13,10 +13,10 @@
   "result_rows": [
     {
       "label": "Total physical qubits",
-      "node_hash": "e0c20c587d38d8885786ea1dfc74a482a0992b8c640425dfdb4e9ee8f2f1ea95"
+      "node_hash": "787b2615470fbc51849829c735080275c2ce3616d7d4a94cd5e3edd4e591e687"
     }
   ],
-  "csv": "label,node_hash\nTotal physical qubits,e0c20c587d38d8885786ea1dfc74a482a0992b8c640425dfdb4e9ee8f2f1ea95\n",
+  "csv": "label,node_hash\nTotal physical qubits,787b2615470fbc51849829c735080275c2ce3616d7d4a94cd5e3edd4e591e687\n",
   "figures": [],
   "references": [
     {
@@ -63,7 +63,7 @@
       "limitations": [],
       "source_published_on": null,
       "retrieved_on": null,
-      "content_hash": "e0c20c587d38d8885786ea1dfc74a482a0992b8c640425dfdb4e9ee8f2f1ea95"
+      "content_hash": "787b2615470fbc51849829c735080275c2ce3616d7d4a94cd5e3edd4e591e687"
     },
     {
       "schema_version": "1.0",
@@ -98,7 +98,7 @@
       "limitations": [],
       "source_published_on": null,
       "retrieved_on": null,
-      "content_hash": "d2a3ba3178d40b1eb9d79270d4895607419d868ad7433976d472f5d701f65240"
+      "content_hash": "2f53232cac19c207018b9b690441256b8d1c01114d110dc86cca9f9d53878d82"
     }
   ],
   "edges": [
@@ -107,21 +107,21 @@
       "hash_rules_id": "study-v1",
       "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
       "kind": "supports",
-      "from_node_hash": "e0c20c587d38d8885786ea1dfc74a482a0992b8c640425dfdb4e9ee8f2f1ea95",
-      "to_node_hash": "d2a3ba3178d40b1eb9d79270d4895607419d868ad7433976d472f5d701f65240",
+      "from_node_hash": "787b2615470fbc51849829c735080275c2ce3616d7d4a94cd5e3edd4e591e687",
+      "to_node_hash": "2f53232cac19c207018b9b690441256b8d1c01114d110dc86cca9f9d53878d82",
       "asserted_by": "ketqat-resource-intelligence",
       "rationale": "The claim reads its bound off this estimate rather than restating it.",
-      "content_hash": "bf3e35c19cb2f2bd3c6fc8b0976f3e2feec24222412d6752ad88bcb1fd9e56e8"
+      "content_hash": "eca66a6e6b0656feb618d5042324ea211071de596017aab11db20296fb1f4c71"
     }
   ],
   "claim_evidence_map": [
     {
-      "claim_node_hash": "d2a3ba3178d40b1eb9d79270d4895607419d868ad7433976d472f5d701f65240",
+      "claim_node_hash": "2f53232cac19c207018b9b690441256b8d1c01114d110dc86cca9f9d53878d82",
       "evidence_node_hashes": [
-        "e0c20c587d38d8885786ea1dfc74a482a0992b8c640425dfdb4e9ee8f2f1ea95"
+        "787b2615470fbc51849829c735080275c2ce3616d7d4a94cd5e3edd4e591e687"
       ],
       "edge_hashes": [
-        "bf3e35c19cb2f2bd3c6fc8b0976f3e2feec24222412d6752ad88bcb1fd9e56e8"
+        "eca66a6e6b0656feb618d5042324ea211071de596017aab11db20296fb1f4c71"
       ]
     }
   ],
@@ -130,5 +130,5 @@
   ],
   "failed_checks": [],
   "is_demo": true,
-  "reproducibility_hash": "bc1a720b1946847f590802284026defa0e2fd2081600856826a6c94517df1f5e"
+  "reproducibility_hash": "b0877bb6b471a624616b1f986a6a5ef5e145b5c451d231c4ff5981efa58477b9"
 }

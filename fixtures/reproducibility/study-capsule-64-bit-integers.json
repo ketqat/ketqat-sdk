@@ -18,7 +18,7 @@
   "source_hash": "489411c005d3b7e54ebed1ee0d39b823f4eaa80121cda982b62a3548fa8e255b",
   "image_digest": null,
   "dependency_lock_ref": null,
-  "seed": 9007199254740991,
+  "seed": "18446744073709551615",
   "environment": {
     "operating_system": "Linux",
     "architecture": "x86_64",
@@ -43,7 +43,7 @@
   },
   "resource_limits": {
     "max_runtime": 3600,
-    "max_memory_bytes": 9007199254740991,
+    "max_memory_bytes": "9223372036854775807",
     "max_credits": 250
   },
   "input_hashes": [],
@@ -55,5 +55,5 @@
     "reason": null
   },
   "attestation_level": "hash_only",
-  "reproducibility_hash": "008caadf2bfe83cb39bb33e0cf4a0397bba53a36bdd992059b15e80af5345cdc"
+  "reproducibility_hash": "2029db4862419e575b7cdf38699a92d1934408a04db06977466566f253aa69d2"
 }

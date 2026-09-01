@@ -3,7 +3,7 @@ import { type Citation } from "../contracts/common.js";
 import { type Contract } from "../intelligence/measurement.js";
 import { type RevisionRef, type StudyEnvironment } from "./common.js";
 import { type EvidenceEdge, type EvidenceNode } from "./evidence.js";
-import type { StudyRefusal } from "./refusals.js";
+import { type StudyRefusal } from "./refusals.js";
 /**
  * The bundle a study leaves the building in (ketqat-sdk#259, ADR 0010, RFC 0008 §7).
  *
@@ -140,7 +140,12 @@ export interface ResearchPackageInput {
     /** Recorded, never omitted. Absent means no check failed, not that none was run. */
     failedChecks?: string[];
     isDemo: boolean;
-    /** Recorded but excluded from the hash. Omit for a byte-stable artifact. */
+    /**
+     * `RECEIPT_ONLY`: the moment the server observed this package, not part of
+     * what it reports. Outside `semanticHash`, inside `recordHash` -- which is the
+     * digest a package's `reproducibility_hash` is -- so omit it for a
+     * byte-stable artifact.
+     */
     createdAt?: string;
 }
 /**

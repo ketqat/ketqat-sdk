@@ -8,20 +8,7 @@
   },
   "revision": 2,
   "supersedes": "1122334455667788990011223344556677889900aabbccddeeff001122334455",
-  "id": "volatile-plan-id",
-  "slug": "volatile-plan-slug",
-  "owner_username": "volatile-owner",
-  "visibility": "private",
-  "status": "AWAITING_CONFIRMATION",
-  "ui_metadata": {
-    "pinned": true
-  },
   "created_at": "2026-02-01T09:00:00.000Z",
-  "updated_at": "2026-02-03T11:30:00.000Z",
-  "submitted_at": "2026-02-03T11:31:00.000Z",
-  "started_at": "2026-02-03T11:32:00.000Z",
-  "finished_at": "2026-02-03T11:47:00.000Z",
-  "runtime_seconds": 900,
   "baselines": [
     {
       "baseline_ref": "aa11bb22cc33dd44ee55ff6677889900aabbccddeeff00112233445566778899",
@@ -104,7 +91,7 @@
   ],
   "execution_limitations": [
     "One QEC scheme is modelled. Other codes are not costed by this plan.",
-    "A fixture. It pins the study-v1 exclusion set and float rendering, and describes no real study."
+    "A fixture. It pins the study-v1 projection and float rendering, and describes no real study."
   ],
-  "content_hash": "a29381c39e2f15ccb1669ab1f6f787e7214bf67cefa9bd96903852b5c3384eb0"
+  "content_hash": "ec6ecced3974c4cf9be630319c8b00f1309ca9a4e2deb02dfbbee78f0340e03d"
 }

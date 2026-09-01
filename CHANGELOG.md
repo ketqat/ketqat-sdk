@@ -83,14 +83,13 @@ life.
   - **No key in a study record is data.** A study record's environment is
     `StudyEnvironment`, not the shared `Environment`: the same four scalars, and then
     `packages: { name, version }[]` and `hardware: { name, value }[]` where the shared
-    contract has two free-form maps. A map's keys arrive at run time, `study-v1` drops its
-    excluded names at every nesting level, and a canonicalizer that drops keys by name cannot
-    be safe over keys that are data — a dependency genuinely called `id`, or a hardware key
-    called `visibility`, vanished before the digest, so two capsules recording different
-    environments hashed identically and one could be handed the other's environment while
-    still verifying. Both lists are required and neither is defaulted. The shared
-    `Environment` in `ketqat-sdk/contracts` is unchanged, and so is every hash computed
-    under it.
+    contract has two free-form maps. A map's keys arrive at run time and are declared by
+    nobody, so a digest built from declared fields would have to read the map wholesale —
+    reopening the question of what a key called `__proto__` means — or refuse it entirely. A
+    list of `{name, value}` pairs is neither: every key in it is a field name the schema
+    declares, and every dependency name is a value, which is where data belongs. Both lists
+    are required and neither is defaulted. The shared `Environment` in
+    `ketqat-sdk/contracts` is unchanged, and so is every hash computed under it.
   - **An undeclared key is refused, not stripped.** Every object in the family is
     `.strict()`. Zod's default is to strip, while the generated JSON Schemas have always
     emitted `additionalProperties: false`, so the two validators gave two answers for one
@@ -104,22 +103,40 @@ life.
     shared ones, so a `smuggled_note` inside an `expected_credits` envelope can no longer be
     stripped by the parse and hashed by the digest. `src/intelligence` and `src/contracts` are
     unchanged, and no schema outside the study family changes.
-  - **A record the two languages would hash differently is refused, not hashed.** Three cases,
-    one rule, and all three in the hashing layer rather than on the fields that met them first.
-    An excluded key below a record's own top level is dropped at every depth, so it is
-    refused (`STUDY_EXCLUDED_KEY_NESTED`) rather than silently left out of the digest — at
-    the hashing layer, which takes any object and is the whole check a Python-only caller
-    has. An embedded record keeps the exemption its own top level needs, and keeps it per
-    key: `hash_rules_id`, `content_hash` and `created_at`, the three excluded names the
-    schemas declare below a root, and nothing else. And a value the two canonicalizers do not
-    agree about is refused in the hashing layer (`STUDY_VALUE_NOT_REPRESENTABLE`), over every
-    study record at every depth rather than on named fields: an integer outside
-    ±`Number.MAX_SAFE_INTEGER` — the ordinary 64-bit seed Stim and NumPy hand out, and near
-    4.2e21 one double standing for 524287 distinct integers — because nothing on the
-    JavaScript side can tell which of them was written; and a string carrying an unpaired
-    UTF-16 surrogate, because JavaScript hashes the escape while Python cannot encode it as
-    UTF-8 at all. Refusing is the honest answer in both cases: a digest that could stand for
-    either value identifies neither.
+  - **The digest is a typed projection, serialized with RFC 8785 (JCS).** `study-v1` does not
+    decide what to leave out by looking at a key's name. Each record kind declares every field
+    it has as `SEMANTIC`, `RECORD_ONLY`, `RECEIPT_ONLY` or `DERIVED`, and the digest is built
+    from those declarations: a key nobody declared is never read, and is refused rather than
+    skipped, at any nesting depth. Free maps, `__proto__` and "is this object an embedded
+    record?" stop being special cases because they stop being questions. The known cost of an
+    allowlist — a new semantic field silently staying out of the digest — is held shut by
+    `tests/study-field-completeness.test.mjs`, which walks each Zod schema and fails on any
+    field the tables do not classify, in either direction.
+
+    Serialization is RFC 8785, implemented against the RFC in both languages and pinned to
+    the RFC's own test vectors, so cross-language byte agreement is conformance to a
+    published spec rather than a coincidence maintained by hand.
+
+  - **Four digests, four questions.** `semanticHash` ("is this the same scientific
+    content?"), `recordHash` ("was this file edited after it was written?"), `receiptHash`
+    ("did this server observe this action, in this order?") and `artifactHash` ("are these
+    the bytes that were produced?"). Each is taken over a NUL-separated preimage header —
+    organisation, record kind, hash purpose, schema version, hash rules id — so two record
+    kinds that project to the same body never share a namespace. A matching hash is never
+    described as "authentic", "signed" or "scientifically correct"; `attestation_level` stays
+    `hash_only`.
+
+  - **Numbers carry a contract per field, not a bound per number.** A measurement is a
+    `finite_float`; a count that cannot reach 2^53 is a `safe_integer`; a 64-bit seed, a
+    shot count, a byte count and an external 64-bit identifier are `exact_integer_string` —
+    validated decimal digits, so both languages hash what was written rather than two
+    roundings of it. Above 2^53 a JSON number is a double in JavaScript and an
+    arbitrary-precision integer in Python, and near 4.2e21 one double stands for 524287
+    distinct integers; recording the digits is what makes those two values two records.
+    `ExecutionCapsule.seed` and `resource_limits.max_memory_bytes` are strings for this
+    reason. A non-finite number and a lone surrogate are refused outright, as RFC 8785
+    requires, and `readStudyFileBytes` refuses an integer *literal* outside ±2^53 at the byte
+    level, before a parse throws that information away.
 
   What is verified in Python is validation, hashing and structural resolution of the claim
   map and graph. It does not recompute the science, and `verify_research_package` reports

@@ -24,7 +24,8 @@
             },
             "revision": {
               "type": "integer",
-              "exclusiveMinimum": 0
+              "minimum": 1,
+              "maximum": 9007199254740991
             }
           },
           "required": [
@@ -34,8 +35,7 @@
           "additionalProperties": false
         },
         "revision": {
-          "type": "integer",
-          "exclusiveMinimum": 0
+          "$ref": "#/definitions/study-plan/properties/specification_ref/properties/revision"
         },
         "supersedes": {
           "anyOf": [
@@ -237,15 +237,23 @@
                   ]
                 },
                 "low": {
-                  "type": [
-                    "number",
-                    "null"
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
                   ]
                 },
                 "high": {
-                  "type": [
-                    "number",
-                    "null"
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/uncertainty/properties/low/anyOf/0"
+                    },
+                    {
+                      "type": "null"
+                    }
                   ]
                 },
                 "basis": {

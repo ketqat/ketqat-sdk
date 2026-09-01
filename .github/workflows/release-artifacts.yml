@@ -180,14 +180,40 @@ jobs:
             console.log(tools.length + ' MCP tools, all readOnly')
           "
 
-      - name: A three-decoder QEC comparison runs, from published packages only
+      - name: A three-decoder QEC comparison runs, from a pinned benchmarks commit and pinned decoder wheels
         # ketqat-benchmarks holds the heavy scientific dependencies so this package stays
         # zod-only, so the QEC half of the clean room installs it from its own repository
         # rather than from anything in this one.
+        #
+        # The reference is a commit SHA, not `refs/heads/main`. ketqat-benchmarks publishes
+        # no release and carries no tag, so the SHA is the strongest immutable reference it
+        # has to offer. It is also content-addressed by git, which is why no SHA-256 of the
+        # tarball is recorded alongside it: the bytes GitHub's `archive/` endpoint returns
+        # are not guaranteed stable across server-side git versions, so a recorded hash
+        # would eventually fail for a reason that has nothing to do with the content it is
+        # there to protect. `pkg[extra] @ url` is the PEP 508 spelling of a direct
+        # reference; the `#egg=` fragment it replaces is deprecated and pip 25.1 rejects it.
+        #
+        # tesseract-decoder is pinned because its published Linux wheels are not built for a
+        # fixed microarchitecture. Upstream's build takes `-march=native` by default and
+        # `-march=x86-64` only under `--config=wheel` (quantumlib/tesseract-decoder: see
+        # `.bazelrc` and `OPT_COPTS` in `src/BUILD`), and the wheels published from
+        # 2026-08-25 onward came off the native path. 0.1.1.dev20260827012621 -- what the
+        # floating reference resolved to -- carries unconditional AVX-512 (vpscatterqq,
+        # vpermt2q, kmovb, zmm operands) inside ordinary decoder functions, with no cpuid
+        # test and no IFUNC anywhere in the object, so on a runner without AVX-512 it dies
+        # with SIGILL and this job exits 132. 0.1.1.dev20260822020007 is the newest wheel
+        # built the portable way: its disassembly contains no AVX-512, no AVX2 and no BMI2
+        # at all, so it runs on any x86-64. Bump this pin only after checking the
+        # replacement the same way -- `>=` here means the next native build lands silently.
         run: |
           python -m venv /tmp/qec
           /tmp/qec/bin/pip install --quiet \
-            "https://github.com/ketqat/ketqat-benchmarks/archive/refs/heads/main.tar.gz#egg=ketqat-benchmarks[decoders]"
+            "ketqat-benchmarks[decoders] @ https://github.com/ketqat/ketqat-benchmarks/archive/8d429a8e5d4211c15babef458170c3a05e33596f.tar.gz" \
+            "tesseract-decoder==0.1.1.dev20260822020007"
+          # The run that found the SIGILL installed --quiet and so never said which decoder
+          # builds it had resolved, which is most of what made it hard to read. It does now.
+          /tmp/qec/bin/pip list --format=freeze
           cd /tmp
           /tmp/qec/bin/python -m ketqat_benchmarks.decoder_comparison \
             --distance 3 --rounds 3 --noise 0.02 --max-shots 2000 --output /tmp/qec.json

@@ -18,7 +18,8 @@
         },
         "sequence": {
           "type": "integer",
-          "exclusiveMinimum": 0
+          "minimum": 1,
+          "maximum": 9007199254740991
         },
         "previous_event_hash": {
           "anyOf": [
@@ -77,8 +78,7 @@
                   "$ref": "#/definitions/study-event/properties/study_ref"
                 },
                 "revision": {
-                  "type": "integer",
-                  "exclusiveMinimum": 0
+                  "$ref": "#/definitions/study-event/properties/sequence"
                 }
               },
               "required": [

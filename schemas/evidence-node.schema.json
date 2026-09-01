@@ -126,15 +126,23 @@
                           ]
                         },
                         "low": {
-                          "type": [
-                            "number",
-                            "null"
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "null"
+                            }
                           ]
                         },
                         "high": {
-                          "type": [
-                            "number",
-                            "null"
+                          "anyOf": [
+                            {
+                              "$ref": "#/definitions/evidence-node/properties/claim/anyOf/0/properties/value/properties/uncertainty/properties/low/anyOf/0"
+                            },
+                            {
+                              "type": "null"
+                            }
                           ]
                         },
                         "basis": {

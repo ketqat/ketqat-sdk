@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { IsoDateTimeSchema } from "../contracts/common.js";
-import { ContentHashSchema, QuantityFieldSchema, STUDY_SCHEMA_VERSION, TextFieldSchema, } from "./common.js";
-import { STUDY_HASH_RULES_ID, calculateStudyHash } from "./hashing.js";
+import { ContentHashSchema, QuantityFieldSchema, STUDY_SCHEMA_VERSION, StudyPositionSchema, TextFieldSchema, } from "./common.js";
+import { studySelfHash } from "./hash.js";
+import { STUDY_HASH_RULES_ID } from "./rules.js";
 function fieldStates(specification) {
     const text = (label, field) => ({
         label,
@@ -30,7 +31,7 @@ export const ProblemSpecificationSchema = z
     hash_rules_id: z.literal(STUDY_HASH_RULES_ID),
     study_ref: ContentHashSchema,
     /** Starts at 1. A change produces revision n+1; it never rewrites revision n. */
-    revision: z.number().int().positive(),
+    revision: StudyPositionSchema,
     /** Hash of the revision this one replaces, or null for the first. */
     supersedes: ContentHashSchema.nullable(),
     /** What the study is for, in the asker's terms. */
@@ -53,7 +54,7 @@ export const ProblemSpecificationSchema = z
     open_questions: z.array(z.string().min(1)),
     /** What this specification does not cover. */
     limitations: z.array(z.string().min(1)),
-    /** Excluded from the hash by name, like every other timestamp in this family. */
+    /** `RECEIPT_ONLY`: the moment the server observed this record, not part of what it says. */
     created_at: IsoDateTimeSchema.optional(),
     content_hash: ContentHashSchema,
 })
@@ -140,7 +141,7 @@ export function reviseSpecification(current, changes, currentHash) {
     };
     return ProblemSpecificationSchema.parse({
         ...withoutHash,
-        content_hash: calculateStudyHash(withoutHash),
+        content_hash: studySelfHash("problem_specification", withoutHash),
     });
 }
 //# sourceMappingURL=specification.js.map

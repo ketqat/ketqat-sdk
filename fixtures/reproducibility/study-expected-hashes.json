@@ -1,10 +1,49 @@
 {
+  "note": "An independent copy of the digests written inside the study fixtures, so that editing a fixture and restamping its own hash still fails. Written by TypeScript and reproduced by python/tests/test_study_hashing.py from the same files. Each entry names the record kind, because a study digest is taken under a preimage header that includes it -- there is no hash of an object in the abstract any more.",
   "study-v1": {
-    "study_float_edge_cases": "f3b37e117eb58a43d77fa7c8be072d9e64a55b9e4b25297075b943fc06e46bd7",
-    "study_plan_revision": "a29381c39e2f15ccb1669ab1f6f787e7214bf67cefa9bd96903852b5c3384eb0",
-    "study_capsule": "f615930ed77798760940687f5a05351c197d30374e455064fa322aede8846e34",
-    "study_evidence_graph": "8df5f746a621dc1917dfa35a03d87c3bf34fc6597f2db5445351d767e26d5090",
-    "study_research_package_as_written": "bc1a720b1946847f590802284026defa0e2fd2081600856826a6c94517df1f5e",
-    "study_capsule_max_safe_integers": "008caadf2bfe83cb39bb33e0cf4a0397bba53a36bdd992059b15e80af5345cdc"
+    "study_plan_revision": {
+      "record_kind": "study_plan",
+      "self_hash_field": "content_hash",
+      "self_hash": "ec6ecced3974c4cf9be630319c8b00f1309ca9a4e2deb02dfbbee78f0340e03d"
+    },
+    "study_capsule": {
+      "record_kind": "execution_capsule",
+      "self_hash_field": "reproducibility_hash",
+      "self_hash": "6a6e4f72025b1985348b5714a77139ccf6dbe36d1e22a19d62dd0e6b9320cfac"
+    },
+    "study_capsule_64_bit_integers": {
+      "record_kind": "execution_capsule",
+      "self_hash_field": "reproducibility_hash",
+      "self_hash": "2029db4862419e575b7cdf38699a92d1934408a04db06977466566f253aa69d2"
+    },
+    "study_research_package_as_written": {
+      "record_kind": "research_package",
+      "self_hash_field": "reproducibility_hash",
+      "self_hash": "b0877bb6b471a624616b1f986a6a5ef5e145b5c451d231c4ff5981efa58477b9"
+    },
+    "study_float_edge_cases": {
+      "record_kind": "evidence_node",
+      "self_hash_field": "content_hash",
+      "nodes": [
+        "4b6148c1854e12f8373c2919bc321226b3856ee6f49422b6f373dba82b8f0ee3",
+        "d0c5609d1b9fffeb3ae8cd90ca673e793f69debf19cdf517611af746056bfc91",
+        "293774c01003330101c0572fd584edb5440897bb1dd23f7141a830b0c9d82e14",
+        "79eace20fe7e794cbbe976d4e8c63b7e6b88c99da2b1becd01f80a67d11db29e",
+        "78e2bac95a6b26f3e009d2287c794fae5eaf8ecfe2ffa2a94fad0135c68d29ca"
+      ]
+    },
+    "study_evidence_graph": {
+      "record_kind": "evidence_node",
+      "self_hash_field": "content_hash",
+      "nodes": [
+        "7d41acbea5f4de7c8f8c9a11c35bc1bbe0a60c85c37f4caf5ffeb52e2fd1124a",
+        "2617b08e376f88768ad9bb4c1593d605570b97c628a17387e323922ed732070b",
+        "346a1bc557fd3cac6f3be4a4da3708822edd8d92075e3868f1f703fa77e7db97"
+      ],
+      "edges": [
+        "b96fd1b37f02792090d1ddf884f3359759117f1f0192e2cd5bc078452051ed05",
+        "84689ab0f253671816462e7c354e1bf4f1cda538c45af4e93b2f1e330f8874de"
+      ]
+    }
   }
 }

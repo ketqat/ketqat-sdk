@@ -8,15 +8,14 @@ import {
   StudyEnvironmentSchema,
   type StudyEnvironment,
 } from "./common.js"
+import { studySelfHash } from "./hash.js"
 import {
-  assertNoNestedExcludedKeys,
-  assertNoUnrepresentableValues,
-  calculateStudyHash,
-  STUDY_HASH_RULES_ID,
-  STUDY_HASH_RULES_KEY,
-  studyRulesIdOf,
-} from "./hashing.js"
-import type { StudyRefusal } from "./refusals.js"
+  studyNotHashableRefusal,
+  studyRulesIdRefusal,
+  type StudyRefusal,
+} from "./refusals.js"
+import { STUDY_HASH_RULES_ID, STUDY_HASH_RULES_KEY } from "./rules.js"
+import { ExactIntegerStringSchema, FiniteFloatSchema } from "./values.js"
 
 /**
  * One execution, recorded so it can be argued with (ketqat-sdk#259, ADR 0014).
@@ -44,47 +43,50 @@ import type { StudyRefusal } from "./refusals.js"
  */
 
 /**
- * Where the safe-integer bound went.
+ * Where the safe-integer bound went, and what replaced it.
  *
  * `seed` and `resource_limits.max_memory_bytes` used to carry
- * `.max(Number.MAX_SAFE_INTEGER)` each, and they were the only two fields in the
- * family that did. That was the bug rather than the fix: every other hashed
- * number was unbounded, `Quantity.value` above all -- which is every number a
- * study reports -- so two research packages whose reported figure differed by
- * 524286 took one digest and both verified clean, while Python refused the
- * honest file this builder had just written because its mirror of the bound
- * named the same two fields.
+ * `.max(Number.MAX_SAFE_INTEGER)` each, then briefly nothing at all while a
+ * blanket rule in the hashing layer refused every integer past 2^53 in every
+ * field. Both readings were wrong in the same direction: they treated a 64-bit
+ * seed as a mistake. It is not. It is what Stim and NumPy hand out, and a byte
+ * count is exactly the quantity that outgrows a double.
  *
- * The rule now lives once, in the hashing layer, as
- * `assertNoUnrepresentableValues`: no study record may carry an integer outside
- * ±`Number.MAX_SAFE_INTEGER` at any depth, whatever field it sits in and
- * whatever record kind is added next. A capsule's seed is still refused, and so
- * is everything the enumeration used to miss.
+ * The fix is a contract per field rather than a bound per number (`values.ts`,
+ * goal §11). A seed and a byte count are `exact_integer_string`: recorded as
+ * digits, so the two languages hash what was written rather than two roundings
+ * of it, and validated so that one value has one spelling. A runtime ceiling
+ * and a credit ceiling are `finite_float`, because they are magnitudes rather
+ * than identifiers and 2^53 is not a bound either of them can reach.
  */
 
 /** What the run was allowed to spend. Null where no limit was set, never zero standing in for one. */
 export interface ResourceLimits {
   max_runtime: number | null
-  max_memory_bytes: number | null
+  max_memory_bytes: string | null
   max_credits: number | null
 }
 
 export const ResourceLimitsSchema: Contract<ResourceLimits> = z
   .object({
     /**
-     * Seconds the run was allowed. A limit, not a measurement: it is a decision
-     * the caller made before the run and it hashes, unlike the durations the
-     * canonicalizer excludes, which are artifacts of the run itself.
+     * Seconds the run was allowed, as a `finite_float`. A limit, not a
+     * measurement: it is a decision the caller made before the run, so it is
+     * part of what the capsule says, unlike the durations that are artifacts of
+     * running and are classified as receipt evidence.
      */
-    max_runtime: z.number().positive().nullable(),
+    max_runtime: FiniteFloatSchema.positive().nullable(),
     /**
-     * A byte count is exactly the size that overflows, and it is no longer
-     * bounded here: `assertNoUnrepresentableValues` refuses an unrepresentable
-     * integer wherever it appears, so this field is covered by the same rule as
-     * every other number the family hashes rather than by a bound of its own.
+     * A byte count, as an `exact_integer_string`.
+     *
+     * This is the field the number problem is named after: 8 GiB is 8589934592
+     * and fits, 16 EiB does not, and above 2^53 a JSON number is a double here
+     * and an arbitrary-precision integer in Python, so one file takes two
+     * digests depending on which language read it. Digits are the one
+     * representation both languages hash identically at any magnitude.
      */
-    max_memory_bytes: z.number().int().positive().nullable(),
-    max_credits: z.number().positive().nullable(),
+    max_memory_bytes: ExactIntegerStringSchema.nullable(),
+    max_credits: FiniteFloatSchema.positive().nullable(),
   })
   .strict()
 
@@ -135,7 +137,7 @@ export interface ExecutionCapsule {
   source_hash: string
   image_digest: string | null
   dependency_lock_ref: string | null
-  seed: number | null
+  seed: string | null
   environment: StudyEnvironment
   resource_limits: ResourceLimits
   input_hashes: string[]
@@ -183,19 +185,25 @@ export const ExecutionCapsuleSchema: Contract<ExecutionCapsule> = z.object({
   image_digest: z.string().regex(/^sha256:[0-9a-f]{64}$/).nullable(),
   dependency_lock_ref: ContentHashSchema.nullable(),
   /**
-   * Non-negative integer, or null when the run was not seeded. Zero is a seed.
+   * The seed, as an `exact_integer_string`: `"0"` is a seed, `null` means the
+   * run was not seeded, and `"18446744073709551615"` is an ordinary value.
    *
-   * A 64-bit seed is what Stim and NumPy hand out, so this is the field that met
-   * the two-language integer problem first -- and the reason the refusal is now
-   * a rule about every number a study record hashes rather than a bound on this
-   * one. `assertNoUnrepresentableValues` refuses it in the hashing layer, which
-   * is also where the Python verifier asks.
+   * A string rather than a number, because a seed is an identifier for a
+   * pseudo-random stream rather than a magnitude, and Stim and NumPy hand out
+   * 64-bit ones. As a JSON number, a seed past 2^53 is the nearest double here
+   * and the integer as written in Python -- so the same capsule takes two
+   * digests, and nothing on this side can tell which of the many seeds sharing
+   * that double actually ran. As digits it is one value with one spelling, and
+   * `ExactIntegerStringSchema` refuses the others (`"+7"`, `"007"`, `"1e3"`,
+   * `"-0"`) so that two spellings cannot become two digests.
    */
-  seed: z.number().int().min(0).nullable(),
+  seed: ExactIntegerStringSchema.nullable(),
   /**
    * Study-local, and array-shaped where the shared `EnvironmentSchema` is a map.
-   * A map's keys are data, and `study-v1` drops excluded names at every depth,
-   * so a capsule's environment is exactly the place a difference could vanish.
+   * A map's keys are chosen by whatever captured the environment, and a
+   * projection reads *declared* fields -- so a map would have to be read
+   * wholesale, keys and all, or not at all. A list of `{name, value}` pairs is
+   * neither: every key in it is a field name the schema declares.
    */
   environment: StudyEnvironmentSchema,
   resource_limits: ResourceLimitsSchema,
@@ -208,14 +216,22 @@ export const ExecutionCapsuleSchema: Contract<ExecutionCapsule> = z.object({
   cancellation: CancellationSchema,
   attestation_level: AttestationLevelSchema,
   /**
-   * Excluded from the hash by name, like every timestamp in this repository. Two
-   * runs of the same capsule differ in when they started and in nothing else
-   * this record hashes.
+   * `RECEIPT_ONLY`: when the server observed this run, not what the run was.
+   *
+   * They are outside `semanticHash`, so two runs of the same inputs describe the
+   * same intended computation whenever they started, and inside `recordHash` --
+   * which is the digest this capsule's `reproducibility_hash` is, because the
+   * question a reader asks of a stored capsule is whether the file was edited.
    */
   started_at: z.string().datetime({ offset: true }).optional(),
   finished_at: z.string().datetime({ offset: true }).optional(),
   created_at: z.string().datetime({ offset: true }).optional(),
-  /** SHA-256 over the canonical form of this capsule under `study-v1`. Excluded from itself. */
+  /**
+   * The capsule's own digest: `recordHash` under `study-v1`, over every declared
+   * field except the three `DERIVED` ones. A record's own hash cannot be an
+   * input to itself, and `schema_version` and `hash_rules_id` are already
+   * committed to by the preimage header rather than restated in the body.
+   */
   reproducibility_hash: ContentHashSchema,
 }).strict()
 
@@ -229,7 +245,7 @@ export interface ExecutionCapsuleInput {
   sourceHash: string
   imageDigest?: string | null
   dependencyLockRef?: string | null
-  seed?: number | null
+  seed?: string | null
   environment: StudyEnvironment
   resourceLimits?: ResourceLimits
   inputHashes?: string[]
@@ -237,7 +253,12 @@ export interface ExecutionCapsuleInput {
   logsRef?: string | null
   executionClass: ExecutionClass
   cancellation?: Cancellation
-  /** Recorded but excluded from the hash. Omit all three for a byte-stable artifact. */
+  /**
+   * `RECEIPT_ONLY`: when the server observed this run, not what the run was.
+   * Outside `semanticHash`, so two runs of the same inputs describe the same
+   * computation; inside `recordHash`, which is the digest a capsule's
+   * `reproducibility_hash` is. Omit all three for a byte-stable artifact.
+   */
   startedAt?: string
   finishedAt?: string
   createdAt?: string
@@ -293,7 +314,7 @@ export function buildExecutionCapsule(input: ExecutionCapsuleInput): ExecutionCa
     ...(input.createdAt ? { created_at: input.createdAt } : {}),
   }
 
-  const hash = calculateStudyHash(withoutHash, STUDY_HASH_RULES_ID)
+  const hash = studySelfHash("execution_capsule", withoutHash)
 
   return ExecutionCapsuleSchema.parse({ ...withoutHash, reproducibility_hash: hash })
 }
@@ -331,6 +352,13 @@ export interface CapsuleVerification {
  * hash means the record is unedited and nothing more. It does not mean the run
  * happened, that the image named is the image that ran, or that the outputs came
  * out of it; `attestation_level` says so in the record itself.
+ *
+ * "Unedited" is the record digest's question, and the record digest is what a
+ * capsule's `reproducibility_hash` is (`registry.ts`). The other question a
+ * reader has about a capsule -- *did this describe the same computation as that
+ * one* -- is `semanticHash("execution_capsule", capsule)`, which ignores when
+ * the run started, whether it was cancelled and where its logs went. Neither
+ * digest answers both, which is why there are four of them.
  */
 export function verifyExecutionCapsule(candidate: unknown): CapsuleVerification {
   const empty = { hash_matches: false, rules_id: null, expected_hash: "", actual_hash: "" }
@@ -344,68 +372,38 @@ export function verifyExecutionCapsule(candidate: unknown): CapsuleVerification 
     }
   }
 
-  let rulesId: string
-  try {
-    rulesId = studyRulesIdOf(candidate)
-  } catch (error) {
-    const recorded = (candidate as Record<string, unknown>)[STUDY_HASH_RULES_KEY]
-    const named = typeof recorded === "string" && recorded.length > 0
+  const rulesRefusal = studyRulesIdRefusal("execution_capsule", candidate)
+  if (rulesRefusal !== null) {
     return {
       valid: false,
       ...empty,
-      problems: [`${STUDY_HASH_RULES_KEY}: ${(error as Error).message}`],
-      refusals: [
-        {
-          subject: "execution_capsule",
-          code: named ? "STUDY_HASH_RULES_ID_UNKNOWN" : "STUDY_HASH_RULES_ID_MISSING",
-          message: (error as Error).message,
-        },
-      ],
+      problems: [`${STUDY_HASH_RULES_KEY}: ${rulesRefusal.message}`],
+      refusals: [rulesRefusal],
     }
   }
+  const rulesId = (candidate as Record<string, unknown>)[STUDY_HASH_RULES_KEY] as string
 
-  // "This cannot be hashed" is answered before "this is not a capsule", for the
-  // same reason the rules id is: a record carrying an excluded key below its own
-  // top level is a hashing-layer refusal, and reporting a schema problem in its
-  // place would send a reader looking for the wrong bug.
+  // "This cannot be hashed" is answered before "this is not a capsule", and the
+  // order is the same one the rules id gets, for the same reason: a record the
+  // projection refuses -- an undeclared key, a field of the wrong shape, a
+  // non-finite number -- is a hashing-layer finding, and reporting a schema
+  // problem in its place sends a reader looking for the wrong bug.
+  //
+  // The digest is computed here, once, and reused below. Computing it is what
+  // asks the question, so there is nothing to check separately first: under a
+  // projection there is no walk that inspects the record and then a second walk
+  // that hashes it.
+  let expected: string
   try {
-    assertNoNestedExcludedKeys(candidate, rulesId)
+    expected = studySelfHash("execution_capsule", candidate)
   } catch (error) {
+    const refusal = studyNotHashableRefusal("execution_capsule", error)
     return {
       valid: false,
       ...empty,
       rules_id: rulesId,
-      problems: [(error as Error).message],
-      refusals: [
-        {
-          subject: "execution_capsule",
-          code: "STUDY_EXCLUDED_KEY_NESTED",
-          message: (error as Error).message,
-        },
-      ],
-    }
-  }
-
-  // And for the same reason, before the shape: an integer the two languages read
-  // as two different numbers, or a string one of them cannot encode at all, is a
-  // hashing-layer refusal. The schema no longer bounds `seed` itself, because
-  // the rule belongs to every number a study record hashes rather than to the
-  // two fields that happened to meet it first.
-  try {
-    assertNoUnrepresentableValues(candidate, rulesId)
-  } catch (error) {
-    return {
-      valid: false,
-      ...empty,
-      rules_id: rulesId,
-      problems: [(error as Error).message],
-      refusals: [
-        {
-          subject: "execution_capsule",
-          code: "STUDY_VALUE_NOT_REPRESENTABLE",
-          message: (error as Error).message,
-        },
-      ],
+      problems: [refusal.message],
+      refusals: [refusal],
     }
   }
 
@@ -429,7 +427,6 @@ export function verifyExecutionCapsule(candidate: unknown): CapsuleVerification 
   // dict it read and fills in nothing. Validation stays a separate,
   // still-reported step above; what it must not do is change what gets hashed.
   const capsule = candidate as ExecutionCapsule
-  const expected = calculateStudyHash(capsule, rulesId)
   const hashMatches = expected === capsule.reproducibility_hash
   const problems = hashMatches
     ? []

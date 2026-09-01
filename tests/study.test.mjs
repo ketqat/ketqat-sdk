@@ -6,7 +6,8 @@ import { quantity, unknownQuantity } from "../dist/index.js"
 // imported by compiled path rather than through `dist/index.js`. The paths are
 // what the barrel will re-export; nothing here depends on the wiring order.
 import { STUDY_SCHEMA_VERSION, TextFieldSchema } from "../dist/study/common.js"
-import { STUDY_HASH_RULES_ID, calculateStudyHash } from "../dist/study/hashing.js"
+import { studySelfHash } from "../dist/study/hash.js"
+import { STUDY_HASH_RULES_ID } from "../dist/study/rules.js"
 import {
   STUDY_STATUS_TRANSITIONS,
   StudyEventSchema,
@@ -35,12 +36,19 @@ import { buildStudyTask } from "../dist/study/task.js"
 const MODEL = "ketqat-study-test"
 const VERSION = "0.1.0"
 
-/** Stamp then hash, in the order every builder in the family uses. */
-function seal(schema, withoutHash) {
-  return schema.parse({ ...withoutHash, content_hash: calculateStudyHash(withoutHash) })
+/**
+ * Stamp then hash, in the order every builder in the family uses.
+ *
+ * The record kind is an argument because it is a preimage header component:
+ * there is no digest of an object in the abstract, and which of the four
+ * digests a kind writes into its own hash field is declared in the registry
+ * rather than chosen here.
+ */
+function seal(recordKind, schema, withoutHash) {
+  return schema.parse({ ...withoutHash, content_hash: studySelfHash(recordKind, withoutHash) })
 }
 
-const study = seal(StudySchema, {
+const study = seal("study", StudySchema, {
   schema_version: STUDY_SCHEMA_VERSION,
   hash_rules_id: STUDY_HASH_RULES_ID,
   study_type: "FTQC_FEASIBILITY",
@@ -86,7 +94,7 @@ function specificationCore(changes = {}) {
   }
 }
 
-const specification = seal(ProblemSpecificationSchema, specificationCore())
+const specification = seal("problem_specification", ProblemSpecificationSchema, specificationCore())
 
 function planCore(changes = {}) {
   return {
@@ -116,7 +124,7 @@ function planCore(changes = {}) {
   }
 }
 
-const plan = seal(StudyPlanSchema, planCore())
+const plan = seal("study_plan", StudyPlanSchema, planCore())
 
 // ------------------------------------------------------------- the status ladder
 
@@ -228,7 +236,7 @@ test("each appended event numbers itself and names the hash of the one before it
     assert.equal(event.previous_event_hash, index === 0 ? null : confirmedTrail[index - 1].content_hash)
     assert.equal(event.from_status, index === 0 ? null : confirmedTrail[index - 1].to_status)
     assert.equal(event.study_ref, study.content_hash)
-    assert.equal(event.content_hash, calculateStudyHash(event))
+    assert.equal(event.content_hash, studySelfHash("study_event", event))
   })
   assert.equal(verifyStudyEventChain(confirmedTrail).valid, true)
 })
@@ -252,7 +260,7 @@ test("an event edited after it was written no longer hashes to what it claims", 
   assert.equal(verdict.problems[0].code, "EVENT_CHAIN_BROKEN")
   // The finding itself rather than the sentence reporting it: the event's
   // contents no longer canonicalize to the hash it carries.
-  assert.notEqual(calculateStudyHash(tampered[2]), tampered[2].content_hash)
+  assert.notEqual(studySelfHash("study_event", tampered[2]), tampered[2].content_hash)
   assert.equal(verdict.problems[0].subject, "study event 3")
 })
 
@@ -261,11 +269,15 @@ test("a rewritten middle event is caught by the event that follows it, even afte
   // on its own -- and event four still names the hash the original event three
   // had, which nothing in the trail can produce any more.
   const rewritten = { ...confirmedTrail[2], reason: "Approved verbally, no plan attached." }
-  rewritten.content_hash = calculateStudyHash(rewritten)
+  rewritten.content_hash = studySelfHash("study_event", rewritten)
   const tampered = [...confirmedTrail]
   tampered[2] = rewritten
 
-  assert.equal(calculateStudyHash(rewritten), rewritten.content_hash, "the rewritten event is internally consistent")
+  assert.equal(
+    studySelfHash("study_event", rewritten),
+    rewritten.content_hash,
+    "the rewritten event is internally consistent",
+  )
   const verdict = verifyStudyEventChain(tampered)
   assert.equal(verdict.valid, false)
   const codes = verdict.problems.map((problem) => problem.code)
@@ -296,7 +308,10 @@ test("a truncated trail still verifies, and a forgery appended to it verifies to
     reason: "Fabricated: this study never refused.",
     plan_ref: null,
   }
-  const continued = [...truncated, StudyEventSchema.parse({ ...forged, content_hash: calculateStudyHash(forged) })]
+  const continued = [
+    ...truncated,
+    StudyEventSchema.parse({ ...forged, content_hash: studySelfHash("study_event", forged) }),
+  ]
 
   assert.equal(
     verifyStudyEventChain(continued).valid,
@@ -354,7 +369,7 @@ test("an event that starts a run must name the plan revision it runs", () => {
 })
 
 test("two studies' events are two trails", () => {
-  const other = seal(StudySchema, { ...study, title: "A different question entirely", content_hash: undefined })
+  const other = seal("study", StudySchema, { ...study, title: "A different question entirely", content_hash: undefined })
   const appended = appendStudyEvent(other, confirmedTrail, { toStatus: "CONCLUDED", actor: "the study service" })
   assert.equal(appended.ok, false)
   assert.equal(appended.refusal.code, "EVENT_CHAIN_BROKEN")
@@ -372,7 +387,7 @@ test("revising a specification produces the next revision and leaves the origina
   assert.equal(revised.revision, 2)
   assert.equal(revised.supersedes, specification.content_hash)
   assert.equal(revised.problem_size.quantity.value, 4800)
-  assert.equal(revised.content_hash, calculateStudyHash(revised))
+  assert.equal(revised.content_hash, studySelfHash("problem_specification", revised))
   assert.notEqual(revised.content_hash, specification.content_hash)
   assert.deepEqual(specification, before, "the superseded revision is untouched")
 })
@@ -383,7 +398,7 @@ test("revising a plan produces the next revision and leaves the original alone",
   assert.equal(revised.revision, 2)
   assert.equal(revised.supersedes, plan.content_hash)
   assert.equal(revised.max_credits, 4000)
-  assert.equal(revised.content_hash, calculateStudyHash(revised))
+  assert.equal(revised.content_hash, studySelfHash("study_plan", revised))
   assert.deepEqual(plan, before, "the superseded revision is untouched")
 })
 
@@ -440,7 +455,7 @@ test("a plan edited after confirmation fails even when the confirmed hash is the
   assert.equal(verdict.refusal.code, "CONFIRMATION_HASH_MISMATCH")
   // What the refusal is about, asserted directly: the confirmed hash is not what
   // the plan now canonicalizes to.
-  assert.notEqual(calculateStudyHash(tampered), tampered.content_hash)
+  assert.notEqual(studySelfHash("study_plan", tampered), tampered.content_hash)
 })
 
 test("a confirmation naming some other record is a mismatch, not a stale approval", () => {
@@ -464,12 +479,15 @@ test("a task binds to the confirmed plan revision by hash", () => {
   assert.equal(built.task.study_ref, study.content_hash)
   assert.equal(built.task.capsule_ref, null)
   assert.equal(built.task.status, "PENDING")
-  assert.equal(built.task.content_hash, calculateStudyHash(built.task))
+  assert.equal(built.task.content_hash, studySelfHash("study_task", built.task))
 
   // The job's status is denormalized here, so a task that progressed is the same
   // task and keeps the hash everything else references it by.
-  assert.equal(calculateStudyHash({ ...built.task, status: "RUNNING" }), built.task.content_hash)
-  assert.notEqual(calculateStudyHash({ ...built.task, kind: "STUDY_BENCHMARK_RUN" }), built.task.content_hash)
+  assert.equal(studySelfHash("study_task", { ...built.task, status: "RUNNING" }), built.task.content_hash)
+  assert.notEqual(
+    studySelfHash("study_task", { ...built.task, kind: "STUDY_BENCHMARK_RUN" }),
+    built.task.content_hash,
+  )
 })
 
 test("a task cannot be built against a plan revision that has been replaced", () => {
@@ -496,6 +514,7 @@ test("a text field with no value must declare UNKNOWN, and one declared UNKNOWN 
 test("an unanswered specification field survives with its reason, and moves the hash when it is answered", () => {
   const reason = "Nobody has said how close an answer has to be to be useful."
   const unanswered = seal(
+    "problem_specification",
     ProblemSpecificationSchema,
     specificationCore({
       accuracy_requirement: unknownQuantityField("relative error", reason),
@@ -515,10 +534,11 @@ test("an unanswered specification field survives with its reason, and moves the 
   // answer".
   const roundTripped = JSON.parse(JSON.stringify(unanswered))
   assert.equal(roundTripped.accuracy_requirement.quantity.value, null)
-  assert.equal(calculateStudyHash(roundTripped), unanswered.content_hash)
+  assert.equal(studySelfHash("problem_specification", roundTripped), unanswered.content_hash)
   assert.equal(ProblemSpecificationSchema.parse(roundTripped).accuracy_requirement.quantity.value, null)
 
   const answered = seal(
+    "problem_specification",
     ProblemSpecificationSchema,
     specificationCore({
       accuracy_requirement: quantityField(0.01, "relative error"),
@@ -531,6 +551,7 @@ test("an unanswered specification field survives with its reason, and moves the 
 
 test("an inferred field and a confirmed one are different records", () => {
   const inferred = seal(
+    "problem_specification",
     ProblemSpecificationSchema,
     specificationCore({
       objective: textField("Decide whether to fund a two-year quantum programme.", "USER_PROVIDED", "INFERRED"),
@@ -538,6 +559,7 @@ test("an inferred field and a confirmed one are different records", () => {
     }),
   )
   const confirmed = seal(
+    "problem_specification",
     ProblemSpecificationSchema,
     specificationCore({
       objective: textField("Decide whether to fund a two-year quantum programme.", "USER_PROVIDED", "CONFIRMED"),
@@ -565,6 +587,7 @@ test("a specification with unconfirmed fields cannot claim to have no open quest
 
 test("open questions name every gap without inventing an answer for it", () => {
   const partial = seal(
+    "problem_specification",
     ProblemSpecificationSchema,
     specificationCore({
       budget_constraint: unknownQuantityField("USD", "No budget has been set."),
@@ -586,62 +609,82 @@ test("the stored plan revision verifies against its own contents", () => {
   const fixture = JSON.parse(
     readFileSync(new URL("../fixtures/reproducibility/study-plan-revision.json", import.meta.url), "utf8"),
   )
+  const pins = JSON.parse(
+    readFileSync(new URL("../fixtures/reproducibility/study-expected-hashes.json", import.meta.url), "utf8"),
+  )[STUDY_HASH_RULES_ID].study_plan_revision
+
   assert.equal(fixture.revision, 2)
   assert.equal(typeof fixture.supersedes, "string")
-  assert.equal(calculateStudyHash(fixture), fixture.content_hash)
-  assert.equal(calculateStudyHash(fixture), "a29381c39e2f15ccb1669ab1f6f787e7214bf67cefa9bd96903852b5c3384eb0")
+  assert.equal(studySelfHash("study_plan", fixture), fixture.content_hash)
+  assert.equal(studySelfHash("study_plan", fixture), pins.self_hash)
+  assert.equal(pins.record_kind, "study_plan")
 
-  // The fixture is written as a store would hand the record back, wrapped in the
-  // row metadata `study-v1` drops. The digest ignores every one of those keys --
-  // which is what the loop below pins -- and the contract declares none of them,
-  // so parsing refuses rather than strips. The generated JSON Schema has said
-  // `additionalProperties: false` all along; stripping was the reading that
-  // disagreed with it, and with the Python validator reading the same file.
-  const ROW_METADATA = [
-    "id",
-    "slug",
-    "owner_username",
-    "visibility",
-    "status",
-    "ui_metadata",
-    "updated_at",
-    "submitted_at",
-    "started_at",
-    "finished_at",
-    "runtime_seconds",
-  ]
-  assert.throws(() => StudyPlanSchema.parse(fixture), /Unrecognized key/)
-
-  const declared = Object.fromEntries(Object.entries(fixture).filter(([key]) => !ROW_METADATA.includes(key)))
-  const parsed = StudyPlanSchema.parse(declared)
-  assert.equal(calculateStudyHash(parsed), fixture.content_hash, "what the digest ignores is not part of the record")
-  assert.equal(verifyPlanConfirmation(parsed, fixture.content_hash).ok, true)
-
-  for (const volatileChange of [
-    { id: "another-id" },
-    { slug: "another-slug" },
-    { status: "RUNNING" },
+  // The fixture is exactly the fields a plan declares, and that is the change.
+  // It used to be written as a store hands the row back -- wrapped in `id`,
+  // `slug`, `owner_username`, `status`, `runtime_seconds` and the rest -- to pin
+  // a rule that dropped those names from the digest at every depth. There is no
+  // such rule any more. The projection reads the fields the kind declares and
+  // refuses the rest, so row metadata is not something a study record can carry
+  // and be hashed: it is stripped by whatever read the row, before the record
+  // exists.
+  //
+  // The refusal is the assertion. Skipping an undeclared key would give this
+  // record and the same record with an extra key one digest, so a field could be
+  // added to a finished plan for nothing.
+  for (const rowMetadata of [
+    { id: "volatile-plan-id" },
+    { slug: "volatile-plan-slug" },
+    { owner_username: "volatile-owner" },
+    { visibility: "private" },
+    { status: "AWAITING_CONFIRMATION" },
+    { ui_metadata: { pinned: true } },
     { updated_at: "2027-01-01T00:00:00.000Z" },
-    { started_at: "2027-01-01T00:00:00.000Z" },
     { runtime_seconds: 4242.5 },
   ]) {
-    assert.equal(
-      calculateStudyHash({ ...fixture, ...volatileChange }),
-      fixture.content_hash,
-      `${Object.keys(volatileChange)[0]} must not move a plan hash`,
+    const key = Object.keys(rowMetadata)[0]
+    assert.throws(
+      () => studySelfHash("study_plan", { ...fixture, ...rowMetadata }),
+      (error) => error.code === "UNDECLARED_FIELD" && error.path === key,
+      `${key} must be refused rather than dropped`,
     )
+    assert.throws(() => StudyPlanSchema.parse({ ...fixture, ...rowMetadata }), /Unrecognized key/)
   }
 
+  const parsed = StudyPlanSchema.parse(fixture)
+  assert.equal(studySelfHash("study_plan", parsed), fixture.content_hash, "parsing changes nothing")
+  assert.equal(verifyPlanConfirmation(parsed, fixture.content_hash).ok, true)
+
+  // A plan is immutable once written, so its identity is the record digest and
+  // every declared field moves it -- including `revision` and `supersedes`,
+  // which are where the revision chain lives. The two that do not are the
+  // `DERIVED` header components the preimage already commits to.
   for (const decision of [
     { max_credits: 2501 },
     { reproducibility_level: "EXACT" },
     { refusal_criteria: [] },
     { data_handling: "Anything goes." },
+    { revision: 3 },
+    { supersedes: "b".repeat(64) },
+    { created_at: "2027-01-01T00:00:00.000Z" },
   ]) {
     assert.notEqual(
-      calculateStudyHash({ ...fixture, ...decision }),
+      studySelfHash("study_plan", { ...fixture, ...decision }),
       fixture.content_hash,
       `${Object.keys(decision)[0]} must move a plan hash`,
+    )
+  }
+
+  // `content_hash` cannot be an input to itself, and the two header components
+  // are committed to outside the body rather than restated inside it.
+  for (const derived of [
+    { content_hash: "c".repeat(64) },
+    { schema_version: STUDY_SCHEMA_VERSION },
+    { hash_rules_id: STUDY_HASH_RULES_ID },
+  ]) {
+    assert.equal(
+      studySelfHash("study_plan", { ...fixture, ...derived }),
+      fixture.content_hash,
+      `${Object.keys(derived)[0]} is DERIVED and is not an input to the digest that covers it`,
     )
   }
 })

@@ -196,6 +196,21 @@ Three things are enforced by the types rather than by convention:
   content-addressed, so a changed plan needs a new confirmation by construction: its hash
   moved. `verifyPlanConfirmation` recomputes the hash, so a plan edited and re-stamped with
   the confirmed value is refused too.
+- **One digest cannot answer two questions, so there are four.** `semanticHash` asks whether
+  two records describe the same scientific content, `recordHash` whether a file was edited
+  after it was written, `receiptHash` whether a server observed an action in a given order,
+  and `artifactHash` whether some bytes are the bytes that were produced. A timestamp has to
+  be outside the first and inside the second, which is why one digest doing both jobs ends up
+  answering whichever question the reader happened to be asking. **None of them establishes
+  authenticity**: `attestation_level` is `hash_only`, and a matching hash is never described
+  here as "signed", "authentic" or "scientifically correct".
+- **What a digest covers is declared, not pattern-matched.** Each record kind classifies every
+  field it has, and the digest is built from those declarations — so a key nobody declared is
+  never read, at any nesting depth, and is refused rather than silently dropped. A test walks
+  each schema against the classification and fails on any field it does not classify, in
+  either direction, so adding a field is a decision a reviewer sees rather than a default.
+  Serialization is RFC 8785 (JCS), implemented against the RFC in both languages and pinned to
+  the RFC's own test vectors.
 - **Nothing is inferred about how a record was hashed.** Study records name their rule set
   in `hash_rules_id` (`study-v1`) and are refused without it — see
   [Schema Versioning](#schema-versioning) for why that is a different field from

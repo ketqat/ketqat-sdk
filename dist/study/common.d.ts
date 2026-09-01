@@ -2,6 +2,15 @@ import { z } from "zod";
 import { type Citation } from "../contracts/common.js";
 import { type Contract, type EvidenceClass, type Quantity, type Uncertainty } from "../intelligence/measurement.js";
 /**
+ * A revision or sequence number: a `safe_integer` that counts up from 1.
+ *
+ * The contract is chosen for the field rather than for the value in front of
+ * us (see `values.ts`). A record revised 2^53 times is not a record; the count
+ * cannot reach the boundary by construction, so it is a JSON number rather
+ * than the `exact_integer_string` a 64-bit seed needs.
+ */
+export declare const StudyPositionSchema: z.ZodNumber;
+/**
  * The vocabulary every record in the `study` family shares (ketqat-sdk#259,
  * ADR 0010).
  *
@@ -41,7 +50,18 @@ import { type Contract, type EvidenceClass, type Quantity, type Uncertainty } fr
  * compatibility that does not exist.
  */
 export declare const STUDY_SCHEMA_VERSION = "1.0";
-/** `Uncertainty`, refusing a key it does not declare. */
+/**
+ * `Uncertainty`, refusing a key it does not declare and requiring its two
+ * bounds to be finite.
+ *
+ * The shared schema types them `z.number().nullable()`, which admits `NaN` and
+ * both infinities -- and `Quantity.value` beside them does not, because the
+ * shared contract refines it. That asymmetry mattered under the old rules and
+ * matters more now: a spread is a `finite_float` under the number contracts in
+ * `values.ts`, and `canonicalizeJcs` refuses a non-finite number outright
+ * (RFC 8785 §3.2.2.3), so an infinite bound reaching this family would be a
+ * record that parses and cannot be hashed. It is refused where it is written.
+ */
 export declare const StudyUncertaintySchema: Contract<Uncertainty>;
 /**
  * `Quantity`, refusing a key it does not declare, and carrying the strict
@@ -159,16 +179,19 @@ export interface StudyHardwareEntry {
  *
  * The shared `EnvironmentSchema` records the same four scalars and then two
  * free-form maps, and a map's keys are *data*: a dependency name, a hardware
- * component name, both chosen by whatever captured the environment. `study-v1`
- * drops its excluded names at every nesting level -- which is what a record's
- * own `created_at` and `status` need -- so a dependency genuinely called `id`,
- * or a hardware key called `visibility`, was gone before the digest was taken.
- * Two capsules recording different environments then hash identically, and one
- * can be handed the other's environment while still verifying against its own
- * digest. A canonicalizer that drops keys by name cannot be safe over keys that
- * are data, and `src/reproducibility` is deliberately the only canonicalizer, so
- * the data moves out of the keys instead: a package name is a value here, and no
- * value is ever dropped.
+ * component name, both chosen by whatever captured the environment. Under the
+ * retired rules that was a collision -- a dependency genuinely called `id` was
+ * dropped by name before the digest was taken, so two capsules recording
+ * different environments hashed identically and one could be handed the other's
+ * environment while still verifying against its own digest.
+ *
+ * The shape stays array-shaped under the projection, and the reason is now the
+ * mirror image rather than the same one. A projection reads *declared* fields,
+ * and a map's keys are declared by nobody: the projection would have to read
+ * the map wholesale -- reopening the question of what a key called `__proto__`
+ * means -- or refuse it entirely. A list of `{name, value}` pairs is neither.
+ * Every key in it is a field name this schema declares, and every dependency
+ * name is a value, which is a place data belongs.
  *
  * `src/contracts/common.ts` keeps its map-shaped `EnvironmentSchema` unchanged.
  * Every hash published under the legacy rules was computed over that shape, and

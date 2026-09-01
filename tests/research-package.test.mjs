@@ -4,7 +4,9 @@ import {
   STUDY_HASH_RULES_ID,
   STUDY_HASH_RULES_KEY,
   STUDY_SCHEMA_VERSION,
-  calculateStudyHash,
+  recordHash,
+  semanticHash,
+  studySelfHash,
 } from "../dist/study/index.js"
 import { EvidenceEdgeSchema, EvidenceNodeSchema } from "../dist/study/evidence.js"
 import {
@@ -95,10 +97,12 @@ const edgeBody = (changes = {}) => ({
 })
 
 // A node's identity is the hash of its content, so a usable node is stamped
-// rather than invented. `content_hash` is excluded from the digest, which is
-// what makes stamping it afterwards non-circular.
-const stampNode = (body) => EvidenceNodeSchema.parse({ ...body, content_hash: calculateStudyHash(body) })
-const stampEdge = (body) => EvidenceEdgeSchema.parse({ ...body, content_hash: calculateStudyHash(body) })
+// rather than invented. `content_hash` is `DERIVED` and no purpose reads it,
+// which is what makes stamping it afterwards non-circular.
+const stampNode = (body) =>
+  EvidenceNodeSchema.parse({ ...body, content_hash: studySelfHash("evidence_node", body) })
+const stampEdge = (body) =>
+  EvidenceEdgeSchema.parse({ ...body, content_hash: studySelfHash("evidence_edge", body) })
 
 const claimNode = stampNode(
   nodeBody({
@@ -494,7 +498,7 @@ test("the verifier makes the same checks as the builder, on a package the builde
   const forged = clone(buildOrThrow())
   forged.edges = forged.edges.filter((edge) => edge.kind !== "supports")
   forged.claim_evidence_map[0].edge_hashes = []
-  forged.reproducibility_hash = calculateStudyHash(forged)
+  forged.reproducibility_hash = studySelfHash("research_package", forged)
 
   const verification = verifyResearchPackage(forged)
 
@@ -515,7 +519,7 @@ test("a self-citing package is refused by the verifier too, not only by the buil
       edge_hashes: [supportsEdge.content_hash],
     },
   ]
-  forged.reproducibility_hash = calculateStudyHash(forged)
+  forged.reproducibility_hash = studySelfHash("research_package", forged)
 
   const verification = verifyResearchPackage(forged)
 
@@ -540,7 +544,7 @@ test("a claim asserting an unknown value is refused rather than thrown", () => {
       value: unknownQuantity(),
     },
   })
-  const unknownClaimNode = { ...body, content_hash: calculateStudyHash(body) }
+  const unknownClaimNode = { ...body, content_hash: studySelfHash("evidence_node", body) }
 
   const built = buildResearchPackage(
     packageInput({
@@ -581,8 +585,8 @@ test("an edited and re-hashed package fails structurally, not cryptographically"
   edited.quantity.value = 42
   // The fabrication a hash check alone cannot see: re-stamp the node and then
   // the package, so every digest in the file agrees with its own contents.
-  edited.content_hash = calculateStudyHash(edited)
-  tampered.reproducibility_hash = calculateStudyHash(tampered)
+  edited.content_hash = studySelfHash("evidence_node", edited)
+  tampered.reproducibility_hash = studySelfHash("research_package", tampered)
 
   const verification = verifyResearchPackage(tampered)
 
@@ -601,8 +605,8 @@ test("a re-hashed node alone breaks the rows that named it", () => {
   const tampered = clone(buildOrThrow())
   const edited = tampered.nodes.find((node) => node.kind === "quantity")
   edited.quantity.value = 42
-  edited.content_hash = calculateStudyHash(edited)
-  tampered.reproducibility_hash = calculateStudyHash(tampered)
+  edited.content_hash = studySelfHash("evidence_node", edited)
+  tampered.reproducibility_hash = studySelfHash("research_package", tampered)
 
   const rowHashes = new Set(tampered.nodes.map((node) => node.content_hash))
   assert.equal(rowHashes.has(tampered.result_rows[0].node_hash), false)
@@ -668,12 +672,30 @@ test("the package round-trips through JSON and keeps its schema and interface in
   ])
 })
 
-test("a timestamp is recorded but never hashed", () => {
+// A timestamp is receipt evidence, and the two digests answer differently about it.
+//
+// Under the retired rules `created_at` was dropped by name, everywhere and for every purpose, so
+// one digest said "the same package" and `verifyResearchPackage` reported it as "the file was not
+// edited" -- two claims from one number, and the second was false. Classified, the same timestamp
+// is out of the semantic digest, where it belongs, and in the record digest, which is the one a
+// package's `reproducibility_hash` is.
+test("a timestamp is receipt evidence: outside the semantic digest, inside the record one", () => {
   const withoutTimestamp = buildOrThrow()
   const withTimestamp = buildOrThrow({ createdAt: "2026-06-30T12:00:00.000Z" })
 
   assert.equal(withTimestamp.created_at, "2026-06-30T12:00:00.000Z")
-  assert.equal(withTimestamp.reproducibility_hash, withoutTimestamp.reproducibility_hash)
+  assert.equal(
+    semanticHash("research_package", withTimestamp),
+    semanticHash("research_package", withoutTimestamp),
+    "the same evidence graph reports the same science, whenever it was written down",
+  )
+  assert.notEqual(
+    withTimestamp.reproducibility_hash,
+    withoutTimestamp.reproducibility_hash,
+    "and they are two different files, which is what the record digest answers",
+  )
+  assert.equal(verifyResearchPackage(withTimestamp).valid, true)
+  assert.equal(verifyResearchPackage(withoutTimestamp).valid, true)
 })
 
 test("a candidate that is not a research package is refused with named problems", () => {
@@ -713,7 +735,7 @@ test("one record has one digest through the build path and the verify path alike
   // same digest: no schema in this family materialises a field at parse time any more.
   const parsed = ResearchPackageSchema.parse(asWritten)
   assert.deepEqual(parsed, asWritten, "the parse must not rewrite its own subject")
-  assert.equal(calculateStudyHash(parsed), built)
+  assert.equal(studySelfHash("research_package", parsed), built)
 
   // A file that omits the list is refused rather than filled in. Previously it parsed, gained an
   // empty array nobody wrote, and was reported valid against a digest of a record it was not.
@@ -743,47 +765,72 @@ test("an environment shaped as a map of run-time keys is no longer a package at 
   )
 })
 
-// A key hidden inside a `Quantity` envelope, refused twice over.
+// A key hidden inside a `Quantity` envelope, refused twice over -- and refused now for a reason
+// that does not depend on what the key is called.
 //
-// `Quantity` comes from `src/intelligence` and used to strip what it did not declare, so a key
-// named after an exclusion survived the parse and only the hashing walk stopped it; the envelope
-// is also an embedded record, whose top level the exclusions deliberately do not bite at. It is
-// now read through `StudyQuantitySchema`, which refuses an undeclared key one step earlier -- and
-// the hashing walk stays underneath as the backstop, because it is the whole check a caller who
-// hand-assembles a dict, or who only has Python, ever runs.
-test("a package whose graph hides an excluded key is refused, not hashed", () => {
-  const forged = clone(buildOrThrow())
-  const node = forged.nodes.find((candidate) => candidate.quantity !== null)
-  node.quantity.id = "smuggled"
+// The name used to be the whole of it: `id` was on a global exclusion list, so a key called that
+// vanished from the digest at every depth, and a `Quantity` envelope was treated as an embedded
+// record whose own top level the exclusions did not bite at. Two nodes differing only there were
+// content-addressed identically. The projection asks a different question -- *is this key
+// declared* rather than *is this key called something suspicious* -- so the same forgery is
+// refused, and so is `{ smuggled: "x" }`, which no exclusion list would ever have named.
+test("a package whose graph hides an undeclared key is refused, not hashed", () => {
+  for (const key of ["id", "slug", "smuggled", "__proto__"]) {
+    const forged = clone(buildOrThrow())
+    const node = forged.nodes.find((candidate) => candidate.quantity !== null)
+    Object.defineProperty(node.quantity, key, {
+      value: "smuggled",
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    })
 
-  const verification = verifyResearchPackage(forged)
-  assert.equal(verification.valid, false)
+    const verification = verifyResearchPackage(forged)
+    assert.equal(verification.valid, false, `${key} must not pass inside a Quantity`)
+
+    // The backstop, on the same node with no schema in the way: the digest is refused rather than
+    // taken over contents a reader cannot see in it.
+    assert.throws(
+      () => studySelfHash("evidence_node", node),
+      (error) => error.code === "UNDECLARED_FIELD" && error.path === `quantity.${key}`,
+      `two nodes differing only in ${key} would otherwise be content-addressed identically`,
+    )
+  }
+
+  // And the mirror image, which is what makes the rule a classification rather than a denylist:
+  // `created_at` is a declared field of a `Quantity` envelope, so it is not smuggled at all. It
+  // is `RECORD_ONLY`, so rebuilding an envelope around the same measurement does not read as new
+  // science, and the record digest still covers it.
+  const honest = clone(buildOrThrow())
+  const node = honest.nodes.find((candidate) => candidate.quantity !== null)
+  const rebuilt = {
+    ...node,
+    quantity: { ...node.quantity, created_at: "2027-01-01T00:00:00.000Z" },
+  }
   assert.equal(
-    verification.problems.some((problem) => /[Uu]nrecognized key/.test(problem)),
-    true,
-    verification.problems.join(" "),
+    semanticHash("evidence_node", rebuilt),
+    semanticHash("evidence_node", node),
+    "an envelope rebuilt around the same number is the same measurement",
   )
-
-  // The backstop, on the same record with no schema in the way: the digest is refused rather than
-  // taken over contents the canonicalizer would silently drop.
-  assert.throws(
-    () => calculateStudyHash(node),
-    /quantity\.id/,
-    "two nodes differing only there would otherwise be content-addressed identically",
-  )
+  assert.notEqual(recordHash("evidence_node", rebuilt), recordHash("evidence_node", node))
 })
 
 // The same key, caught at the build boundary, where the parts a builder passes through
 // unvalidated meet the record it assembles. A refusal is the ordinary outcome here, not an
 // exception a caller has to catch.
-test("a row hiding an excluded key is refused before the package is assembled", () => {
+//
+// One code rather than two: `STUDY_EXCLUDED_KEY_NESTED` and `STUDY_VALUE_NOT_REPRESENTABLE`
+// both described the retired rules rather than the failure, and there is no key the digest
+// drops any more. Which refusal fired, and at which path, is in the message.
+test("a row hiding a key nobody declared is refused before the package is assembled", () => {
   const built = buildResearchPackage(
     packageInput({
       assumptionRows: [{ label: "Physical error rate", node_hash: inputNode.content_hash, id: "smuggled" }],
     }),
   )
   assert.equal(built.ok, false)
-  assert.deepEqual(codesOf(built.refusals), ["STUDY_EXCLUDED_KEY_NESTED"])
+  assert.deepEqual(codesOf(built.refusals), ["STUDY_RECORD_NOT_HASHABLE"])
+  assert.match(built.refusals[0].message, /^UNDECLARED_FIELD: /)
   assert.equal(built.refusals[0].message.includes("assumption_rows[0].id"), true, built.refusals[0].message)
 })
 

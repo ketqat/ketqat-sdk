@@ -1,0 +1,1 @@
+{"version":3,"file":"file.d.ts","sourceRoot":"","sources":["../../src/study/file.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,UAAU,CAAA;AAmRzC,MAAM,WAAW,gBAAgB;IAC/B,wDAAwD;IACxD,QAAQ,CAAC,KAAK,EAAE,SAAS,CAAA;IACzB,sEAAsE;IACtE,QAAQ,CAAC,IAAI,EAAE,MAAM,CAAA;CACtB;AAED;;;;;;GAMG;AACH,wBAAgB,kBAAkB,CAAC,KAAK,EAAE,UAAU,GAAG,gBAAgB,CAmCtE"}

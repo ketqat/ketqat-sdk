@@ -6,11 +6,13 @@ from importlib import resources
 from pathlib import Path
 
 import pytest
+from jsonschema import Draft7Validator
 
-from ketqat_runner.study_hashing import STUDY_HASH_RULES_ID, calculate_study_hash
+from ketqat_runner.study_hash import study_self_hash
+from ketqat_runner.study_limits import JS_MAX_SAFE_INTEGER, StudyHashRefusal
+from ketqat_runner.study_rules import STUDY_HASH_RULES_ID
 from ketqat_runner.validation import KetQatValidationError, load_schema
 from ketqat_runner.study_validation import (
-    JS_MAX_SAFE_INTEGER,
     STUDY_SCHEMA_FILES,
     STUDY_SCHEMA_VERSION,
     validate_study_record,
@@ -94,7 +96,7 @@ def _node(**changes) -> dict:
         "retrieved_on": None,
     }
     body.update(changes)
-    return {**body, "content_hash": calculate_study_hash(body)}
+    return {**body, "content_hash": study_self_hash("evidence_node", body)}
 
 
 def _edge(**changes) -> dict:
@@ -109,7 +111,7 @@ def _edge(**changes) -> dict:
         "rationale": "The bound is read from the estimate rather than restated.",
     }
     body.update(changes)
-    return {**body, "content_hash": calculate_study_hash(body)}
+    return {**body, "content_hash": study_self_hash("evidence_edge", body)}
 
 
 def _package() -> dict:
@@ -211,7 +213,7 @@ def _package() -> dict:
         "failed_checks": [],
         "is_demo": True,
     }
-    return {**body, "reproducibility_hash": calculate_study_hash(body)}
+    return {**body, "reproducibility_hash": study_self_hash("research_package", body)}
 
 
 def _quantity_node(package: dict) -> dict:
@@ -261,8 +263,8 @@ def test_an_edited_and_rehashed_package_fails_structurally() -> None:
     package = _package()
     node = _quantity_node(package)
     node["quantity"]["value"] = 42
-    node["content_hash"] = calculate_study_hash(node)
-    package["reproducibility_hash"] = calculate_study_hash(package)
+    node["content_hash"] = study_self_hash("evidence_node", node)
+    package["reproducibility_hash"] = study_self_hash("research_package", package)
 
     result = verify_research_package(package, validate_schema=False)
 
@@ -276,7 +278,7 @@ def test_an_edited_and_rehashed_package_fails_structurally() -> None:
 def test_a_result_row_without_a_node_does_not_resolve() -> None:
     package = _package()
     package["result_rows"] = [{"label": "Total physical qubits", "node_hash": ABSENT_HASH}]
-    package["reproducibility_hash"] = calculate_study_hash(package)
+    package["reproducibility_hash"] = study_self_hash("research_package", package)
 
     result = verify_research_package(package, validate_schema=False)
 
@@ -288,7 +290,7 @@ def test_a_result_row_without_a_node_does_not_resolve() -> None:
 def test_a_claim_with_no_map_entry_does_not_resolve() -> None:
     package = _package()
     package["claim_evidence_map"] = []
-    package["reproducibility_hash"] = calculate_study_hash(package)
+    package["reproducibility_hash"] = study_self_hash("research_package", package)
 
     result = verify_research_package(package, validate_schema=False)
 
@@ -300,7 +302,7 @@ def test_a_claim_map_naming_absent_evidence_does_not_resolve() -> None:
     package = _package()
     package["claim_evidence_map"][0]["evidence_node_hashes"] = [ABSENT_HASH]
     package["claim_evidence_map"][0]["edge_hashes"] = [ABSENT_HASH]
-    package["reproducibility_hash"] = calculate_study_hash(package)
+    package["reproducibility_hash"] = study_self_hash("research_package", package)
 
     result = verify_research_package(package, validate_schema=False)
 
@@ -331,7 +333,7 @@ def test_a_claim_citing_itself_does_not_resolve() -> None:
             "edge_hashes": [],
         }
     ]
-    package["reproducibility_hash"] = calculate_study_hash(package)
+    package["reproducibility_hash"] = study_self_hash("research_package", package)
 
     result = verify_research_package(package, validate_schema=False)
 
@@ -370,7 +372,7 @@ def test_a_claim_citing_evidence_no_edge_joins_does_not_resolve() -> None:
             "edge_hashes": [package["edges"][0]["content_hash"]],
         }
     ]
-    package["reproducibility_hash"] = calculate_study_hash(package)
+    package["reproducibility_hash"] = study_self_hash("research_package", package)
 
     result = verify_research_package(package, validate_schema=False)
 
@@ -389,7 +391,7 @@ def test_a_result_row_naming_a_node_with_no_value_does_not_resolve() -> None:
         node["content_hash"] for node in package["nodes"] if node["kind"] == "claim"
     )
     package["result_rows"] = [{"label": "Total physical qubits", "node_hash": claim_hash}]
-    package["reproducibility_hash"] = calculate_study_hash(package)
+    package["reproducibility_hash"] = study_self_hash("research_package", package)
 
     result = verify_research_package(package, validate_schema=False)
 
@@ -407,7 +409,7 @@ def test_a_dangling_edge_endpoint_invalidates_the_graph() -> None:
             rationale="Reviewed by a node this package forgot to carry.",
         )
     )
-    package["reproducibility_hash"] = calculate_study_hash(package)
+    package["reproducibility_hash"] = study_self_hash("research_package", package)
 
     result = verify_research_package(package, validate_schema=False)
 
@@ -520,53 +522,54 @@ def test_the_schema_refuses_an_enum_member_in_the_wrong_case() -> None:
 # ------------------------------------------------- cross-language hashing refusals
 
 
-def test_an_integer_above_max_safe_integer_is_refused_rather_than_diverging() -> None:
-    """A 64-bit seed is not the same number in the two languages.
+def test_a_64_bit_seed_and_byte_count_are_carried_as_digits_rather_than_refused() -> None:
+    """A 64-bit seed is not the same number in the two languages, so it is not a number.
 
-    This one holds the integer as written; JavaScript reads the same JSON as a
-    double, so the ordinary seed a Stim or NumPy run reports --
-    13835058055282163712 -- comes back there as 13835058055282164000. The two
-    canonical forms differ and so do the digests, and no rendering rule
-    reconciles them, because the value the other side holds is not the value that
-    was written. So the contract refuses rather than producing two answers for
-    one record, in this language and in `src/study/capsule.ts` alike.
+    This language holds the integer as written; JavaScript reads the same JSON as
+    a double, so the ordinary seed a Stim or NumPy run reports --
+    13835058055282163712 -- comes back there as 13835058055282164000, and the two
+    digests differ over one file. Refusing every integer past 2^53 fixed that by
+    refusing the family's own inputs. The contract fixes it instead: a seed and a
+    byte count are `exact_integer_string`, so both languages hash the digits the
+    file contains at any magnitude.
     """
-    capsule = _fixture("study-capsule-max-safe-integers.json")
-
-    for path, unsafe in (
-        (("seed",), 13835058055282163712),
-        (("resource_limits", "max_memory_bytes"), 2**63),
-    ):
-        broken = copy.deepcopy(capsule)
-        target = broken
-        for part in path[:-1]:
-            target = target[part]
-        target[path[-1]] = unsafe
-
-        with pytest.raises(KetQatValidationError) as caught:
-            validate_study_record(broken, "execution_capsule")
-        message = str(caught.value)
-        assert ".".join(path) in message
-        # The message says *why*, not only that: a caller reading it can tell
-        # that retrying will not help and that the value itself has to change.
-        assert "two different digests" in message
-
-
-def test_exactly_max_safe_integer_is_accepted_and_hashes_the_same_in_both_languages() -> None:
-    """The boundary is inclusive, and pinned.
-
-    9007199254740991 is the last integer JavaScript holds exactly, so it is the
-    last one the two languages can agree about -- and a contract that refused it
-    would be refusing a value that was never in danger.
-    """
-    capsule = _fixture("study-capsule-max-safe-integers.json")
-    assert capsule["seed"] == JS_MAX_SAFE_INTEGER
-    assert capsule["resource_limits"]["max_memory_bytes"] == JS_MAX_SAFE_INTEGER
-
+    capsule = _fixture("study-capsule-64-bit-integers.json")
+    assert int(capsule["seed"]) > JS_MAX_SAFE_INTEGER
+    assert int(capsule["resource_limits"]["max_memory_bytes"]) > JS_MAX_SAFE_INTEGER
     validate_study_record(capsule, "execution_capsule")
-    expected = _fixture("study-expected-hashes.json")[STUDY_HASH_RULES_ID]
-    assert calculate_study_hash(capsule) == expected["study_capsule_max_safe_integers"]
-    assert calculate_study_hash(capsule) == capsule["reproducibility_hash"]
+
+    pins = _fixture("study-expected-hashes.json")[STUDY_HASH_RULES_ID]
+    assert study_self_hash("execution_capsule", capsule) == pins["study_capsule_64_bit_integers"]["self_hash"]
+    assert study_self_hash("execution_capsule", capsule) == capsule["reproducibility_hash"]
+
+    # Two integers one apart, which one double cannot tell apart and the digits can.
+    neighbour = copy.deepcopy(capsule)
+    neighbour["seed"] = str(int(capsule["seed"]) - 1)
+    assert float(neighbour["seed"]) == float(capsule["seed"])
+    assert study_self_hash("execution_capsule", neighbour) != capsule["reproducibility_hash"]
+
+
+@pytest.mark.skipif(not SCHEMAS_LOADABLE, reason="study schemas are not generated yet")
+def test_a_seed_written_as_a_number_is_refused_by_the_shipped_schema_too() -> None:
+    """The contract has to survive into the JSON Schema, or only one language applies it.
+
+    `zod-to-json-schema` emits a `pattern` and cannot emit a `.refine`, so the
+    rule is written as one regular expression rather than split between a loose
+    pattern and refinements beside it. Without that, `seed` would be
+    `{"type": "string"}` here -- and a capsule carrying `"abc"` would be refused
+    in TypeScript and accepted by the validator that reads this schema.
+    """
+    schema = load_schema("execution-capsule.schema.json")
+    seed = schema["definitions"]["execution-capsule"]["properties"]["seed"]["anyOf"][0]
+    assert seed["type"] == "string"
+    assert seed["pattern"] == "^(?:0|-?[1-9][0-9]{0,63})$"
+
+    capsule = _fixture("study-capsule.json")
+    for spelling in (13835058055282163712, "-0", "007", "+7", "1e3", "abc", "9" * 65):
+        broken = copy.deepcopy(capsule)
+        broken["seed"] = spelling
+        with pytest.raises(KetQatValidationError, match="seed"):
+            validate_study_record(broken, "execution_capsule")
 
 
 def test_a_package_verifies_as_written_here_too() -> None:
@@ -588,52 +591,24 @@ def test_a_package_verifies_as_written_here_too() -> None:
     assert result["problems"] == []
     assert result["valid"] is True
     assert result["hash_matches"] is True
-    expected = _fixture("study-expected-hashes.json")[STUDY_HASH_RULES_ID]
-    assert result["expected_hash"] == expected["study_research_package_as_written"]
+    pins = _fixture("study-expected-hashes.json")[STUDY_HASH_RULES_ID]
+    assert result["expected_hash"] == pins["study_research_package_as_written"]["self_hash"]
 
 
-def test_a_package_whose_graph_hides_an_excluded_key_is_reported_not_raised() -> None:
-    """The keys a schema cannot answer for, walked in the data instead.
-
-    An environment recording a dependency named `id` was dropped at every depth
-    before the digest was taken, so two packages differing only there were
-    content-addressed identically. `StudyEnvironment` puts the dependency name in
-    a declared field, so that shape is no longer a package at all -- but a
-    `Quantity` envelope is an embedded record whose own top level the exclusions
-    deliberately do not bite at, and the exemption there covers only the three
-    excluded names such a record declares. A recipient checking a file they were
-    sent gets this beside the other findings rather than as an exception, which
-    is how `verifyResearchPackage` reports it too.
-    """
-    package = copy.deepcopy(_package())
-    node = next(node for node in package["nodes"] if node["quantity"] is not None)
-    node["quantity"]["id"] = "smuggled"
-
-    result = verify_research_package(package, validate_schema=False)
-    assert result["valid"] is False
-    assert result["hash_matches"] is False
-    assert result["expected_hash"] == ""
-    assert len(result["problems"]) == 1
-    assert result["problems"][0].startswith("STUDY_EXCLUDED_KEY_NESTED")
-    assert "quantity.id" in result["problems"][0]
-
-    # And the validator refuses it outright, before the schema gate: "this cannot
-    # be hashed" is a different answer from "this is the wrong shape".
-    with pytest.raises(KetQatValidationError, match="quantity.id"):
-        validate_study_record(package, "research_package")
-
-
-# ----------------------------------------------------- the three forging routes
+# ------------------------------------- what a projection makes impossible to ask
 #
-# Each was schema-valid, and each bought the "embedded record" exemption with
-# data rather than with a schema: an object under `hardware` carrying a marker,
-# an object under `hardware` shaped like a `Quantity` envelope, and a dependency
-# literally named `hash_rules_id`. The exemption then let the canonicalizer drop
-# `id` inside it, so two environments hashed identically and a capsule verified
-# against a digest that could not see its own environment.
+# Three forgeries used to work, each schema-valid, and each buying the "embedded
+# record" exemption with data rather than with a schema: an object under
+# `hardware` carrying a rules marker, an object under `hardware` shaped like a
+# `Quantity` envelope, and a dependency literally named `hash_rules_id`. The
+# exemption then let the canonicalizer drop `id` inside it, so two environments
+# hashed identically and a capsule verified against a digest that could not see
+# its own environment.
 #
-# Asserted from both languages, against the same routes, in
-# tests/study-exclusion-collisions.test.mjs.
+# There is no exemption to buy any more, and no marker to forge: the projection
+# reads the fields a record kind declares and refuses the rest, so "is this
+# object an embedded record?" is not a question the digest asks. What is left is
+# a `hardware` entry that is a declared `{name, value}` pair or is not a capsule.
 
 
 def _capsule_with_environment(environment: dict) -> dict:
@@ -643,7 +618,6 @@ def _capsule_with_environment(environment: dict) -> dict:
     return capsule
 
 
-@pytest.mark.skipif(not SCHEMAS_LOADABLE, reason="study schemas are not generated yet")
 @pytest.mark.parametrize(
     "hardware",
     [
@@ -652,46 +626,45 @@ def _capsule_with_environment(environment: dict) -> dict:
     ],
     ids=["marker", "quantity-envelope"],
 )
-def test_an_object_under_hardware_cannot_buy_the_embedded_record_exemption(hardware: dict) -> None:
+def test_an_object_under_hardware_has_no_exemption_left_to_buy(hardware: dict) -> None:
     capsule = _capsule_with_environment(
         {"operating_system": "Linux", "packages": [], "hardware": hardware}
     )
     capsule["reproducibility_hash"] = "0" * 64
 
-    # Refused at the hashing layer, which is the only gate a caller who hashes a
-    # hand-assembled dict ever passes.
-    with pytest.raises(ValueError, match="must not carry an excluded key below its own top level"):
-        calculate_study_hash(capsule)
-    # And refused as a capsule, because a hardware entry has no key a producer chooses.
+    # The declaration says `hardware` is a list, so a map is refused as a shape
+    # mismatch rather than walked to see what its keys are called.
+    with pytest.raises(StudyHashRefusal) as caught:
+        study_self_hash("execution_capsule", capsule)
+    assert caught.value.code == "SHAPE_MISMATCH"
+    assert caught.value.path == "environment.hardware"
+
     with pytest.raises(KetQatValidationError):
         validate_study_record(capsule, "execution_capsule")
 
 
-@pytest.mark.skipif(not SCHEMAS_LOADABLE, reason="study schemas are not generated yet")
-def test_a_dependency_named_after_the_rules_marker_cannot_buy_it_either() -> None:
+def test_a_dependency_named_after_the_rules_marker_is_a_value_like_any_other() -> None:
     capsule = _capsule_with_environment(
         {"operating_system": "Linux", "packages": {"hash_rules_id": "1.0.0"}, "hardware": []}
     )
     capsule["reproducibility_hash"] = "0" * 64
+    with pytest.raises(StudyHashRefusal) as caught:
+        study_self_hash("execution_capsule", capsule)
+    assert caught.value.code == "SHAPE_MISMATCH"
 
-    # A marker naming no known rule set is not a marker, so the object carrying it
-    # is not an embedded record and its `hash_rules_id` is refused, not dropped.
-    with pytest.raises(ValueError, match="must not carry an excluded key below its own top level"):
-        calculate_study_hash(capsule)
-    with pytest.raises(KetQatValidationError):
-        validate_study_record(capsule, "execution_capsule")
-
-    # Recorded as a value, the same dependency is content: two versions of a
-    # package called `hash_rules_id` are two different capsules.
+    # Recorded the way the schema declares it, the same dependency is content:
+    # two versions of a package called `hash_rules_id` are two different capsules,
+    # and the name buys nothing because no name buys anything.
     def with_version(version: str) -> str:
-        return calculate_study_hash(
+        return study_self_hash(
+            "execution_capsule",
             _capsule_with_environment(
                 {
                     "operating_system": "Linux",
                     "packages": [{"name": "hash_rules_id", "version": version}],
                     "hardware": [],
                 }
-            )
+            ),
         )
 
     assert with_version("1.0.0") != with_version("2.0.0")
@@ -699,130 +672,145 @@ def test_a_dependency_named_after_the_rules_marker_cannot_buy_it_either() -> Non
 
 def test_two_environments_that_differ_are_two_capsules() -> None:
     def with_accelerator(name: str) -> str:
-        return calculate_study_hash(
+        return study_self_hash(
+            "execution_capsule",
             _capsule_with_environment(
                 {
                     "operating_system": "Linux",
                     "packages": [],
                     "hardware": [{"name": "accelerator", "value": name}],
                 }
-            )
+            ),
         )
 
     assert with_accelerator("gpu-0") != with_accelerator("gpu-1")
 
 
-@pytest.mark.skipif(not SCHEMAS_LOADABLE, reason="study schemas are not generated yet")
-@pytest.mark.parametrize("undeclared", ["owner_username", "smuggled_root_key"])
+@pytest.mark.parametrize("undeclared", ["owner_username", "smuggled_root_key", "__proto__"])
 def test_an_undeclared_key_is_refused_here_and_in_typescript(undeclared: str) -> None:
-    """One file, one verdict.
+    """One file, one verdict, and no name is special.
 
     `owner_username` is the case that hid best: undeclared by the contract *and*
-    excluded from the digest, so zod stripped it, the hash did not move, and
+    on the retired exclusion list, so zod stripped it, the hash did not move, and
     `verifyResearchPackage` reported `valid: True, problems: []` while this
     language raised "Additional properties are not allowed" over the same bytes.
-    The schema said `additionalProperties: false` all along; the zod parse now
-    says the same thing, so this is the assertion that they agree.
+    The digest now refuses it too, and refuses `smuggled_root_key` and
+    `__proto__` on exactly the same grounds -- the question is whether a field is
+    declared, not whether its name is suspicious.
     """
+    package = _package()
+    forged = {**package, undeclared: "somebody-else"}
+
+    with pytest.raises(StudyHashRefusal) as caught:
+        study_self_hash("research_package", forged)
+    assert caught.value.code == "UNDECLARED_FIELD"
+    assert caught.value.path == undeclared
+
+    result = verify_research_package(forged, validate_schema=False)
+    assert result["valid"] is False
+    assert result["expected_hash"] == "", "the digest was never taken"
+    assert result["problems"][0].startswith("STUDY_RECORD_NOT_HASHABLE (research_package): UNDECLARED_FIELD")
+
+
+@pytest.mark.skipif(not SCHEMAS_LOADABLE, reason="study schemas are not generated yet")
+@pytest.mark.parametrize("undeclared", ["owner_username", "smuggled_root_key"])
+def test_the_schema_refuses_the_same_undeclared_keys(undeclared: str) -> None:
+    """The schema still says so, and the validator now answers before it.
+
+    `validate_study_record` reaches the hashing gate first, so an undeclared key
+    is reported as `UNDECLARED_FIELD` rather than as "Additional properties are
+    not allowed" -- deliberately, because "this cannot be hashed" and "this is
+    the wrong shape" send a reader to different places. The schema is asserted
+    directly here so that the two answers cannot drift apart while only one of
+    them is ever exercised.
+    """
+    schema = load_schema("research-package.schema.json")
+    assert schema["definitions"]["research-package"]["additionalProperties"] is False
+
     package = dict(_package(), **{undeclared: "somebody-else"})
+    errors = list(Draft7Validator(schema).iter_errors(package))
+    assert any("Additional properties are not allowed" in error.message for error in errors)
 
-    with pytest.raises(KetQatValidationError, match="Additional properties are not allowed"):
+    with pytest.raises(KetQatValidationError, match="UNDECLARED_FIELD"):
         validate_study_record(package, "research_package")
-
-    # The digest is untouched by an excluded key, which is why strictness rather
-    # than hashing is what catches this one.
-    if undeclared == "owner_username":
-        assert package["reproducibility_hash"] == calculate_study_hash(package)
 
 
 # ------------------------------- one rule, every record kind, at every depth
 
 
-@pytest.mark.skipif(not SCHEMAS_LOADABLE, reason="study schemas are not generated yet")
-def test_a_reported_figure_javascript_cannot_hold_exactly_is_refused_wherever_it_sits() -> None:
-    """The half of the safe-integer rule no enumeration reached.
+def test_a_key_hidden_inside_a_quantity_envelope_is_refused_at_any_depth() -> None:
+    """Nesting depth is not a question the projection asks.
 
-    `JS_SAFE_INTEGER_FIELDS` named two paths on one record kind, and
-    `src/study/capsule.ts` bounded the same two fields. `Quantity.value` -- every
-    number a study reports -- was guarded by neither. Near 4.2e21 one double
-    stands for 524287 distinct integers, so two packages whose reported figure
-    differed by 524286 took one digest in JavaScript, kept one node identity, and
-    verified `valid: true` with no problems; this language held the integers as
-    written, computed two different digests, and refused the *honest* file the
-    TypeScript builder had just produced.
-
-    Both languages now refuse both files, which is the only answer that leaves a
-    reader able to tell the two studies apart.
+    The retired rule matched key names recursively, so it had to be right about
+    every name that could appear at every depth -- including names an attacker
+    picks. Five rounds of probing found five holes in it. Here a key nobody
+    declared is never read, wherever it sits, and the refusal names the path.
     """
-    low = 4199999999999999737857
-    high = 4200000000000000262143
-    assert float(low) == float(high)
+    for key in ("id", "slug", "content_hash", "smuggled", "__proto__"):
+        package = copy.deepcopy(_package())
+        node = next(node for node in package["nodes"] if node["quantity"] is not None)
+        node["quantity"][key] = "smuggled"
 
-    for figure in (low, high, 4.2e21):
+        result = verify_research_package(package, validate_schema=False)
+        assert result["valid"] is False
+        assert result["hash_matches"] is False
+        assert result["expected_hash"] == "", "the digest was never taken"
+        assert len(result["problems"]) == 1
+        assert result["problems"][0].startswith("STUDY_RECORD_NOT_HASHABLE")
+        assert f"quantity.{key}" in result["problems"][0]
+
+        with pytest.raises(StudyHashRefusal) as caught:
+            study_self_hash("evidence_node", node)
+        assert caught.value.code == "UNDECLARED_FIELD"
+        assert caught.value.path == f"quantity.{key}"
+
+
+def test_a_declared_envelope_annotation_is_classified_rather_than_dropped() -> None:
+    """The mirror image, which is what makes this a classification and not a denylist.
+
+    `created_at` inside a `Quantity` is a declared field, so it is not smuggled at
+    all. It is `RECORD_ONLY`: rebuilding an envelope around the same measurement
+    must not read as new science, and the record digest still covers it.
+    """
+    from ketqat_runner.study_hash import record_hash, semantic_hash
+
+    package = _package()
+    node = next(node for node in package["nodes"] if node["quantity"] is not None)
+    rebuilt = copy.deepcopy(node)
+    rebuilt["quantity"]["created_at"] = "2027-01-01T00:00:00.000Z"
+
+    assert semantic_hash("evidence_node", rebuilt) == semantic_hash("evidence_node", node)
+    assert record_hash("evidence_node", rebuilt) != record_hash("evidence_node", node)
+
+
+def test_a_non_finite_number_is_refused_rather_than_written_as_bare_inf() -> None:
+    """RFC 8785 §3.2.2.3 requires a compliant implementation to terminate on one.
+
+    JSON has no syntax for NaN or an infinity, and the two languages disagree
+    about what to write instead: one emits `null`, collapsing three distinct
+    values onto one digest, the other emits bare `inf`, which is not JSON and
+    which the first cannot read back.
+    """
+    for figure in (float("nan"), float("inf"), float("-inf")):
         package = copy.deepcopy(_package())
         node = next(node for node in package["nodes"] if node["quantity"] is not None)
         node["quantity"]["value"] = figure
 
-        # Reported rather than raised, beside the other findings, the way
-        # `verifyResearchPackage` reports it: a recipient checking a file they
-        # were sent needs the finding, not a traceback.
-        result = verify_research_package(package, validate_schema=False)
-        assert result["valid"] is False
-        assert result["expected_hash"] == "", "the digest was never taken"
-        assert len(result["problems"]) == 1
-        assert result["problems"][0].startswith("STUDY_VALUE_NOT_REPRESENTABLE")
-        assert "quantity.value" in result["problems"][0]
-        assert "two different digests" in result["problems"][0]
-
-        # And the validator refuses it before the schema gate, for every record
-        # kind rather than for the one kind an enumeration happened to name.
-        with pytest.raises(KetQatValidationError, match="quantity.value"):
-            validate_study_record(package, "research_package")
-        with pytest.raises(KetQatValidationError, match="quantity.value"):
-            validate_study_record(node, "evidence_node")
+        with pytest.raises(StudyHashRefusal) as caught:
+            study_self_hash("evidence_node", node)
+        assert caught.value.code == "NON_FINITE_NUMBER"
+        assert caught.value.path == "quantity.value"
 
 
-@pytest.mark.skipif(not SCHEMAS_LOADABLE, reason="study schemas are not generated yet")
-def test_a_capsule_seed_is_still_refused_now_that_the_schema_no_longer_bounds_it() -> None:
-    """The two fields that met the problem first are still covered.
-
-    `execution-capsule.schema.json` no longer carries
-    `maximum: 9007199254740991` on `seed` or on
-    `resource_limits.max_memory_bytes`, because the bound moved to the hashing
-    layer where it covers every number instead of two. That is only an
-    improvement if the original case is still refused, so it is asserted here
-    rather than assumed.
-    """
-    capsule = _fixture("study-capsule-max-safe-integers.json")
-    schema = load_schema("execution-capsule.schema.json")
-    assert "9007199254740991" not in json.dumps(schema), "the per-field bound is gone"
-
-    for path, unsafe in (
-        (("seed",), 13835058055282163712),
-        (("resource_limits", "max_memory_bytes"), 2**63),
-    ):
-        broken = copy.deepcopy(capsule)
-        target = broken
-        for part in path[:-1]:
-            target = target[part]
-        target[path[-1]] = unsafe
-
-        with pytest.raises(KetQatValidationError) as caught:
-            validate_study_record(broken, "execution_capsule")
-        message = str(caught.value)
-        assert ".".join(path) in message
-        assert "two different digests" in message
-
-
-@pytest.mark.skipif(not SCHEMAS_LOADABLE, reason="study schemas are not generated yet")
 def test_a_string_neither_language_can_round_trip_is_refused_rather_than_raised() -> None:
     """A lone surrogate stopped this verifier dead.
 
-    `calculate_study_hash` encodes the canonical form as UTF-8, and an unpaired
-    surrogate cannot be encoded at all, so a package carrying one raised
-    `UnicodeEncodeError` out of `verify_research_package` -- a recipient could
-    not check the file, and nothing said why. The TypeScript side hashed the
-    escape and reported the package valid. Now both refuse it by name.
+    The canonical form is encoded as UTF-8, and an unpaired surrogate cannot be
+    encoded at all, so a package carrying one raised `UnicodeEncodeError` out of
+    `verify_research_package` -- a recipient could not check the file, and
+    nothing said why. The TypeScript side hashed the escape and reported the
+    package valid. Both now refuse it by name, which is RFC 8785 §3.2.2.2's own
+    requirement.
     """
     package = copy.deepcopy(_package())
     node = next(node for node in package["nodes"] if node["quantity"] is not None)
@@ -830,10 +818,10 @@ def test_a_string_neither_language_can_round_trip_is_refused_rather_than_raised(
 
     result = verify_research_package(package, validate_schema=False)
     assert result["valid"] is False
-    assert result["problems"][0].startswith("STUDY_VALUE_NOT_REPRESENTABLE")
-    assert "unpaired UTF-16 surrogate" in result["problems"][0]
+    assert result["problems"][0].startswith("STUDY_RECORD_NOT_HASHABLE")
+    assert "LONE_SURROGATE" in result["problems"][0]
 
-    with pytest.raises(KetQatValidationError, match="unpaired UTF-16 surrogate"):
+    with pytest.raises(KetQatValidationError, match="LONE_SURROGATE"):
         validate_study_record(package, "research_package")
 
 
@@ -862,15 +850,16 @@ def test_a_citation_must_carry_its_author_list_rather_than_be_given_one() -> Non
 
 @pytest.mark.skipif(not SCHEMAS_LOADABLE, reason="study schemas are not generated yet")
 def test_an_undeclared_key_inside_a_quantity_envelope_is_refused_in_both_languages() -> None:
-    """The parse and the digest are two readings of one file.
+    """The parse and the digest are two readings of one file, and they now agree.
 
     `Quantity` is declared in `src/intelligence` and used to strip what it did
     not declare, so a `smuggled_note` inside an `expected_credits` envelope
     survived into the digest and did not survive the parse: a consumer that
     parsed the file and then verified got one digest for two different files,
     while one that hashed the file as read got two. The generated schema has said
-    `additionalProperties: false` here all along -- so this language always
-    refused it -- and `StudyQuantitySchema` now makes the TypeScript parse agree.
+    `additionalProperties: false` here all along, and `StudyQuantitySchema` makes
+    the TypeScript parse agree -- and now the digest refuses it too, so all three
+    readings are one.
     """
     schema = load_schema("research-package.schema.json")
     envelope = schema["definitions"]["research-package"]["properties"]["nodes"]["items"][
@@ -882,14 +871,7 @@ def test_an_undeclared_key_inside_a_quantity_envelope_is_refused_in_both_languag
     node = next(node for node in package["nodes"] if node["quantity"] is not None)
     node["quantity"]["smuggled_note"] = "figures revised downward after review"
 
-    # The quantity is nullable, so the schema reports the whole `anyOf` rather
-    # than the additional property by name; the path is what a reader needs, and
-    # the refusal is what the two languages now share.
-    with pytest.raises(KetQatValidationError, match=r"\$\.nodes\[1\]\.quantity"):
+    # The hashing refusal comes first, because "this cannot be hashed" and "this
+    # is the wrong shape" send a reader to different places.
+    with pytest.raises(KetQatValidationError, match="UNDECLARED_FIELD"):
         validate_study_record(package, "research_package")
-
-    # It is content either way: the digest has always seen it, which is why the
-    # parse that stripped it was the half that was wrong.
-    clean = copy.deepcopy(_package())
-    clean_node = next(node for node in clean["nodes"] if node["quantity"] is not None)
-    assert calculate_study_hash(node) != calculate_study_hash(clean_node)

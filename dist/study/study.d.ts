@@ -7,18 +7,24 @@ import type { StudyRefusal } from "./refusals.js";
  * (ketqat-sdk#259, ADR 0010).
  *
  * A `Study` record is deliberately thin, and most of what it displays is
- * excluded from its own hash. That looks strange until you notice what the
- * alternative costs: a study's status changes six or seven times between "someone
- * asked a question" and "here is the answer", and if status were hashed, the same
- * study would stop matching itself between two reads of the same row. Every
- * reference to it -- from a specification revision, a plan, a task, an evidence
- * node -- would break on a state change that changed nothing about what was being
- * asked.
+ * outside the digest that identifies it. That looks strange until you notice what
+ * the alternative costs: a study's status changes six or seven times between
+ * "someone asked a question" and "here is the answer", and if the identity moved
+ * with it, the same study would stop matching itself between two reads of the
+ * same row. Every reference to it -- from a specification revision, a plan, a
+ * task, an evidence node -- would break on a state change that changed nothing
+ * about what was being asked.
  *
- * So the hash covers the creation core: what kind of study, what it is called,
- * whose project it belongs to, and whether it is a demonstration. Everything that
- * moves lives in the append-only `StudyEvent` trail, and the status field on the
- * study is a projection of that trail rather than a source of truth.
+ * So a study's `content_hash` is its **semantic** digest, and it is one of only
+ * two kinds in the family whose self-hash is (`registry.ts` says which and why).
+ * It covers the creation core: what kind of study, what it is called, whose
+ * project it belongs to, and whether it is a demonstration. `status`,
+ * `latest_specification` and `latest_plan` are `RECORD_ONLY` and
+ * `created_at` is `RECEIPT_ONLY`, so `recordHash("study", study)` still answers
+ * "was this row edited" for a caller who wants that question asked -- it is just
+ * not what anything points at. Everything that moves lives in the append-only
+ * `StudyEvent` trail, and the status field on the study is a projection of that
+ * trail rather than a source of truth.
  *
  * **The trail is hash-chained, and the chain proves one thing.** ADR 0010
  * requires the history to be append-only but leaves the mechanism open, and
@@ -34,9 +40,9 @@ import type { StudyRefusal } from "./refusals.js";
  * verifies; append a fabricated event onto that stub and it verifies too, because
  * the forger holds the same hash the honest writer would have. Nothing in the
  * `Study` record anchors the head: `status`, `latest_specification` and
- * `latest_plan` are excluded from its hash by design -- that exclusion is what
- * keeps a study's identity from moving every time its state does -- so the study
- * a trail belongs to says nothing about how long that trail should be.
+ * `latest_plan` are outside its semantic digest by design -- that is what keeps
+ * a study's identity from moving every time its state does -- so the study a
+ * trail belongs to says nothing about how long that trail should be.
  *
  * Closing that needs one hash from outside the trail. `verifyStudyEventChain`
  * takes the head a caller holds -- from the store, from a receipt, from an
@@ -123,7 +129,12 @@ export interface StudyEventInput {
     actor: string;
     reason?: string | null;
     planRef?: RevisionRef | null;
-    /** Recorded on the event but excluded from its hash. Omit for a byte-stable trail. */
+    /**
+     * `RECEIPT_ONLY`, like every other field of an event: an event *is* audit
+     * evidence, which is why its `content_hash` is the record digest rather than
+     * the semantic one -- a semantic projection of an event reads no field at all
+     * and refuses. Omit for a byte-stable trail.
+     */
     createdAt?: string;
 }
 /**
@@ -160,8 +171,10 @@ export declare function appendStudyEvent(study: Study, events: readonly StudyEve
  * fabricated onto the cut end links to it exactly as an honest one would: the
  * chain runs forward from an unanchored beginning, so only its far end can be
  * questioned, and nothing inside the trail can question it. `Study.status` and
- * the `latest_*` pointers are excluded from the study's hash, so the record the
- * trail belongs to cannot serve as the anchor either.
+ * the `latest_*` pointers are `RECORD_ONLY`, and a study's `content_hash` is
+ * its semantic digest, so the record the trail belongs to cannot serve as the
+ * anchor either -- deliberately, since an identity that moved with the status
+ * would break every reference to the study each time it advanced.
  *
  * `expectedHeadHash` is that anchor, and it has to come from somewhere the
  * trail's author does not control -- the store the events were read from, a

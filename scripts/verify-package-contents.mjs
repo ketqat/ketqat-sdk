@@ -134,7 +134,22 @@ if (oversizedFiles.length > 0) {
 // same order as before, which is the point: the limit tracks what the package
 // actually costs today, so the next unplanned 300 KB still has to argue for
 // itself here.
-const PACKAGE_SIZE_LIMIT_BYTES = 2_800_000
+//
+// Raised again from 2.8 MB to 3.0 MB for the study hashing core: the RFC 8785
+// canonicalizer, the typed projection, the preimage header, the four hash roles,
+// the raw-byte file verifier and the record-kind classification tables. The
+// measured cost was 178 KB against a 2.77 MB baseline -- 123 KB of code and
+// declarations and 55 KB of the source maps ketqat-sdk#237 already tracks.
+//
+// Two reductions were made while adding it rather than after. The record-kind
+// shape tables are 120 KB of JSON and are emitted only into the Python package,
+// which is the only place they are read -- the TypeScript side has them in code,
+// so a copy under `schemas/` would have been 120 KB no npm consumer opens.
+// `tests/study-field-completeness.test.mjs` re-serializes the registry and
+// compares the bytes, so dropping the second copy did not drop the drift check.
+// And the projection is declared as data rather than generated per record kind,
+// so nine record kinds cost nine tables and not nine modules.
+const PACKAGE_SIZE_LIMIT_BYTES = 3_000_000
 if (manifest.unpackedSize > PACKAGE_SIZE_LIMIT_BYTES) {
   failures.push(
     `Unpacked package size ${manifest.unpackedSize} exceeds the ` +

@@ -38,7 +38,7 @@
       "source_published_on": null,
       "retrieved_on": null,
       "created_at": "2026-01-01T00:00:02.000Z",
-      "content_hash": "490680a9f665023c84831c6f785a3677d0e0580a60312e13c52d91bbc41f31fc"
+      "content_hash": "7d41acbea5f4de7c8f8c9a11c35bc1bbe0a60c85c37f4caf5ffeb52e2fd1124a"
     },
     {
       "schema_version": "1.0",
@@ -70,7 +70,7 @@
       "source_published_on": null,
       "retrieved_on": null,
       "created_at": "2026-01-01T00:00:02.000Z",
-      "content_hash": "73bbd453f6f14b2934a256560c0a7ed65d0b004a93d5b9068a9a00f029c3b393"
+      "content_hash": "2617b08e376f88768ad9bb4c1593d605570b97c628a17387e323922ed732070b"
     },
     {
       "schema_version": "1.0",
@@ -92,7 +92,7 @@
       "source_published_on": null,
       "retrieved_on": null,
       "created_at": "2026-01-01T00:00:02.000Z",
-      "content_hash": "ac6101e0289fdf0713a991a92405fa13492c2aeae650e7a2cad0583874e91b58"
+      "content_hash": "346a1bc557fd3cac6f3be4a4da3708822edd8d92075e3868f1f703fa77e7db97"
     }
   ],
   "edges": [
@@ -101,24 +101,24 @@
       "hash_rules_id": "study-v1",
       "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
       "kind": "supports",
-      "from_node_hash": "ac6101e0289fdf0713a991a92405fa13492c2aeae650e7a2cad0583874e91b58",
-      "to_node_hash": "490680a9f665023c84831c6f785a3677d0e0580a60312e13c52d91bbc41f31fc",
+      "from_node_hash": "346a1bc557fd3cac6f3be4a4da3708822edd8d92075e3868f1f703fa77e7db97",
+      "to_node_hash": "7d41acbea5f4de7c8f8c9a11c35bc1bbe0a60c85c37f4caf5ffeb52e2fd1124a",
       "asserted_by": "ketqat-resource-intelligence",
       "rationale": "The claimed bound is the total physical qubit count this estimate produced, read from the estimate rather than restated.",
       "created_at": "2026-01-01T00:00:02.000Z",
-      "content_hash": "964fc0c910dee6071ddad51771c1e0ed21736f28759814344370a7aa03da5d18"
+      "content_hash": "b96fd1b37f02792090d1ddf884f3359759117f1f0192e2cd5bc078452051ed05"
     },
     {
       "schema_version": "1.0",
       "hash_rules_id": "study-v1",
       "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
       "kind": "used_input",
-      "from_node_hash": "ac6101e0289fdf0713a991a92405fa13492c2aeae650e7a2cad0583874e91b58",
-      "to_node_hash": "73bbd453f6f14b2934a256560c0a7ed65d0b004a93d5b9068a9a00f029c3b393",
+      "from_node_hash": "346a1bc557fd3cac6f3be4a4da3708822edd8d92075e3868f1f703fa77e7db97",
+      "to_node_hash": "2617b08e376f88768ad9bb4c1593d605570b97c628a17387e323922ed732070b",
       "asserted_by": "ketqat-resource-intelligence",
       "rationale": "The estimate consumed the classical baseline runtime, which was never established; the edge records the dependency an absent number would otherwise hide.",
       "created_at": "2026-01-01T00:00:02.000Z",
-      "content_hash": "90277341e35aa792b00b846d4a907910723f5df01487470c3b129bd31d5bb66a"
+      "content_hash": "84689ab0f253671816462e7c354e1bf4f1cda538c45af4e93b2f1e330f8874de"
     }
   ]
 }

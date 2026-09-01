@@ -1,6 +1,18 @@
 import { z } from "zod";
 import { CitationSchema } from "../contracts/common.js";
 import { EvidenceClassSchema, QuantitySchema, UncertaintySchema, } from "../intelligence/measurement.js";
+import { FiniteFloatSchema, SafeIntegerSchema } from "./values.js";
+/**
+ * A revision or sequence number: a `safe_integer` that counts up from 1.
+ *
+ * The contract is chosen for the field rather than for the value in front of
+ * us (see `values.ts`). A record revised 2^53 times is not a record; the count
+ * cannot reach the boundary by construction, so it is a JSON number rather
+ * than the `exact_integer_string` a 64-bit seed needs.
+ */
+export const StudyPositionSchema = SafeIntegerSchema.min(1, {
+    message: "A revision or sequence number counts up from 1.",
+});
 /**
  * The vocabulary every record in the `study` family shares (ketqat-sdk#259,
  * ADR 0010).
@@ -75,8 +87,24 @@ export const STUDY_SCHEMA_VERSION = "1.0";
  * reinterpreted, and the shared refinements are re-run rather than restated.
  */
 const sharedUncertaintyObject = UncertaintySchema;
-/** `Uncertainty`, refusing a key it does not declare. */
-export const StudyUncertaintySchema = sharedUncertaintyObject.strict();
+/**
+ * `Uncertainty`, refusing a key it does not declare and requiring its two
+ * bounds to be finite.
+ *
+ * The shared schema types them `z.number().nullable()`, which admits `NaN` and
+ * both infinities -- and `Quantity.value` beside them does not, because the
+ * shared contract refines it. That asymmetry mattered under the old rules and
+ * matters more now: a spread is a `finite_float` under the number contracts in
+ * `values.ts`, and `canonicalizeJcs` refuses a non-finite number outright
+ * (RFC 8785 §3.2.2.3), so an infinite bound reaching this family would be a
+ * record that parses and cannot be hashed. It is refused where it is written.
+ */
+export const StudyUncertaintySchema = sharedUncertaintyObject
+    .extend({
+    low: FiniteFloatSchema.nullable(),
+    high: FiniteFloatSchema.nullable(),
+})
+    .strict();
 const sharedQuantityObject = QuantitySchema.innerType();
 /**
  * `Quantity`, refusing a key it does not declare, and carrying the strict
@@ -127,14 +155,20 @@ export const ContentHashSchema = z.string().regex(/^[0-9a-f]{64}$/);
 export const RevisionRefSchema = z
     .object({
     /**
-     * Deliberately not named `content_hash`. A record's own `content_hash` is excluded from its
-     * own hash, and the canonicalizer drops excluded keys at every nesting level -- so a reference
-     * field named `content_hash` would be stripped before hashing, and a task bound to plan
-     * revision B would be content-addressed identically to one bound to plan revision C. The
-     * binding this reference carries is the whole point of it, so it must survive canonicalization.
+     * Not named `content_hash`, and the reason has changed.
+     *
+     * Under the retired rules the name *was* the invariant: `content_hash` was
+     * dropped by name at every nesting level, so a reference field called that
+     * would have been stripped before hashing and a task bound to plan revision
+     * B would have been content-addressed identically to one bound to revision
+     * C. The projection in `registry.ts` classifies this field `SEMANTIC`
+     * instead, and a field's class is a fact about the field rather than about
+     * its spelling -- so the binding would now survive whatever it were called.
+     * The name is kept because renaming it would move every digest in the
+     * family for no gain, and because "revision hash" is the clearer word.
      */
     revision_hash: ContentHashSchema,
-    revision: z.number().int().positive(),
+    revision: StudyPositionSchema,
 })
     .strict();
 /**
@@ -215,9 +249,9 @@ export const StudyHardwareEntrySchema = z
     name: z.string().min(1),
     /**
      * A string, never a nested object. An object here would be a map one level
-     * down -- its keys data again, its excluded names dropped again before the
-     * digest -- which is exactly what this shape exists to prevent. A core count
-     * is recorded as "8": the information survives, the data-shaped key does not.
+     * down, its keys data again and declared by nobody, which is exactly what
+     * this shape exists to prevent. A core count is recorded as "8": the
+     * information survives, the data-shaped key does not.
      */
     value: z.string().min(1),
 })

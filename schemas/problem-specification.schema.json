@@ -18,7 +18,8 @@
         },
         "revision": {
           "type": "integer",
-          "exclusiveMinimum": 0
+          "minimum": 1,
+          "maximum": 9007199254740991
         },
         "supersedes": {
           "anyOf": [
@@ -142,15 +143,23 @@
                       ]
                     },
                     "low": {
-                      "type": [
-                        "number",
-                        "null"
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
                       ]
                     },
                     "high": {
-                      "type": [
-                        "number",
-                        "null"
+                      "anyOf": [
+                        {
+                          "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/uncertainty/properties/low/anyOf/0"
+                        },
+                        {
+                          "type": "null"
+                        }
                       ]
                     },
                     "basis": {
