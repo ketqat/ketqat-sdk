@@ -187,42 +187,12 @@ def validate_study_record(value: dict[str, Any], kind: str) -> None:
         formatted.append(f"{path}: {error.message}")
     raise KetQatValidationError(f"Invalid study {kind} record:\n" + "\n".join(formatted))
 
-
-def verify_research_package(
-    value: dict[str, Any], *, validate_schema: bool = True, **options: Any
-) -> dict[str, Any]:
-    """Check a research package the way a recipient has to: from the file alone.
-
-    Every check lives in `study_package`, and this is the door a caller who
-    already imports this module comes in through. The levels are returned
-    separately -- schema, canonicalization, digest, record integrity, graph
-    structure, provenance closure, claim resolution, bundle resolution, and the
-    three that say what nobody did -- because one boolean hides which check
-    passed, and a reader shown one quotes the strongest reading of it.
-
-    **This function does not recompute the science.** It does not re-derive an
-    estimate from a scenario, re-run a decision rule, or rebuild a bundle's
-    assessments from its inputs; ADR 0010 grants this language hashing and
-    validation only, and ADR 0014 requires the absence to be stated rather than
-    implied. ``verification_performed`` says ``INTEGRITY_AND_STRUCTURE`` in the
-    returned value, where the TypeScript verifier says
-    ``INTEGRITY_STRUCTURE_AND_SCIENCE``, so a caller reporting "verified in
-    Python" cannot accidentally report more than was checked.
-
-    `validate_schema` exists because "is this shaped like a research package" and
-    "does this research package hold together" are different questions. A caller
-    that has already answered the first should not be made to answer it twice.
-    """
-    if not isinstance(value, dict):
-        raise KetQatValidationError(
-            f"A research package must be a JSON object, not {type(value).__name__}."
-        )
-    # Imported here rather than at module scope. `study_package` genuinely depends
-    # on this module -- it validates records against the shipped schemas -- while
-    # this function is only a convenience re-export in the other direction. Making
-    # the convenience edge the deferred one leaves a single direction of
-    # dependency at import time instead of a cycle both modules had to work
-    # around.
-    from .study_package import verify_research_package
-
-    return verify_research_package(value, validate_schema=validate_schema, **options)
+#: `verify_research_package` is not re-exported here.
+#:
+#: It lived in this module as a convenience door for a caller that already had
+#: it imported. That door was the only reason `study_validation` and
+#: `study_package` referred to each other, and a deferred import is still an
+#: import edge -- so the cycle stayed no matter which side deferred. The verifier
+#: lives in `study_package`, where the checks it runs live, and callers import it
+#: from there. `study_package` depends on this module for schema validation, and
+#: nothing depends on `study_package` from here.

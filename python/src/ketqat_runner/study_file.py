@@ -49,7 +49,7 @@ from __future__ import annotations
 import json
 from typing import Any, NamedTuple
 
-from .study_limits import JS_MAX_SAFE_INTEGER, refuse
+from .study_limits import JS_MAX_SAFE_INTEGER, StudyHashRefusal, refuse
 
 _BOM_UTF8 = b"\xef\xbb\xbf"
 
@@ -198,7 +198,7 @@ def _read_string(text: str, index: int) -> tuple[str, int]:
             return "".join(out), index
         out.append(character)
         index += 1
-    refuse("INVALID_JSON", "a string is not closed before the end of the file.")
+    raise StudyHashRefusal("INVALID_JSON", "a string is not closed before the end of the file.")
 
 
 def _is_property_name(text: str, index: int) -> bool:

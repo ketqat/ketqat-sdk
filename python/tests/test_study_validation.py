@@ -12,11 +12,11 @@ from ketqat_runner.study_hash import study_self_hash
 from ketqat_runner.study_limits import JS_MAX_SAFE_INTEGER, StudyHashRefusal
 from ketqat_runner.study_rules import STUDY_HASH_RULES_ID
 from ketqat_runner.validation import KetQatValidationError, load_schema
+from ketqat_runner.study_package import verify_research_package
 from ketqat_runner.study_validation import (
     STUDY_SCHEMA_FILES,
     STUDY_SCHEMA_VERSION,
     validate_study_record,
-    verify_research_package,
 )
 
 
