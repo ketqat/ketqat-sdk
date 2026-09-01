@@ -8,35 +8,40 @@
       "self_hash": {
         "field": "content_hash",
         "purpose": "semantic",
-        "digest": "d49fe424811207bda39564dd876b2207e8f44dc3607b8baf6e0534126b6bb814"
+        "digest": "78d71efc1352c19f372a0f7b2e16df0a6a478c067ffd4ba7753b6398d0f17547"
       },
       "record": {
         "schema_version": "1.0",
         "hash_rules_id": "study-v1",
-        "study_type": "QEC",
-        "title": "Surface code memory",
-        "project_ref": "789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456",
-        "is_demo": false,
-        "status": "DRAFT",
-        "latest_specification": {
-          "revision_hash": "89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567",
-          "revision": 2
+        "study_id": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
+        "core": {
+          "study_type": "QEC",
+          "project_ref": "2c7f5a91-4d68-4e02-b9a4-30f18c6b7d25",
+          "is_demo": false
         },
-        "latest_plan": {
-          "revision_hash": "9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678",
-          "revision": 1
+        "presentation": {
+          "title": "Surface code memory",
+          "status": "DRAFT",
+          "latest_specification": {
+            "revision_hash": "89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567",
+            "revision": 2
+          },
+          "latest_plan": {
+            "revision_hash": "9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678",
+            "revision": 1
+          }
         },
         "created_at": "2026-08-31T10:00:00.000Z",
         "content_hash": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
       },
       "canonical_bodies": {
-        "semantic": "{\"is_demo\":false,\"project_ref\":\"789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456\",\"study_type\":\"QEC\",\"title\":\"Surface code memory\"}",
-        "record": "{\"created_at\":\"2026-08-31T10:00:00.000Z\",\"is_demo\":false,\"latest_plan\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"latest_specification\":{\"revision\":2,\"revision_hash\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\"},\"project_ref\":\"789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456\",\"status\":\"DRAFT\",\"study_type\":\"QEC\",\"title\":\"Surface code memory\"}",
+        "semantic": "{\"core\":{\"is_demo\":false,\"project_ref\":\"2c7f5a91-4d68-4e02-b9a4-30f18c6b7d25\",\"study_type\":\"QEC\"},\"study_id\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\"}",
+        "record": "{\"core\":{\"is_demo\":false,\"project_ref\":\"2c7f5a91-4d68-4e02-b9a4-30f18c6b7d25\",\"study_type\":\"QEC\"},\"created_at\":\"2026-08-31T10:00:00.000Z\",\"presentation\":{\"latest_plan\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"latest_specification\":{\"revision\":2,\"revision_hash\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\"},\"status\":\"DRAFT\",\"title\":\"Surface code memory\"},\"study_id\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\"}",
         "receipt": "{\"created_at\":\"2026-08-31T10:00:00.000Z\"}"
       },
       "digests": {
-        "semantic": "d49fe424811207bda39564dd876b2207e8f44dc3607b8baf6e0534126b6bb814",
-        "record": "87de506ab9e7860bdb92fbf125dbb4ff4cbc3fb6c61e7e9359254ff8b1539456",
+        "semantic": "78d71efc1352c19f372a0f7b2e16df0a6a478c067ffd4ba7753b6398d0f17547",
+        "record": "91bb5ce9488325fb3185d16cb59202828a8bc5fd63ad89c17e327aec6d06365f",
         "receipt": "41a9c43bcb0096ef8bd73e3c631889d3114bcb761c425c830d252db34cc1d8e7"
       },
       "refusals": {}
@@ -46,32 +51,50 @@
       "self_hash": {
         "field": "content_hash",
         "purpose": "record",
-        "digest": "31265e9e22ae02ca29a114a81bf9326b4656526f9ac16955eea675a529d026c3"
+        "digest": "688352b5596d4b94dface84abdee223f4033ff55e91af4d7e170ef88c7e44b4b"
       },
       "record": {
         "schema_version": "1.0",
         "hash_rules_id": "study-v1",
-        "study_ref": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+        "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
+        "event_type": "plan_superseded",
         "sequence": 3,
         "previous_event_hash": "bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a",
-        "from_status": "DRAFT",
+        "from_status": "PLANNED",
         "to_status": "PLANNED",
         "actor": "curator@example.invalid",
         "reason": "specification confirmed",
+        "specification_ref": {
+          "revision_hash": "89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567",
+          "revision": 2
+        },
         "plan_ref": {
           "revision_hash": "9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678",
           "revision": 1
         },
+        "superseded_plan_ref": {
+          "revision_hash": "f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde",
+          "revision": 0
+        },
+        "confirmed_hash": "6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345",
+        "receipt_ref": "56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234",
+        "task_ref": "789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456",
+        "capsule_ref": "89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567",
+        "package_ref": "9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678",
+        "reproduction_capsule_ref": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+        "superseding_study_ref": "0f3b7d24-91ca-4e58-a7d0-5b6e2c419f83",
+        "question": "which decoder latency is acceptable?",
+        "review_verdict": "ACCEPTED",
         "created_at": "2026-08-31T10:30:00.000Z",
         "content_hash": "cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab"
       },
       "canonical_bodies": {
-        "record": "{\"actor\":\"curator@example.invalid\",\"created_at\":\"2026-08-31T10:30:00.000Z\",\"from_status\":\"DRAFT\",\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"previous_event_hash\":\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\",\"reason\":\"specification confirmed\",\"sequence\":3,\"study_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"to_status\":\"PLANNED\"}",
-        "receipt": "{\"actor\":\"curator@example.invalid\",\"created_at\":\"2026-08-31T10:30:00.000Z\",\"from_status\":\"DRAFT\",\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"previous_event_hash\":\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\",\"reason\":\"specification confirmed\",\"sequence\":3,\"study_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"to_status\":\"PLANNED\"}"
+        "record": "{\"actor\":\"curator@example.invalid\",\"capsule_ref\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\",\"confirmed_hash\":\"6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345\",\"created_at\":\"2026-08-31T10:30:00.000Z\",\"event_type\":\"plan_superseded\",\"from_status\":\"PLANNED\",\"package_ref\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\",\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"previous_event_hash\":\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\",\"question\":\"which decoder latency is acceptable?\",\"reason\":\"specification confirmed\",\"receipt_ref\":\"56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234\",\"reproduction_capsule_ref\":\"abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789\",\"review_verdict\":\"ACCEPTED\",\"sequence\":3,\"specification_ref\":{\"revision\":2,\"revision_hash\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\"},\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"superseded_plan_ref\":{\"revision\":0,\"revision_hash\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\"},\"superseding_study_ref\":\"0f3b7d24-91ca-4e58-a7d0-5b6e2c419f83\",\"task_ref\":\"789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456\",\"to_status\":\"PLANNED\"}",
+        "receipt": "{\"actor\":\"curator@example.invalid\",\"capsule_ref\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\",\"confirmed_hash\":\"6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345\",\"created_at\":\"2026-08-31T10:30:00.000Z\",\"event_type\":\"plan_superseded\",\"from_status\":\"PLANNED\",\"package_ref\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\",\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"previous_event_hash\":\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\",\"question\":\"which decoder latency is acceptable?\",\"reason\":\"specification confirmed\",\"receipt_ref\":\"56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234\",\"reproduction_capsule_ref\":\"abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789\",\"review_verdict\":\"ACCEPTED\",\"sequence\":3,\"specification_ref\":{\"revision\":2,\"revision_hash\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\"},\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"superseded_plan_ref\":{\"revision\":0,\"revision_hash\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\"},\"superseding_study_ref\":\"0f3b7d24-91ca-4e58-a7d0-5b6e2c419f83\",\"task_ref\":\"789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456\",\"to_status\":\"PLANNED\"}"
       },
       "digests": {
-        "record": "31265e9e22ae02ca29a114a81bf9326b4656526f9ac16955eea675a529d026c3",
-        "receipt": "a07aa93eec4edd2ca34d11e6f2baec493f13f3361e4110a3b8d05a64b9684fab"
+        "record": "688352b5596d4b94dface84abdee223f4033ff55e91af4d7e170ef88c7e44b4b",
+        "receipt": "afb36282c7e62712bbd8b1903853df825c58a77a1f15b7b632e94fd0f83cb4ba"
       },
       "refusals": {
         "semantic": "EMPTY_PROJECTION"
@@ -82,12 +105,12 @@
       "self_hash": {
         "field": "content_hash",
         "purpose": "record",
-        "digest": "41b87a0095a501495eddb6caa33761b1b64b6502d2aea6301fcf005a965ffaed"
+        "digest": "ffe7804301f8375862c92c0a40c2ec1f460fee9355838bc072c0701348d70466"
       },
       "record": {
         "schema_version": "1.0",
         "hash_rules_id": "study-v1",
-        "study_ref": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+        "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
         "revision": 2,
         "supersedes": "def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc",
         "objective": {
@@ -97,9 +120,28 @@
         },
         "success_criteria": [
           {
-            "value": "d=15 fits budget",
-            "evidence": "MODELLED",
-            "origin": "INFERRED"
+            "statement": {
+              "value": "d=15 fits budget",
+              "evidence": "MODELLED",
+              "origin": "INFERRED"
+            },
+            "predicate": {
+              "criterion_id": "logical_error_rate_target",
+              "metric_ref": "decoder.logical_error_rate",
+              "comparator": "AT_MOST",
+              "threshold": {
+                "dimension": "QUBITS",
+                "value": 4200000,
+                "exact_value": null,
+                "unit": "physical qubits"
+              },
+              "required_evidence": [
+                "MODELLED",
+                "DERIVED"
+              ],
+              "status": "NOT_RUN",
+              "explanation": "p_L below target"
+            }
           }
         ],
         "accuracy_requirement": {
@@ -221,7 +263,26 @@
           "origin": "INFERRED"
         },
         "open_questions": [
-          "decoder latency"
+          {
+            "question_id": "decoder_latency",
+            "targets": "runtime_constraint",
+            "question": "which decoder latency is acceptable?",
+            "answer_type": "QUANTITY",
+            "requirement": "REQUIRED",
+            "why_needed": "the runtime constraint cannot be sized without it",
+            "blocks": [
+              "PLAN_CONSTRUCTION",
+              "PLAN_CONFIRMATION"
+            ],
+            "allowed_choices": null,
+            "answer_provenance": {
+              "source": "USER",
+              "actor": "curator@example.invalid",
+              "reference": "intake call, 2026-08-30",
+              "recorded_at": "2026-08-31T10:00:00.000Z"
+            },
+            "resolution": "ANSWERED"
+          }
         ],
         "limitations": [
           "circuit-level noise only"
@@ -230,13 +291,13 @@
         "content_hash": "ef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd"
       },
       "canonical_bodies": {
-        "semantic": "{\"accuracy_requirement\":{\"origin\":\"CONFIRMED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"budget_constraint\":{\"origin\":\"INFERRED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"current_classical_method\":{\"evidence\":\"REPORTED\",\"origin\":\"CONFIRMED\",\"value\":\"MWPM\"},\"limitations\":[\"circuit-level noise only\"],\"objective\":{\"evidence\":\"REPORTED\",\"origin\":\"CONFIRMED\",\"value\":\"reach p_L < 1e-9\"},\"open_questions\":[\"decoder latency\"],\"problem_size\":{\"origin\":\"CONFIRMED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"runtime_constraint\":{\"origin\":\"INFERRED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"success_criteria\":[{\"evidence\":\"MODELLED\",\"origin\":\"INFERRED\",\"value\":\"d=15 fits budget\"}],\"why_quantum\":{\"evidence\":\"MODELLED\",\"origin\":\"INFERRED\",\"value\":\"scaling\"}}",
-        "record": "{\"accuracy_requirement\":{\"origin\":\"CONFIRMED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"budget_constraint\":{\"origin\":\"INFERRED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"created_at\":\"2026-08-31T11:00:00.000Z\",\"current_classical_method\":{\"evidence\":\"REPORTED\",\"origin\":\"CONFIRMED\",\"value\":\"MWPM\"},\"limitations\":[\"circuit-level noise only\"],\"objective\":{\"evidence\":\"REPORTED\",\"origin\":\"CONFIRMED\",\"value\":\"reach p_L < 1e-9\"},\"open_questions\":[\"decoder latency\"],\"problem_size\":{\"origin\":\"CONFIRMED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"revision\":2,\"runtime_constraint\":{\"origin\":\"INFERRED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"study_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"success_criteria\":[{\"evidence\":\"MODELLED\",\"origin\":\"INFERRED\",\"value\":\"d=15 fits budget\"}],\"supersedes\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"why_quantum\":{\"evidence\":\"MODELLED\",\"origin\":\"INFERRED\",\"value\":\"scaling\"}}",
+        "semantic": "{\"accuracy_requirement\":{\"origin\":\"CONFIRMED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"budget_constraint\":{\"origin\":\"INFERRED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"current_classical_method\":{\"evidence\":\"REPORTED\",\"origin\":\"CONFIRMED\",\"value\":\"MWPM\"},\"limitations\":[\"circuit-level noise only\"],\"objective\":{\"evidence\":\"REPORTED\",\"origin\":\"CONFIRMED\",\"value\":\"reach p_L < 1e-9\"},\"open_questions\":[{\"allowed_choices\":null,\"answer_provenance\":{\"actor\":\"curator@example.invalid\",\"reference\":\"intake call, 2026-08-30\",\"source\":\"USER\"},\"answer_type\":\"QUANTITY\",\"blocks\":[\"PLAN_CONSTRUCTION\",\"PLAN_CONFIRMATION\"],\"question_id\":\"decoder_latency\",\"requirement\":\"REQUIRED\",\"resolution\":\"ANSWERED\",\"targets\":\"runtime_constraint\"}],\"problem_size\":{\"origin\":\"CONFIRMED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"runtime_constraint\":{\"origin\":\"INFERRED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"success_criteria\":[{\"predicate\":{\"comparator\":\"AT_MOST\",\"criterion_id\":\"logical_error_rate_target\",\"metric_ref\":\"decoder.logical_error_rate\",\"required_evidence\":[\"MODELLED\",\"DERIVED\"],\"threshold\":{\"dimension\":\"QUBITS\",\"exact_value\":null,\"unit\":\"physical qubits\",\"value\":4200000}},\"statement\":{\"evidence\":\"MODELLED\",\"origin\":\"INFERRED\",\"value\":\"d=15 fits budget\"}}],\"why_quantum\":{\"evidence\":\"MODELLED\",\"origin\":\"INFERRED\",\"value\":\"scaling\"}}",
+        "record": "{\"accuracy_requirement\":{\"origin\":\"CONFIRMED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"budget_constraint\":{\"origin\":\"INFERRED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"created_at\":\"2026-08-31T11:00:00.000Z\",\"current_classical_method\":{\"evidence\":\"REPORTED\",\"origin\":\"CONFIRMED\",\"value\":\"MWPM\"},\"limitations\":[\"circuit-level noise only\"],\"objective\":{\"evidence\":\"REPORTED\",\"origin\":\"CONFIRMED\",\"value\":\"reach p_L < 1e-9\"},\"open_questions\":[{\"allowed_choices\":null,\"answer_provenance\":{\"actor\":\"curator@example.invalid\",\"recorded_at\":\"2026-08-31T10:00:00.000Z\",\"reference\":\"intake call, 2026-08-30\",\"source\":\"USER\"},\"answer_type\":\"QUANTITY\",\"blocks\":[\"PLAN_CONSTRUCTION\",\"PLAN_CONFIRMATION\"],\"question\":\"which decoder latency is acceptable?\",\"question_id\":\"decoder_latency\",\"requirement\":\"REQUIRED\",\"resolution\":\"ANSWERED\",\"targets\":\"runtime_constraint\",\"why_needed\":\"the runtime constraint cannot be sized without it\"}],\"problem_size\":{\"origin\":\"CONFIRMED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"revision\":2,\"runtime_constraint\":{\"origin\":\"INFERRED\",\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"success_criteria\":[{\"predicate\":{\"comparator\":\"AT_MOST\",\"criterion_id\":\"logical_error_rate_target\",\"explanation\":\"p_L below target\",\"metric_ref\":\"decoder.logical_error_rate\",\"required_evidence\":[\"MODELLED\",\"DERIVED\"],\"status\":\"NOT_RUN\",\"threshold\":{\"dimension\":\"QUBITS\",\"exact_value\":null,\"unit\":\"physical qubits\",\"value\":4200000}},\"statement\":{\"evidence\":\"MODELLED\",\"origin\":\"INFERRED\",\"value\":\"d=15 fits budget\"}}],\"supersedes\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"why_quantum\":{\"evidence\":\"MODELLED\",\"origin\":\"INFERRED\",\"value\":\"scaling\"}}",
         "receipt": "{\"created_at\":\"2026-08-31T11:00:00.000Z\"}"
       },
       "digests": {
-        "semantic": "29b19a21bc42ff49d3b676faf8b73ce6ef13054c4ee60b0d001cd10478011cfe",
-        "record": "41b87a0095a501495eddb6caa33761b1b64b6502d2aea6301fcf005a965ffaed",
+        "semantic": "d57c09ee2f9113ed5173c0df33179d419757d01ec6db92a8dbba8c4d61453a01",
+        "record": "ffe7804301f8375862c92c0a40c2ec1f460fee9355838bc072c0701348d70466",
         "receipt": "a026e1c59056802f703e40af30f7b2a7afeb77c2aaa6a40e1b68d3e55e29c6f8"
       },
       "refusals": {}
@@ -246,12 +307,12 @@
       "self_hash": {
         "field": "content_hash",
         "purpose": "record",
-        "digest": "44d9cba9e1eec17c78ae3f0ecff50ddb60b7c4d148a3616a651de9242300e6c2"
+        "digest": "cb946fd7f90b68adbdd82cabe6a8407e2d1c2d489f572e8d36d7c6999c45b7dc"
       },
       "record": {
         "schema_version": "1.0",
         "hash_rules_id": "study-v1",
-        "study_ref": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+        "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
         "specification_ref": {
           "revision_hash": "89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567",
           "revision": 2
@@ -277,16 +338,34 @@
         ],
         "pinned_versions": {
           "adapter": {
-            "name": "stim",
-            "version": "1.13.0"
+            "package_name": "stim",
+            "package_version": "1.13.0",
+            "artifact_digest": "sha256:cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab",
+            "source_commit": "def0123456789abcdef0123456789abcdef01234",
+            "container_digest": "sha256:ef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd",
+            "model_snapshot_hash": "f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde",
+            "schema_hash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "adapter_configuration_hash": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0"
           },
           "model": {
-            "name": "surface-code",
-            "version": "0.4.1"
+            "package_name": "surface-code",
+            "package_version": "0.4.1",
+            "artifact_digest": "sha256:23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01",
+            "source_commit": "3456789abcdef0123456789abcdef0123456789a",
+            "container_digest": "sha256:456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123",
+            "model_snapshot_hash": "56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234",
+            "schema_hash": "6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345",
+            "adapter_configuration_hash": "789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456"
           },
           "engine": {
-            "name": "ketqat",
-            "version": "0.3.0"
+            "package_name": "ketqat",
+            "package_version": "0.3.0",
+            "artifact_digest": "sha256:89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567",
+            "source_commit": "9abcdef0123456789abcdef0123456789abcdef0",
+            "container_digest": "sha256:abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+            "model_snapshot_hash": "bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a",
+            "schema_hash": "cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab",
+            "adapter_configuration_hash": "def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc"
           }
         },
         "expected_runtime": {
@@ -338,13 +417,62 @@
           ]
         },
         "max_credits": 100,
-        "data_handling": "no personal data",
+        "data_handling": {
+          "visibility": "PRIVATE",
+          "retention": {
+            "kind": "DELETE_AFTER_DAYS",
+            "days": 90
+          },
+          "third_party_transfer": "NAMED_PROCESSORS",
+          "model_training_use": "FORBIDDEN",
+          "public_dataset_opt_in": false,
+          "allowed_egress": [
+            {
+              "kind": "NAMED_HOST",
+              "host": "results.example.invalid"
+            }
+          ],
+          "export_permission": "HASHES_ONLY",
+          "deletion_policy": {
+            "kind": "ON_REQUEST",
+            "within_days": 7
+          },
+          "secret_handling": "PER_JOB_NEVER_PERSISTED",
+          "pii_handling": "NONE_PRESENT",
+          "policy_version": "1.0"
+        },
         "reproducibility_level": "EXACT",
         "success_criteria": [
-          "p_L below target"
+          {
+            "criterion_id": "logical_error_rate_target",
+            "metric_ref": "decoder.logical_error_rate",
+            "comparator": "AT_MOST",
+            "threshold": {
+              "dimension": "QUBITS",
+              "value": 4200000,
+              "exact_value": null,
+              "unit": "physical qubits"
+            },
+            "required_evidence": [
+              "MODELLED",
+              "DERIVED"
+            ],
+            "status": "NOT_RUN",
+            "explanation": "p_L below target"
+          }
         ],
         "refusal_criteria": [
-          "decoder unavailable"
+          {
+            "criterion_id": "decoder_unavailable",
+            "metric_ref": "decoder.available",
+            "comparator": "IS_FALSE",
+            "threshold": null,
+            "required_evidence": [
+              "MEASURED"
+            ],
+            "status": "NOT_RUN",
+            "explanation": "decoder unavailable"
+          }
         ],
         "execution_limitations": [
           "single machine"
@@ -353,47 +481,151 @@
         "content_hash": "3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012"
       },
       "canonical_bodies": {
-        "semantic": "{\"baselines\":[{\"baseline_ref\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"source_class\":\"PUBLISHED\"}],\"candidates\":[{\"workload_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\"}],\"data_handling\":\"no personal data\",\"execution_limitations\":[\"single machine\"],\"expected_credits\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"expected_runtime\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"max_credits\":100,\"pinned_versions\":{\"adapter\":{\"name\":\"stim\",\"version\":\"1.13.0\"},\"engine\":{\"name\":\"ketqat\",\"version\":\"0.3.0\"},\"model\":{\"name\":\"surface-code\",\"version\":\"0.4.1\"}},\"refusal_criteria\":[\"decoder unavailable\"],\"reproducibility_level\":\"EXACT\",\"scenario_refs\":[\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\"],\"specification_ref\":{\"revision\":2,\"revision_hash\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\"},\"success_criteria\":[\"p_L below target\"]}",
-        "record": "{\"baselines\":[{\"baseline_ref\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"note\":\"from the paper\",\"source_class\":\"PUBLISHED\"}],\"candidates\":[{\"name\":\"mwpm\",\"rationale\":\"the obvious decoder\",\"workload_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\"}],\"created_at\":\"2026-08-31T11:30:00.000Z\",\"data_handling\":\"no personal data\",\"execution_limitations\":[\"single machine\"],\"expected_credits\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"expected_runtime\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"max_credits\":100,\"pinned_versions\":{\"adapter\":{\"name\":\"stim\",\"version\":\"1.13.0\"},\"engine\":{\"name\":\"ketqat\",\"version\":\"0.3.0\"},\"model\":{\"name\":\"surface-code\",\"version\":\"0.4.1\"}},\"refusal_criteria\":[\"decoder unavailable\"],\"reproducibility_level\":\"EXACT\",\"revision\":1,\"scenario_refs\":[\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\"],\"specification_ref\":{\"revision\":2,\"revision_hash\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\"},\"study_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"success_criteria\":[\"p_L below target\"],\"supersedes\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\"}",
+        "semantic": "{\"baselines\":[{\"baseline_ref\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"source_class\":\"PUBLISHED\"}],\"candidates\":[{\"workload_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\"}],\"data_handling\":{\"allowed_egress\":[{\"host\":\"results.example.invalid\",\"kind\":\"NAMED_HOST\"}],\"deletion_policy\":{\"kind\":\"ON_REQUEST\",\"within_days\":7},\"export_permission\":\"HASHES_ONLY\",\"model_training_use\":\"FORBIDDEN\",\"pii_handling\":\"NONE_PRESENT\",\"policy_version\":\"1.0\",\"public_dataset_opt_in\":false,\"retention\":{\"days\":90,\"kind\":\"DELETE_AFTER_DAYS\"},\"secret_handling\":\"PER_JOB_NEVER_PERSISTED\",\"third_party_transfer\":\"NAMED_PROCESSORS\",\"visibility\":\"PRIVATE\"},\"execution_limitations\":[\"single machine\"],\"expected_credits\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"expected_runtime\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"max_credits\":100,\"pinned_versions\":{\"adapter\":{\"adapter_configuration_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"artifact_digest\":\"sha256:cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab\",\"container_digest\":\"sha256:ef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd\",\"model_snapshot_hash\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\",\"package_name\":\"stim\",\"package_version\":\"1.13.0\",\"schema_hash\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"source_commit\":\"def0123456789abcdef0123456789abcdef01234\"},\"engine\":{\"adapter_configuration_hash\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"artifact_digest\":\"sha256:89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\",\"container_digest\":\"sha256:abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789\",\"model_snapshot_hash\":\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\",\"package_name\":\"ketqat\",\"package_version\":\"0.3.0\",\"schema_hash\":\"cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab\",\"source_commit\":\"9abcdef0123456789abcdef0123456789abcdef0\"},\"model\":{\"adapter_configuration_hash\":\"789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456\",\"artifact_digest\":\"sha256:23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"container_digest\":\"sha256:456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"model_snapshot_hash\":\"56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234\",\"package_name\":\"surface-code\",\"package_version\":\"0.4.1\",\"schema_hash\":\"6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345\",\"source_commit\":\"3456789abcdef0123456789abcdef0123456789a\"}},\"refusal_criteria\":[{\"comparator\":\"IS_FALSE\",\"criterion_id\":\"decoder_unavailable\",\"metric_ref\":\"decoder.available\",\"required_evidence\":[\"MEASURED\"],\"threshold\":null}],\"reproducibility_level\":\"EXACT\",\"scenario_refs\":[\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\"],\"specification_ref\":{\"revision\":2,\"revision_hash\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\"},\"success_criteria\":[{\"comparator\":\"AT_MOST\",\"criterion_id\":\"logical_error_rate_target\",\"metric_ref\":\"decoder.logical_error_rate\",\"required_evidence\":[\"MODELLED\",\"DERIVED\"],\"threshold\":{\"dimension\":\"QUBITS\",\"exact_value\":null,\"unit\":\"physical qubits\",\"value\":4200000}}]}",
+        "record": "{\"baselines\":[{\"baseline_ref\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"note\":\"from the paper\",\"source_class\":\"PUBLISHED\"}],\"candidates\":[{\"name\":\"mwpm\",\"rationale\":\"the obvious decoder\",\"workload_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\"}],\"created_at\":\"2026-08-31T11:30:00.000Z\",\"data_handling\":{\"allowed_egress\":[{\"host\":\"results.example.invalid\",\"kind\":\"NAMED_HOST\"}],\"deletion_policy\":{\"kind\":\"ON_REQUEST\",\"within_days\":7},\"export_permission\":\"HASHES_ONLY\",\"model_training_use\":\"FORBIDDEN\",\"pii_handling\":\"NONE_PRESENT\",\"policy_version\":\"1.0\",\"public_dataset_opt_in\":false,\"retention\":{\"days\":90,\"kind\":\"DELETE_AFTER_DAYS\"},\"secret_handling\":\"PER_JOB_NEVER_PERSISTED\",\"third_party_transfer\":\"NAMED_PROCESSORS\",\"visibility\":\"PRIVATE\"},\"execution_limitations\":[\"single machine\"],\"expected_credits\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"expected_runtime\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"max_credits\":100,\"pinned_versions\":{\"adapter\":{\"adapter_configuration_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"artifact_digest\":\"sha256:cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab\",\"container_digest\":\"sha256:ef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd\",\"model_snapshot_hash\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\",\"package_name\":\"stim\",\"package_version\":\"1.13.0\",\"schema_hash\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"source_commit\":\"def0123456789abcdef0123456789abcdef01234\"},\"engine\":{\"adapter_configuration_hash\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"artifact_digest\":\"sha256:89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\",\"container_digest\":\"sha256:abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789\",\"model_snapshot_hash\":\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\",\"package_name\":\"ketqat\",\"package_version\":\"0.3.0\",\"schema_hash\":\"cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab\",\"source_commit\":\"9abcdef0123456789abcdef0123456789abcdef0\"},\"model\":{\"adapter_configuration_hash\":\"789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456\",\"artifact_digest\":\"sha256:23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"container_digest\":\"sha256:456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"model_snapshot_hash\":\"56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234\",\"package_name\":\"surface-code\",\"package_version\":\"0.4.1\",\"schema_hash\":\"6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345\",\"source_commit\":\"3456789abcdef0123456789abcdef0123456789a\"}},\"refusal_criteria\":[{\"comparator\":\"IS_FALSE\",\"criterion_id\":\"decoder_unavailable\",\"explanation\":\"decoder unavailable\",\"metric_ref\":\"decoder.available\",\"required_evidence\":[\"MEASURED\"],\"status\":\"NOT_RUN\",\"threshold\":null}],\"reproducibility_level\":\"EXACT\",\"revision\":1,\"scenario_refs\":[\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\"],\"specification_ref\":{\"revision\":2,\"revision_hash\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\"},\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"success_criteria\":[{\"comparator\":\"AT_MOST\",\"criterion_id\":\"logical_error_rate_target\",\"explanation\":\"p_L below target\",\"metric_ref\":\"decoder.logical_error_rate\",\"required_evidence\":[\"MODELLED\",\"DERIVED\"],\"status\":\"NOT_RUN\",\"threshold\":{\"dimension\":\"QUBITS\",\"exact_value\":null,\"unit\":\"physical qubits\",\"value\":4200000}}],\"supersedes\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\"}",
         "receipt": "{\"created_at\":\"2026-08-31T11:30:00.000Z\"}"
       },
       "digests": {
-        "semantic": "e1ead0d325d5418956f31490b4a36ced18792897b1bbabc449c5b226c64393a6",
-        "record": "44d9cba9e1eec17c78ae3f0ecff50ddb60b7c4d148a3616a651de9242300e6c2",
+        "semantic": "8a8ae815e0a602f85e245187fba80b2aeb3200d4ae134beb3ad556b520d116e9",
+        "record": "cb946fd7f90b68adbdd82cabe6a8407e2d1c2d489f572e8d36d7c6999c45b7dc",
         "receipt": "73f8910b958a9db70a03786abfbad76f2a2b4fa736888553b4b88f6745201aac"
       },
       "refusals": {}
     },
     {
-      "record_kind": "study_task",
+      "record_kind": "confirmation_receipt",
       "self_hash": {
         "field": "content_hash",
-        "purpose": "semantic",
-        "digest": "08dd4f0bb6324a1426de1cb6e717c265a54ef1cd9ea65a6fd583bb646345853f"
+        "purpose": "record",
+        "digest": "24da37ab1544c976adf0a25c71d88889ef0145e5e7d207c1915e85154e2729b7"
       },
       "record": {
         "schema_version": "1.0",
         "hash_rules_id": "study-v1",
-        "study_ref": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
-        "kind": "SIMULATION",
+        "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
         "plan_ref": {
           "revision_hash": "9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678",
           "revision": 1
         },
-        "capsule_ref": "456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123",
-        "status": "PENDING",
-        "created_at": "2026-08-31T11:45:00.000Z",
-        "content_hash": "56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234"
+        "plan_semantic_hash": "bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a",
+        "shown_summary_hash": "cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab",
+        "authorization_scope": [
+          "study:estimate",
+          "study:execute"
+        ],
+        "estimated_credits": 42.5,
+        "max_credits": 100,
+        "resource_class": "HARDWARE",
+        "data_handling_policy_revision": "dh-2026-07",
+        "expires_at": "2026-09-07T12:00:00.000Z",
+        "limitations": [
+          "not a signature by the actor named"
+        ],
+        "attestation_level": "hash_only",
+        "actor_subject_id": "auth0|6512abf0",
+        "tenant_id": "tenant-14",
+        "oauth_client_id": "ketqat-console",
+        "confirmation_channel": "WEB_CONSOLE",
+        "confirmed_at": "2026-08-31T11:45:00.000Z",
+        "nonce": "ef0123456789abcdef0123456789abcd",
+        "idempotency_key": "confirm-2026-08-31-000117",
+        "content_hash": "def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc"
       },
       "canonical_bodies": {
-        "semantic": "{\"capsule_ref\":\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"kind\":\"SIMULATION\",\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"}}",
-        "record": "{\"capsule_ref\":\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"created_at\":\"2026-08-31T11:45:00.000Z\",\"kind\":\"SIMULATION\",\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"status\":\"PENDING\",\"study_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\"}",
-        "receipt": "{\"created_at\":\"2026-08-31T11:45:00.000Z\"}"
+        "semantic": "{\"authorization_scope\":[\"study:estimate\",\"study:execute\"],\"data_handling_policy_revision\":\"dh-2026-07\",\"estimated_credits\":42.5,\"expires_at\":\"2026-09-07T12:00:00.000Z\",\"limitations\":[\"not a signature by the actor named\"],\"max_credits\":100,\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"plan_semantic_hash\":\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\",\"resource_class\":\"HARDWARE\",\"shown_summary_hash\":\"cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab\"}",
+        "record": "{\"actor_subject_id\":\"auth0|6512abf0\",\"attestation_level\":\"hash_only\",\"authorization_scope\":[\"study:estimate\",\"study:execute\"],\"confirmation_channel\":\"WEB_CONSOLE\",\"confirmed_at\":\"2026-08-31T11:45:00.000Z\",\"data_handling_policy_revision\":\"dh-2026-07\",\"estimated_credits\":42.5,\"expires_at\":\"2026-09-07T12:00:00.000Z\",\"idempotency_key\":\"confirm-2026-08-31-000117\",\"limitations\":[\"not a signature by the actor named\"],\"max_credits\":100,\"nonce\":\"ef0123456789abcdef0123456789abcd\",\"oauth_client_id\":\"ketqat-console\",\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"plan_semantic_hash\":\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\",\"resource_class\":\"HARDWARE\",\"shown_summary_hash\":\"cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab\",\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"tenant_id\":\"tenant-14\"}",
+        "receipt": "{\"actor_subject_id\":\"auth0|6512abf0\",\"confirmation_channel\":\"WEB_CONSOLE\",\"confirmed_at\":\"2026-08-31T11:45:00.000Z\",\"idempotency_key\":\"confirm-2026-08-31-000117\",\"nonce\":\"ef0123456789abcdef0123456789abcd\",\"oauth_client_id\":\"ketqat-console\",\"tenant_id\":\"tenant-14\"}"
       },
       "digests": {
-        "semantic": "08dd4f0bb6324a1426de1cb6e717c265a54ef1cd9ea65a6fd583bb646345853f",
-        "record": "41a5c36479e4c92a23c2ae01f74840996c643395c43a362eb489b786f9764e18",
-        "receipt": "f42d05efc3e8a01b558a634224bf41c7247d4407381f198d6e9e3d8b91d4eaf1"
+        "semantic": "5e415809561620552ab5b209872c5ec346c1df01412579d7939d9b04c044b410",
+        "record": "24da37ab1544c976adf0a25c71d88889ef0145e5e7d207c1915e85154e2729b7",
+        "receipt": "b339ffaf74a44c839e01f52c63f4d66ea40cb722309fb12ac65eb1612a16a990"
+      },
+      "refusals": {}
+    },
+    {
+      "record_kind": "study_task_authorization",
+      "self_hash": {
+        "field": "content_hash",
+        "purpose": "record",
+        "digest": "c39497648e213c3a9ce0c9c8a2e6b88f5e5297caf3ea797a26666384c2e2390c"
+      },
+      "record": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
+        "plan_ref": {
+          "revision_hash": "9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678",
+          "revision": 1
+        },
+        "confirmation_receipt_ref": "def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc",
+        "requested_operation": "STUDY_BENCHMARK_RUN",
+        "input_refs": [
+          {
+            "name": "circuit.stim",
+            "role": "CIRCUIT",
+            "media_type": "text/plain",
+            "byte_size": "18446744073709551615",
+            "content_hash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "resolution": {
+              "kind": "CONTENT_ADDRESSED_STORE",
+              "locator": "cas://ab/cd/ef"
+            },
+            "completeness": "COMPLETE",
+            "partial_reason": null,
+            "redaction": "NONE",
+            "redaction_reason": null
+          }
+        ],
+        "resource_ceiling": {
+          "max_credits": 100,
+          "max_runtime": 3600,
+          "max_memory_bytes": "9223372036854775807",
+          "resource_class": "HARDWARE"
+        },
+        "created_at": "2026-08-31T11:46:00.000Z",
+        "content_hash": "f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde"
+      },
+      "canonical_bodies": {
+        "semantic": "{\"confirmation_receipt_ref\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"input_refs\":[{\"byte_size\":\"18446744073709551615\",\"completeness\":\"COMPLETE\",\"content_hash\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"media_type\":\"text/plain\",\"name\":\"circuit.stim\",\"partial_reason\":null,\"redaction\":\"NONE\",\"redaction_reason\":null,\"resolution\":{\"kind\":\"CONTENT_ADDRESSED_STORE\",\"locator\":\"cas://ab/cd/ef\"},\"role\":\"CIRCUIT\"}],\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"requested_operation\":\"STUDY_BENCHMARK_RUN\",\"resource_ceiling\":{\"max_credits\":100,\"max_memory_bytes\":\"9223372036854775807\",\"max_runtime\":3600,\"resource_class\":\"HARDWARE\"}}",
+        "record": "{\"confirmation_receipt_ref\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"created_at\":\"2026-08-31T11:46:00.000Z\",\"input_refs\":[{\"byte_size\":\"18446744073709551615\",\"completeness\":\"COMPLETE\",\"content_hash\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"media_type\":\"text/plain\",\"name\":\"circuit.stim\",\"partial_reason\":null,\"redaction\":\"NONE\",\"redaction_reason\":null,\"resolution\":{\"kind\":\"CONTENT_ADDRESSED_STORE\",\"locator\":\"cas://ab/cd/ef\"},\"role\":\"CIRCUIT\"}],\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"requested_operation\":\"STUDY_BENCHMARK_RUN\",\"resource_ceiling\":{\"max_credits\":100,\"max_memory_bytes\":\"9223372036854775807\",\"max_runtime\":3600,\"resource_class\":\"HARDWARE\"},\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\"}",
+        "receipt": "{\"created_at\":\"2026-08-31T11:46:00.000Z\"}"
+      },
+      "digests": {
+        "semantic": "2778569c8a6397581cfe3cf8d236a1db6226ad7d65423c5ad2aee40306eaf35e",
+        "record": "c39497648e213c3a9ce0c9c8a2e6b88f5e5297caf3ea797a26666384c2e2390c",
+        "receipt": "54893d692bc039a6c21a76963ba39420c1518975ef77927e21f377c1f8cbe3f7"
+      },
+      "refusals": {}
+    },
+    {
+      "record_kind": "task_outcome",
+      "self_hash": {
+        "field": "content_hash",
+        "purpose": "record",
+        "digest": "8bcc95295be610fbf30b187532ccf05b8a08e0869453587b5666e17ae6046049"
+      },
+      "record": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
+        "authorization_ref": "f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde",
+        "capsule_ref": "ef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd",
+        "terminal_status": "SUCCEEDED",
+        "reason": null,
+        "attempts": 2,
+        "created_at": "2026-08-31T12:10:02.000Z",
+        "content_hash": "23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01"
+      },
+      "canonical_bodies": {
+        "semantic": "{\"authorization_ref\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\",\"capsule_ref\":\"ef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd\",\"reason\":null,\"terminal_status\":\"SUCCEEDED\"}",
+        "record": "{\"attempts\":2,\"authorization_ref\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\",\"capsule_ref\":\"ef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd\",\"created_at\":\"2026-08-31T12:10:02.000Z\",\"reason\":null,\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"terminal_status\":\"SUCCEEDED\"}",
+        "receipt": "{\"attempts\":2,\"created_at\":\"2026-08-31T12:10:02.000Z\"}"
+      },
+      "digests": {
+        "semantic": "67551e68384c96229a6963fa4cd6da4fef67d65b1ddaee9db3815dd6a9d1544a",
+        "record": "8bcc95295be610fbf30b187532ccf05b8a08e0869453587b5666e17ae6046049",
+        "receipt": "672d6a8d2fbc0cb7103a026a33303d744c8f20bae05061e30d4b118b61142b5b"
       },
       "refusals": {}
     },
@@ -402,41 +634,27 @@
       "self_hash": {
         "field": "content_hash",
         "purpose": "record",
-        "digest": "ff0fec4078b5b11bb9964c68c7e24b82c9185488e732b4f4116b2aa868cc7570"
+        "digest": "4782ea985950f1bcf00fa2e533a20dfb46468d04d20228650b4fffa72a1e57f9"
       },
       "record": {
         "schema_version": "1.0",
         "hash_rules_id": "study-v1",
-        "study_ref": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+        "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
         "kind": "MEASURED_RESULT",
         "label": "logical error rate at d=7",
+        "visibility": "PUBLIC",
         "claim": {
-          "subject": "surface code",
+          "subject_ref": {
+            "record_kind": "quantum_workload",
+            "hash": "bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a",
+            "record_slug": "surface-code-memory"
+          },
           "metric": "p_L",
           "comparator": "LESS_THAN",
-          "value": {
-            "value": 0.001,
-            "unit": "logical_error_rate",
-            "bound": "ESTIMATE",
-            "evidence": "MODELLED",
-            "source": "resource-model",
-            "model": "surface-code",
-            "model_version": "0.4.1",
-            "assumptions": [
-              "p=1e-3",
-              "round-trip"
-            ],
-            "created_at": "2026-08-01T00:00:00.000Z",
-            "schema_version": "0.1",
-            "uncertainty": {
-              "kind": "INTERVAL",
-              "low": 0.0009,
-              "high": 0.0011,
-              "basis": "bootstrap"
-            },
-            "limitations": [
-              "single decoder"
-            ]
+          "value_ref": {
+            "kind": "value_node",
+            "node_hash": "cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab",
+            "field_path": null
           }
         },
         "quantity": {
@@ -488,13 +706,13 @@
         "content_hash": "3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012"
       },
       "canonical_bodies": {
-        "semantic": "{\"citation\":{\"authors\":[\"Ada\",\"Grace\"],\"bibtex\":\"@article{x}\",\"doi\":\"10.0000/x\",\"title\":\"A paper\",\"url\":\"https://example.invalid/x\",\"year\":2026},\"claim\":{\"comparator\":\"LESS_THAN\",\"metric\":\"p_L\",\"subject\":\"surface code\",\"value\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"kind\":\"MEASURED_RESULT\",\"limitations\":[\"one seed\"],\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"reference\":{\"hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"record_kind\":\"qec_benchmark_result\"},\"retrieved_on\":\"2026-08-30\",\"source_published_on\":\"2026-05-01\"}",
-        "record": "{\"citation\":{\"authors\":[\"Ada\",\"Grace\"],\"bibtex\":\"@article{x}\",\"doi\":\"10.0000/x\",\"title\":\"A paper\",\"url\":\"https://example.invalid/x\",\"year\":2026},\"claim\":{\"comparator\":\"LESS_THAN\",\"metric\":\"p_L\",\"subject\":\"surface code\",\"value\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"created_at\":\"2026-08-31T12:00:00.000Z\",\"kind\":\"MEASURED_RESULT\",\"label\":\"logical error rate at d=7\",\"limitations\":[\"one seed\"],\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"reference\":{\"hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"record_kind\":\"qec_benchmark_result\",\"record_slug\":\"run-7\"},\"retrieved_on\":\"2026-08-30\",\"source_published_on\":\"2026-05-01\",\"study_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\"}",
+        "semantic": "{\"citation\":{\"authors\":[\"Ada\",\"Grace\"],\"bibtex\":\"@article{x}\",\"doi\":\"10.0000/x\",\"title\":\"A paper\",\"url\":\"https://example.invalid/x\",\"year\":2026},\"claim\":{\"comparator\":\"LESS_THAN\",\"metric\":\"p_L\",\"subject_ref\":{\"hash\":\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\",\"record_kind\":\"quantum_workload\"},\"value_ref\":{\"field_path\":null,\"kind\":\"value_node\",\"node_hash\":\"cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab\"}},\"kind\":\"MEASURED_RESULT\",\"limitations\":[\"one seed\"],\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"reference\":{\"hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"record_kind\":\"qec_benchmark_result\"},\"retrieved_on\":\"2026-08-30\",\"source_published_on\":\"2026-05-01\"}",
+        "record": "{\"citation\":{\"authors\":[\"Ada\",\"Grace\"],\"bibtex\":\"@article{x}\",\"doi\":\"10.0000/x\",\"title\":\"A paper\",\"url\":\"https://example.invalid/x\",\"year\":2026},\"claim\":{\"comparator\":\"LESS_THAN\",\"metric\":\"p_L\",\"subject_ref\":{\"hash\":\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\",\"record_kind\":\"quantum_workload\",\"record_slug\":\"surface-code-memory\"},\"value_ref\":{\"field_path\":null,\"kind\":\"value_node\",\"node_hash\":\"cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab\"}},\"created_at\":\"2026-08-31T12:00:00.000Z\",\"kind\":\"MEASURED_RESULT\",\"label\":\"logical error rate at d=7\",\"limitations\":[\"one seed\"],\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"reference\":{\"hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"record_kind\":\"qec_benchmark_result\",\"record_slug\":\"run-7\"},\"retrieved_on\":\"2026-08-30\",\"source_published_on\":\"2026-05-01\",\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"visibility\":\"PUBLIC\"}",
         "receipt": "{\"created_at\":\"2026-08-31T12:00:00.000Z\"}"
       },
       "digests": {
-        "semantic": "df5de1cd9cd7117b21e2700c9aaf61035cc0906e5d3ffe01040f2333201d093d",
-        "record": "ff0fec4078b5b11bb9964c68c7e24b82c9185488e732b4f4116b2aa868cc7570",
+        "semantic": "cd67e3fdc6d61817a4cd99e4d70ddf5221326b59054e5f53d625ff12f4ba9d7b",
+        "record": "4782ea985950f1bcf00fa2e533a20dfb46468d04d20228650b4fffa72a1e57f9",
         "receipt": "71adac50060d1408ac12b5cf2208c8595d6d73cbd47eebed720e10cd22d18d1e"
       },
       "refusals": {}
@@ -504,12 +722,12 @@
       "self_hash": {
         "field": "content_hash",
         "purpose": "record",
-        "digest": "4afa26cb76a5e5bcf5e7a74c4faa2d648fa89ae5eeb6d8d45bd66cb34b14669a"
+        "digest": "b44622bf1404b36d09314ddc08b6c9f14910fc12ccdef40719ef869b3fd0ad91"
       },
       "record": {
         "schema_version": "1.0",
         "hash_rules_id": "study-v1",
-        "study_ref": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+        "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
         "kind": "SUPPORTS",
         "from_node_hash": "456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123",
         "to_node_hash": "56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234",
@@ -520,13 +738,75 @@
       },
       "canonical_bodies": {
         "semantic": "{\"from_node_hash\":\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"kind\":\"SUPPORTS\",\"to_node_hash\":\"56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234\"}",
-        "record": "{\"asserted_by\":\"reviewer@example.invalid\",\"created_at\":\"2026-08-31T12:05:00.000Z\",\"from_node_hash\":\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"kind\":\"SUPPORTS\",\"rationale\":\"the run measures the claimed metric\",\"study_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"to_node_hash\":\"56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234\"}",
+        "record": "{\"asserted_by\":\"reviewer@example.invalid\",\"created_at\":\"2026-08-31T12:05:00.000Z\",\"from_node_hash\":\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"kind\":\"SUPPORTS\",\"rationale\":\"the run measures the claimed metric\",\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"to_node_hash\":\"56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234\"}",
         "receipt": "{\"asserted_by\":\"reviewer@example.invalid\",\"created_at\":\"2026-08-31T12:05:00.000Z\"}"
       },
       "digests": {
         "semantic": "104f6da88a20495cc8f9bf4c9c8728a8c5d2856258f435a0b2f33de293925f76",
-        "record": "4afa26cb76a5e5bcf5e7a74c4faa2d648fa89ae5eeb6d8d45bd66cb34b14669a",
+        "record": "b44622bf1404b36d09314ddc08b6c9f14910fc12ccdef40719ef869b3fd0ad91",
         "receipt": "02c8cbdd69eac396c748478b62593dcf86a60137eaaf532ea74bc1a8210832ef"
+      },
+      "refusals": {}
+    },
+    {
+      "record_kind": "review_record",
+      "self_hash": {
+        "field": "content_hash",
+        "purpose": "record",
+        "digest": "437e06d2355203a70804e47eded9ed879c353f67234439dbf0a8c823d8102202"
+      },
+      "record": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
+        "subject_node_hash": "def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc",
+        "verdict": "CHANGES_REQUESTED",
+        "rationale": "the decoder version is not pinned",
+        "reviewer": "reviewer@example.invalid",
+        "created_at": "2026-08-31T12:20:00.000Z",
+        "content_hash": "ef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd"
+      },
+      "canonical_bodies": {
+        "semantic": "{\"subject_node_hash\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"verdict\":\"CHANGES_REQUESTED\"}",
+        "record": "{\"created_at\":\"2026-08-31T12:20:00.000Z\",\"rationale\":\"the decoder version is not pinned\",\"reviewer\":\"reviewer@example.invalid\",\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"subject_node_hash\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"verdict\":\"CHANGES_REQUESTED\"}",
+        "receipt": "{\"created_at\":\"2026-08-31T12:20:00.000Z\",\"reviewer\":\"reviewer@example.invalid\"}"
+      },
+      "digests": {
+        "semantic": "876f0a1ba5eba98c6f0cc50bbdf9f74e81105749ae5d30898e53ef2e04619c2f",
+        "record": "437e06d2355203a70804e47eded9ed879c353f67234439dbf0a8c823d8102202",
+        "receipt": "29ecc6c5b4dd564012dfe5de415d97832eda8f09cb03efea1bd190429f41f30d"
+      },
+      "refusals": {}
+    },
+    {
+      "record_kind": "reproduction_record",
+      "self_hash": {
+        "field": "content_hash",
+        "purpose": "record",
+        "digest": "5dd8c05223683e4f4de7f5ddbdbc84b721ef27c0ee9c13ecdf3c01d40f213c9a"
+      },
+      "record": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
+        "original_node_hash": "f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde",
+        "reproduction_capsule_ref": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "observed_node_hash": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+        "outcome": "DIVERGED",
+        "notes": "p_L differed by 4% at d=7",
+        "asserted_by": "runner@example.invalid",
+        "created_at": "2026-08-31T12:30:00.000Z",
+        "content_hash": "23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01"
+      },
+      "canonical_bodies": {
+        "semantic": "{\"observed_node_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"original_node_hash\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\",\"outcome\":\"DIVERGED\",\"reproduction_capsule_ref\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\"}",
+        "record": "{\"asserted_by\":\"runner@example.invalid\",\"created_at\":\"2026-08-31T12:30:00.000Z\",\"notes\":\"p_L differed by 4% at d=7\",\"observed_node_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"original_node_hash\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\",\"outcome\":\"DIVERGED\",\"reproduction_capsule_ref\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\"}",
+        "receipt": "{\"asserted_by\":\"runner@example.invalid\",\"created_at\":\"2026-08-31T12:30:00.000Z\"}"
+      },
+      "digests": {
+        "semantic": "ff1400991edcc805ca6b9bf4684d184fc14506526620d0a4fe982804c426d7f8",
+        "record": "5dd8c05223683e4f4de7f5ddbdbc84b721ef27c0ee9c13ecdf3c01d40f213c9a",
+        "receipt": "9529135dc8a4edd8383b0d6c9682799ab3a9719d37380dd9bad4b47381c5c928"
       },
       "refusals": {}
     },
@@ -535,13 +815,13 @@
       "self_hash": {
         "field": "reproducibility_hash",
         "purpose": "record",
-        "digest": "799fe4ce02528ad67c534c54b499b37c3a048723a2355091293f1ba75fbb518f"
+        "digest": "ff7c1d4aa80df3b933c59f79a647cd7c067f1c333547fc2afe3581048d22df2d"
       },
       "record": {
         "schema_version": "1.0",
         "hash_rules_id": "study-v1",
-        "study_ref": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
-        "task_ref": "6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345",
+        "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
+        "authorization_ref": "f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde",
         "manifest_hash": "789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456",
         "versions": {
           "schema": "0.1",
@@ -555,8 +835,6 @@
           }
         },
         "source_hash": "89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567",
-        "image_digest": "sha256:9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678",
-        "dependency_lock_ref": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
         "seed": "18446744073709551615",
         "environment": {
           "operating_system": "linux",
@@ -576,38 +854,103 @@
             }
           ]
         },
-        "resource_limits": {
-          "max_runtime": 3600,
-          "max_memory_bytes": "9223372036854775807",
-          "max_credits": 100
+        "inputs": [
+          {
+            "name": "circuit.stim",
+            "role": "CIRCUIT",
+            "media_type": "text/plain",
+            "byte_size": "18446744073709551615",
+            "content_hash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "resolution": {
+              "kind": "CONTENT_ADDRESSED_STORE",
+              "locator": "cas://ab/cd/ef"
+            },
+            "completeness": "COMPLETE",
+            "partial_reason": null,
+            "redaction": "NONE",
+            "redaction_reason": null
+          }
+        ],
+        "outputs": [
+          {
+            "name": "measurements.json",
+            "role": "MEASUREMENTS",
+            "media_type": "application/json",
+            "byte_size": "4096",
+            "content_hash": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+            "resolution": {
+              "kind": "NOT_RETAINED",
+              "locator": null
+            },
+            "completeness": "PARTIAL",
+            "partial_reason": "the wall-clock limit stopped the run at round 812 of 1000",
+            "redaction": "REDACTED",
+            "redaction_reason": "per-shot identifiers removed under data-handling policy dh-2026-07"
+          }
+        ],
+        "execution_class": "HARDWARE",
+        "execution": {
+          "kind": "HARDWARE",
+          "image_digest": "sha256:9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678",
+          "dependency_lock_ref": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+          "runner_version": {
+            "name": "ketqat-runner",
+            "version": "0.3.0"
+          },
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "9223372036854775807",
+            "max_credits": 100
+          },
+          "attestation_limitation": "run on an operator machine; the installed packages are recorded, not attested",
+          "provider_adapter": {
+            "name": "ionq",
+            "version": "2.1.0"
+          },
+          "backend_snapshot": {
+            "provider": "ionq",
+            "backend": "aria-1",
+            "snapshot_hash": "3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012"
+          },
+          "confirmation_receipt_ref": "def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc",
+          "provider_result_ref": "456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123",
+          "cost_confirmation": {
+            "credits_charged": 40.25,
+            "authorized_maximum": 100,
+            "source": "PROVIDER_REPORTED"
+          },
+          "quota_confirmation": {
+            "quota": "monthly_shots",
+            "within_quota": true,
+            "source": "PROVIDER_REPORTED",
+            "exceeded_reason": null
+          }
         },
-        "input_hashes": [
-          "bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a"
-        ],
-        "output_hashes": [
-          "cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab"
-        ],
         "logs_ref": "def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc",
-        "execution_class": "SIMULATED",
         "cancellation": {
           "cancelled": false,
           "reason": ""
         },
         "attestation_level": "hash_only",
-        "started_at": "2026-08-31T12:00:00.000Z",
-        "finished_at": "2026-08-31T12:10:00.000Z",
+        "execution_receipt": {
+          "job_id": "6d4f2a18-53bc-4e79-9a02-8f31c7e05b46",
+          "attempt": 2,
+          "actor": "runner@example.invalid",
+          "started_at": "2026-08-31T12:00:00.000Z",
+          "finished_at": "2026-08-31T12:10:00.000Z"
+        },
         "created_at": "2026-08-31T12:10:01.000Z",
         "reproducibility_hash": "ef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd"
       },
       "canonical_bodies": {
-        "semantic": "{\"dependency_lock_ref\":\"abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789\",\"environment\":{\"architecture\":\"arm64\",\"hardware\":[{\"name\":\"cpu\",\"value\":\"apple-m2\"}],\"node_version\":\"22.11.0\",\"operating_system\":\"linux\",\"packages\":[{\"name\":\"stim\",\"version\":\"1.13.0\"}],\"python_version\":\"3.11.9\"},\"execution_class\":\"SIMULATED\",\"image_digest\":\"sha256:9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\",\"input_hashes\":[\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\"],\"manifest_hash\":\"789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456\",\"output_hashes\":[\"cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab\"],\"resource_limits\":{\"max_credits\":100,\"max_memory_bytes\":\"9223372036854775807\",\"max_runtime\":3600},\"seed\":\"18446744073709551615\",\"source_hash\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\",\"versions\":{\"adapter\":{\"name\":\"stim\",\"version\":\"1.13.0\"},\"engine\":{\"name\":\"ketqat\",\"version\":\"0.3.0\"},\"schema\":\"0.1\"}}",
-        "record": "{\"attestation_level\":\"hash_only\",\"cancellation\":{\"cancelled\":false,\"reason\":\"\"},\"created_at\":\"2026-08-31T12:10:01.000Z\",\"dependency_lock_ref\":\"abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789\",\"environment\":{\"architecture\":\"arm64\",\"hardware\":[{\"name\":\"cpu\",\"value\":\"apple-m2\"}],\"node_version\":\"22.11.0\",\"operating_system\":\"linux\",\"packages\":[{\"name\":\"stim\",\"version\":\"1.13.0\"}],\"python_version\":\"3.11.9\"},\"execution_class\":\"SIMULATED\",\"finished_at\":\"2026-08-31T12:10:00.000Z\",\"image_digest\":\"sha256:9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\",\"input_hashes\":[\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\"],\"logs_ref\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"manifest_hash\":\"789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456\",\"output_hashes\":[\"cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab\"],\"resource_limits\":{\"max_credits\":100,\"max_memory_bytes\":\"9223372036854775807\",\"max_runtime\":3600},\"seed\":\"18446744073709551615\",\"source_hash\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\",\"started_at\":\"2026-08-31T12:00:00.000Z\",\"study_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"task_ref\":\"6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345\",\"versions\":{\"adapter\":{\"name\":\"stim\",\"version\":\"1.13.0\"},\"engine\":{\"name\":\"ketqat\",\"version\":\"0.3.0\"},\"schema\":\"0.1\"}}",
-        "receipt": "{\"cancellation\":{\"cancelled\":false,\"reason\":\"\"},\"created_at\":\"2026-08-31T12:10:01.000Z\",\"finished_at\":\"2026-08-31T12:10:00.000Z\",\"started_at\":\"2026-08-31T12:00:00.000Z\"}"
+        "semantic": "{\"authorization_ref\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\",\"environment\":{\"architecture\":\"arm64\",\"hardware\":[{\"name\":\"cpu\",\"value\":\"apple-m2\"}],\"node_version\":\"22.11.0\",\"operating_system\":\"linux\",\"packages\":[{\"name\":\"stim\",\"version\":\"1.13.0\"}],\"python_version\":\"3.11.9\"},\"execution\":{\"attestation_limitation\":\"run on an operator machine; the installed packages are recorded, not attested\",\"backend_snapshot\":{\"backend\":\"aria-1\",\"provider\":\"ionq\",\"snapshot_hash\":\"3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012\"},\"confirmation_receipt_ref\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"cost_confirmation\":{\"authorized_maximum\":100,\"credits_charged\":40.25,\"source\":\"PROVIDER_REPORTED\"},\"dependency_lock_ref\":\"abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789\",\"image_digest\":\"sha256:9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\",\"kind\":\"HARDWARE\",\"provider_adapter\":{\"name\":\"ionq\",\"version\":\"2.1.0\"},\"provider_result_ref\":\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"quota_confirmation\":{\"exceeded_reason\":null,\"quota\":\"monthly_shots\",\"source\":\"PROVIDER_REPORTED\",\"within_quota\":true},\"resource_limits\":{\"max_credits\":100,\"max_memory_bytes\":\"9223372036854775807\",\"max_runtime\":3600},\"runner_version\":{\"name\":\"ketqat-runner\",\"version\":\"0.3.0\"}},\"execution_class\":\"HARDWARE\",\"inputs\":[{\"byte_size\":\"18446744073709551615\",\"completeness\":\"COMPLETE\",\"content_hash\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"media_type\":\"text/plain\",\"name\":\"circuit.stim\",\"partial_reason\":null,\"redaction\":\"NONE\",\"redaction_reason\":null,\"resolution\":{\"kind\":\"CONTENT_ADDRESSED_STORE\",\"locator\":\"cas://ab/cd/ef\"},\"role\":\"CIRCUIT\"}],\"manifest_hash\":\"789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456\",\"outputs\":[{\"byte_size\":\"4096\",\"completeness\":\"PARTIAL\",\"content_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"media_type\":\"application/json\",\"name\":\"measurements.json\",\"partial_reason\":\"the wall-clock limit stopped the run at round 812 of 1000\",\"redaction\":\"REDACTED\",\"redaction_reason\":\"per-shot identifiers removed under data-handling policy dh-2026-07\",\"resolution\":{\"kind\":\"NOT_RETAINED\",\"locator\":null},\"role\":\"MEASUREMENTS\"}],\"seed\":\"18446744073709551615\",\"source_hash\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\",\"versions\":{\"adapter\":{\"name\":\"stim\",\"version\":\"1.13.0\"},\"engine\":{\"name\":\"ketqat\",\"version\":\"0.3.0\"},\"schema\":\"0.1\"}}",
+        "record": "{\"attestation_level\":\"hash_only\",\"authorization_ref\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\",\"cancellation\":{\"cancelled\":false,\"reason\":\"\"},\"created_at\":\"2026-08-31T12:10:01.000Z\",\"environment\":{\"architecture\":\"arm64\",\"hardware\":[{\"name\":\"cpu\",\"value\":\"apple-m2\"}],\"node_version\":\"22.11.0\",\"operating_system\":\"linux\",\"packages\":[{\"name\":\"stim\",\"version\":\"1.13.0\"}],\"python_version\":\"3.11.9\"},\"execution\":{\"attestation_limitation\":\"run on an operator machine; the installed packages are recorded, not attested\",\"backend_snapshot\":{\"backend\":\"aria-1\",\"provider\":\"ionq\",\"snapshot_hash\":\"3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012\"},\"confirmation_receipt_ref\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"cost_confirmation\":{\"authorized_maximum\":100,\"credits_charged\":40.25,\"source\":\"PROVIDER_REPORTED\"},\"dependency_lock_ref\":\"abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789\",\"image_digest\":\"sha256:9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\",\"kind\":\"HARDWARE\",\"provider_adapter\":{\"name\":\"ionq\",\"version\":\"2.1.0\"},\"provider_result_ref\":\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"quota_confirmation\":{\"exceeded_reason\":null,\"quota\":\"monthly_shots\",\"source\":\"PROVIDER_REPORTED\",\"within_quota\":true},\"resource_limits\":{\"max_credits\":100,\"max_memory_bytes\":\"9223372036854775807\",\"max_runtime\":3600},\"runner_version\":{\"name\":\"ketqat-runner\",\"version\":\"0.3.0\"}},\"execution_class\":\"HARDWARE\",\"execution_receipt\":{\"actor\":\"runner@example.invalid\",\"attempt\":2,\"finished_at\":\"2026-08-31T12:10:00.000Z\",\"job_id\":\"6d4f2a18-53bc-4e79-9a02-8f31c7e05b46\",\"started_at\":\"2026-08-31T12:00:00.000Z\"},\"inputs\":[{\"byte_size\":\"18446744073709551615\",\"completeness\":\"COMPLETE\",\"content_hash\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"media_type\":\"text/plain\",\"name\":\"circuit.stim\",\"partial_reason\":null,\"redaction\":\"NONE\",\"redaction_reason\":null,\"resolution\":{\"kind\":\"CONTENT_ADDRESSED_STORE\",\"locator\":\"cas://ab/cd/ef\"},\"role\":\"CIRCUIT\"}],\"logs_ref\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"manifest_hash\":\"789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456\",\"outputs\":[{\"byte_size\":\"4096\",\"completeness\":\"PARTIAL\",\"content_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"media_type\":\"application/json\",\"name\":\"measurements.json\",\"partial_reason\":\"the wall-clock limit stopped the run at round 812 of 1000\",\"redaction\":\"REDACTED\",\"redaction_reason\":\"per-shot identifiers removed under data-handling policy dh-2026-07\",\"resolution\":{\"kind\":\"NOT_RETAINED\",\"locator\":null},\"role\":\"MEASUREMENTS\"}],\"seed\":\"18446744073709551615\",\"source_hash\":\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\",\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"versions\":{\"adapter\":{\"name\":\"stim\",\"version\":\"1.13.0\"},\"engine\":{\"name\":\"ketqat\",\"version\":\"0.3.0\"},\"schema\":\"0.1\"}}",
+        "receipt": "{\"cancellation\":{\"cancelled\":false,\"reason\":\"\"},\"created_at\":\"2026-08-31T12:10:01.000Z\",\"execution_receipt\":{\"actor\":\"runner@example.invalid\",\"attempt\":2,\"finished_at\":\"2026-08-31T12:10:00.000Z\",\"job_id\":\"6d4f2a18-53bc-4e79-9a02-8f31c7e05b46\",\"started_at\":\"2026-08-31T12:00:00.000Z\"}}"
       },
       "digests": {
-        "semantic": "2c16ce949c90b06f9d235457ce3098f1e3013efa814cdcc183ac489b6ffab684",
-        "record": "799fe4ce02528ad67c534c54b499b37c3a048723a2355091293f1ba75fbb518f",
-        "receipt": "2696d488167fbe7cb8b2c7baa5db71341ec2f9eb61dd5910a721247cce83b733"
+        "semantic": "51f34dd05011a3fc628f9f599d04b3bb79328ea699d319ba6ecd3cf0cbbdfbbe",
+        "record": "ff7c1d4aa80df3b933c59f79a647cd7c067f1c333547fc2afe3581048d22df2d",
+        "receipt": "c23b41dbe271f7acdbaa9701e439c84ddf4f0fec6b7bc2f9613f58f1d9a381de"
       },
       "refusals": {}
     },
@@ -616,36 +959,203 @@
       "self_hash": {
         "field": "reproducibility_hash",
         "purpose": "record",
-        "digest": "ef3f40068a21144544ef75eccd3f420aec6f2f5ab3a53ddf1328477fd9f45524"
+        "digest": "825078e8d338a8175d7c95c80c352f426c75e379ba0e0c0fbe44ef86552b2fcf"
       },
       "record": {
         "schema_version": "1.0",
         "hash_rules_id": "study-v1",
         "package_kind": "research_package",
-        "study_ref": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+        "distribution": "OFFLINE_EXPORT",
+        "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
         "plan_ref": {
           "revision_hash": "9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678",
           "revision": 1
         },
-        "report_markdown": "# Report\n\nText.\n",
-        "methods": "Stim + PyMatching.",
-        "assumption_rows": [
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "HEADING",
+                  "level": 1,
+                  "text": "Memory",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The decoder reaches",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "CLAIM_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "CITATION_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": 0,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "LIMITATION_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": 0,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "threshold"
+                }
+              ]
+            }
+          ],
+          "commentary": [
+            {
+              "commentary_id": "outlook",
+              "title": "Outlook",
+              "text": "At 1e-4 the picture changes."
+            }
+          ]
+        },
+        "tables": [
           {
-            "label": "noise",
-            "node_hash": "f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde"
+            "table_id": "results",
+            "caption": "Logical error rate by distance.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "distance",
+                "header": "Distance",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "p_l",
+                "header": "Logical error rate",
+                "role": "VALUE",
+                "unit": "probability"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "d7",
+                "cells": [
+                  {
+                    "column_id": "distance",
+                    "text": "7",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "p_l",
+                    "text": null,
+                    "node_hash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "96",
+              "content_hash": "3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012"
+            }
           }
         ],
-        "result_rows": [
-          {
-            "label": "p_L",
-            "node_hash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-          }
-        ],
-        "csv": "label,value\r\np_L,1e-3\r\n",
         "figures": [
           {
-            "label": "threshold",
-            "svg": "<svg/>"
+            "figure_id": "threshold",
+            "title": "Threshold",
+            "caption": "Logical error rate against distance.",
+            "spec": {
+              "kind": "LINE",
+              "x_axis": {
+                "label": "Distance",
+                "unit": null
+              },
+              "y_axis": {
+                "label": "Logical error rate",
+                "unit": "probability"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base noise",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "d7",
+                        "column_id": "p_l"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": {
+              "media_type": "image/svg+xml",
+              "byte_size": "512",
+              "content_hash": "56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234"
+            }
           }
         ],
         "references": [
@@ -662,7 +1172,16 @@
           }
         ],
         "bundle_refs": [
-          "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0"
+          {
+            "bundle_kind": "RESOURCE_INTELLIGENCE",
+            "reproducibility_hash": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+            "embedded": {
+              "media_type": "application/json",
+              "byte_size": "2",
+              "content_hash": "6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345",
+              "base64": "e30="
+            }
+          }
         ],
         "environment": {
           "operating_system": "linux",
@@ -682,41 +1201,86 @@
             }
           ]
         },
-        "reproduction_command": "ketqat run examples/qec/surface-code-memory.yaml",
+        "recipe": {
+          "runner": "ketqat-runner",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456",
+          "argv": [
+            "run",
+            "examples/qec/surface-code-memory.yaml"
+          ],
+          "input_refs": [
+            {
+              "name": "circuit.stim",
+              "role": "CIRCUIT",
+              "media_type": "text/plain",
+              "byte_size": "18446744073709551615",
+              "content_hash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+              "resolution": {
+                "kind": "CONTENT_ADDRESSED_STORE",
+                "locator": "cas://ab/cd/ef"
+              },
+              "completeness": "COMPLETE",
+              "partial_reason": null,
+              "redaction": "NONE",
+              "redaction_reason": null
+            }
+          ],
+          "environment_allowlist": [
+            "KETQAT_CACHE_DIR"
+          ],
+          "expected_output_refs": [
+            {
+              "name": "measurements.json",
+              "role": "MEASUREMENTS",
+              "media_type": "application/json",
+              "byte_size": "4096",
+              "content_hash": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+              "resolution": {
+                "kind": "NOT_RETAINED",
+                "locator": null
+              },
+              "completeness": "PARTIAL",
+              "partial_reason": "the wall-clock limit stopped the run at round 812 of 1000",
+              "redaction": "REDACTED",
+              "redaction_reason": "per-shot identifiers removed under data-handling policy dh-2026-07"
+            }
+          ],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "9223372036854775807",
+            "max_credits": 100
+          },
+          "network_policy": "ALLOWLIST",
+          "allowed_hosts": [
+            "api.example.invalid"
+          ],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "arm64",
+            "minimum_runner_version": "0.3.0"
+          }
+        },
         "nodes": [
           {
             "schema_version": "1.0",
             "hash_rules_id": "study-v1",
-            "study_ref": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+            "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
             "kind": "MEASURED_RESULT",
             "label": "logical error rate at d=7",
+            "visibility": "PUBLIC",
             "claim": {
-              "subject": "surface code",
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": "bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a",
+                "record_slug": "surface-code-memory"
+              },
               "metric": "p_L",
               "comparator": "LESS_THAN",
-              "value": {
-                "value": 0.001,
-                "unit": "logical_error_rate",
-                "bound": "ESTIMATE",
-                "evidence": "MODELLED",
-                "source": "resource-model",
-                "model": "surface-code",
-                "model_version": "0.4.1",
-                "assumptions": [
-                  "p=1e-3",
-                  "round-trip"
-                ],
-                "created_at": "2026-08-01T00:00:00.000Z",
-                "schema_version": "0.1",
-                "uncertainty": {
-                  "kind": "INTERVAL",
-                  "low": 0.0009,
-                  "high": 0.0011,
-                  "basis": "bootstrap"
-                },
-                "limitations": [
-                  "single decoder"
-                ]
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab",
+                "field_path": null
               }
             },
             "quantity": {
@@ -772,7 +1336,7 @@
           {
             "schema_version": "1.0",
             "hash_rules_id": "study-v1",
-            "study_ref": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+            "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
             "kind": "SUPPORTS",
             "from_node_hash": "456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123",
             "to_node_hash": "56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234",
@@ -790,26 +1354,93 @@
             ],
             "edge_hashes": [
               "456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123"
+            ],
+            "bundle_fields": [
+              {
+                "bundle_hash": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+                "field_path": "estimates[0].runtime.value"
+              }
             ]
+          }
+        ],
+        "reviews": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
+            "subject_node_hash": "def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc",
+            "verdict": "CHANGES_REQUESTED",
+            "rationale": "the decoder version is not pinned",
+            "reviewer": "reviewer@example.invalid",
+            "created_at": "2026-08-31T12:20:00.000Z",
+            "content_hash": "ef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd"
+          }
+        ],
+        "reproductions": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
+            "original_node_hash": "f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde",
+            "reproduction_capsule_ref": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "observed_node_hash": "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+            "outcome": "DIVERGED",
+            "notes": "p_L differed by 4% at d=7",
+            "asserted_by": "runner@example.invalid",
+            "created_at": "2026-08-31T12:30:00.000Z",
+            "content_hash": "23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01"
+          }
+        ],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [
+              "89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567"
+            ],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "structural only"
+            ],
+            "observed_at": "2026-08-31T12:59:00.000Z"
+          },
+          {
+            "check_id": "hardware_reproduction",
+            "status": "NOT_RUN",
+            "requirement": "OPTIONAL",
+            "tool": {
+              "name": "ketqat-runner",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "no device was booked",
+            "limitations": [],
+            "observed_at": "2026-08-31T12:59:30.000Z"
           }
         ],
         "limitations": [
           "one decoder"
         ],
-        "failed_checks": [],
         "is_demo": false,
         "created_at": "2026-08-31T13:00:00.000Z",
         "reproducibility_hash": "56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234"
       },
       "canonical_bodies": {
-        "semantic": "{\"assumption_rows\":[{\"node_hash\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\"}],\"bundle_refs\":[\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\"],\"claim_evidence_map\":[{\"claim_node_hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"edge_hashes\":[\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\"],\"evidence_node_hashes\":[\"3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012\"]}],\"edges\":[{\"from_node_hash\":\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"kind\":\"SUPPORTS\",\"to_node_hash\":\"56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234\"}],\"environment\":{\"architecture\":\"arm64\",\"hardware\":[{\"name\":\"cpu\",\"value\":\"apple-m2\"}],\"node_version\":\"22.11.0\",\"operating_system\":\"linux\",\"packages\":[{\"name\":\"stim\",\"version\":\"1.13.0\"}],\"python_version\":\"3.11.9\"},\"failed_checks\":[],\"is_demo\":false,\"limitations\":[\"one decoder\"],\"nodes\":[{\"citation\":{\"authors\":[\"Ada\",\"Grace\"],\"bibtex\":\"@article{x}\",\"doi\":\"10.0000/x\",\"title\":\"A paper\",\"url\":\"https://example.invalid/x\",\"year\":2026},\"claim\":{\"comparator\":\"LESS_THAN\",\"metric\":\"p_L\",\"subject\":\"surface code\",\"value\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"kind\":\"MEASURED_RESULT\",\"limitations\":[\"one seed\"],\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"reference\":{\"hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"record_kind\":\"qec_benchmark_result\"},\"retrieved_on\":\"2026-08-30\",\"source_published_on\":\"2026-05-01\"}],\"package_kind\":\"research_package\",\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"references\":[{\"authors\":[\"Ada\",\"Grace\"],\"bibtex\":\"@article{x}\",\"doi\":\"10.0000/x\",\"title\":\"A paper\",\"url\":\"https://example.invalid/x\",\"year\":2026}],\"reproduction_command\":\"ketqat run examples/qec/surface-code-memory.yaml\",\"result_rows\":[{\"node_hash\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\"}]}",
-        "record": "{\"assumption_rows\":[{\"label\":\"noise\",\"node_hash\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\"}],\"bundle_refs\":[\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\"],\"claim_evidence_map\":[{\"claim_node_hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"edge_hashes\":[\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\"],\"evidence_node_hashes\":[\"3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012\"]}],\"created_at\":\"2026-08-31T13:00:00.000Z\",\"csv\":\"label,value\\r\\np_L,1e-3\\r\\n\",\"edges\":[{\"asserted_by\":\"reviewer@example.invalid\",\"created_at\":\"2026-08-31T12:05:00.000Z\",\"from_node_hash\":\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"kind\":\"SUPPORTS\",\"rationale\":\"the run measures the claimed metric\",\"study_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"to_node_hash\":\"56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234\"}],\"environment\":{\"architecture\":\"arm64\",\"hardware\":[{\"name\":\"cpu\",\"value\":\"apple-m2\"}],\"node_version\":\"22.11.0\",\"operating_system\":\"linux\",\"packages\":[{\"name\":\"stim\",\"version\":\"1.13.0\"}],\"python_version\":\"3.11.9\"},\"failed_checks\":[],\"figures\":[{\"label\":\"threshold\",\"svg\":\"<svg/>\"}],\"is_demo\":false,\"limitations\":[\"one decoder\"],\"methods\":\"Stim + PyMatching.\",\"nodes\":[{\"citation\":{\"authors\":[\"Ada\",\"Grace\"],\"bibtex\":\"@article{x}\",\"doi\":\"10.0000/x\",\"title\":\"A paper\",\"url\":\"https://example.invalid/x\",\"year\":2026},\"claim\":{\"comparator\":\"LESS_THAN\",\"metric\":\"p_L\",\"subject\":\"surface code\",\"value\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001}},\"created_at\":\"2026-08-31T12:00:00.000Z\",\"kind\":\"MEASURED_RESULT\",\"label\":\"logical error rate at d=7\",\"limitations\":[\"one seed\"],\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"reference\":{\"hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"record_kind\":\"qec_benchmark_result\",\"record_slug\":\"run-7\"},\"retrieved_on\":\"2026-08-30\",\"source_published_on\":\"2026-05-01\",\"study_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\"}],\"package_kind\":\"research_package\",\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"references\":[{\"authors\":[\"Ada\",\"Grace\"],\"bibtex\":\"@article{x}\",\"doi\":\"10.0000/x\",\"title\":\"A paper\",\"url\":\"https://example.invalid/x\",\"year\":2026}],\"report_markdown\":\"# Report\\n\\nText.\\n\",\"reproduction_command\":\"ketqat run examples/qec/surface-code-memory.yaml\",\"result_rows\":[{\"label\":\"p_L\",\"node_hash\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\"}],\"study_ref\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\"}",
-        "receipt": "{\"created_at\":\"2026-08-31T13:00:00.000Z\"}"
+        "semantic": "{\"bundle_refs\":[{\"bundle_kind\":\"RESOURCE_INTELLIGENCE\",\"embedded\":{\"base64\":\"e30=\",\"byte_size\":\"2\",\"content_hash\":\"6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345\",\"media_type\":\"application/json\"},\"reproducibility_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\"}],\"claim_evidence_map\":[{\"bundle_fields\":[{\"bundle_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"field_path\":\"estimates[0].runtime.value\"}],\"claim_node_hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"edge_hashes\":[\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\"],\"evidence_node_hashes\":[\"3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012\"]}],\"distribution\":\"OFFLINE_EXPORT\",\"edges\":[{\"from_node_hash\":\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"kind\":\"SUPPORTS\",\"to_node_hash\":\"56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234\"}],\"environment\":{\"architecture\":\"arm64\",\"hardware\":[{\"name\":\"cpu\",\"value\":\"apple-m2\"}],\"node_version\":\"22.11.0\",\"operating_system\":\"linux\",\"packages\":[{\"name\":\"stim\",\"version\":\"1.13.0\"}],\"python_version\":\"3.11.9\"},\"is_demo\":false,\"limitations\":[\"one decoder\"],\"nodes\":[{\"citation\":{\"authors\":[\"Ada\",\"Grace\"],\"bibtex\":\"@article{x}\",\"doi\":\"10.0000/x\",\"title\":\"A paper\",\"url\":\"https://example.invalid/x\",\"year\":2026},\"claim\":{\"comparator\":\"LESS_THAN\",\"metric\":\"p_L\",\"subject_ref\":{\"hash\":\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\",\"record_kind\":\"quantum_workload\"},\"value_ref\":{\"field_path\":null,\"kind\":\"value_node\",\"node_hash\":\"cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab\"}},\"kind\":\"MEASURED_RESULT\",\"limitations\":[\"one seed\"],\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"reference\":{\"hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"record_kind\":\"qec_benchmark_result\"},\"retrieved_on\":\"2026-08-30\",\"source_published_on\":\"2026-05-01\"}],\"package_kind\":\"research_package\",\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"recipe\":{\"allowed_hosts\":[\"api.example.invalid\"],\"argv\":[\"run\",\"examples/qec/surface-code-memory.yaml\"],\"container_digest\":\"sha256:789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456\",\"environment_allowlist\":[\"KETQAT_CACHE_DIR\"],\"expected_output_refs\":[{\"byte_size\":\"4096\",\"completeness\":\"PARTIAL\",\"content_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"media_type\":\"application/json\",\"name\":\"measurements.json\",\"partial_reason\":\"the wall-clock limit stopped the run at round 812 of 1000\",\"redaction\":\"REDACTED\",\"redaction_reason\":\"per-shot identifiers removed under data-handling policy dh-2026-07\",\"resolution\":{\"kind\":\"NOT_RETAINED\",\"locator\":null},\"role\":\"MEASUREMENTS\"}],\"input_refs\":[{\"byte_size\":\"18446744073709551615\",\"completeness\":\"COMPLETE\",\"content_hash\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"media_type\":\"text/plain\",\"name\":\"circuit.stim\",\"partial_reason\":null,\"redaction\":\"NONE\",\"redaction_reason\":null,\"resolution\":{\"kind\":\"CONTENT_ADDRESSED_STORE\",\"locator\":\"cas://ab/cd/ef\"},\"role\":\"CIRCUIT\"}],\"network_policy\":\"ALLOWLIST\",\"platform\":{\"architecture\":\"arm64\",\"minimum_runner_version\":\"0.3.0\",\"operating_system\":\"linux\"},\"resource_limits\":{\"max_credits\":100,\"max_memory_bytes\":\"9223372036854775807\",\"max_runtime\":3600},\"runner\":\"ketqat-runner\",\"runner_version\":\"0.3.0\"},\"references\":[{\"authors\":[\"Ada\",\"Grace\"],\"bibtex\":\"@article{x}\",\"doi\":\"10.0000/x\",\"title\":\"A paper\",\"url\":\"https://example.invalid/x\",\"year\":2026}],\"tables\":[{\"columns\":[{\"column_id\":\"distance\",\"role\":\"LABEL\",\"unit\":null},{\"column_id\":\"p_l\",\"role\":\"VALUE\",\"unit\":\"probability\"}],\"role\":\"RESULTS\",\"rows\":[{\"cells\":[{\"column_id\":\"distance\",\"node_hash\":null},{\"column_id\":\"p_l\",\"node_hash\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\"}],\"row_id\":\"d7\"}],\"table_id\":\"results\"}]}",
+        "record": "{\"bundle_refs\":[{\"bundle_kind\":\"RESOURCE_INTELLIGENCE\",\"embedded\":{\"base64\":\"e30=\",\"byte_size\":\"2\",\"content_hash\":\"6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345\",\"media_type\":\"application/json\"},\"reproducibility_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\"}],\"check_ledger\":[{\"check_id\":\"graph_structure\",\"input_refs\":[\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\"],\"limitations\":[\"structural only\"],\"observed_at\":\"2026-08-31T12:59:00.000Z\",\"output_ref\":null,\"reason\":\"\",\"requirement\":\"REQUIRED\",\"status\":\"PASS\",\"tool\":{\"name\":\"ketqat-sdk\",\"version\":\"0.3.0\"}},{\"check_id\":\"hardware_reproduction\",\"input_refs\":[],\"limitations\":[],\"observed_at\":\"2026-08-31T12:59:30.000Z\",\"output_ref\":null,\"reason\":\"no device was booked\",\"requirement\":\"OPTIONAL\",\"status\":\"NOT_RUN\",\"tool\":{\"name\":\"ketqat-runner\",\"version\":\"0.3.0\"}}],\"claim_evidence_map\":[{\"bundle_fields\":[{\"bundle_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"field_path\":\"estimates[0].runtime.value\"}],\"claim_node_hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"edge_hashes\":[\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\"],\"evidence_node_hashes\":[\"3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012\"]}],\"created_at\":\"2026-08-31T13:00:00.000Z\",\"distribution\":\"OFFLINE_EXPORT\",\"edges\":[{\"asserted_by\":\"reviewer@example.invalid\",\"created_at\":\"2026-08-31T12:05:00.000Z\",\"from_node_hash\":\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"kind\":\"SUPPORTS\",\"rationale\":\"the run measures the claimed metric\",\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"to_node_hash\":\"56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234\"}],\"environment\":{\"architecture\":\"arm64\",\"hardware\":[{\"name\":\"cpu\",\"value\":\"apple-m2\"}],\"node_version\":\"22.11.0\",\"operating_system\":\"linux\",\"packages\":[{\"name\":\"stim\",\"version\":\"1.13.0\"}],\"python_version\":\"3.11.9\"},\"figures\":[{\"caption\":\"Logical error rate against distance.\",\"figure_id\":\"threshold\",\"spec\":{\"kind\":\"LINE\",\"series\":[{\"label\":\"Base noise\",\"points\":[{\"x\":{\"column_id\":null,\"kind\":\"NODE\",\"node_hash\":\"456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123\",\"row_id\":null,\"table_id\":null},\"y\":{\"column_id\":\"p_l\",\"kind\":\"TABLE_CELL\",\"node_hash\":null,\"row_id\":\"d7\",\"table_id\":\"results\"}}],\"series_id\":\"base\"}],\"x_axis\":{\"label\":\"Distance\",\"unit\":null},\"y_axis\":{\"label\":\"Logical error rate\",\"unit\":\"probability\"}},\"svg_artifact\":{\"byte_size\":\"512\",\"content_hash\":\"56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234\",\"media_type\":\"image/svg+xml\"},\"title\":\"Threshold\"}],\"is_demo\":false,\"limitations\":[\"one decoder\"],\"nodes\":[{\"citation\":{\"authors\":[\"Ada\",\"Grace\"],\"bibtex\":\"@article{x}\",\"doi\":\"10.0000/x\",\"title\":\"A paper\",\"url\":\"https://example.invalid/x\",\"year\":2026},\"claim\":{\"comparator\":\"LESS_THAN\",\"metric\":\"p_L\",\"subject_ref\":{\"hash\":\"bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a\",\"record_kind\":\"quantum_workload\",\"record_slug\":\"surface-code-memory\"},\"value_ref\":{\"field_path\":null,\"kind\":\"value_node\",\"node_hash\":\"cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab\"}},\"created_at\":\"2026-08-31T12:00:00.000Z\",\"kind\":\"MEASURED_RESULT\",\"label\":\"logical error rate at d=7\",\"limitations\":[\"one seed\"],\"quantity\":{\"assumptions\":[\"p=1e-3\",\"round-trip\"],\"bound\":\"ESTIMATE\",\"created_at\":\"2026-08-01T00:00:00.000Z\",\"evidence\":\"MODELLED\",\"limitations\":[\"single decoder\"],\"model\":\"surface-code\",\"model_version\":\"0.4.1\",\"schema_version\":\"0.1\",\"source\":\"resource-model\",\"uncertainty\":{\"basis\":\"bootstrap\",\"high\":0.0011,\"kind\":\"INTERVAL\",\"low\":0.0009},\"unit\":\"logical_error_rate\",\"value\":0.001},\"reference\":{\"hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"record_kind\":\"qec_benchmark_result\",\"record_slug\":\"run-7\"},\"retrieved_on\":\"2026-08-30\",\"source_published_on\":\"2026-05-01\",\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"visibility\":\"PUBLIC\"}],\"package_kind\":\"research_package\",\"plan_ref\":{\"revision\":1,\"revision_hash\":\"9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678\"},\"recipe\":{\"allowed_hosts\":[\"api.example.invalid\"],\"argv\":[\"run\",\"examples/qec/surface-code-memory.yaml\"],\"container_digest\":\"sha256:789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456\",\"environment_allowlist\":[\"KETQAT_CACHE_DIR\"],\"expected_output_refs\":[{\"byte_size\":\"4096\",\"completeness\":\"PARTIAL\",\"content_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"media_type\":\"application/json\",\"name\":\"measurements.json\",\"partial_reason\":\"the wall-clock limit stopped the run at round 812 of 1000\",\"redaction\":\"REDACTED\",\"redaction_reason\":\"per-shot identifiers removed under data-handling policy dh-2026-07\",\"resolution\":{\"kind\":\"NOT_RETAINED\",\"locator\":null},\"role\":\"MEASUREMENTS\"}],\"input_refs\":[{\"byte_size\":\"18446744073709551615\",\"completeness\":\"COMPLETE\",\"content_hash\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"media_type\":\"text/plain\",\"name\":\"circuit.stim\",\"partial_reason\":null,\"redaction\":\"NONE\",\"redaction_reason\":null,\"resolution\":{\"kind\":\"CONTENT_ADDRESSED_STORE\",\"locator\":\"cas://ab/cd/ef\"},\"role\":\"CIRCUIT\"}],\"network_policy\":\"ALLOWLIST\",\"platform\":{\"architecture\":\"arm64\",\"minimum_runner_version\":\"0.3.0\",\"operating_system\":\"linux\"},\"resource_limits\":{\"max_credits\":100,\"max_memory_bytes\":\"9223372036854775807\",\"max_runtime\":3600},\"runner\":\"ketqat-runner\",\"runner_version\":\"0.3.0\"},\"references\":[{\"authors\":[\"Ada\",\"Grace\"],\"bibtex\":\"@article{x}\",\"doi\":\"10.0000/x\",\"title\":\"A paper\",\"url\":\"https://example.invalid/x\",\"year\":2026}],\"report\":{\"commentary\":[{\"commentary_id\":\"outlook\",\"text\":\"At 1e-4 the picture changes.\",\"title\":\"Outlook\"}],\"sections\":[{\"section_id\":\"findings\",\"segments\":[{\"citation_index\":null,\"figure_id\":null,\"kind\":\"HEADING\",\"level\":1,\"limitation_index\":null,\"node_hash\":null,\"table_id\":null,\"text\":\"Memory\"},{\"citation_index\":null,\"figure_id\":null,\"kind\":\"PROSE\",\"level\":null,\"limitation_index\":null,\"node_hash\":null,\"table_id\":null,\"text\":\"The decoder reaches\"},{\"citation_index\":null,\"figure_id\":null,\"kind\":\"QUANTITY_REF\",\"level\":null,\"limitation_index\":null,\"node_hash\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\",\"table_id\":null,\"text\":null},{\"citation_index\":null,\"figure_id\":null,\"kind\":\"CLAIM_REF\",\"level\":null,\"limitation_index\":null,\"node_hash\":\"23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01\",\"table_id\":null,\"text\":null},{\"citation_index\":0,\"figure_id\":null,\"kind\":\"CITATION_REF\",\"level\":null,\"limitation_index\":null,\"node_hash\":null,\"table_id\":null,\"text\":null},{\"citation_index\":null,\"figure_id\":null,\"kind\":\"LIMITATION_REF\",\"level\":null,\"limitation_index\":0,\"node_hash\":null,\"table_id\":null,\"text\":null},{\"citation_index\":null,\"figure_id\":null,\"kind\":\"TABLE_REF\",\"level\":null,\"limitation_index\":null,\"node_hash\":null,\"table_id\":\"results\",\"text\":null},{\"citation_index\":null,\"figure_id\":\"threshold\",\"kind\":\"FIGURE_REF\",\"level\":null,\"limitation_index\":null,\"node_hash\":null,\"table_id\":null,\"text\":null}],\"title\":\"Findings\"}]},\"reproductions\":[{\"asserted_by\":\"runner@example.invalid\",\"created_at\":\"2026-08-31T12:30:00.000Z\",\"notes\":\"p_L differed by 4% at d=7\",\"observed_node_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"original_node_hash\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\",\"outcome\":\"DIVERGED\",\"reproduction_capsule_ref\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\"}],\"reviews\":[{\"created_at\":\"2026-08-31T12:20:00.000Z\",\"rationale\":\"the decoder version is not pinned\",\"reviewer\":\"reviewer@example.invalid\",\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"subject_node_hash\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"verdict\":\"CHANGES_REQUESTED\"}],\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"tables\":[{\"caption\":\"Logical error rate by distance.\",\"columns\":[{\"column_id\":\"distance\",\"header\":\"Distance\",\"role\":\"LABEL\",\"unit\":null},{\"column_id\":\"p_l\",\"header\":\"Logical error rate\",\"role\":\"VALUE\",\"unit\":\"probability\"}],\"csv_artifact\":{\"byte_size\":\"96\",\"content_hash\":\"3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012\",\"media_type\":\"text/csv\"},\"role\":\"RESULTS\",\"rows\":[{\"cells\":[{\"column_id\":\"distance\",\"node_hash\":null,\"text\":\"7\"},{\"column_id\":\"p_l\",\"node_hash\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"text\":null}],\"row_id\":\"d7\"}],\"table_id\":\"results\"}]}",
+        "receipt": "{\"check_ledger\":[{\"check_id\":\"graph_structure\",\"input_refs\":[\"89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\"],\"limitations\":[\"structural only\"],\"observed_at\":\"2026-08-31T12:59:00.000Z\",\"output_ref\":null,\"reason\":\"\",\"requirement\":\"REQUIRED\",\"status\":\"PASS\",\"tool\":{\"name\":\"ketqat-sdk\",\"version\":\"0.3.0\"}},{\"check_id\":\"hardware_reproduction\",\"input_refs\":[],\"limitations\":[],\"observed_at\":\"2026-08-31T12:59:30.000Z\",\"output_ref\":null,\"reason\":\"no device was booked\",\"requirement\":\"OPTIONAL\",\"status\":\"NOT_RUN\",\"tool\":{\"name\":\"ketqat-runner\",\"version\":\"0.3.0\"}}],\"created_at\":\"2026-08-31T13:00:00.000Z\",\"reproductions\":[{\"asserted_by\":\"runner@example.invalid\",\"created_at\":\"2026-08-31T12:30:00.000Z\",\"notes\":\"p_L differed by 4% at d=7\",\"observed_node_hash\":\"123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0\",\"original_node_hash\":\"f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\",\"outcome\":\"DIVERGED\",\"reproduction_capsule_ref\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\"}],\"reviews\":[{\"created_at\":\"2026-08-31T12:20:00.000Z\",\"rationale\":\"the decoder version is not pinned\",\"reviewer\":\"reviewer@example.invalid\",\"study_ref\":\"9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58\",\"subject_node_hash\":\"def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc\",\"verdict\":\"CHANGES_REQUESTED\"}]}"
       },
       "digests": {
-        "semantic": "3d12d06de0c86638c33d84f774b557b6f844d9b0eb9db2fe58a1c15e424e21de",
-        "record": "ef3f40068a21144544ef75eccd3f420aec6f2f5ab3a53ddf1328477fd9f45524",
-        "receipt": "5e4d4c52ba9812fce1d788c5292499a61becee80107b9351fd208292cec05b55"
+        "semantic": "387e8d8fee12fc0fd8d41202a3b168db2d188a873f879ab4198cd808b5589eca",
+        "record": "825078e8d338a8175d7c95c80c352f426c75e379ba0e0c0fbe44ef86552b2fcf",
+        "receipt": "acf4dbaf358d3cd2bea37e4f2ab8913b51b8a4554611c4e5fbe55c702c49e12c"
       },
       "refusals": {}
     }

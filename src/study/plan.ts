@@ -7,12 +7,27 @@ import {
   RevisionRefSchema,
   STUDY_SCHEMA_VERSION,
   StudyPositionSchema,
-  StudyQuantitySchema,
   type RevisionRef,
 } from "./common.js"
+import {
+  StudyCriterionSchema,
+  UNEVALUATED_CRITERION_STATUS,
+  duplicateCriterionIds,
+  type StudyCriterion,
+} from "./criteria.js"
 import { studySelfHash } from "./hash.js"
+import { StudyIdSchema } from "./identity.js"
+import {
+  VersionPinSchema,
+  versionPinShortfall,
+  type VersionPin,
+  type VersionPinShortfall,
+} from "./pins.js"
+import { DataHandlingPolicySchema, dataHandlingSummary, type DataHandlingPolicy } from "./policy.js"
 import type { StudyRefusal } from "./refusals.js"
+import { studyRevisionRefusal } from "./revision.js"
 import { STUDY_HASH_RULES_ID } from "./rules.js"
+import { dimensionedQuantitySchema } from "./units.js"
 import { FiniteFloatSchema } from "./values.js"
 
 /**
@@ -29,17 +44,33 @@ import { FiniteFloatSchema } from "./values.js"
  * to invalidate the old approval, because nothing invalidates it; it simply
  * stops matching.
  *
- * Two smaller decisions carry weight.
+ * Four smaller decisions carry weight.
  *
- * **Success and refusal criteria are both required.** A plan that says only what
- * would count as success has pre-committed to succeeding: every outcome can be
- * read as partial progress after the fact. Stating in advance what would make
- * the study stop is what makes the eventual conclusion falsifiable (RFC §3).
+ * **Success and refusal criteria are both required, and both are predicates.** A
+ * plan that says only what would count as success has pre-committed to
+ * succeeding: every outcome can be read as partial progress after the fact.
+ * Stating in advance what would make the study stop is what makes the eventual
+ * conclusion falsifiable (RFC §3) -- and stating it as prose leaves the reading
+ * of it to whoever writes the report, which is the same failure one step later.
+ * So each criterion is a metric, a comparator, a threshold and the kinds of
+ * evidence that satisfy it, with the sentence kept beside it as explanation.
  *
  * **`max_credits` is a plain number, not a `Quantity`.** Every estimate in this
  * family wears the measurement envelope because an estimate has a provenance and
  * an uncertainty. A spending ceiling has neither: it is a decision the user made,
- * exact by construction, in the same way `error_budget` is on a scenario.
+ * exact by construction, in the same way `error_budget` is on a scenario. It is
+ * denominated in credits, which is why `expected_credits` is a `CREDITS`
+ * quantity and cannot be stated in dollars -- a ceiling and an estimate that
+ * could not be compared would be two numbers about nothing.
+ *
+ * **Data handling is a policy, and its summary is generated.** See `policy.ts`:
+ * a stored paragraph beside the fields is a second statement free to disagree
+ * with them, and the reader believes the paragraph.
+ *
+ * **A pinned version is not a name and a version.** See `pins.ts`: a version
+ * string is a label a registry resolves to whatever is published under it today.
+ * Whether a plan is executable is asked of the pins by `planExecutability`,
+ * rather than assumed by whatever runs it.
  */
 
 export const PlannedBaselineSchema = z.object({
@@ -67,7 +98,11 @@ export const CandidateWorkflowSchema = z.object({
 }).strict()
 export type CandidateWorkflow = z.infer<typeof CandidateWorkflowSchema>
 
-const namedVersion = z.object({ name: z.string().min(1), version: z.string().min(1) }).strict()
+export interface PinnedVersions {
+  adapter: VersionPin | null
+  model: VersionPin
+  engine: VersionPin
+}
 
 /**
  * The versions this plan is pinned to.
@@ -76,14 +111,15 @@ const namedVersion = z.object({ name: z.string().min(1), version: z.string().min
  * produced this" is only answerable in hindsight if it was decided in advance.
  * The adapter is nullable -- some studies have no vendor adapter -- while the
  * model and the engine are not: something computed the numbers, and it has a
- * version.
+ * version, a digest and, where the source is public, a commit.
  */
-export const PinnedVersionsSchema = z.object({
-  adapter: namedVersion.nullable(),
-  model: namedVersion,
-  engine: namedVersion,
-}).strict()
-export type PinnedVersions = z.infer<typeof PinnedVersionsSchema>
+export const PinnedVersionsSchema: Contract<PinnedVersions> = z
+  .object({
+    adapter: VersionPinSchema.nullable(),
+    model: VersionPinSchema,
+    engine: VersionPinSchema,
+  })
+  .strict() as unknown as Contract<PinnedVersions>
 
 /**
  * How exactly a rerun is expected to match.
@@ -110,10 +146,10 @@ export interface StudyPlan {
   expected_runtime: Quantity
   expected_credits: Quantity
   max_credits: number
-  data_handling: string
+  data_handling: DataHandlingPolicy
   reproducibility_level: ReproducibilityLevel
-  success_criteria: string[]
-  refusal_criteria: string[]
+  success_criteria: StudyCriterion[]
+  refusal_criteria: StudyCriterion[]
   execution_limitations: string[]
   created_at?: string
   content_hash: string
@@ -123,7 +159,8 @@ export const StudyPlanSchema: Contract<StudyPlan> = z
   .object({
     schema_version: z.string().min(1),
     hash_rules_id: z.literal(STUDY_HASH_RULES_ID),
-    study_ref: ContentHashSchema,
+    /** The study this record belongs to, by its stable id: a rename does not break this reference. */
+    study_ref: StudyIdSchema,
     /** The specification revision this plan answers. A plan for an older question is a different plan. */
     specification_ref: RevisionRefSchema,
     revision: StudyPositionSchema,
@@ -140,17 +177,18 @@ export const StudyPlanSchema: Contract<StudyPlan> = z
     scenario_refs: z.array(ContentHashSchema).min(1),
     pinned_versions: PinnedVersionsSchema,
     /** An estimate, so it wears the envelope with its evidence class and its assumptions. */
-    expected_runtime: StudyQuantitySchema,
-    expected_credits: StudyQuantitySchema,
-    /** The user's hard ceiling. Their decision, exact, not an estimate of anything. */
+    expected_runtime: dimensionedQuantitySchema("TIME"),
+    /** In credits, which is what `max_credits` bounds. A figure in dollars would bound nothing. */
+    expected_credits: dimensionedQuantitySchema("CREDITS"),
+    /** The user's hard ceiling, in credits. Their decision, exact, not an estimate of anything. */
     max_credits: FiniteFloatSchema.positive(),
-    /** What happens to the inputs and the outputs. Never blank on a plan somebody signs. */
-    data_handling: z.string().min(1),
+    /** What happens to the inputs and the outputs, as decisions rather than a paragraph. */
+    data_handling: DataHandlingPolicySchema,
     reproducibility_level: ReproducibilityLevelSchema,
-    /** What would count as an answer. */
-    success_criteria: z.array(z.string().min(1)).min(1),
+    /** What would count as an answer, as predicates something can evaluate. */
+    success_criteria: z.array(StudyCriterionSchema).min(1),
     /** What would make this study stop and report nothing. Required, and required to be non-empty. */
-    refusal_criteria: z.array(z.string().min(1)).min(1),
+    refusal_criteria: z.array(StudyCriterionSchema).min(1),
     /** What this plan already knows it will not establish. */
     execution_limitations: z.array(z.string().min(1)),
     /** `RECEIPT_ONLY`: the moment the server observed this record, not part of what it says. */
@@ -174,7 +212,46 @@ export const StudyPlanSchema: Contract<StudyPlan> = z
         path: ["supersedes"],
       })
     }
-  })
+
+    // One id space across both lists. A verdict is filed against an id, and a
+    // success criterion sharing an id with a refusal criterion would let one
+    // verdict argue both ways.
+    const criteria = [...plan.success_criteria, ...plan.refusal_criteria]
+    for (const duplicate of duplicateCriterionIds(criteria)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          `Two criteria on this plan are filed under ${duplicate}. A verdict recorded against that id would ` +
+          "settle both, and which one it was about could not be recovered.",
+        path: ["success_criteria"],
+      })
+    }
+
+    // A plan is written before anything runs, so a criterion on it cannot
+    // already have a verdict. A plan carrying PASS is a plan asserting its own
+    // conclusion, which is exactly what stating refusal criteria in advance
+    // exists to prevent.
+    for (const [index, criterion] of plan.success_criteria.entries()) {
+      if (criterion.status !== UNEVALUATED_CRITERION_STATUS) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            `Success criterion ${criterion.criterion_id} is recorded as ${criterion.status} on a plan. Nothing ` +
+            "has run yet, so a plan that carries a verdict is a plan that has decided its own outcome.",
+          path: ["success_criteria", index, "status"],
+        })
+      }
+    }
+    for (const [index, criterion] of plan.refusal_criteria.entries()) {
+      if (criterion.status !== UNEVALUATED_CRITERION_STATUS) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Refusal criterion ${criterion.criterion_id} is recorded as ${criterion.status} on a plan.`,
+          path: ["refusal_criteria", index, "status"],
+        })
+      }
+    }
+  }) as unknown as Contract<StudyPlan>
 
 /**
  * The hash a user is asked to confirm.
@@ -185,6 +262,46 @@ export const StudyPlanSchema: Contract<StudyPlan> = z
  */
 export function planConfirmationTarget(plan: StudyPlan): string {
   return plan.content_hash
+}
+
+/**
+ * The data-handling paragraph a user is shown, generated from the policy they
+ * are confirming.
+ *
+ * Named here so that a surface asking for confirmation has one place to reach
+ * for it, and so that no surface is tempted to write its own -- a second
+ * rendering is a second thing that can say what the fields do not.
+ */
+export function planDataHandlingSummary(plan: StudyPlan): string {
+  return dataHandlingSummary(plan.data_handling)
+}
+
+export interface PlanExecutability {
+  readonly executable: boolean
+  readonly shortfalls: readonly VersionPinShortfall[]
+}
+
+/**
+ * Whether this plan's pins name programs rather than labels.
+ *
+ * A report rather than a refusal, and the distinction is the point. A plan is
+ * drafted before an image is built, and refusing to record one would push the
+ * drafting out of the record; but running a plan whose engine is pinned only by
+ * a version string produces a capsule nobody can reproduce, and the runner has
+ * to be able to see that before it spends anything.
+ *
+ * The adapter is checked only when there is one. A study with no vendor adapter
+ * is not a study with an unpinned adapter.
+ */
+export function planExecutability(plan: StudyPlan): PlanExecutability {
+  const shortfalls = [
+    ...versionPinShortfall("engine", plan.pinned_versions.engine),
+    ...versionPinShortfall("model", plan.pinned_versions.model),
+    ...(plan.pinned_versions.adapter === null
+      ? []
+      : versionPinShortfall("adapter", plan.pinned_versions.adapter)),
+  ]
+  return Object.freeze({ executable: shortfalls.length === 0, shortfalls: Object.freeze(shortfalls) })
 }
 
 /**
@@ -275,13 +392,32 @@ export function verifyPlanConfirmation(
  *
  * `currentHash` comes from the caller for the same reason it does in
  * `reviseSpecification` -- the field on the record is a claim, the argument is
- * what the caller checked.
+ * what the caller checked -- and it is now checked rather than written into
+ * `supersedes` on trust. All four statements that have to agree are compared in
+ * `revision.ts`, which is also where what the SDK checks and what a store must
+ * is spelled out; `latestRevision` is how a caller brings the store's answer
+ * into the comparison and gets the concurrent case detected.
+ *
+ * This one matters more than the specification's. A plan is the thing a user
+ * confirms, so a revision built on a stale or edited base is a plan somebody is
+ * about to be asked to approve on the strength of a chain that points at a
+ * record it did not come from.
  */
 export function revisePlan(
   current: StudyPlan,
   changes: Partial<Omit<StudyPlan, "revision" | "supersedes" | "schema_version" | "hash_rules_id" | "content_hash">>,
   currentHash: string,
-): StudyPlan {
+  latestRevision?: RevisionRef | null,
+): { ok: true; plan: StudyPlan } | { ok: false; refusal: StudyRefusal } {
+  const refusal = studyRevisionRefusal(
+    "study_plan",
+    `study plan revision ${current.revision}`,
+    current,
+    currentHash,
+    latestRevision,
+  )
+  if (refusal !== null) return { ok: false, refusal }
+
   const withoutHash = {
     ...current,
     ...changes,
@@ -292,5 +428,8 @@ export function revisePlan(
     created_at: changes.created_at,
     content_hash: undefined,
   }
-  return StudyPlanSchema.parse({ ...withoutHash, content_hash: studySelfHash("study_plan", withoutHash) })
+  return {
+    ok: true,
+    plan: StudyPlanSchema.parse({ ...withoutHash, content_hash: studySelfHash("study_plan", withoutHash) }),
+  }
 }

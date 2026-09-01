@@ -53,6 +53,357 @@
     "max_nodes": 100000,
     "max_canonical_bytes": 8388608
   },
+  "control_plane_kinds": [
+    {
+      "record_kind": "execution_job",
+      "address_instead": "study_task_authorization",
+      "why": "a job is where the work is right now -- queued, leased, running, retried -- and a digest over state that moves is a digest that stops matching itself between two reads of the same row"
+    }
+  ],
+  "package_limits": {
+    "max_nodes": 5000,
+    "max_edges": 20000,
+    "max_tables": 64,
+    "max_table_rows": 5000,
+    "max_report_bytes": 1048576,
+    "max_commentary_bytes": 262144,
+    "max_csv_bytes": 4194304,
+    "max_figures": 64,
+    "max_svg_bytes": 1048576,
+    "max_citations": 512,
+    "max_embedded_bundle_bytes": 16777216,
+    "max_check_ledger_entries": 512,
+    "max_nesting_depth": 24
+  },
+  "evidence_ground_rules": [
+    {
+      "node_kind": "claim",
+      "grounds": "never"
+    },
+    {
+      "node_kind": "quantity",
+      "grounds": "when_unknown"
+    },
+    {
+      "node_kind": "assumption",
+      "grounds": "always"
+    },
+    {
+      "node_kind": "input",
+      "grounds": "always"
+    },
+    {
+      "node_kind": "model_ref",
+      "grounds": "never"
+    },
+    {
+      "node_kind": "result",
+      "grounds": "always"
+    },
+    {
+      "node_kind": "capsule_ref",
+      "grounds": "always"
+    },
+    {
+      "node_kind": "source",
+      "grounds": "always"
+    },
+    {
+      "node_kind": "dataset_ref",
+      "grounds": "always"
+    },
+    {
+      "node_kind": "snapshot_ref",
+      "grounds": "always"
+    }
+  ],
+  "evidence_edge_matrix": [
+    {
+      "from_kind": "result",
+      "edge_kind": "derived_from",
+      "to_kind": "capsule_ref"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "derived_from",
+      "to_kind": "result"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "derived_from",
+      "to_kind": "dataset_ref"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "derived_from",
+      "to_kind": "snapshot_ref"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "derived_from",
+      "to_kind": "input"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "derived_from",
+      "to_kind": "result"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "derived_from",
+      "to_kind": "capsule_ref"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "derived_from",
+      "to_kind": "quantity"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "derived_from",
+      "to_kind": "dataset_ref"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "used_model",
+      "to_kind": "model_ref"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "used_model",
+      "to_kind": "model_ref"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "used_input",
+      "to_kind": "input"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "used_input",
+      "to_kind": "dataset_ref"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "used_input",
+      "to_kind": "snapshot_ref"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "used_input",
+      "to_kind": "quantity"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "used_input",
+      "to_kind": "assumption"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "used_input",
+      "to_kind": "input"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "used_input",
+      "to_kind": "dataset_ref"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "used_input",
+      "to_kind": "snapshot_ref"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "used_input",
+      "to_kind": "quantity"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "used_input",
+      "to_kind": "assumption"
+    },
+    {
+      "from_kind": "claim",
+      "edge_kind": "supports",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "supports",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "assumption",
+      "edge_kind": "supports",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "supports",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "capsule_ref",
+      "edge_kind": "supports",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "source",
+      "edge_kind": "supports",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "dataset_ref",
+      "edge_kind": "supports",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "snapshot_ref",
+      "edge_kind": "supports",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "input",
+      "edge_kind": "supports",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "model_ref",
+      "edge_kind": "supports",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "claim",
+      "edge_kind": "contradicts",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "claim",
+      "edge_kind": "contradicts",
+      "to_kind": "quantity"
+    },
+    {
+      "from_kind": "claim",
+      "edge_kind": "contradicts",
+      "to_kind": "result"
+    },
+    {
+      "from_kind": "claim",
+      "edge_kind": "contradicts",
+      "to_kind": "source"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "contradicts",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "contradicts",
+      "to_kind": "quantity"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "contradicts",
+      "to_kind": "result"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "contradicts",
+      "to_kind": "source"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "contradicts",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "contradicts",
+      "to_kind": "quantity"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "contradicts",
+      "to_kind": "result"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "contradicts",
+      "to_kind": "source"
+    },
+    {
+      "from_kind": "source",
+      "edge_kind": "contradicts",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "source",
+      "edge_kind": "contradicts",
+      "to_kind": "quantity"
+    },
+    {
+      "from_kind": "source",
+      "edge_kind": "contradicts",
+      "to_kind": "result"
+    },
+    {
+      "from_kind": "source",
+      "edge_kind": "contradicts",
+      "to_kind": "source"
+    },
+    {
+      "from_kind": "claim",
+      "edge_kind": "supersedes",
+      "to_kind": "claim"
+    },
+    {
+      "from_kind": "quantity",
+      "edge_kind": "supersedes",
+      "to_kind": "quantity"
+    },
+    {
+      "from_kind": "assumption",
+      "edge_kind": "supersedes",
+      "to_kind": "assumption"
+    },
+    {
+      "from_kind": "input",
+      "edge_kind": "supersedes",
+      "to_kind": "input"
+    },
+    {
+      "from_kind": "model_ref",
+      "edge_kind": "supersedes",
+      "to_kind": "model_ref"
+    },
+    {
+      "from_kind": "result",
+      "edge_kind": "supersedes",
+      "to_kind": "result"
+    },
+    {
+      "from_kind": "capsule_ref",
+      "edge_kind": "supersedes",
+      "to_kind": "capsule_ref"
+    },
+    {
+      "from_kind": "source",
+      "edge_kind": "supersedes",
+      "to_kind": "source"
+    },
+    {
+      "from_kind": "dataset_ref",
+      "edge_kind": "supersedes",
+      "to_kind": "dataset_ref"
+    },
+    {
+      "from_kind": "snapshot_ref",
+      "edge_kind": "supersedes",
+      "to_kind": "snapshot_ref"
+    }
+  ],
   "record_kinds": [
     {
       "record_kind": "study",
@@ -83,57 +434,36 @@
             }
           },
           {
-            "name": "study_type",
+            "name": "study_id",
             "field_class": "SEMANTIC",
             "value": {
               "kind": "leaf"
             }
           },
           {
-            "name": "title",
+            "name": "core",
             "field_class": "SEMANTIC",
-            "value": {
-              "kind": "leaf"
-            }
-          },
-          {
-            "name": "project_ref",
-            "field_class": "SEMANTIC",
-            "value": {
-              "kind": "leaf"
-            }
-          },
-          {
-            "name": "is_demo",
-            "field_class": "SEMANTIC",
-            "value": {
-              "kind": "leaf"
-            }
-          },
-          {
-            "name": "status",
-            "field_class": "RECORD_ONLY",
-            "value": {
-              "kind": "leaf"
-            }
-          },
-          {
-            "name": "latest_specification",
-            "field_class": "RECORD_ONLY",
             "value": {
               "kind": "object",
               "shape": {
-                "name": "study.revision_ref",
+                "name": "study.core",
                 "fields": [
                   {
-                    "name": "revision_hash",
+                    "name": "study_type",
                     "field_class": "SEMANTIC",
                     "value": {
                       "kind": "leaf"
                     }
                   },
                   {
-                    "name": "revision",
+                    "name": "project_ref",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "is_demo",
                     "field_class": "SEMANTIC",
                     "value": {
                       "kind": "leaf"
@@ -144,25 +474,77 @@
             }
           },
           {
-            "name": "latest_plan",
+            "name": "presentation",
             "field_class": "RECORD_ONLY",
             "value": {
               "kind": "object",
               "shape": {
-                "name": "study.revision_ref",
+                "name": "study.presentation",
                 "fields": [
                   {
-                    "name": "revision_hash",
-                    "field_class": "SEMANTIC",
+                    "name": "title",
+                    "field_class": "RECORD_ONLY",
                     "value": {
                       "kind": "leaf"
                     }
                   },
                   {
-                    "name": "revision",
-                    "field_class": "SEMANTIC",
+                    "name": "status",
+                    "field_class": "RECORD_ONLY",
                     "value": {
                       "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "latest_specification",
+                    "field_class": "RECORD_ONLY",
+                    "value": {
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.revision_ref",
+                        "fields": [
+                          {
+                            "name": "revision_hash",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "revision",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "name": "latest_plan",
+                    "field_class": "RECORD_ONLY",
+                    "value": {
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.revision_ref",
+                        "fields": [
+                          {
+                            "name": "revision_hash",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "revision",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
                     }
                   }
                 ]
@@ -215,6 +597,13 @@
             }
           },
           {
+            "name": "event_type",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
             "name": "sequence",
             "field_class": "RECEIPT_ONLY",
             "value": {
@@ -257,6 +646,39 @@
             }
           },
           {
+            "name": "created_at",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "specification_ref",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "object",
+              "shape": {
+                "name": "study.revision_ref",
+                "fields": [
+                  {
+                    "name": "revision_hash",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "revision",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
             "name": "plan_ref",
             "field_class": "RECEIPT_ONLY",
             "value": {
@@ -283,7 +705,89 @@
             }
           },
           {
-            "name": "created_at",
+            "name": "superseded_plan_ref",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "object",
+              "shape": {
+                "name": "study.revision_ref",
+                "fields": [
+                  {
+                    "name": "revision_hash",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "revision",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "name": "confirmed_hash",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "receipt_ref",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "task_ref",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "capsule_ref",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "package_ref",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "reproduction_capsule_ref",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "superseding_study_ref",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "question",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "review_verdict",
             "field_class": "RECEIPT_ONLY",
             "value": {
               "kind": "leaf"
@@ -382,27 +886,136 @@
               "item": {
                 "kind": "object",
                 "shape": {
-                  "name": "study.text_field",
+                  "name": "study.specification_success_criterion",
                   "fields": [
                     {
-                      "name": "value",
+                      "name": "statement",
                       "field_class": "SEMANTIC",
                       "value": {
-                        "kind": "leaf"
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.text_field",
+                          "fields": [
+                            {
+                              "name": "value",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "evidence",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "origin",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
                       }
                     },
                     {
-                      "name": "evidence",
+                      "name": "predicate",
                       "field_class": "SEMANTIC",
                       "value": {
-                        "kind": "leaf"
-                      }
-                    },
-                    {
-                      "name": "origin",
-                      "field_class": "SEMANTIC",
-                      "value": {
-                        "kind": "leaf"
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.criterion",
+                          "fields": [
+                            {
+                              "name": "criterion_id",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "metric_ref",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "comparator",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "threshold",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "object",
+                                "shape": {
+                                  "name": "study.criterion_threshold",
+                                  "fields": [
+                                    {
+                                      "name": "dimension",
+                                      "field_class": "SEMANTIC",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    },
+                                    {
+                                      "name": "value",
+                                      "field_class": "SEMANTIC",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    },
+                                    {
+                                      "name": "exact_value",
+                                      "field_class": "SEMANTIC",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    },
+                                    {
+                                      "name": "unit",
+                                      "field_class": "SEMANTIC",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "required_evidence",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "array",
+                                "item": {
+                                  "kind": "leaf"
+                                }
+                              }
+                            },
+                            {
+                              "name": "status",
+                              "field_class": "RECORD_ONLY",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "explanation",
+                              "field_class": "RECORD_ONLY",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -1098,7 +1711,121 @@
             "value": {
               "kind": "array",
               "item": {
-                "kind": "leaf"
+                "kind": "object",
+                "shape": {
+                  "name": "study.open_question",
+                  "fields": [
+                    {
+                      "name": "question_id",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "targets",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "question",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "answer_type",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "requirement",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "why_needed",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "blocks",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "array",
+                        "item": {
+                          "kind": "leaf"
+                        }
+                      }
+                    },
+                    {
+                      "name": "allowed_choices",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "array",
+                        "item": {
+                          "kind": "leaf"
+                        }
+                      }
+                    },
+                    {
+                      "name": "answer_provenance",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.answer_provenance",
+                          "fields": [
+                            {
+                              "name": "source",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "actor",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "reference",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "recorded_at",
+                              "field_class": "RECEIPT_ONLY",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "resolution",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    }
+                  ]
+                }
               }
             }
           },
@@ -1296,14 +2023,56 @@
                         "name": "study.pinned_versions.adapter",
                         "fields": [
                           {
-                            "name": "name",
+                            "name": "package_name",
                             "field_class": "SEMANTIC",
                             "value": {
                               "kind": "leaf"
                             }
                           },
                           {
-                            "name": "version",
+                            "name": "package_version",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "artifact_digest",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "source_commit",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "container_digest",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "model_snapshot_hash",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "schema_hash",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "adapter_configuration_hash",
                             "field_class": "SEMANTIC",
                             "value": {
                               "kind": "leaf"
@@ -1322,14 +2091,56 @@
                         "name": "study.pinned_versions.model",
                         "fields": [
                           {
-                            "name": "name",
+                            "name": "package_name",
                             "field_class": "SEMANTIC",
                             "value": {
                               "kind": "leaf"
                             }
                           },
                           {
-                            "name": "version",
+                            "name": "package_version",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "artifact_digest",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "source_commit",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "container_digest",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "model_snapshot_hash",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "schema_hash",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "adapter_configuration_hash",
                             "field_class": "SEMANTIC",
                             "value": {
                               "kind": "leaf"
@@ -1348,14 +2159,56 @@
                         "name": "study.pinned_versions.engine",
                         "fields": [
                           {
-                            "name": "name",
+                            "name": "package_name",
                             "field_class": "SEMANTIC",
                             "value": {
                               "kind": "leaf"
                             }
                           },
                           {
-                            "name": "version",
+                            "name": "package_version",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "artifact_digest",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "source_commit",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "container_digest",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "model_snapshot_hash",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "schema_hash",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "adapter_configuration_hash",
                             "field_class": "SEMANTIC",
                             "value": {
                               "kind": "leaf"
@@ -1650,7 +2503,149 @@
             "name": "data_handling",
             "field_class": "SEMANTIC",
             "value": {
-              "kind": "leaf"
+              "kind": "object",
+              "shape": {
+                "name": "study.data_handling_policy",
+                "fields": [
+                  {
+                    "name": "visibility",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "retention",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.data_retention",
+                        "fields": [
+                          {
+                            "name": "kind",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "days",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "name": "third_party_transfer",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "model_training_use",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "public_dataset_opt_in",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "allowed_egress",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "array",
+                      "item": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.allowed_egress",
+                          "fields": [
+                            {
+                              "name": "kind",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "host",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "name": "export_permission",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "deletion_policy",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.deletion_policy",
+                        "fields": [
+                          {
+                            "name": "kind",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "within_days",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "name": "secret_handling",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "pii_handling",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "policy_version",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  }
+                ]
+              }
             }
           },
           {
@@ -1666,7 +2661,97 @@
             "value": {
               "kind": "array",
               "item": {
-                "kind": "leaf"
+                "kind": "object",
+                "shape": {
+                  "name": "study.criterion",
+                  "fields": [
+                    {
+                      "name": "criterion_id",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "metric_ref",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "comparator",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "threshold",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.criterion_threshold",
+                          "fields": [
+                            {
+                              "name": "dimension",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "value",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "exact_value",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "unit",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "required_evidence",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "array",
+                        "item": {
+                          "kind": "leaf"
+                        }
+                      }
+                    },
+                    {
+                      "name": "status",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "explanation",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    }
+                  ]
+                }
               }
             }
           },
@@ -1676,7 +2761,97 @@
             "value": {
               "kind": "array",
               "item": {
-                "kind": "leaf"
+                "kind": "object",
+                "shape": {
+                  "name": "study.criterion",
+                  "fields": [
+                    {
+                      "name": "criterion_id",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "metric_ref",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "comparator",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "threshold",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.criterion_threshold",
+                          "fields": [
+                            {
+                              "name": "dimension",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "value",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "exact_value",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "unit",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "required_evidence",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "array",
+                        "item": {
+                          "kind": "leaf"
+                        }
+                      }
+                    },
+                    {
+                      "name": "status",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "explanation",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    }
+                  ]
+                }
               }
             }
           },
@@ -1701,11 +2876,11 @@
       }
     },
     {
-      "record_kind": "study_task",
+      "record_kind": "confirmation_receipt",
       "self_hash_field": "content_hash",
-      "self_hash_purpose": "semantic",
+      "self_hash_purpose": "record",
       "shape": {
-        "name": "study_task",
+        "name": "confirmation_receipt",
         "fields": [
           {
             "name": "schema_version",
@@ -1731,13 +2906,6 @@
           {
             "name": "study_ref",
             "field_class": "RECORD_ONLY",
-            "value": {
-              "kind": "leaf"
-            }
-          },
-          {
-            "name": "kind",
-            "field_class": "SEMANTIC",
             "value": {
               "kind": "leaf"
             }
@@ -1769,6 +2937,405 @@
             }
           },
           {
+            "name": "plan_semantic_hash",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "shown_summary_hash",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "authorization_scope",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "array",
+              "item": {
+                "kind": "leaf"
+              }
+            }
+          },
+          {
+            "name": "estimated_credits",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "max_credits",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "resource_class",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "data_handling_policy_revision",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "expires_at",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "limitations",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "array",
+              "item": {
+                "kind": "leaf"
+              }
+            }
+          },
+          {
+            "name": "attestation_level",
+            "field_class": "RECORD_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "actor_subject_id",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "oauth_client_id",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "confirmation_channel",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "confirmed_at",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "nonce",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "idempotency_key",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "record_kind": "study_task_authorization",
+      "self_hash_field": "content_hash",
+      "self_hash_purpose": "record",
+      "shape": {
+        "name": "study_task_authorization",
+        "fields": [
+          {
+            "name": "schema_version",
+            "field_class": "DERIVED",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "hash_rules_id",
+            "field_class": "DERIVED",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "content_hash",
+            "field_class": "DERIVED",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "study_ref",
+            "field_class": "RECORD_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "plan_ref",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "object",
+              "shape": {
+                "name": "study.revision_ref",
+                "fields": [
+                  {
+                    "name": "revision_hash",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "revision",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "name": "confirmation_receipt_ref",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "requested_operation",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "input_refs",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "array",
+              "item": {
+                "kind": "object",
+                "shape": {
+                  "name": "study.artifact_ref",
+                  "fields": [
+                    {
+                      "name": "name",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "role",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "media_type",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "byte_size",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "content_hash",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "resolution",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.artifact_resolution",
+                          "fields": [
+                            {
+                              "name": "kind",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "locator",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "completeness",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "partial_reason",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "redaction",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "redaction_reason",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "name": "resource_ceiling",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "object",
+              "shape": {
+                "name": "study.resource_ceiling",
+                "fields": [
+                  {
+                    "name": "max_credits",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "max_runtime",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "max_memory_bytes",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "resource_class",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "name": "created_at",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "record_kind": "task_outcome",
+      "self_hash_field": "content_hash",
+      "self_hash_purpose": "record",
+      "shape": {
+        "name": "task_outcome",
+        "fields": [
+          {
+            "name": "schema_version",
+            "field_class": "DERIVED",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "hash_rules_id",
+            "field_class": "DERIVED",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "content_hash",
+            "field_class": "DERIVED",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "study_ref",
+            "field_class": "RECORD_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "authorization_ref",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
             "name": "capsule_ref",
             "field_class": "SEMANTIC",
             "value": {
@@ -1776,8 +3343,22 @@
             }
           },
           {
-            "name": "status",
-            "field_class": "RECORD_ONLY",
+            "name": "terminal_status",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "reason",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "attempts",
+            "field_class": "RECEIPT_ONLY",
             "value": {
               "kind": "leaf"
             }
@@ -1842,6 +3423,13 @@
             }
           },
           {
+            "name": "visibility",
+            "field_class": "RECORD_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
             "name": "claim",
             "field_class": "SEMANTIC",
             "value": {
@@ -1850,10 +3438,36 @@
                 "name": "study.claim_statement",
                 "fields": [
                   {
-                    "name": "subject",
+                    "name": "subject_ref",
                     "field_class": "SEMANTIC",
                     "value": {
-                      "kind": "leaf"
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.evidence_reference",
+                        "fields": [
+                          {
+                            "name": "record_kind",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "hash",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "record_slug",
+                            "field_class": "RECORD_ONLY",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
                     }
                   },
                   {
@@ -1871,132 +3485,30 @@
                     }
                   },
                   {
-                    "name": "value",
+                    "name": "value_ref",
                     "field_class": "SEMANTIC",
                     "value": {
                       "kind": "object",
                       "shape": {
-                        "name": "study.quantity",
+                        "name": "study.claim_value_ref",
                         "fields": [
                           {
-                            "name": "value",
+                            "name": "kind",
                             "field_class": "SEMANTIC",
                             "value": {
                               "kind": "leaf"
                             }
                           },
                           {
-                            "name": "unit",
+                            "name": "node_hash",
                             "field_class": "SEMANTIC",
                             "value": {
                               "kind": "leaf"
                             }
                           },
                           {
-                            "name": "bound",
+                            "name": "field_path",
                             "field_class": "SEMANTIC",
-                            "value": {
-                              "kind": "leaf"
-                            }
-                          },
-                          {
-                            "name": "evidence",
-                            "field_class": "SEMANTIC",
-                            "value": {
-                              "kind": "leaf"
-                            }
-                          },
-                          {
-                            "name": "model",
-                            "field_class": "SEMANTIC",
-                            "value": {
-                              "kind": "leaf"
-                            }
-                          },
-                          {
-                            "name": "model_version",
-                            "field_class": "SEMANTIC",
-                            "value": {
-                              "kind": "leaf"
-                            }
-                          },
-                          {
-                            "name": "assumptions",
-                            "field_class": "SEMANTIC",
-                            "value": {
-                              "kind": "array",
-                              "item": {
-                                "kind": "leaf"
-                              }
-                            }
-                          },
-                          {
-                            "name": "uncertainty",
-                            "field_class": "SEMANTIC",
-                            "value": {
-                              "kind": "object",
-                              "shape": {
-                                "name": "study.uncertainty",
-                                "fields": [
-                                  {
-                                    "name": "kind",
-                                    "field_class": "SEMANTIC",
-                                    "value": {
-                                      "kind": "leaf"
-                                    }
-                                  },
-                                  {
-                                    "name": "low",
-                                    "field_class": "SEMANTIC",
-                                    "value": {
-                                      "kind": "leaf"
-                                    }
-                                  },
-                                  {
-                                    "name": "high",
-                                    "field_class": "SEMANTIC",
-                                    "value": {
-                                      "kind": "leaf"
-                                    }
-                                  },
-                                  {
-                                    "name": "basis",
-                                    "field_class": "SEMANTIC",
-                                    "value": {
-                                      "kind": "leaf"
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          },
-                          {
-                            "name": "limitations",
-                            "field_class": "SEMANTIC",
-                            "value": {
-                              "kind": "array",
-                              "item": {
-                                "kind": "leaf"
-                              }
-                            }
-                          },
-                          {
-                            "name": "source",
-                            "field_class": "RECORD_ONLY",
-                            "value": {
-                              "kind": "leaf"
-                            }
-                          },
-                          {
-                            "name": "schema_version",
-                            "field_class": "RECORD_ONLY",
-                            "value": {
-                              "kind": "leaf"
-                            }
-                          },
-                          {
-                            "name": "created_at",
-                            "field_class": "RECORD_ONLY",
                             "value": {
                               "kind": "leaf"
                             }
@@ -2349,6 +3861,166 @@
       }
     },
     {
+      "record_kind": "review_record",
+      "self_hash_field": "content_hash",
+      "self_hash_purpose": "record",
+      "shape": {
+        "name": "review_record",
+        "fields": [
+          {
+            "name": "schema_version",
+            "field_class": "DERIVED",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "hash_rules_id",
+            "field_class": "DERIVED",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "content_hash",
+            "field_class": "DERIVED",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "study_ref",
+            "field_class": "RECORD_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "subject_node_hash",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "verdict",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "rationale",
+            "field_class": "RECORD_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "reviewer",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "created_at",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "record_kind": "reproduction_record",
+      "self_hash_field": "content_hash",
+      "self_hash_purpose": "record",
+      "shape": {
+        "name": "reproduction_record",
+        "fields": [
+          {
+            "name": "schema_version",
+            "field_class": "DERIVED",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "hash_rules_id",
+            "field_class": "DERIVED",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "content_hash",
+            "field_class": "DERIVED",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "study_ref",
+            "field_class": "RECORD_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "original_node_hash",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "reproduction_capsule_ref",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "observed_node_hash",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "outcome",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "notes",
+            "field_class": "RECORD_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "asserted_by",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
+            "name": "created_at",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "leaf"
+            }
+          }
+        ]
+      }
+    },
+    {
       "record_kind": "execution_capsule",
       "self_hash_field": "reproducibility_hash",
       "self_hash_purpose": "record",
@@ -2384,8 +4056,8 @@
             }
           },
           {
-            "name": "task_ref",
-            "field_class": "RECORD_ONLY",
+            "name": "authorization_ref",
+            "field_class": "SEMANTIC",
             "value": {
               "kind": "leaf"
             }
@@ -2470,20 +4142,6 @@
           },
           {
             "name": "source_hash",
-            "field_class": "SEMANTIC",
-            "value": {
-              "kind": "leaf"
-            }
-          },
-          {
-            "name": "image_digest",
-            "field_class": "SEMANTIC",
-            "value": {
-              "kind": "leaf"
-            }
-          },
-          {
-            "name": "dependency_lock_ref",
             "field_class": "SEMANTIC",
             "value": {
               "kind": "leaf"
@@ -2595,55 +4253,210 @@
             }
           },
           {
-            "name": "resource_limits",
-            "field_class": "SEMANTIC",
-            "value": {
-              "kind": "object",
-              "shape": {
-                "name": "study.resource_limits",
-                "fields": [
-                  {
-                    "name": "max_runtime",
-                    "field_class": "SEMANTIC",
-                    "value": {
-                      "kind": "leaf"
-                    }
-                  },
-                  {
-                    "name": "max_memory_bytes",
-                    "field_class": "SEMANTIC",
-                    "value": {
-                      "kind": "leaf"
-                    }
-                  },
-                  {
-                    "name": "max_credits",
-                    "field_class": "SEMANTIC",
-                    "value": {
-                      "kind": "leaf"
-                    }
-                  }
-                ]
-              }
-            }
-          },
-          {
-            "name": "input_hashes",
+            "name": "inputs",
             "field_class": "SEMANTIC",
             "value": {
               "kind": "array",
               "item": {
-                "kind": "leaf"
+                "kind": "object",
+                "shape": {
+                  "name": "study.artifact_ref",
+                  "fields": [
+                    {
+                      "name": "name",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "role",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "media_type",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "byte_size",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "content_hash",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "resolution",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.artifact_resolution",
+                          "fields": [
+                            {
+                              "name": "kind",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "locator",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "completeness",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "partial_reason",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "redaction",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "redaction_reason",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    }
+                  ]
+                }
               }
             }
           },
           {
-            "name": "output_hashes",
+            "name": "outputs",
             "field_class": "SEMANTIC",
             "value": {
               "kind": "array",
               "item": {
-                "kind": "leaf"
+                "kind": "object",
+                "shape": {
+                  "name": "study.artifact_ref",
+                  "fields": [
+                    {
+                      "name": "name",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "role",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "media_type",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "byte_size",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "content_hash",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "resolution",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.artifact_resolution",
+                          "fields": [
+                            {
+                              "name": "kind",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "locator",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "completeness",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "partial_reason",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "redaction",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "redaction_reason",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    }
+                  ]
+                }
               }
             }
           },
@@ -2652,6 +4465,251 @@
             "field_class": "SEMANTIC",
             "value": {
               "kind": "leaf"
+            }
+          },
+          {
+            "name": "execution",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "object",
+              "shape": {
+                "name": "study.execution_envelope",
+                "fields": [
+                  {
+                    "name": "kind",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "image_digest",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "dependency_lock_ref",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "runner_version",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.runner_version",
+                        "fields": [
+                          {
+                            "name": "name",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "version",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "name": "resource_limits",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.resource_limits",
+                        "fields": [
+                          {
+                            "name": "max_runtime",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "max_memory_bytes",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "max_credits",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "name": "attestation_limitation",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "provider_adapter",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.provider_adapter",
+                        "fields": [
+                          {
+                            "name": "name",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "version",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "name": "backend_snapshot",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.backend_snapshot",
+                        "fields": [
+                          {
+                            "name": "provider",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "backend",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "snapshot_hash",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "name": "confirmation_receipt_ref",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "provider_result_ref",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "cost_confirmation",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.cost_confirmation",
+                        "fields": [
+                          {
+                            "name": "credits_charged",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "authorized_maximum",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "source",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "name": "quota_confirmation",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.quota_confirmation",
+                        "fields": [
+                          {
+                            "name": "quota",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "within_quota",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "source",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "exceeded_reason",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
             }
           },
           {
@@ -2695,17 +4753,50 @@
             }
           },
           {
-            "name": "started_at",
+            "name": "execution_receipt",
             "field_class": "RECEIPT_ONLY",
             "value": {
-              "kind": "leaf"
-            }
-          },
-          {
-            "name": "finished_at",
-            "field_class": "RECEIPT_ONLY",
-            "value": {
-              "kind": "leaf"
+              "kind": "object",
+              "shape": {
+                "name": "study.execution_receipt",
+                "fields": [
+                  {
+                    "name": "job_id",
+                    "field_class": "RECEIPT_ONLY",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "attempt",
+                    "field_class": "RECEIPT_ONLY",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "actor",
+                    "field_class": "RECEIPT_ONLY",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "started_at",
+                    "field_class": "RECEIPT_ONLY",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "finished_at",
+                    "field_class": "RECEIPT_ONLY",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  }
+                ]
+              }
             }
           },
           {
@@ -2754,6 +4845,13 @@
             }
           },
           {
+            "name": "distribution",
+            "field_class": "SEMANTIC",
+            "value": {
+              "kind": "leaf"
+            }
+          },
+          {
             "name": "study_ref",
             "field_class": "RECORD_ONLY",
             "value": {
@@ -2787,24 +4885,321 @@
             }
           },
           {
-            "name": "report_markdown",
+            "name": "report",
             "field_class": "RECORD_ONLY",
             "value": {
-              "kind": "leaf"
+              "kind": "object",
+              "shape": {
+                "name": "study.report_document",
+                "fields": [
+                  {
+                    "name": "sections",
+                    "field_class": "RECORD_ONLY",
+                    "value": {
+                      "kind": "array",
+                      "item": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.report_section",
+                          "fields": [
+                            {
+                              "name": "section_id",
+                              "field_class": "RECORD_ONLY",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "title",
+                              "field_class": "RECORD_ONLY",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "segments",
+                              "field_class": "RECORD_ONLY",
+                              "value": {
+                                "kind": "array",
+                                "item": {
+                                  "kind": "object",
+                                  "shape": {
+                                    "name": "study.report_segment",
+                                    "fields": [
+                                      {
+                                        "name": "kind",
+                                        "field_class": "RECORD_ONLY",
+                                        "value": {
+                                          "kind": "leaf"
+                                        }
+                                      },
+                                      {
+                                        "name": "level",
+                                        "field_class": "RECORD_ONLY",
+                                        "value": {
+                                          "kind": "leaf"
+                                        }
+                                      },
+                                      {
+                                        "name": "text",
+                                        "field_class": "RECORD_ONLY",
+                                        "value": {
+                                          "kind": "leaf"
+                                        }
+                                      },
+                                      {
+                                        "name": "node_hash",
+                                        "field_class": "RECORD_ONLY",
+                                        "value": {
+                                          "kind": "leaf"
+                                        }
+                                      },
+                                      {
+                                        "name": "citation_index",
+                                        "field_class": "RECORD_ONLY",
+                                        "value": {
+                                          "kind": "leaf"
+                                        }
+                                      },
+                                      {
+                                        "name": "limitation_index",
+                                        "field_class": "RECORD_ONLY",
+                                        "value": {
+                                          "kind": "leaf"
+                                        }
+                                      },
+                                      {
+                                        "name": "table_id",
+                                        "field_class": "RECORD_ONLY",
+                                        "value": {
+                                          "kind": "leaf"
+                                        }
+                                      },
+                                      {
+                                        "name": "figure_id",
+                                        "field_class": "RECORD_ONLY",
+                                        "value": {
+                                          "kind": "leaf"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "name": "commentary",
+                    "field_class": "RECORD_ONLY",
+                    "value": {
+                      "kind": "array",
+                      "item": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.commentary_block",
+                          "fields": [
+                            {
+                              "name": "commentary_id",
+                              "field_class": "RECORD_ONLY",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "title",
+                              "field_class": "RECORD_ONLY",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "text",
+                              "field_class": "RECORD_ONLY",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
             }
           },
           {
-            "name": "methods",
-            "field_class": "RECORD_ONLY",
+            "name": "tables",
+            "field_class": "SEMANTIC",
             "value": {
-              "kind": "leaf"
-            }
-          },
-          {
-            "name": "csv",
-            "field_class": "RECORD_ONLY",
-            "value": {
-              "kind": "leaf"
+              "kind": "array",
+              "item": {
+                "kind": "object",
+                "shape": {
+                  "name": "study.table",
+                  "fields": [
+                    {
+                      "name": "table_id",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "caption",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "role",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "columns",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "array",
+                        "item": {
+                          "kind": "object",
+                          "shape": {
+                            "name": "study.table_column",
+                            "fields": [
+                              {
+                                "name": "column_id",
+                                "field_class": "SEMANTIC",
+                                "value": {
+                                  "kind": "leaf"
+                                }
+                              },
+                              {
+                                "name": "header",
+                                "field_class": "RECORD_ONLY",
+                                "value": {
+                                  "kind": "leaf"
+                                }
+                              },
+                              {
+                                "name": "role",
+                                "field_class": "SEMANTIC",
+                                "value": {
+                                  "kind": "leaf"
+                                }
+                              },
+                              {
+                                "name": "unit",
+                                "field_class": "SEMANTIC",
+                                "value": {
+                                  "kind": "leaf"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "name": "rows",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "array",
+                        "item": {
+                          "kind": "object",
+                          "shape": {
+                            "name": "study.table_row",
+                            "fields": [
+                              {
+                                "name": "row_id",
+                                "field_class": "SEMANTIC",
+                                "value": {
+                                  "kind": "leaf"
+                                }
+                              },
+                              {
+                                "name": "cells",
+                                "field_class": "SEMANTIC",
+                                "value": {
+                                  "kind": "array",
+                                  "item": {
+                                    "kind": "object",
+                                    "shape": {
+                                      "name": "study.table_cell",
+                                      "fields": [
+                                        {
+                                          "name": "column_id",
+                                          "field_class": "SEMANTIC",
+                                          "value": {
+                                            "kind": "leaf"
+                                          }
+                                        },
+                                        {
+                                          "name": "text",
+                                          "field_class": "RECORD_ONLY",
+                                          "value": {
+                                            "kind": "leaf"
+                                          }
+                                        },
+                                        {
+                                          "name": "node_hash",
+                                          "field_class": "SEMANTIC",
+                                          "value": {
+                                            "kind": "leaf"
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "name": "csv_artifact",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.generated_artifact",
+                          "fields": [
+                            {
+                              "name": "media_type",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "byte_size",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "content_hash",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
             }
           },
           {
@@ -2818,75 +5213,266 @@
                   "name": "study.figure",
                   "fields": [
                     {
-                      "name": "label",
-                      "field_class": "RECORD_ONLY",
-                      "value": {
-                        "kind": "leaf"
-                      }
-                    },
-                    {
-                      "name": "svg",
-                      "field_class": "RECORD_ONLY",
-                      "value": {
-                        "kind": "leaf"
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "name": "assumption_rows",
-            "field_class": "SEMANTIC",
-            "value": {
-              "kind": "array",
-              "item": {
-                "kind": "object",
-                "shape": {
-                  "name": "study.assumption_row",
-                  "fields": [
-                    {
-                      "name": "label",
-                      "field_class": "RECORD_ONLY",
-                      "value": {
-                        "kind": "leaf"
-                      }
-                    },
-                    {
-                      "name": "node_hash",
+                      "name": "figure_id",
                       "field_class": "SEMANTIC",
                       "value": {
                         "kind": "leaf"
                       }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          {
-            "name": "result_rows",
-            "field_class": "SEMANTIC",
-            "value": {
-              "kind": "array",
-              "item": {
-                "kind": "object",
-                "shape": {
-                  "name": "study.result_row",
-                  "fields": [
+                    },
                     {
-                      "name": "label",
+                      "name": "title",
                       "field_class": "RECORD_ONLY",
                       "value": {
                         "kind": "leaf"
                       }
                     },
                     {
-                      "name": "node_hash",
-                      "field_class": "SEMANTIC",
+                      "name": "caption",
+                      "field_class": "RECORD_ONLY",
                       "value": {
                         "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "spec",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.figure_spec",
+                          "fields": [
+                            {
+                              "name": "kind",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "x_axis",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "object",
+                                "shape": {
+                                  "name": "study.figure_spec.x_axis",
+                                  "fields": [
+                                    {
+                                      "name": "label",
+                                      "field_class": "RECORD_ONLY",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    },
+                                    {
+                                      "name": "unit",
+                                      "field_class": "SEMANTIC",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "y_axis",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "object",
+                                "shape": {
+                                  "name": "study.figure_spec.y_axis",
+                                  "fields": [
+                                    {
+                                      "name": "label",
+                                      "field_class": "RECORD_ONLY",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    },
+                                    {
+                                      "name": "unit",
+                                      "field_class": "SEMANTIC",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "series",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "array",
+                                "item": {
+                                  "kind": "object",
+                                  "shape": {
+                                    "name": "study.figure_series",
+                                    "fields": [
+                                      {
+                                        "name": "series_id",
+                                        "field_class": "SEMANTIC",
+                                        "value": {
+                                          "kind": "leaf"
+                                        }
+                                      },
+                                      {
+                                        "name": "label",
+                                        "field_class": "RECORD_ONLY",
+                                        "value": {
+                                          "kind": "leaf"
+                                        }
+                                      },
+                                      {
+                                        "name": "points",
+                                        "field_class": "SEMANTIC",
+                                        "value": {
+                                          "kind": "array",
+                                          "item": {
+                                            "kind": "object",
+                                            "shape": {
+                                              "name": "study.figure_point",
+                                              "fields": [
+                                                {
+                                                  "name": "x",
+                                                  "field_class": "SEMANTIC",
+                                                  "value": {
+                                                    "kind": "object",
+                                                    "shape": {
+                                                      "name": "study.figure_point.x",
+                                                      "fields": [
+                                                        {
+                                                          "name": "kind",
+                                                          "field_class": "SEMANTIC",
+                                                          "value": {
+                                                            "kind": "leaf"
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "node_hash",
+                                                          "field_class": "SEMANTIC",
+                                                          "value": {
+                                                            "kind": "leaf"
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "table_id",
+                                                          "field_class": "SEMANTIC",
+                                                          "value": {
+                                                            "kind": "leaf"
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "row_id",
+                                                          "field_class": "SEMANTIC",
+                                                          "value": {
+                                                            "kind": "leaf"
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "column_id",
+                                                          "field_class": "SEMANTIC",
+                                                          "value": {
+                                                            "kind": "leaf"
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "y",
+                                                  "field_class": "SEMANTIC",
+                                                  "value": {
+                                                    "kind": "object",
+                                                    "shape": {
+                                                      "name": "study.figure_point.y",
+                                                      "fields": [
+                                                        {
+                                                          "name": "kind",
+                                                          "field_class": "SEMANTIC",
+                                                          "value": {
+                                                            "kind": "leaf"
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "node_hash",
+                                                          "field_class": "SEMANTIC",
+                                                          "value": {
+                                                            "kind": "leaf"
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "table_id",
+                                                          "field_class": "SEMANTIC",
+                                                          "value": {
+                                                            "kind": "leaf"
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "row_id",
+                                                          "field_class": "SEMANTIC",
+                                                          "value": {
+                                                            "kind": "leaf"
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "column_id",
+                                                          "field_class": "SEMANTIC",
+                                                          "value": {
+                                                            "kind": "leaf"
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "svg_artifact",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.generated_artifact",
+                          "fields": [
+                            {
+                              "name": "media_type",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "byte_size",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "content_hash",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
                   ]
@@ -2960,7 +5546,66 @@
             "value": {
               "kind": "array",
               "item": {
-                "kind": "leaf"
+                "kind": "object",
+                "shape": {
+                  "name": "study.bundle_ref",
+                  "fields": [
+                    {
+                      "name": "bundle_kind",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "reproducibility_hash",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "embedded",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.embedded_bundle",
+                          "fields": [
+                            {
+                              "name": "media_type",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "byte_size",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "content_hash",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "base64",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
               }
             }
           },
@@ -3063,10 +5708,347 @@
             }
           },
           {
-            "name": "reproduction_command",
+            "name": "recipe",
             "field_class": "SEMANTIC",
             "value": {
-              "kind": "leaf"
+              "kind": "object",
+              "shape": {
+                "name": "study.reproduction_recipe",
+                "fields": [
+                  {
+                    "name": "runner",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "runner_version",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "container_digest",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "argv",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "array",
+                      "item": {
+                        "kind": "leaf"
+                      }
+                    }
+                  },
+                  {
+                    "name": "input_refs",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "array",
+                      "item": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.artifact_ref",
+                          "fields": [
+                            {
+                              "name": "name",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "role",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "media_type",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "byte_size",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "content_hash",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "resolution",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "object",
+                                "shape": {
+                                  "name": "study.artifact_resolution",
+                                  "fields": [
+                                    {
+                                      "name": "kind",
+                                      "field_class": "SEMANTIC",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    },
+                                    {
+                                      "name": "locator",
+                                      "field_class": "SEMANTIC",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "completeness",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "partial_reason",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "redaction",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "redaction_reason",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "name": "environment_allowlist",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "array",
+                      "item": {
+                        "kind": "leaf"
+                      }
+                    }
+                  },
+                  {
+                    "name": "expected_output_refs",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "array",
+                      "item": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.artifact_ref",
+                          "fields": [
+                            {
+                              "name": "name",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "role",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "media_type",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "byte_size",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "content_hash",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "resolution",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "object",
+                                "shape": {
+                                  "name": "study.artifact_resolution",
+                                  "fields": [
+                                    {
+                                      "name": "kind",
+                                      "field_class": "SEMANTIC",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    },
+                                    {
+                                      "name": "locator",
+                                      "field_class": "SEMANTIC",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "completeness",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "partial_reason",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "redaction",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "redaction_reason",
+                              "field_class": "SEMANTIC",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "name": "resource_limits",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.resource_limits",
+                        "fields": [
+                          {
+                            "name": "max_runtime",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "max_memory_bytes",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "max_credits",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "name": "network_policy",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "leaf"
+                    }
+                  },
+                  {
+                    "name": "allowed_hosts",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "array",
+                      "item": {
+                        "kind": "leaf"
+                      }
+                    }
+                  },
+                  {
+                    "name": "platform",
+                    "field_class": "SEMANTIC",
+                    "value": {
+                      "kind": "object",
+                      "shape": {
+                        "name": "study.platform_requirement",
+                        "fields": [
+                          {
+                            "name": "operating_system",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "architecture",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          },
+                          {
+                            "name": "minimum_runner_version",
+                            "field_class": "SEMANTIC",
+                            "value": {
+                              "kind": "leaf"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
             }
           },
           {
@@ -3122,6 +6104,13 @@
                       }
                     },
                     {
+                      "name": "visibility",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
                       "name": "claim",
                       "field_class": "SEMANTIC",
                       "value": {
@@ -3130,10 +6119,36 @@
                           "name": "study.claim_statement",
                           "fields": [
                             {
-                              "name": "subject",
+                              "name": "subject_ref",
                               "field_class": "SEMANTIC",
                               "value": {
-                                "kind": "leaf"
+                                "kind": "object",
+                                "shape": {
+                                  "name": "study.evidence_reference",
+                                  "fields": [
+                                    {
+                                      "name": "record_kind",
+                                      "field_class": "SEMANTIC",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    },
+                                    {
+                                      "name": "hash",
+                                      "field_class": "SEMANTIC",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    },
+                                    {
+                                      "name": "record_slug",
+                                      "field_class": "RECORD_ONLY",
+                                      "value": {
+                                        "kind": "leaf"
+                                      }
+                                    }
+                                  ]
+                                }
                               }
                             },
                             {
@@ -3151,132 +6166,30 @@
                               }
                             },
                             {
-                              "name": "value",
+                              "name": "value_ref",
                               "field_class": "SEMANTIC",
                               "value": {
                                 "kind": "object",
                                 "shape": {
-                                  "name": "study.quantity",
+                                  "name": "study.claim_value_ref",
                                   "fields": [
                                     {
-                                      "name": "value",
+                                      "name": "kind",
                                       "field_class": "SEMANTIC",
                                       "value": {
                                         "kind": "leaf"
                                       }
                                     },
                                     {
-                                      "name": "unit",
+                                      "name": "node_hash",
                                       "field_class": "SEMANTIC",
                                       "value": {
                                         "kind": "leaf"
                                       }
                                     },
                                     {
-                                      "name": "bound",
+                                      "name": "field_path",
                                       "field_class": "SEMANTIC",
-                                      "value": {
-                                        "kind": "leaf"
-                                      }
-                                    },
-                                    {
-                                      "name": "evidence",
-                                      "field_class": "SEMANTIC",
-                                      "value": {
-                                        "kind": "leaf"
-                                      }
-                                    },
-                                    {
-                                      "name": "model",
-                                      "field_class": "SEMANTIC",
-                                      "value": {
-                                        "kind": "leaf"
-                                      }
-                                    },
-                                    {
-                                      "name": "model_version",
-                                      "field_class": "SEMANTIC",
-                                      "value": {
-                                        "kind": "leaf"
-                                      }
-                                    },
-                                    {
-                                      "name": "assumptions",
-                                      "field_class": "SEMANTIC",
-                                      "value": {
-                                        "kind": "array",
-                                        "item": {
-                                          "kind": "leaf"
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "name": "uncertainty",
-                                      "field_class": "SEMANTIC",
-                                      "value": {
-                                        "kind": "object",
-                                        "shape": {
-                                          "name": "study.uncertainty",
-                                          "fields": [
-                                            {
-                                              "name": "kind",
-                                              "field_class": "SEMANTIC",
-                                              "value": {
-                                                "kind": "leaf"
-                                              }
-                                            },
-                                            {
-                                              "name": "low",
-                                              "field_class": "SEMANTIC",
-                                              "value": {
-                                                "kind": "leaf"
-                                              }
-                                            },
-                                            {
-                                              "name": "high",
-                                              "field_class": "SEMANTIC",
-                                              "value": {
-                                                "kind": "leaf"
-                                              }
-                                            },
-                                            {
-                                              "name": "basis",
-                                              "field_class": "SEMANTIC",
-                                              "value": {
-                                                "kind": "leaf"
-                                              }
-                                            }
-                                          ]
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "name": "limitations",
-                                      "field_class": "SEMANTIC",
-                                      "value": {
-                                        "kind": "array",
-                                        "item": {
-                                          "kind": "leaf"
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "name": "source",
-                                      "field_class": "RECORD_ONLY",
-                                      "value": {
-                                        "kind": "leaf"
-                                      }
-                                    },
-                                    {
-                                      "name": "schema_version",
-                                      "field_class": "RECORD_ONLY",
-                                      "value": {
-                                        "kind": "leaf"
-                                      }
-                                    },
-                                    {
-                                      "name": "created_at",
-                                      "field_class": "RECORD_ONLY",
                                       "value": {
                                         "kind": "leaf"
                                       }
@@ -3671,6 +6584,308 @@
                           "kind": "leaf"
                         }
                       }
+                    },
+                    {
+                      "name": "bundle_fields",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "array",
+                        "item": {
+                          "kind": "object",
+                          "shape": {
+                            "name": "study.bundle_field_ref",
+                            "fields": [
+                              {
+                                "name": "bundle_hash",
+                                "field_class": "SEMANTIC",
+                                "value": {
+                                  "kind": "leaf"
+                                }
+                              },
+                              {
+                                "name": "field_path",
+                                "field_class": "SEMANTIC",
+                                "value": {
+                                  "kind": "leaf"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "name": "reviews",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "array",
+              "item": {
+                "kind": "object",
+                "shape": {
+                  "name": "review_record",
+                  "fields": [
+                    {
+                      "name": "schema_version",
+                      "field_class": "DERIVED",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "hash_rules_id",
+                      "field_class": "DERIVED",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "content_hash",
+                      "field_class": "DERIVED",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "study_ref",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "subject_node_hash",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "verdict",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "rationale",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "reviewer",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "created_at",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "name": "reproductions",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "array",
+              "item": {
+                "kind": "object",
+                "shape": {
+                  "name": "reproduction_record",
+                  "fields": [
+                    {
+                      "name": "schema_version",
+                      "field_class": "DERIVED",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "hash_rules_id",
+                      "field_class": "DERIVED",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "content_hash",
+                      "field_class": "DERIVED",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "study_ref",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "original_node_hash",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "reproduction_capsule_ref",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "observed_node_hash",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "outcome",
+                      "field_class": "SEMANTIC",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "notes",
+                      "field_class": "RECORD_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "asserted_by",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "created_at",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "name": "check_ledger",
+            "field_class": "RECEIPT_ONLY",
+            "value": {
+              "kind": "array",
+              "item": {
+                "kind": "object",
+                "shape": {
+                  "name": "study.check_ledger_entry",
+                  "fields": [
+                    {
+                      "name": "check_id",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "status",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "requirement",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "tool",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "object",
+                        "shape": {
+                          "name": "study.check_tool",
+                          "fields": [
+                            {
+                              "name": "name",
+                              "field_class": "RECEIPT_ONLY",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            },
+                            {
+                              "name": "version",
+                              "field_class": "RECEIPT_ONLY",
+                              "value": {
+                                "kind": "leaf"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "input_refs",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "array",
+                        "item": {
+                          "kind": "leaf"
+                        }
+                      }
+                    },
+                    {
+                      "name": "output_ref",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "reason",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
+                    },
+                    {
+                      "name": "limitations",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "array",
+                        "item": {
+                          "kind": "leaf"
+                        }
+                      }
+                    },
+                    {
+                      "name": "observed_at",
+                      "field_class": "RECEIPT_ONLY",
+                      "value": {
+                        "kind": "leaf"
+                      }
                     }
                   ]
                 }
@@ -3679,16 +6894,6 @@
           },
           {
             "name": "limitations",
-            "field_class": "SEMANTIC",
-            "value": {
-              "kind": "array",
-              "item": {
-                "kind": "leaf"
-              }
-            }
-          },
-          {
-            "name": "failed_checks",
             "field_class": "SEMANTIC",
             "value": {
               "kind": "array",

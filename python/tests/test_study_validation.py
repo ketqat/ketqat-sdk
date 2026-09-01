@@ -27,7 +27,21 @@ def _fixture(name: str) -> dict:
     return json.loads((FIXTURE_DIR / name).read_text())
 
 
-STUDY_REF = "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9"
+VECTOR_PATH = Path(__file__).resolve().parents[2] / "fixtures" / "study" / "verification-vectors.json"
+
+
+def _vector_case(label: str) -> dict:
+    """One case from the cross-language verification vectors, by label."""
+    document = json.loads(VECTOR_PATH.read_text())
+    for case in document["cases"]:
+        if case["label"] == label:
+            return case
+    raise AssertionError(f"No verification vector case is labelled {label!r}.")
+
+
+#: A study id, not a digest: `study_ref` points at the aggregate's stable
+#: opaque id, so a rename does not orphan every record that names it.
+STUDY_REF = "d5a370a6-8b65-4ae8-8f57-8c06f313afac"
 ABSENT_HASH = "9" * 64
 
 
@@ -87,6 +101,7 @@ def _node(**changes) -> dict:
         "study_ref": STUDY_REF,
         "kind": "quantity",
         "label": "a node",
+        "visibility": "PUBLIC",
         "claim": None,
         "quantity": None,
         "reference": None,
@@ -115,325 +130,19 @@ def _edge(**changes) -> dict:
 
 
 def _package() -> dict:
-    """A small, self-consistent research package, built rather than committed.
+    """The intact package from the cross-language verification vectors.
 
-    Inline because the nine schemas -- and the fixture that will be validated
-    against them -- arrive with the integration work package. Everything this
-    checks is computable from the record itself, so nothing here waits on a file.
+    Built by TypeScript and committed as `fixtures/study/verification-vectors.json`,
+    rather than assembled again here. A second hand-written package would be a
+    second thing that can drift from the shape the schemas describe -- and it
+    would drift silently, because a Python-only package is one nothing on the
+    other side ever reads.
     """
-    claim_node = _node(
-        kind="claim",
-        label="Shor-2048 fits within 4.2 million physical qubits under the base scenario",
-        claim={
-            "subject": "shor-2048",
-            "metric": "total_physical_qubits",
-            "comparator": "AT_MOST",
-            "value": _quantity(),
-        },
-    )
-    quantity_node = _node(
-        kind="quantity",
-        label="Total physical qubits, base scenario",
-        quantity=_quantity(),
-    )
-    result_node = _node(
-        kind="result",
-        label="Resource estimate snapshot, base scenario",
-        reference={
-            "record_kind": "resource_estimate_snapshot",
-            "hash": "e" * 64,
-            "record_slug": None,
-        },
-    )
-    supports_edge = _edge(
-        kind="supports",
-        from_node_hash=quantity_node["content_hash"],
-        to_node_hash=claim_node["content_hash"],
-        rationale="The claimed ceiling is the estimate's own upper bound, not a rounding of it.",
-    )
-    # The claim map cites the snapshot as well as the number, so the graph has to
-    # carry an edge saying the snapshot supports the claim. `derived_from` below
-    # is provenance -- where the number came from -- and provenance is not
-    # support.
-    result_supports_edge = _edge(
-        kind="supports",
-        from_node_hash=result_node["content_hash"],
-        to_node_hash=claim_node["content_hash"],
-        rationale="The claimed ceiling is read out of this estimate snapshot, which is the run that produced it.",
-    )
-    derived_edge = _edge(
-        kind="derived_from",
-        from_node_hash=quantity_node["content_hash"],
-        to_node_hash=result_node["content_hash"],
-        rationale="The qubit count is read out of the estimate snapshot.",
-    )
-
-    body = {
-        "schema_version": STUDY_SCHEMA_VERSION,
-        "hash_rules_id": STUDY_HASH_RULES_ID,
-        "package_kind": "KETQAT_RESEARCH_PACKAGE",
-        "study_ref": STUDY_REF,
-        "plan_ref": { "revision_hash": "c" * 64, "revision": 2},
-        "report_markdown": "# Shor-2048 feasibility\n\nOne claim, and the numbers it rests on.",
-        "methods": "Surface-code resource estimation under the base scenario.",
-        "assumption_rows": [
-            {"label": "Estimate snapshot", "node_hash": result_node["content_hash"]}
-        ],
-        "result_rows": [
-            {"label": "Total physical qubits", "node_hash": quantity_node["content_hash"]}
-        ],
-        "csv": "label,node_hash\nTotal physical qubits," + quantity_node["content_hash"] + "\n",
-        "figures": [],
-        "references": [
-            {
-                "title": "Surface codes: towards practical large-scale quantum computation",
-                "authors": [],
-                "year": 2012,
-            }
-        ],
-        "bundle_refs": ["f" * 64],
-        "environment": {"operating_system": "linux", "packages": [], "hardware": []},
-        "reproduction_command": "ketqat-engine study verify <this-file>",
-        "nodes": [claim_node, quantity_node, result_node],
-        "edges": [supports_edge, result_supports_edge, derived_edge],
-        "claim_evidence_map": [
-            {
-                "claim_node_hash": claim_node["content_hash"],
-                "evidence_node_hashes": [
-                    quantity_node["content_hash"],
-                    result_node["content_hash"],
-                ],
-                "edge_hashes": [
-                    supports_edge["content_hash"],
-                    result_supports_edge["content_hash"],
-                ],
-            }
-        ],
-        "limitations": ["Modelled, not measured. No device was run."],
-        "failed_checks": [],
-        "is_demo": True,
-    }
-    return {**body, "reproducibility_hash": study_self_hash("research_package", body)}
+    return copy.deepcopy(_vector_case("intact")["package"])
 
 
 def _quantity_node(package: dict) -> dict:
     return next(node for node in package["nodes"] if node["kind"] == "quantity")
-
-
-# ------------------------------------------------------------- hash + structure
-
-
-def test_a_self_consistent_package_verifies() -> None:
-    """The baseline the tampering tests are read against.
-
-    Everything checkable from the file alone holds: the digest is the digest of
-    the contents, every node is its own hash, every edge joins two nodes that are
-    here, and every table row resolves to a node the recipient actually has.
-    """
-    result = verify_research_package(_package(), validate_schema=False)
-
-    assert result["problems"] == []
-    assert result["valid"] is True
-    assert result["hash_matches"] is True
-    assert result["claims_resolve"] is True
-    assert result["graph_valid"] is True
-
-
-def test_an_edited_package_fails_its_hash_check() -> None:
-    package = _package()
-    _quantity_node(package)["quantity"]["value"] = 42
-
-    result = verify_research_package(package, validate_schema=False)
-
-    assert result["hash_matches"] is False
-    assert result["valid"] is False
-    assert result["expected_hash"] != package["reproducibility_hash"]
-
-
-def test_an_edited_and_rehashed_package_fails_structurally() -> None:
-    """The fabrication a hash check cannot see, caught by the structure instead.
-
-    Anyone who edits a package can recompute its digests, and after this the file
-    is cryptographically beyond reproach. What they cannot do quietly is keep the
-    edited node's identity: identity here *is* the content hash, so the result
-    row, the supporting edge and the claim map all now name a node the package no
-    longer contains. Making the numbers lie means rewriting the graph, and a
-    rewritten graph says something different where a reader can see it.
-    """
-    package = _package()
-    node = _quantity_node(package)
-    node["quantity"]["value"] = 42
-    node["content_hash"] = study_self_hash("evidence_node", node)
-    package["reproducibility_hash"] = study_self_hash("research_package", package)
-
-    result = verify_research_package(package, validate_schema=False)
-
-    assert result["hash_matches"] is True
-    assert result["claims_resolve"] is False
-    assert result["graph_valid"] is False
-    assert result["valid"] is False
-    assert any("EVIDENCE_NODE_UNRESOLVED" in problem for problem in result["problems"])
-
-
-def test_a_result_row_without_a_node_does_not_resolve() -> None:
-    package = _package()
-    package["result_rows"] = [{"label": "Total physical qubits", "node_hash": ABSENT_HASH}]
-    package["reproducibility_hash"] = study_self_hash("research_package", package)
-
-    result = verify_research_package(package, validate_schema=False)
-
-    assert result["hash_matches"] is True
-    assert result["claims_resolve"] is False
-    assert any("EVIDENCE_NODE_UNRESOLVED" in problem for problem in result["problems"])
-
-
-def test_a_claim_with_no_map_entry_does_not_resolve() -> None:
-    package = _package()
-    package["claim_evidence_map"] = []
-    package["reproducibility_hash"] = study_self_hash("research_package", package)
-
-    result = verify_research_package(package, validate_schema=False)
-
-    assert result["claims_resolve"] is False
-    assert any("CLAIM_WITHOUT_EVIDENCE_NODE" in problem for problem in result["problems"])
-
-
-def test_a_claim_map_naming_absent_evidence_does_not_resolve() -> None:
-    package = _package()
-    package["claim_evidence_map"][0]["evidence_node_hashes"] = [ABSENT_HASH]
-    package["claim_evidence_map"][0]["edge_hashes"] = [ABSENT_HASH]
-    package["reproducibility_hash"] = study_self_hash("research_package", package)
-
-    result = verify_research_package(package, validate_schema=False)
-
-    assert result["claims_resolve"] is False
-    problems = " ".join(result["problems"])
-    assert "EVIDENCE_NODE_UNRESOLVED" in problems
-    assert "EVIDENCE_EDGE_ENDPOINT_UNRESOLVED" in problems
-
-
-def test_a_claim_citing_itself_does_not_resolve() -> None:
-    """Every hash resolves and nothing is established.
-
-    This package passed a resolution-only check perfectly: the claim node is in
-    the file, the map names it, and the hash it cites is a hash the package
-    carries. What no part of it says is that anything supports anything -- and
-    the edge that would say so cannot exist, because an edge must join two
-    different nodes.
-    """
-    package = _package()
-    claim_hash = next(
-        node["content_hash"] for node in package["nodes"] if node["kind"] == "claim"
-    )
-    package["edges"] = []
-    package["claim_evidence_map"] = [
-        {
-            "claim_node_hash": claim_hash,
-            "evidence_node_hashes": [claim_hash],
-            "edge_hashes": [],
-        }
-    ]
-    package["reproducibility_hash"] = study_self_hash("research_package", package)
-
-    result = verify_research_package(package, validate_schema=False)
-
-    assert result["hash_matches"] is True
-    assert result["claims_resolve"] is False
-    problems = " ".join(result["problems"])
-    assert "CLAIM_EVIDENCE_SELF_REFERENTIAL" in problems
-    assert "CLAIM_EVIDENCE_UNLINKED" in problems
-    assert "CLAIM_WITHOUT_EVIDENCE_NODE" in problems
-
-
-def test_a_claim_citing_evidence_no_edge_joins_does_not_resolve() -> None:
-    """The map and the graph, made to agree.
-
-    The node is carried and the claim is real; what is missing is any edge
-    asserting that the one bears on the other. `derived_from` is provenance and
-    does not assert support, which is why removing the supports edge for the
-    snapshot is enough to fail this while the snapshot stays in the graph.
-    """
-    package = _package()
-    claim_hash = next(
-        node["content_hash"] for node in package["nodes"] if node["kind"] == "claim"
-    )
-    result_hash = next(
-        node["content_hash"] for node in package["nodes"] if node["kind"] == "result"
-    )
-    package["edges"] = [
-        edge
-        for edge in package["edges"]
-        if not (edge["kind"] == "supports" and edge["from_node_hash"] == result_hash)
-    ]
-    package["claim_evidence_map"] = [
-        {
-            "claim_node_hash": claim_hash,
-            "evidence_node_hashes": [result_hash],
-            "edge_hashes": [package["edges"][0]["content_hash"]],
-        }
-    ]
-    package["reproducibility_hash"] = study_self_hash("research_package", package)
-
-    result = verify_research_package(package, validate_schema=False)
-
-    assert result["claims_resolve"] is False
-    assert any("CLAIM_EVIDENCE_UNLINKED" in problem for problem in result["problems"])
-
-
-def test_a_result_row_naming_a_node_with_no_value_does_not_resolve() -> None:
-    """A result row is a number in a table.
-
-    The claim node is the tempting one: it holds a number, inside a sentence. A
-    row reading from it would print the assertion as a measurement.
-    """
-    package = _package()
-    claim_hash = next(
-        node["content_hash"] for node in package["nodes"] if node["kind"] == "claim"
-    )
-    package["result_rows"] = [{"label": "Total physical qubits", "node_hash": claim_hash}]
-    package["reproducibility_hash"] = study_self_hash("research_package", package)
-
-    result = verify_research_package(package, validate_schema=False)
-
-    assert result["claims_resolve"] is False
-    assert any("RESULT_ROW_WITHOUT_VALUE" in problem for problem in result["problems"])
-
-
-def test_a_dangling_edge_endpoint_invalidates_the_graph() -> None:
-    package = _package()
-    package["edges"].append(
-        _edge(
-            kind="reviewed_by",
-            from_node_hash=package["nodes"][0]["content_hash"],
-            to_node_hash=ABSENT_HASH,
-            rationale="Reviewed by a node this package forgot to carry.",
-        )
-    )
-    package["reproducibility_hash"] = study_self_hash("research_package", package)
-
-    result = verify_research_package(package, validate_schema=False)
-
-    assert result["graph_valid"] is False
-    assert result["valid"] is False
-
-
-def test_verification_reports_that_no_decision_was_recomputed() -> None:
-    """ADR 0014's honest-absence rule, in the result rather than only in prose.
-
-    Python validates and hashes; it does not re-derive an estimate or re-run a
-    decision rule. A caller that renders this dict renders the limitation with
-    it, so "verified in Python" cannot quietly grow to mean more than was
-    checked.
-    """
-    result = verify_research_package(_package(), validate_schema=False)
-
-    assert result["decision_recompute"] is False
-    assert "does not recompute the science" in verify_research_package.__doc__
-
-
-def test_a_package_that_is_not_an_object_is_refused() -> None:
-    with pytest.raises(KetQatValidationError):
-        verify_research_package(["not", "a", "package"], validate_schema=False)
 
 
 # ------------------------------------------------------------------ validation
@@ -502,7 +211,7 @@ def test_every_study_schema_ships_inside_the_package() -> None:
 @pytest.mark.skipif(not SCHEMAS_LOADABLE, reason="study schemas are not generated yet")
 def test_a_valid_package_passes_schema_validation() -> None:
     validate_study_record(_package(), "research_package")
-    assert verify_research_package(_package())["valid"] is True
+    assert verify_research_package(_package())["status"] == "STRUCTURE_VERIFIED"
 
 
 @pytest.mark.skipif(not SCHEMAS_LOADABLE, reason="study schemas are not generated yet")
@@ -535,7 +244,10 @@ def test_a_64_bit_seed_and_byte_count_are_carried_as_digits_rather_than_refused(
     """
     capsule = _fixture("study-capsule-64-bit-integers.json")
     assert int(capsule["seed"]) > JS_MAX_SAFE_INTEGER
-    assert int(capsule["resource_limits"]["max_memory_bytes"]) > JS_MAX_SAFE_INTEGER
+    assert int(capsule["execution"]["resource_limits"]["max_memory_bytes"]) > JS_MAX_SAFE_INTEGER
+    # And on an artifact reference, which is the third place in this family where
+    # a byte count routinely outgrows a double.
+    assert int(capsule["outputs"][0]["byte_size"]) > JS_MAX_SAFE_INTEGER
     validate_study_record(capsule, "execution_capsule")
 
     pins = _fixture("study-expected-hashes.json")[STUDY_HASH_RULES_ID]
@@ -589,8 +301,12 @@ def test_a_package_verifies_as_written_here_too() -> None:
 
     result = verify_research_package(package, validate_schema=False)
     assert result["problems"] == []
-    assert result["valid"] is True
-    assert result["hash_matches"] is True
+    assert result["status"] == "STRUCTURE_VERIFIED"
+    assert result["levels"]["hash_matches"] is True
+    # Structural, not reproduction: this language does not re-run a model, and
+    # the value says so rather than the docstring alone (ADR 0010, ADR 0014).
+    assert result["verification_performed"] == "INTEGRITY_AND_STRUCTURE"
+    assert result["levels"]["science_recomputed"] is False
     pins = _fixture("study-expected-hashes.json")[STUDY_HASH_RULES_ID]
     assert result["expected_hash"] == pins["study_research_package_as_written"]["self_hash"]
 
@@ -707,9 +423,10 @@ def test_an_undeclared_key_is_refused_here_and_in_typescript(undeclared: str) ->
     assert caught.value.path == undeclared
 
     result = verify_research_package(forged, validate_schema=False)
-    assert result["valid"] is False
+    assert result["status"] != "STRUCTURE_VERIFIED"
     assert result["expected_hash"] == "", "the digest was never taken"
-    assert result["problems"][0].startswith("STUDY_RECORD_NOT_HASHABLE (research_package): UNDECLARED_FIELD")
+    assert result["findings"][0]["code"] == "STUDY_RECORD_NOT_HASHABLE"
+    assert "UNDECLARED_FIELD" in result["findings"][0]["message"]
 
 
 @pytest.mark.skipif(not SCHEMAS_LOADABLE, reason="study schemas are not generated yet")
@@ -752,12 +469,13 @@ def test_a_key_hidden_inside_a_quantity_envelope_is_refused_at_any_depth() -> No
         node["quantity"][key] = "smuggled"
 
         result = verify_research_package(package, validate_schema=False)
-        assert result["valid"] is False
-        assert result["hash_matches"] is False
+        assert result["status"] == "REFUSED"
+        assert result["levels"]["canonicalizable"] is False
+        assert result["levels"]["hash_matches"] is False
         assert result["expected_hash"] == "", "the digest was never taken"
-        assert len(result["problems"]) == 1
-        assert result["problems"][0].startswith("STUDY_RECORD_NOT_HASHABLE")
-        assert f"quantity.{key}" in result["problems"][0]
+        assert len(result["findings"]) == 1
+        assert result["findings"][0]["code"] == "STUDY_RECORD_NOT_HASHABLE"
+        assert f"quantity.{key}" in result["findings"][0]["message"]
 
         with pytest.raises(StudyHashRefusal) as caught:
             study_self_hash("evidence_node", node)
@@ -817,7 +535,7 @@ def test_a_string_neither_language_can_round_trip_is_refused_rather_than_raised(
     node["label"] = "Total physical qubits \ud800"
 
     result = verify_research_package(package, validate_schema=False)
-    assert result["valid"] is False
+    assert result["status"] != "STRUCTURE_VERIFIED"
     assert result["problems"][0].startswith("STUDY_RECORD_NOT_HASHABLE")
     assert "LONE_SURROGATE" in result["problems"][0]
 
@@ -864,7 +582,7 @@ def test_an_undeclared_key_inside_a_quantity_envelope_is_refused_in_both_languag
     schema = load_schema("research-package.schema.json")
     envelope = schema["definitions"]["research-package"]["properties"]["nodes"]["items"][
         "properties"
-    ]["claim"]["anyOf"][0]["properties"]["value"]
+    ]["quantity"]["anyOf"][0]
     assert envelope["additionalProperties"] is False, "this language has always refused it"
 
     package = copy.deepcopy(_package())

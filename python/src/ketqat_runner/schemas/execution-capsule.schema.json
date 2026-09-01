@@ -14,13 +14,14 @@
         },
         "study_ref": {
           "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "authorization_ref": {
+          "type": "string",
           "pattern": "^[0-9a-f]{64}$"
         },
-        "task_ref": {
-          "$ref": "#/definitions/execution-capsule/properties/study_ref"
-        },
         "manifest_hash": {
-          "$ref": "#/definitions/execution-capsule/properties/study_ref"
+          "$ref": "#/definitions/execution-capsule/properties/authorization_ref"
         },
         "versions": {
           "type": "object",
@@ -66,28 +67,7 @@
           "additionalProperties": false
         },
         "source_hash": {
-          "$ref": "#/definitions/execution-capsule/properties/study_ref"
-        },
-        "image_digest": {
-          "anyOf": [
-            {
-              "type": "string",
-              "pattern": "^sha256:[0-9a-f]{64}$"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "dependency_lock_ref": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/execution-capsule/properties/study_ref"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/definitions/execution-capsule/properties/authorization_ref"
         },
         "seed": {
           "anyOf": [
@@ -164,70 +144,127 @@
           ],
           "additionalProperties": false
         },
-        "resource_limits": {
-          "type": "object",
-          "properties": {
-            "max_runtime": {
-              "anyOf": [
-                {
-                  "type": "number",
-                  "exclusiveMinimum": 0
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "max_memory_bytes": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/execution-capsule/properties/seed/anyOf/0"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "max_credits": {
-              "anyOf": [
-                {
-                  "type": "number",
-                  "exclusiveMinimum": 0
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          },
-          "required": [
-            "max_runtime",
-            "max_memory_bytes",
-            "max_credits"
-          ],
-          "additionalProperties": false
-        },
-        "input_hashes": {
+        "inputs": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/execution-capsule/properties/study_ref"
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "CIRCUIT",
+                  "PARAMETERS",
+                  "DATASET",
+                  "NOISE_MODEL",
+                  "MANIFEST",
+                  "MEASUREMENTS",
+                  "RESULT",
+                  "METRICS",
+                  "LOG"
+                ]
+              },
+              "media_type": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]{0,126}\\/[a-z0-9][a-z0-9!#$&^_.+-]{0,126}$"
+              },
+              "byte_size": {
+                "$ref": "#/definitions/execution-capsule/properties/seed/anyOf/0"
+              },
+              "content_hash": {
+                "$ref": "#/definitions/execution-capsule/properties/authorization_ref"
+              },
+              "resolution": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "INLINE_IN_BUNDLE",
+                      "CONTENT_ADDRESSED_STORE",
+                      "PROVIDER_HELD",
+                      "NOT_RETAINED"
+                    ]
+                  },
+                  "locator": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "locator"
+                ],
+                "additionalProperties": false
+              },
+              "completeness": {
+                "type": "string",
+                "enum": [
+                  "COMPLETE",
+                  "PARTIAL"
+                ]
+              },
+              "partial_reason": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "redaction": {
+                "type": "string",
+                "enum": [
+                  "NONE",
+                  "REDACTED"
+                ]
+              },
+              "redaction_reason": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "role",
+              "media_type",
+              "byte_size",
+              "content_hash",
+              "resolution",
+              "completeness",
+              "partial_reason",
+              "redaction",
+              "redaction_reason"
+            ],
+            "additionalProperties": false
           }
         },
-        "output_hashes": {
+        "outputs": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/execution-capsule/properties/study_ref"
+            "$ref": "#/definitions/execution-capsule/properties/inputs/items"
           }
-        },
-        "logs_ref": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/execution-capsule/properties/study_ref"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "execution_class": {
           "type": "string",
@@ -236,6 +273,235 @@
             "SIMULATION",
             "HARDWARE",
             "ANALYTICAL"
+          ]
+        },
+        "execution": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "MANAGED_SIMULATION"
+                },
+                "image_digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "dependency_lock_ref": {
+                  "$ref": "#/definitions/execution-capsule/properties/authorization_ref"
+                },
+                "runner_version": {
+                  "$ref": "#/definitions/execution-capsule/properties/versions/properties/adapter/anyOf/0"
+                },
+                "resource_limits": {
+                  "type": "object",
+                  "properties": {
+                    "max_runtime": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "max_memory_bytes": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/definitions/execution-capsule/properties/seed/anyOf/0"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "max_credits": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "max_runtime",
+                    "max_memory_bytes",
+                    "max_credits"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "kind",
+                "image_digest",
+                "dependency_lock_ref",
+                "runner_version",
+                "resource_limits"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "LOCAL_SIMULATION"
+                },
+                "image_digest": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/execution-capsule/properties/execution/anyOf/0/properties/image_digest"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "attestation_limitation": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "kind",
+                "image_digest",
+                "attestation_limitation"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "HARDWARE"
+                },
+                "provider_adapter": {
+                  "$ref": "#/definitions/execution-capsule/properties/versions/properties/adapter/anyOf/0"
+                },
+                "backend_snapshot": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "backend": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "snapshot_hash": {
+                      "$ref": "#/definitions/execution-capsule/properties/authorization_ref"
+                    }
+                  },
+                  "required": [
+                    "provider",
+                    "backend",
+                    "snapshot_hash"
+                  ],
+                  "additionalProperties": false
+                },
+                "confirmation_receipt_ref": {
+                  "$ref": "#/definitions/execution-capsule/properties/authorization_ref"
+                },
+                "provider_result_ref": {
+                  "$ref": "#/definitions/execution-capsule/properties/authorization_ref"
+                },
+                "cost_confirmation": {
+                  "type": "object",
+                  "properties": {
+                    "credits_charged": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "authorized_maximum": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "PROVIDER_REPORTED",
+                        "ADAPTER_COMPUTED"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "credits_charged",
+                    "authorized_maximum",
+                    "source"
+                  ],
+                  "additionalProperties": false
+                },
+                "quota_confirmation": {
+                  "type": "object",
+                  "properties": {
+                    "quota": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "within_quota": {
+                      "type": "boolean"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "PROVIDER_REPORTED",
+                        "ADAPTER_COMPUTED"
+                      ]
+                    },
+                    "exceeded_reason": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "quota",
+                    "within_quota",
+                    "source",
+                    "exceeded_reason"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "kind",
+                "provider_adapter",
+                "backend_snapshot",
+                "confirmation_receipt_ref",
+                "provider_result_ref",
+                "cost_confirmation",
+                "quota_confirmation"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "logs_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/execution-capsule/properties/authorization_ref"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "cancellation": {
@@ -268,39 +534,60 @@
             "hash_only"
           ]
         },
-        "started_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "finished_at": {
-          "type": "string",
-          "format": "date-time"
+        "execution_receipt": {
+          "type": "object",
+          "properties": {
+            "job_id": {
+              "$ref": "#/definitions/execution-capsule/properties/study_ref"
+            },
+            "attempt": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "actor": {
+              "type": "string",
+              "minLength": 1
+            },
+            "started_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "finished_at": {
+              "$ref": "#/definitions/execution-capsule/properties/execution_receipt/properties/started_at"
+            }
+          },
+          "required": [
+            "job_id",
+            "attempt",
+            "actor",
+            "started_at",
+            "finished_at"
+          ],
+          "additionalProperties": false
         },
         "created_at": {
-          "type": "string",
-          "format": "date-time"
+          "$ref": "#/definitions/execution-capsule/properties/execution_receipt/properties/started_at"
         },
         "reproducibility_hash": {
-          "$ref": "#/definitions/execution-capsule/properties/study_ref"
+          "$ref": "#/definitions/execution-capsule/properties/authorization_ref"
         }
       },
       "required": [
         "schema_version",
         "hash_rules_id",
         "study_ref",
-        "task_ref",
+        "authorization_ref",
         "manifest_hash",
         "versions",
         "source_hash",
-        "image_digest",
-        "dependency_lock_ref",
         "seed",
         "environment",
-        "resource_limits",
-        "input_hashes",
-        "output_hashes",
-        "logs_ref",
+        "inputs",
+        "outputs",
         "execution_class",
+        "execution",
+        "logs_ref",
         "cancellation",
         "attestation_level",
         "reproducibility_hash"

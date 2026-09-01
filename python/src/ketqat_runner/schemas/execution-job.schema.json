@@ -1,0 +1,124 @@
+{
+  "$ref": "#/definitions/execution-job",
+  "definitions": {
+    "execution-job": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "job_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "authorization_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "QUEUED",
+            "LEASED",
+            "RUNNING",
+            "RETRY_SCHEDULED",
+            "SUCCEEDED",
+            "FAILED",
+            "CANCELLED"
+          ]
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "progress": {
+          "type": "object",
+          "properties": {
+            "completed_units": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "total_units": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "note": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "completed_units",
+            "total_units",
+            "note"
+          ],
+          "additionalProperties": false
+        },
+        "cancellation": {
+          "type": "object",
+          "properties": {
+            "cancelled": {
+              "type": "boolean"
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "cancelled",
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "schema_version",
+        "job_id",
+        "authorization_ref",
+        "status",
+        "attempt",
+        "max_attempts",
+        "progress",
+        "cancellation",
+        "updated_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

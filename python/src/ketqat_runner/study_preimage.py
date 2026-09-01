@@ -13,10 +13,11 @@ Mirrors `src/study/preimage.ts`::
 
 Without the header, two record kinds that happen to project to the same body
 share a digest. That is not a hypothetical in this family: the receipt projection
-of a `study`, a `study_task` and a `problem_specification` is the same one-field
-object in all three cases, and a `semantic` and a `record` projection of the same
-record coincide exactly whenever every field of that record is ``SEMANTIC``. A
-digest that can stand for either of two things identifies neither.
+of a `study`, a `study_task_authorization` and a `problem_specification` is the
+same one-field object in all three cases, and a `semantic` and a `record`
+projection of the same record coincide exactly whenever every field of that
+record is ``SEMANTIC``. A digest that can stand for either of two things
+identifies neither.
 
 NUL is the separator because it cannot occur in any of the five components: each
 is validated below as one or more printable ASCII characters, so the header

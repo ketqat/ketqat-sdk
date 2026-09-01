@@ -143,13 +143,20 @@ export const StudyCitationSchema = CitationSchema.extend({
 })
     .strict();
 /**
- * A 64-character lowercase hex digest: the only way one study record names
- * another.
+ * A 64-character lowercase hex digest: how one study record names an immutable
+ * one.
  *
- * Records in this family are content-addressed, so a reference is a claim about
- * the exact bytes referenced. A slug would keep resolving after the thing it
- * named changed underneath it, which is how a confirmation ends up attached to a
- * plan nobody approved.
+ * A revision, a capsule, a node, an edge and a package are immutable, so a
+ * reference to one is a claim about exact bytes: a slug would keep resolving
+ * after the thing it named changed underneath it, which is how a confirmation
+ * ends up attached to a plan nobody approved.
+ *
+ * The one reference that is deliberately *not* a digest is `study_ref`. A study
+ * is an aggregate rather than an immutable record -- it is renamed, it advances,
+ * it acquires revisions -- so it carries the opaque `StudyIdSchema` id in
+ * `identity.ts`, and this contract would have made every reference to it break
+ * on an edit to a title. Which kind of reference a field takes is a fact about
+ * what is on the other end of it.
  */
 export const ContentHashSchema = z.string().regex(/^[0-9a-f]{64}$/);
 export const RevisionRefSchema = z
@@ -226,6 +233,33 @@ export const BaselineSourceClassSchema = z.enum([
     "approved_adapter",
     "cited_primary_source",
     "unknown",
+]);
+/**
+ * Which kind of machine a run is authorised for and executed on (goal §15).
+ *
+ * Three members, and the distinction between the first two is not cosmetic. A
+ * managed simulation runs an image this system pinned, under limits this system
+ * enforced, on a runner whose version it recorded; a local simulation runs
+ * whatever was on somebody's laptop. Both are simulations and neither is more
+ * *correct* than the other, but only one of them carries evidence a second
+ * party can check, and a capsule that could not tell them apart would let the
+ * weaker one be read as the stronger.
+ *
+ * Kept separate from `ExecutionClass` in `src/contracts/common.ts`, which
+ * answers a different question -- what kind of measurement this is, for a
+ * comparison that must refuse to rank a simulation against hardware. The two
+ * agree where they overlap and `capsule.ts` requires it: a capsule executed as
+ * `HARDWARE` here must carry execution class `HARDWARE` there, and neither
+ * field is inferred from the other, because a record that stated it once could
+ * not be checked.
+ */
+export const ExecutionResourceClassSchema = z.enum([
+    /** An image, a lock file and a runner this system pinned and can name. */
+    "MANAGED_SIMULATION",
+    /** The operator's own machine. Reproducible only to whoever has that machine. */
+    "LOCAL_SIMULATION",
+    /** A physical device reached through a provider adapter, which costs money and queue time. */
+    "HARDWARE",
 ]);
 /**
  * What an execution record actually attests to (ADR 0014 §1).

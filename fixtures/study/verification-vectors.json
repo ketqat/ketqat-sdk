@@ -1,0 +1,4821 @@
+{
+  "note": "Written by scripts/generate-study-verification-vectors.mjs, checked in place by tests/research-package.test.mjs and reproduced by python/tests/test_study_package.py from the same packages. The contract is the `findings` list: a code and a JSON path per defect, sorted. Messages are written for people and are deliberately not compared across the two languages -- a test that compared English would fail on an improved sentence and pass on a wrong path. Only defects both languages can find are pinned in `findings`: recomputing a bundle's estimates is the TypeScript verifier's alone (ADR 0010), so a vector for it would be a vector Python is required to fail. `typescript_only_findings` records what this build finds in addition -- every refusal `verifyEvidenceGraph` addresses to a subject rather than to a place, which is the edge matrix, cycles, supersession forks, reference agreement and provenance closure -- so the difference between the two verifiers is written down rather than implied.",
+  "schema_version": "1.0",
+  "hash_rules_id": "study-v1",
+  "cases": [
+    {
+      "label": "intact",
+      "why": "Nothing wrong with it. A vector set with no passing case cannot tell a strict verifier from a broken one.",
+      "status": "STRUCTURE_VERIFIED",
+      "levels": {
+        "schema_valid": true,
+        "canonicalizable": true,
+        "hash_matches": true,
+        "record_integrity_valid": true,
+        "graph_structurally_valid": true,
+        "provenance_closed": true,
+        "claims_resolve": true,
+        "bundles_resolve": true
+      },
+      "findings": [],
+      "typescript_only_findings": [],
+      "package": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "package_kind": "KETQAT_RESEARCH_PACKAGE",
+        "distribution": "ONLINE",
+        "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+        "plan_ref": {
+          "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "revision": 2
+        },
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The base scenario needs",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "scaling"
+                }
+              ]
+            }
+          ],
+          "commentary": []
+        },
+        "tables": [
+          {
+            "table_id": "results",
+            "caption": "Resource estimate under the base scenario.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "scenario",
+                "header": "Scenario",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "qubits",
+                "header": "Total physical qubits",
+                "role": "VALUE",
+                "unit": "physical qubits"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "base",
+                "cells": [
+                  {
+                    "column_id": "scenario",
+                    "text": "Base",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "qubits",
+                    "text": null,
+                    "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "154",
+              "content_hash": "108b4f99388611f5df6afeb3070dad4996e91662eaf47962b41fab5058e88be5"
+            }
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "scaling",
+            "title": "Physical qubits against code distance",
+            "caption": "One point, drawn from the nodes the table reads.",
+            "spec": {
+              "kind": "SCATTER",
+              "x_axis": {
+                "label": "Code distance",
+                "unit": "code distance"
+              },
+              "y_axis": {
+                "label": "Total physical qubits",
+                "unit": "physical qubits"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base scenario",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "base",
+                        "column_id": "qubits"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": null
+          }
+        ],
+        "references": [
+          {
+            "title": "Surface codes: towards practical large-scale quantum computation",
+            "authors": [],
+            "year": 2012
+          }
+        ],
+        "bundle_refs": [],
+        "environment": {
+          "operating_system": "Linux",
+          "architecture": "x86_64",
+          "python_version": "3.11.9",
+          "packages": [],
+          "hardware": []
+        },
+        "recipe": {
+          "runner": "ketqat-runner",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "argv": [
+            "study",
+            "reproduce",
+            "--package",
+            "research-package.json"
+          ],
+          "input_refs": [],
+          "environment_allowlist": [],
+          "expected_output_refs": [],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "8589934592",
+            "max_credits": null
+          },
+          "network_policy": "NONE",
+          "allowed_hosts": [],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "minimum_runner_version": null
+          }
+        },
+        "nodes": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Total physical qubits, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 4200000,
+              "unit": "physical qubits",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Code distance, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 21,
+              "unit": "code distance",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "claim",
+            "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+            "visibility": "PUBLIC",
+            "claim": {
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": null,
+                "record_slug": "shor-2048"
+              },
+              "metric": "total_physical_qubits",
+              "comparator": "AT_MOST",
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                "field_path": null
+              }
+            },
+            "quantity": null,
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "result",
+            "label": "Resource estimate snapshot, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": null,
+            "reference": {
+              "record_kind": "resource_estimate_snapshot",
+              "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_slug": null
+            },
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa"
+          }
+        ],
+        "edges": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "supports",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The claimed ceiling is the estimate's own upper bound.",
+            "content_hash": "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The number is read out of this estimate.",
+            "content_hash": "b34f994e83fd5ba4f324bcf2eb7240a2d645dcabfeeff84c9e2edd0a0ab8aca3"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The code distance is read out of the same estimate.",
+            "content_hash": "942c32a76e68ebc85125906eec37232a77a46c6134df2f69ace6eeae09ac1383"
+          }
+        ],
+        "claim_evidence_map": [
+          {
+            "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "evidence_node_hashes": [
+              "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            ],
+            "edge_hashes": [
+              "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+            ],
+            "bundle_fields": []
+          }
+        ],
+        "reviews": [],
+        "reproductions": [],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          }
+        ],
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ],
+        "is_demo": false,
+        "reproducibility_hash": "21bb27b185e8437b2f03bbdac819b3872d82a5f8623123995cd544f8449fe202"
+      }
+    },
+    {
+      "label": "edited_without_rehash",
+      "why": "The ordinary tampering: a number changed and nothing else touched.",
+      "status": "STRUCTURE_UNVERIFIED",
+      "levels": {
+        "schema_valid": true,
+        "canonicalizable": true,
+        "hash_matches": false,
+        "record_integrity_valid": false,
+        "graph_structurally_valid": true,
+        "provenance_closed": true,
+        "claims_resolve": false,
+        "bundles_resolve": true
+      },
+      "findings": [
+        {
+          "code": "STUDY_RECORD_NOT_HASHABLE",
+          "path": "$.nodes[0].content_hash"
+        },
+        {
+          "code": "STUDY_RECORD_NOT_HASHABLE",
+          "path": "$.reproducibility_hash"
+        },
+        {
+          "code": "TABLE_CSV_ARTIFACT_MISMATCH",
+          "path": "$.tables[0].csv_artifact.byte_size"
+        },
+        {
+          "code": "TABLE_CSV_ARTIFACT_MISMATCH",
+          "path": "$.tables[0].csv_artifact.content_hash"
+        }
+      ],
+      "typescript_only_findings": [],
+      "package": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "package_kind": "KETQAT_RESEARCH_PACKAGE",
+        "distribution": "ONLINE",
+        "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+        "plan_ref": {
+          "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "revision": 2
+        },
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The base scenario needs",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "scaling"
+                }
+              ]
+            }
+          ],
+          "commentary": []
+        },
+        "tables": [
+          {
+            "table_id": "results",
+            "caption": "Resource estimate under the base scenario.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "scenario",
+                "header": "Scenario",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "qubits",
+                "header": "Total physical qubits",
+                "role": "VALUE",
+                "unit": "physical qubits"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "base",
+                "cells": [
+                  {
+                    "column_id": "scenario",
+                    "text": "Base",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "qubits",
+                    "text": null,
+                    "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "154",
+              "content_hash": "108b4f99388611f5df6afeb3070dad4996e91662eaf47962b41fab5058e88be5"
+            }
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "scaling",
+            "title": "Physical qubits against code distance",
+            "caption": "One point, drawn from the nodes the table reads.",
+            "spec": {
+              "kind": "SCATTER",
+              "x_axis": {
+                "label": "Code distance",
+                "unit": "code distance"
+              },
+              "y_axis": {
+                "label": "Total physical qubits",
+                "unit": "physical qubits"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base scenario",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "base",
+                        "column_id": "qubits"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": null
+          }
+        ],
+        "references": [
+          {
+            "title": "Surface codes: towards practical large-scale quantum computation",
+            "authors": [],
+            "year": 2012
+          }
+        ],
+        "bundle_refs": [],
+        "environment": {
+          "operating_system": "Linux",
+          "architecture": "x86_64",
+          "python_version": "3.11.9",
+          "packages": [],
+          "hardware": []
+        },
+        "recipe": {
+          "runner": "ketqat-runner",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "argv": [
+            "study",
+            "reproduce",
+            "--package",
+            "research-package.json"
+          ],
+          "input_refs": [],
+          "environment_allowlist": [],
+          "expected_output_refs": [],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "8589934592",
+            "max_credits": null
+          },
+          "network_policy": "NONE",
+          "allowed_hosts": [],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "minimum_runner_version": null
+          }
+        },
+        "nodes": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Total physical qubits, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 42,
+              "unit": "physical qubits",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Code distance, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 21,
+              "unit": "code distance",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "claim",
+            "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+            "visibility": "PUBLIC",
+            "claim": {
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": null,
+                "record_slug": "shor-2048"
+              },
+              "metric": "total_physical_qubits",
+              "comparator": "AT_MOST",
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                "field_path": null
+              }
+            },
+            "quantity": null,
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "result",
+            "label": "Resource estimate snapshot, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": null,
+            "reference": {
+              "record_kind": "resource_estimate_snapshot",
+              "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_slug": null
+            },
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa"
+          }
+        ],
+        "edges": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "supports",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The claimed ceiling is the estimate's own upper bound.",
+            "content_hash": "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The number is read out of this estimate.",
+            "content_hash": "b34f994e83fd5ba4f324bcf2eb7240a2d645dcabfeeff84c9e2edd0a0ab8aca3"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The code distance is read out of the same estimate.",
+            "content_hash": "942c32a76e68ebc85125906eec37232a77a46c6134df2f69ace6eeae09ac1383"
+          }
+        ],
+        "claim_evidence_map": [
+          {
+            "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "evidence_node_hashes": [
+              "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            ],
+            "edge_hashes": [
+              "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+            ],
+            "bundle_fields": []
+          }
+        ],
+        "reviews": [],
+        "reproductions": [],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          }
+        ],
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ],
+        "is_demo": false,
+        "reproducibility_hash": "21bb27b185e8437b2f03bbdac819b3872d82a5f8623123995cd544f8449fe202"
+      }
+    },
+    {
+      "label": "edited_and_rehashed",
+      "why": "The fabrication a digest cannot see: the node is edited, re-stamped, and the package re-hashed, so every digest in the file agrees with its own contents and every reference to the node has stopped resolving.",
+      "status": "STRUCTURE_UNVERIFIED",
+      "levels": {
+        "schema_valid": true,
+        "canonicalizable": true,
+        "hash_matches": true,
+        "record_integrity_valid": true,
+        "graph_structurally_valid": false,
+        "provenance_closed": false,
+        "claims_resolve": false,
+        "bundles_resolve": true
+      },
+      "findings": [
+        {
+          "code": "EVIDENCE_EDGE_ENDPOINT_UNRESOLVED",
+          "path": "$.edges[0].from_node_hash"
+        },
+        {
+          "code": "EVIDENCE_EDGE_ENDPOINT_UNRESOLVED",
+          "path": "$.edges[1].from_node_hash"
+        },
+        {
+          "code": "EVIDENCE_NODE_UNRESOLVED",
+          "path": "$.claim_evidence_map[0].evidence_node_hashes[0]"
+        },
+        {
+          "code": "EVIDENCE_NODE_UNRESOLVED",
+          "path": "$.tables[0].rows[0].cells[1].node_hash"
+        },
+        {
+          "code": "FIGURE_POINT_UNRESOLVED",
+          "path": "$.figures[0].spec.series[0].points[0].y"
+        },
+        {
+          "code": "REPORT_REFERENCE_UNRESOLVED",
+          "path": "$.report.sections[0].segments[1].node_hash"
+        }
+      ],
+      "typescript_only_findings": [
+        {
+          "code": "CLAIM_NOT_GROUNDED",
+          "path": "$.nodes"
+        },
+        {
+          "code": "EVIDENCE_NODE_UNRESOLVED",
+          "path": "$.edges"
+        }
+      ],
+      "package": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "package_kind": "KETQAT_RESEARCH_PACKAGE",
+        "distribution": "ONLINE",
+        "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+        "plan_ref": {
+          "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "revision": 2
+        },
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The base scenario needs",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "scaling"
+                }
+              ]
+            }
+          ],
+          "commentary": []
+        },
+        "tables": [
+          {
+            "table_id": "results",
+            "caption": "Resource estimate under the base scenario.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "scenario",
+                "header": "Scenario",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "qubits",
+                "header": "Total physical qubits",
+                "role": "VALUE",
+                "unit": "physical qubits"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "base",
+                "cells": [
+                  {
+                    "column_id": "scenario",
+                    "text": "Base",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "qubits",
+                    "text": null,
+                    "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "154",
+              "content_hash": "108b4f99388611f5df6afeb3070dad4996e91662eaf47962b41fab5058e88be5"
+            }
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "scaling",
+            "title": "Physical qubits against code distance",
+            "caption": "One point, drawn from the nodes the table reads.",
+            "spec": {
+              "kind": "SCATTER",
+              "x_axis": {
+                "label": "Code distance",
+                "unit": "code distance"
+              },
+              "y_axis": {
+                "label": "Total physical qubits",
+                "unit": "physical qubits"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base scenario",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "base",
+                        "column_id": "qubits"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": null
+          }
+        ],
+        "references": [
+          {
+            "title": "Surface codes: towards practical large-scale quantum computation",
+            "authors": [],
+            "year": 2012
+          }
+        ],
+        "bundle_refs": [],
+        "environment": {
+          "operating_system": "Linux",
+          "architecture": "x86_64",
+          "python_version": "3.11.9",
+          "packages": [],
+          "hardware": []
+        },
+        "recipe": {
+          "runner": "ketqat-runner",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "argv": [
+            "study",
+            "reproduce",
+            "--package",
+            "research-package.json"
+          ],
+          "input_refs": [],
+          "environment_allowlist": [],
+          "expected_output_refs": [],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "8589934592",
+            "max_credits": null
+          },
+          "network_policy": "NONE",
+          "allowed_hosts": [],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "minimum_runner_version": null
+          }
+        },
+        "nodes": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Total physical qubits, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 42,
+              "unit": "physical qubits",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "82dfef0da3fd3d6289b0378975bfd2d0c5cd66c800e82050d9b10b2d684d5885"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Code distance, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 21,
+              "unit": "code distance",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "claim",
+            "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+            "visibility": "PUBLIC",
+            "claim": {
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": null,
+                "record_slug": "shor-2048"
+              },
+              "metric": "total_physical_qubits",
+              "comparator": "AT_MOST",
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                "field_path": null
+              }
+            },
+            "quantity": null,
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "result",
+            "label": "Resource estimate snapshot, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": null,
+            "reference": {
+              "record_kind": "resource_estimate_snapshot",
+              "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_slug": null
+            },
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa"
+          }
+        ],
+        "edges": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "supports",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The claimed ceiling is the estimate's own upper bound.",
+            "content_hash": "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The number is read out of this estimate.",
+            "content_hash": "b34f994e83fd5ba4f324bcf2eb7240a2d645dcabfeeff84c9e2edd0a0ab8aca3"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The code distance is read out of the same estimate.",
+            "content_hash": "942c32a76e68ebc85125906eec37232a77a46c6134df2f69ace6eeae09ac1383"
+          }
+        ],
+        "claim_evidence_map": [
+          {
+            "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "evidence_node_hashes": [
+              "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            ],
+            "edge_hashes": [
+              "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+            ],
+            "bundle_fields": []
+          }
+        ],
+        "reviews": [],
+        "reproductions": [],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          }
+        ],
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ],
+        "is_demo": false,
+        "reproducibility_hash": "6163bc81a0a384d03ace318527d3a3dd6184d33054eec2bb5adbe1d561a40564"
+      }
+    },
+    {
+      "label": "prose_carries_a_number",
+      "why": "A figure typed into a verified section, which is the failure the structured report exists to prevent.",
+      "status": "STRUCTURE_UNVERIFIED",
+      "levels": {
+        "schema_valid": true,
+        "canonicalizable": true,
+        "hash_matches": true,
+        "record_integrity_valid": true,
+        "graph_structurally_valid": true,
+        "provenance_closed": true,
+        "claims_resolve": false,
+        "bundles_resolve": true
+      },
+      "findings": [
+        {
+          "code": "VERIFIED_PROSE_NOT_GROUNDED",
+          "path": "$.report.sections[0].segments[0].text"
+        }
+      ],
+      "typescript_only_findings": [],
+      "package": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "package_kind": "KETQAT_RESEARCH_PACKAGE",
+        "distribution": "ONLINE",
+        "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+        "plan_ref": {
+          "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "revision": 2
+        },
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The base scenario needs 4.2 million physical qubits",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "scaling"
+                }
+              ]
+            }
+          ],
+          "commentary": []
+        },
+        "tables": [
+          {
+            "table_id": "results",
+            "caption": "Resource estimate under the base scenario.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "scenario",
+                "header": "Scenario",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "qubits",
+                "header": "Total physical qubits",
+                "role": "VALUE",
+                "unit": "physical qubits"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "base",
+                "cells": [
+                  {
+                    "column_id": "scenario",
+                    "text": "Base",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "qubits",
+                    "text": null,
+                    "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "154",
+              "content_hash": "108b4f99388611f5df6afeb3070dad4996e91662eaf47962b41fab5058e88be5"
+            }
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "scaling",
+            "title": "Physical qubits against code distance",
+            "caption": "One point, drawn from the nodes the table reads.",
+            "spec": {
+              "kind": "SCATTER",
+              "x_axis": {
+                "label": "Code distance",
+                "unit": "code distance"
+              },
+              "y_axis": {
+                "label": "Total physical qubits",
+                "unit": "physical qubits"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base scenario",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "base",
+                        "column_id": "qubits"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": null
+          }
+        ],
+        "references": [
+          {
+            "title": "Surface codes: towards practical large-scale quantum computation",
+            "authors": [],
+            "year": 2012
+          }
+        ],
+        "bundle_refs": [],
+        "environment": {
+          "operating_system": "Linux",
+          "architecture": "x86_64",
+          "python_version": "3.11.9",
+          "packages": [],
+          "hardware": []
+        },
+        "recipe": {
+          "runner": "ketqat-runner",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "argv": [
+            "study",
+            "reproduce",
+            "--package",
+            "research-package.json"
+          ],
+          "input_refs": [],
+          "environment_allowlist": [],
+          "expected_output_refs": [],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "8589934592",
+            "max_credits": null
+          },
+          "network_policy": "NONE",
+          "allowed_hosts": [],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "minimum_runner_version": null
+          }
+        },
+        "nodes": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Total physical qubits, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 4200000,
+              "unit": "physical qubits",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Code distance, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 21,
+              "unit": "code distance",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "claim",
+            "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+            "visibility": "PUBLIC",
+            "claim": {
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": null,
+                "record_slug": "shor-2048"
+              },
+              "metric": "total_physical_qubits",
+              "comparator": "AT_MOST",
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                "field_path": null
+              }
+            },
+            "quantity": null,
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "result",
+            "label": "Resource estimate snapshot, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": null,
+            "reference": {
+              "record_kind": "resource_estimate_snapshot",
+              "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_slug": null
+            },
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa"
+          }
+        ],
+        "edges": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "supports",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The claimed ceiling is the estimate's own upper bound.",
+            "content_hash": "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The number is read out of this estimate.",
+            "content_hash": "b34f994e83fd5ba4f324bcf2eb7240a2d645dcabfeeff84c9e2edd0a0ab8aca3"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The code distance is read out of the same estimate.",
+            "content_hash": "942c32a76e68ebc85125906eec37232a77a46c6134df2f69ace6eeae09ac1383"
+          }
+        ],
+        "claim_evidence_map": [
+          {
+            "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "evidence_node_hashes": [
+              "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            ],
+            "edge_hashes": [
+              "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+            ],
+            "bundle_fields": []
+          }
+        ],
+        "reviews": [],
+        "reproductions": [],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          }
+        ],
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ],
+        "is_demo": false,
+        "reproducibility_hash": "a1a2c110fa6e6118459d990156bf0388d06e6b419b8115759111e4b876636076"
+      }
+    },
+    {
+      "label": "table_value_cell_without_node",
+      "why": "A number typed into a table cell, which renders exactly like one that was measured.",
+      "status": "STRUCTURE_UNVERIFIED",
+      "levels": {
+        "schema_valid": true,
+        "canonicalizable": true,
+        "hash_matches": true,
+        "record_integrity_valid": true,
+        "graph_structurally_valid": true,
+        "provenance_closed": true,
+        "claims_resolve": false,
+        "bundles_resolve": true
+      },
+      "findings": [
+        {
+          "code": "FIGURE_POINT_UNRESOLVED",
+          "path": "$.figures[0].spec.series[0].points[0].y"
+        },
+        {
+          "code": "TABLE_CELL_WITHOUT_NODE",
+          "path": "$.tables[0].rows[0].cells[1].node_hash"
+        }
+      ],
+      "typescript_only_findings": [],
+      "package": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "package_kind": "KETQAT_RESEARCH_PACKAGE",
+        "distribution": "ONLINE",
+        "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+        "plan_ref": {
+          "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "revision": 2
+        },
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The base scenario needs",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "scaling"
+                }
+              ]
+            }
+          ],
+          "commentary": []
+        },
+        "tables": [
+          {
+            "table_id": "results",
+            "caption": "Resource estimate under the base scenario.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "scenario",
+                "header": "Scenario",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "qubits",
+                "header": "Total physical qubits",
+                "role": "VALUE",
+                "unit": "physical qubits"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "base",
+                "cells": [
+                  {
+                    "column_id": "scenario",
+                    "text": "Base",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "qubits",
+                    "text": "4200000",
+                    "node_hash": null
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "154",
+              "content_hash": "108b4f99388611f5df6afeb3070dad4996e91662eaf47962b41fab5058e88be5"
+            }
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "scaling",
+            "title": "Physical qubits against code distance",
+            "caption": "One point, drawn from the nodes the table reads.",
+            "spec": {
+              "kind": "SCATTER",
+              "x_axis": {
+                "label": "Code distance",
+                "unit": "code distance"
+              },
+              "y_axis": {
+                "label": "Total physical qubits",
+                "unit": "physical qubits"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base scenario",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "base",
+                        "column_id": "qubits"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": null
+          }
+        ],
+        "references": [
+          {
+            "title": "Surface codes: towards practical large-scale quantum computation",
+            "authors": [],
+            "year": 2012
+          }
+        ],
+        "bundle_refs": [],
+        "environment": {
+          "operating_system": "Linux",
+          "architecture": "x86_64",
+          "python_version": "3.11.9",
+          "packages": [],
+          "hardware": []
+        },
+        "recipe": {
+          "runner": "ketqat-runner",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "argv": [
+            "study",
+            "reproduce",
+            "--package",
+            "research-package.json"
+          ],
+          "input_refs": [],
+          "environment_allowlist": [],
+          "expected_output_refs": [],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "8589934592",
+            "max_credits": null
+          },
+          "network_policy": "NONE",
+          "allowed_hosts": [],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "minimum_runner_version": null
+          }
+        },
+        "nodes": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Total physical qubits, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 4200000,
+              "unit": "physical qubits",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Code distance, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 21,
+              "unit": "code distance",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "claim",
+            "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+            "visibility": "PUBLIC",
+            "claim": {
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": null,
+                "record_slug": "shor-2048"
+              },
+              "metric": "total_physical_qubits",
+              "comparator": "AT_MOST",
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                "field_path": null
+              }
+            },
+            "quantity": null,
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "result",
+            "label": "Resource estimate snapshot, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": null,
+            "reference": {
+              "record_kind": "resource_estimate_snapshot",
+              "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_slug": null
+            },
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa"
+          }
+        ],
+        "edges": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "supports",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The claimed ceiling is the estimate's own upper bound.",
+            "content_hash": "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The number is read out of this estimate.",
+            "content_hash": "b34f994e83fd5ba4f324bcf2eb7240a2d645dcabfeeff84c9e2edd0a0ab8aca3"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The code distance is read out of the same estimate.",
+            "content_hash": "942c32a76e68ebc85125906eec37232a77a46c6134df2f69ace6eeae09ac1383"
+          }
+        ],
+        "claim_evidence_map": [
+          {
+            "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "evidence_node_hashes": [
+              "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            ],
+            "edge_hashes": [
+              "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+            ],
+            "bundle_fields": []
+          }
+        ],
+        "reviews": [],
+        "reproductions": [],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          }
+        ],
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ],
+        "is_demo": false,
+        "reproducibility_hash": "edcfb945630777318cae1d957f1af62a6679869f65d0414b9945711bb8534f76"
+      }
+    },
+    {
+      "label": "csv_artifact_mismatch",
+      "why": "The forwarded file and the rows it was generated from, disagreeing.",
+      "status": "STRUCTURE_UNVERIFIED",
+      "levels": {
+        "schema_valid": true,
+        "canonicalizable": true,
+        "hash_matches": true,
+        "record_integrity_valid": true,
+        "graph_structurally_valid": true,
+        "provenance_closed": true,
+        "claims_resolve": false,
+        "bundles_resolve": true
+      },
+      "findings": [
+        {
+          "code": "TABLE_CSV_ARTIFACT_MISMATCH",
+          "path": "$.tables[0].csv_artifact.content_hash"
+        }
+      ],
+      "typescript_only_findings": [],
+      "package": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "package_kind": "KETQAT_RESEARCH_PACKAGE",
+        "distribution": "ONLINE",
+        "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+        "plan_ref": {
+          "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "revision": 2
+        },
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The base scenario needs",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "scaling"
+                }
+              ]
+            }
+          ],
+          "commentary": []
+        },
+        "tables": [
+          {
+            "table_id": "results",
+            "caption": "Resource estimate under the base scenario.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "scenario",
+                "header": "Scenario",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "qubits",
+                "header": "Total physical qubits",
+                "role": "VALUE",
+                "unit": "physical qubits"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "base",
+                "cells": [
+                  {
+                    "column_id": "scenario",
+                    "text": "Base",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "qubits",
+                    "text": null,
+                    "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "154",
+              "content_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "scaling",
+            "title": "Physical qubits against code distance",
+            "caption": "One point, drawn from the nodes the table reads.",
+            "spec": {
+              "kind": "SCATTER",
+              "x_axis": {
+                "label": "Code distance",
+                "unit": "code distance"
+              },
+              "y_axis": {
+                "label": "Total physical qubits",
+                "unit": "physical qubits"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base scenario",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "base",
+                        "column_id": "qubits"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": null
+          }
+        ],
+        "references": [
+          {
+            "title": "Surface codes: towards practical large-scale quantum computation",
+            "authors": [],
+            "year": 2012
+          }
+        ],
+        "bundle_refs": [],
+        "environment": {
+          "operating_system": "Linux",
+          "architecture": "x86_64",
+          "python_version": "3.11.9",
+          "packages": [],
+          "hardware": []
+        },
+        "recipe": {
+          "runner": "ketqat-runner",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "argv": [
+            "study",
+            "reproduce",
+            "--package",
+            "research-package.json"
+          ],
+          "input_refs": [],
+          "environment_allowlist": [],
+          "expected_output_refs": [],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "8589934592",
+            "max_credits": null
+          },
+          "network_policy": "NONE",
+          "allowed_hosts": [],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "minimum_runner_version": null
+          }
+        },
+        "nodes": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Total physical qubits, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 4200000,
+              "unit": "physical qubits",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Code distance, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 21,
+              "unit": "code distance",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "claim",
+            "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+            "visibility": "PUBLIC",
+            "claim": {
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": null,
+                "record_slug": "shor-2048"
+              },
+              "metric": "total_physical_qubits",
+              "comparator": "AT_MOST",
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                "field_path": null
+              }
+            },
+            "quantity": null,
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "result",
+            "label": "Resource estimate snapshot, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": null,
+            "reference": {
+              "record_kind": "resource_estimate_snapshot",
+              "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_slug": null
+            },
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa"
+          }
+        ],
+        "edges": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "supports",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The claimed ceiling is the estimate's own upper bound.",
+            "content_hash": "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The number is read out of this estimate.",
+            "content_hash": "b34f994e83fd5ba4f324bcf2eb7240a2d645dcabfeeff84c9e2edd0a0ab8aca3"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The code distance is read out of the same estimate.",
+            "content_hash": "942c32a76e68ebc85125906eec37232a77a46c6134df2f69ace6eeae09ac1383"
+          }
+        ],
+        "claim_evidence_map": [
+          {
+            "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "evidence_node_hashes": [
+              "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            ],
+            "edge_hashes": [
+              "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+            ],
+            "bundle_fields": []
+          }
+        ],
+        "reviews": [],
+        "reproductions": [],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          }
+        ],
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ],
+        "is_demo": false,
+        "reproducibility_hash": "0b28c3e60f88dd9a46d1c52f5beaa17b6aa5c6c0531b3827bbcc5430eac3401d"
+      }
+    },
+    {
+      "label": "figure_point_unresolved",
+      "why": "A chart drawn from a coordinate the package does not carry.",
+      "status": "STRUCTURE_UNVERIFIED",
+      "levels": {
+        "schema_valid": true,
+        "canonicalizable": true,
+        "hash_matches": true,
+        "record_integrity_valid": true,
+        "graph_structurally_valid": true,
+        "provenance_closed": true,
+        "claims_resolve": false,
+        "bundles_resolve": true
+      },
+      "findings": [
+        {
+          "code": "FIGURE_POINT_UNRESOLVED",
+          "path": "$.figures[0].spec.series[0].points[0].y"
+        }
+      ],
+      "typescript_only_findings": [],
+      "package": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "package_kind": "KETQAT_RESEARCH_PACKAGE",
+        "distribution": "ONLINE",
+        "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+        "plan_ref": {
+          "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "revision": 2
+        },
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The base scenario needs",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "scaling"
+                }
+              ]
+            }
+          ],
+          "commentary": []
+        },
+        "tables": [
+          {
+            "table_id": "results",
+            "caption": "Resource estimate under the base scenario.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "scenario",
+                "header": "Scenario",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "qubits",
+                "header": "Total physical qubits",
+                "role": "VALUE",
+                "unit": "physical qubits"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "base",
+                "cells": [
+                  {
+                    "column_id": "scenario",
+                    "text": "Base",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "qubits",
+                    "text": null,
+                    "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "154",
+              "content_hash": "108b4f99388611f5df6afeb3070dad4996e91662eaf47962b41fab5058e88be5"
+            }
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "scaling",
+            "title": "Physical qubits against code distance",
+            "caption": "One point, drawn from the nodes the table reads.",
+            "spec": {
+              "kind": "SCATTER",
+              "x_axis": {
+                "label": "Code distance",
+                "unit": "code distance"
+              },
+              "y_axis": {
+                "label": "Total physical qubits",
+                "unit": "physical qubits"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base scenario",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "no-such-row",
+                        "column_id": "qubits"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": null
+          }
+        ],
+        "references": [
+          {
+            "title": "Surface codes: towards practical large-scale quantum computation",
+            "authors": [],
+            "year": 2012
+          }
+        ],
+        "bundle_refs": [],
+        "environment": {
+          "operating_system": "Linux",
+          "architecture": "x86_64",
+          "python_version": "3.11.9",
+          "packages": [],
+          "hardware": []
+        },
+        "recipe": {
+          "runner": "ketqat-runner",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "argv": [
+            "study",
+            "reproduce",
+            "--package",
+            "research-package.json"
+          ],
+          "input_refs": [],
+          "environment_allowlist": [],
+          "expected_output_refs": [],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "8589934592",
+            "max_credits": null
+          },
+          "network_policy": "NONE",
+          "allowed_hosts": [],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "minimum_runner_version": null
+          }
+        },
+        "nodes": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Total physical qubits, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 4200000,
+              "unit": "physical qubits",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Code distance, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 21,
+              "unit": "code distance",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "claim",
+            "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+            "visibility": "PUBLIC",
+            "claim": {
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": null,
+                "record_slug": "shor-2048"
+              },
+              "metric": "total_physical_qubits",
+              "comparator": "AT_MOST",
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                "field_path": null
+              }
+            },
+            "quantity": null,
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "result",
+            "label": "Resource estimate snapshot, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": null,
+            "reference": {
+              "record_kind": "resource_estimate_snapshot",
+              "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_slug": null
+            },
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa"
+          }
+        ],
+        "edges": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "supports",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The claimed ceiling is the estimate's own upper bound.",
+            "content_hash": "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The number is read out of this estimate.",
+            "content_hash": "b34f994e83fd5ba4f324bcf2eb7240a2d645dcabfeeff84c9e2edd0a0ab8aca3"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The code distance is read out of the same estimate.",
+            "content_hash": "942c32a76e68ebc85125906eec37232a77a46c6134df2f69ace6eeae09ac1383"
+          }
+        ],
+        "claim_evidence_map": [
+          {
+            "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "evidence_node_hashes": [
+              "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            ],
+            "edge_hashes": [
+              "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+            ],
+            "bundle_fields": []
+          }
+        ],
+        "reviews": [],
+        "reproductions": [],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          }
+        ],
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ],
+        "is_demo": false,
+        "reproducibility_hash": "f74063c1f557a821bc27b5945bd8b4775c63fd8ce0062161e06225f526c82fdf"
+      }
+    },
+    {
+      "label": "report_reference_unresolved",
+      "why": "A report segment naming a node the package does not carry.",
+      "status": "STRUCTURE_UNVERIFIED",
+      "levels": {
+        "schema_valid": true,
+        "canonicalizable": true,
+        "hash_matches": true,
+        "record_integrity_valid": true,
+        "graph_structurally_valid": true,
+        "provenance_closed": true,
+        "claims_resolve": false,
+        "bundles_resolve": true
+      },
+      "findings": [
+        {
+          "code": "REPORT_REFERENCE_UNRESOLVED",
+          "path": "$.report.sections[0].segments[1].node_hash"
+        }
+      ],
+      "typescript_only_findings": [],
+      "package": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "package_kind": "KETQAT_RESEARCH_PACKAGE",
+        "distribution": "ONLINE",
+        "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+        "plan_ref": {
+          "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "revision": 2
+        },
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The base scenario needs",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "9999999999999999999999999999999999999999999999999999999999999999",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "scaling"
+                }
+              ]
+            }
+          ],
+          "commentary": []
+        },
+        "tables": [
+          {
+            "table_id": "results",
+            "caption": "Resource estimate under the base scenario.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "scenario",
+                "header": "Scenario",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "qubits",
+                "header": "Total physical qubits",
+                "role": "VALUE",
+                "unit": "physical qubits"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "base",
+                "cells": [
+                  {
+                    "column_id": "scenario",
+                    "text": "Base",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "qubits",
+                    "text": null,
+                    "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "154",
+              "content_hash": "108b4f99388611f5df6afeb3070dad4996e91662eaf47962b41fab5058e88be5"
+            }
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "scaling",
+            "title": "Physical qubits against code distance",
+            "caption": "One point, drawn from the nodes the table reads.",
+            "spec": {
+              "kind": "SCATTER",
+              "x_axis": {
+                "label": "Code distance",
+                "unit": "code distance"
+              },
+              "y_axis": {
+                "label": "Total physical qubits",
+                "unit": "physical qubits"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base scenario",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "base",
+                        "column_id": "qubits"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": null
+          }
+        ],
+        "references": [
+          {
+            "title": "Surface codes: towards practical large-scale quantum computation",
+            "authors": [],
+            "year": 2012
+          }
+        ],
+        "bundle_refs": [],
+        "environment": {
+          "operating_system": "Linux",
+          "architecture": "x86_64",
+          "python_version": "3.11.9",
+          "packages": [],
+          "hardware": []
+        },
+        "recipe": {
+          "runner": "ketqat-runner",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "argv": [
+            "study",
+            "reproduce",
+            "--package",
+            "research-package.json"
+          ],
+          "input_refs": [],
+          "environment_allowlist": [],
+          "expected_output_refs": [],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "8589934592",
+            "max_credits": null
+          },
+          "network_policy": "NONE",
+          "allowed_hosts": [],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "minimum_runner_version": null
+          }
+        },
+        "nodes": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Total physical qubits, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 4200000,
+              "unit": "physical qubits",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Code distance, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 21,
+              "unit": "code distance",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "claim",
+            "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+            "visibility": "PUBLIC",
+            "claim": {
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": null,
+                "record_slug": "shor-2048"
+              },
+              "metric": "total_physical_qubits",
+              "comparator": "AT_MOST",
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                "field_path": null
+              }
+            },
+            "quantity": null,
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "result",
+            "label": "Resource estimate snapshot, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": null,
+            "reference": {
+              "record_kind": "resource_estimate_snapshot",
+              "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_slug": null
+            },
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa"
+          }
+        ],
+        "edges": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "supports",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The claimed ceiling is the estimate's own upper bound.",
+            "content_hash": "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The number is read out of this estimate.",
+            "content_hash": "b34f994e83fd5ba4f324bcf2eb7240a2d645dcabfeeff84c9e2edd0a0ab8aca3"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The code distance is read out of the same estimate.",
+            "content_hash": "942c32a76e68ebc85125906eec37232a77a46c6134df2f69ace6eeae09ac1383"
+          }
+        ],
+        "claim_evidence_map": [
+          {
+            "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "evidence_node_hashes": [
+              "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            ],
+            "edge_hashes": [
+              "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+            ],
+            "bundle_fields": []
+          }
+        ],
+        "reviews": [],
+        "reproductions": [],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          }
+        ],
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ],
+        "is_demo": false,
+        "reproducibility_hash": "540bc9ea62392707c99ddff848adaa779828ee0373dfe7f4307a137535a7336f"
+      }
+    },
+    {
+      "label": "claim_evidence_unlinked",
+      "why": "The map and the graph disagreeing: the evidence is carried and no edge says it backs the claim.",
+      "status": "STRUCTURE_UNVERIFIED",
+      "levels": {
+        "schema_valid": true,
+        "canonicalizable": true,
+        "hash_matches": true,
+        "record_integrity_valid": true,
+        "graph_structurally_valid": true,
+        "provenance_closed": false,
+        "claims_resolve": false,
+        "bundles_resolve": true
+      },
+      "findings": [
+        {
+          "code": "CLAIM_EVIDENCE_UNLINKED",
+          "path": "$.claim_evidence_map[0].edge_hashes"
+        },
+        {
+          "code": "CLAIM_EVIDENCE_UNLINKED",
+          "path": "$.claim_evidence_map[0].evidence_node_hashes[0]"
+        },
+        {
+          "code": "CLAIM_WITHOUT_EVIDENCE_NODE",
+          "path": "$.nodes[2].content_hash"
+        }
+      ],
+      "typescript_only_findings": [
+        {
+          "code": "CLAIM_WITHOUT_EVIDENCE_NODE",
+          "path": "$.nodes"
+        }
+      ],
+      "package": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "package_kind": "KETQAT_RESEARCH_PACKAGE",
+        "distribution": "ONLINE",
+        "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+        "plan_ref": {
+          "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "revision": 2
+        },
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The base scenario needs",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "scaling"
+                }
+              ]
+            }
+          ],
+          "commentary": []
+        },
+        "tables": [
+          {
+            "table_id": "results",
+            "caption": "Resource estimate under the base scenario.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "scenario",
+                "header": "Scenario",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "qubits",
+                "header": "Total physical qubits",
+                "role": "VALUE",
+                "unit": "physical qubits"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "base",
+                "cells": [
+                  {
+                    "column_id": "scenario",
+                    "text": "Base",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "qubits",
+                    "text": null,
+                    "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "154",
+              "content_hash": "108b4f99388611f5df6afeb3070dad4996e91662eaf47962b41fab5058e88be5"
+            }
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "scaling",
+            "title": "Physical qubits against code distance",
+            "caption": "One point, drawn from the nodes the table reads.",
+            "spec": {
+              "kind": "SCATTER",
+              "x_axis": {
+                "label": "Code distance",
+                "unit": "code distance"
+              },
+              "y_axis": {
+                "label": "Total physical qubits",
+                "unit": "physical qubits"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base scenario",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "base",
+                        "column_id": "qubits"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": null
+          }
+        ],
+        "references": [
+          {
+            "title": "Surface codes: towards practical large-scale quantum computation",
+            "authors": [],
+            "year": 2012
+          }
+        ],
+        "bundle_refs": [],
+        "environment": {
+          "operating_system": "Linux",
+          "architecture": "x86_64",
+          "python_version": "3.11.9",
+          "packages": [],
+          "hardware": []
+        },
+        "recipe": {
+          "runner": "ketqat-runner",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "argv": [
+            "study",
+            "reproduce",
+            "--package",
+            "research-package.json"
+          ],
+          "input_refs": [],
+          "environment_allowlist": [],
+          "expected_output_refs": [],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "8589934592",
+            "max_credits": null
+          },
+          "network_policy": "NONE",
+          "allowed_hosts": [],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "minimum_runner_version": null
+          }
+        },
+        "nodes": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Total physical qubits, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 4200000,
+              "unit": "physical qubits",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Code distance, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 21,
+              "unit": "code distance",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "claim",
+            "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+            "visibility": "PUBLIC",
+            "claim": {
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": null,
+                "record_slug": "shor-2048"
+              },
+              "metric": "total_physical_qubits",
+              "comparator": "AT_MOST",
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                "field_path": null
+              }
+            },
+            "quantity": null,
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "result",
+            "label": "Resource estimate snapshot, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": null,
+            "reference": {
+              "record_kind": "resource_estimate_snapshot",
+              "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_slug": null
+            },
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa"
+          }
+        ],
+        "edges": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The number is read out of this estimate.",
+            "content_hash": "b34f994e83fd5ba4f324bcf2eb7240a2d645dcabfeeff84c9e2edd0a0ab8aca3"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The code distance is read out of the same estimate.",
+            "content_hash": "942c32a76e68ebc85125906eec37232a77a46c6134df2f69ace6eeae09ac1383"
+          }
+        ],
+        "claim_evidence_map": [
+          {
+            "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "evidence_node_hashes": [
+              "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            ],
+            "edge_hashes": [],
+            "bundle_fields": []
+          }
+        ],
+        "reviews": [],
+        "reproductions": [],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          }
+        ],
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ],
+        "is_demo": false,
+        "reproducibility_hash": "959a87e4745d67cf8b16d9d61b0278b827199b5ca96742bd6518a3a7453c4bbb"
+      }
+    },
+    {
+      "label": "offline_export_without_bundle",
+      "why": "A file calling itself self-contained and citing a document nobody has.",
+      "status": "STRUCTURE_UNVERIFIED",
+      "levels": {
+        "schema_valid": true,
+        "canonicalizable": true,
+        "hash_matches": true,
+        "record_integrity_valid": true,
+        "graph_structurally_valid": true,
+        "provenance_closed": true,
+        "claims_resolve": true,
+        "bundles_resolve": false
+      },
+      "findings": [
+        {
+          "code": "OFFLINE_EXPORT_BUNDLE_NOT_EMBEDDED",
+          "path": "$.bundle_refs[0].embedded"
+        }
+      ],
+      "typescript_only_findings": [],
+      "package": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "package_kind": "KETQAT_RESEARCH_PACKAGE",
+        "distribution": "OFFLINE_EXPORT",
+        "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+        "plan_ref": {
+          "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "revision": 2
+        },
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The base scenario needs",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "scaling"
+                }
+              ]
+            }
+          ],
+          "commentary": []
+        },
+        "tables": [
+          {
+            "table_id": "results",
+            "caption": "Resource estimate under the base scenario.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "scenario",
+                "header": "Scenario",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "qubits",
+                "header": "Total physical qubits",
+                "role": "VALUE",
+                "unit": "physical qubits"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "base",
+                "cells": [
+                  {
+                    "column_id": "scenario",
+                    "text": "Base",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "qubits",
+                    "text": null,
+                    "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "154",
+              "content_hash": "108b4f99388611f5df6afeb3070dad4996e91662eaf47962b41fab5058e88be5"
+            }
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "scaling",
+            "title": "Physical qubits against code distance",
+            "caption": "One point, drawn from the nodes the table reads.",
+            "spec": {
+              "kind": "SCATTER",
+              "x_axis": {
+                "label": "Code distance",
+                "unit": "code distance"
+              },
+              "y_axis": {
+                "label": "Total physical qubits",
+                "unit": "physical qubits"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base scenario",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "base",
+                        "column_id": "qubits"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": null
+          }
+        ],
+        "references": [
+          {
+            "title": "Surface codes: towards practical large-scale quantum computation",
+            "authors": [],
+            "year": 2012
+          }
+        ],
+        "bundle_refs": [
+          {
+            "bundle_kind": "RESOURCE_INTELLIGENCE",
+            "reproducibility_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+            "embedded": null
+          }
+        ],
+        "environment": {
+          "operating_system": "Linux",
+          "architecture": "x86_64",
+          "python_version": "3.11.9",
+          "packages": [],
+          "hardware": []
+        },
+        "recipe": {
+          "runner": "ketqat-runner",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "argv": [
+            "study",
+            "reproduce",
+            "--package",
+            "research-package.json"
+          ],
+          "input_refs": [],
+          "environment_allowlist": [],
+          "expected_output_refs": [],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "8589934592",
+            "max_credits": null
+          },
+          "network_policy": "NONE",
+          "allowed_hosts": [],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "minimum_runner_version": null
+          }
+        },
+        "nodes": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Total physical qubits, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 4200000,
+              "unit": "physical qubits",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Code distance, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 21,
+              "unit": "code distance",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "claim",
+            "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+            "visibility": "PUBLIC",
+            "claim": {
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": null,
+                "record_slug": "shor-2048"
+              },
+              "metric": "total_physical_qubits",
+              "comparator": "AT_MOST",
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                "field_path": null
+              }
+            },
+            "quantity": null,
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "result",
+            "label": "Resource estimate snapshot, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": null,
+            "reference": {
+              "record_kind": "resource_estimate_snapshot",
+              "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_slug": null
+            },
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa"
+          }
+        ],
+        "edges": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "supports",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The claimed ceiling is the estimate's own upper bound.",
+            "content_hash": "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The number is read out of this estimate.",
+            "content_hash": "b34f994e83fd5ba4f324bcf2eb7240a2d645dcabfeeff84c9e2edd0a0ab8aca3"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The code distance is read out of the same estimate.",
+            "content_hash": "942c32a76e68ebc85125906eec37232a77a46c6134df2f69ace6eeae09ac1383"
+          }
+        ],
+        "claim_evidence_map": [
+          {
+            "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "evidence_node_hashes": [
+              "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            ],
+            "edge_hashes": [
+              "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+            ],
+            "bundle_fields": []
+          }
+        ],
+        "reviews": [],
+        "reproductions": [],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          }
+        ],
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ],
+        "is_demo": false,
+        "reproducibility_hash": "e8b687335d91c563c67ec46367a71ae50f50947a276dac02cb50dfb5f4486d2d"
+      }
+    },
+    {
+      "label": "check_ledger_duplicate_id",
+      "why": "Two answers about one check, and a consumer indexing by id reports whichever it read last.",
+      "status": "REFUSED",
+      "levels": {
+        "schema_valid": false,
+        "canonicalizable": false,
+        "hash_matches": false,
+        "record_integrity_valid": false,
+        "graph_structurally_valid": false,
+        "provenance_closed": false,
+        "claims_resolve": false,
+        "bundles_resolve": false
+      },
+      "findings": [
+        {
+          "code": "CHECK_LEDGER_DUPLICATE_ID",
+          "path": "$.check_ledger[1].check_id"
+        }
+      ],
+      "typescript_only_findings": [],
+      "package": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "package_kind": "KETQAT_RESEARCH_PACKAGE",
+        "distribution": "ONLINE",
+        "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+        "plan_ref": {
+          "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "revision": 2
+        },
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The base scenario needs",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "scaling"
+                }
+              ]
+            }
+          ],
+          "commentary": []
+        },
+        "tables": [
+          {
+            "table_id": "results",
+            "caption": "Resource estimate under the base scenario.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "scenario",
+                "header": "Scenario",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "qubits",
+                "header": "Total physical qubits",
+                "role": "VALUE",
+                "unit": "physical qubits"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "base",
+                "cells": [
+                  {
+                    "column_id": "scenario",
+                    "text": "Base",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "qubits",
+                    "text": null,
+                    "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "154",
+              "content_hash": "108b4f99388611f5df6afeb3070dad4996e91662eaf47962b41fab5058e88be5"
+            }
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "scaling",
+            "title": "Physical qubits against code distance",
+            "caption": "One point, drawn from the nodes the table reads.",
+            "spec": {
+              "kind": "SCATTER",
+              "x_axis": {
+                "label": "Code distance",
+                "unit": "code distance"
+              },
+              "y_axis": {
+                "label": "Total physical qubits",
+                "unit": "physical qubits"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base scenario",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "base",
+                        "column_id": "qubits"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": null
+          }
+        ],
+        "references": [
+          {
+            "title": "Surface codes: towards practical large-scale quantum computation",
+            "authors": [],
+            "year": 2012
+          }
+        ],
+        "bundle_refs": [],
+        "environment": {
+          "operating_system": "Linux",
+          "architecture": "x86_64",
+          "python_version": "3.11.9",
+          "packages": [],
+          "hardware": []
+        },
+        "recipe": {
+          "runner": "ketqat-runner",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "argv": [
+            "study",
+            "reproduce",
+            "--package",
+            "research-package.json"
+          ],
+          "input_refs": [],
+          "environment_allowlist": [],
+          "expected_output_refs": [],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "8589934592",
+            "max_credits": null
+          },
+          "network_policy": "NONE",
+          "allowed_hosts": [],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "minimum_runner_version": null
+          }
+        },
+        "nodes": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Total physical qubits, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 4200000,
+              "unit": "physical qubits",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Code distance, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 21,
+              "unit": "code distance",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "claim",
+            "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+            "visibility": "PUBLIC",
+            "claim": {
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": null,
+                "record_slug": "shor-2048"
+              },
+              "metric": "total_physical_qubits",
+              "comparator": "AT_MOST",
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                "field_path": null
+              }
+            },
+            "quantity": null,
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "result",
+            "label": "Resource estimate snapshot, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": null,
+            "reference": {
+              "record_kind": "resource_estimate_snapshot",
+              "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_slug": null
+            },
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa"
+          }
+        ],
+        "edges": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "supports",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The claimed ceiling is the estimate's own upper bound.",
+            "content_hash": "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The number is read out of this estimate.",
+            "content_hash": "b34f994e83fd5ba4f324bcf2eb7240a2d645dcabfeeff84c9e2edd0a0ab8aca3"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The code distance is read out of the same estimate.",
+            "content_hash": "942c32a76e68ebc85125906eec37232a77a46c6134df2f69ace6eeae09ac1383"
+          }
+        ],
+        "claim_evidence_map": [
+          {
+            "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "evidence_node_hashes": [
+              "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            ],
+            "edge_hashes": [
+              "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+            ],
+            "bundle_fields": []
+          }
+        ],
+        "reviews": [],
+        "reproductions": [],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          },
+          {
+            "check_id": "graph_structure",
+            "status": "FAIL",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "It did not.",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          }
+        ],
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ],
+        "is_demo": false,
+        "reproducibility_hash": "68d0079a4181a5132947a2848fb297af501263bbc3fcea7c15de83c0547ab7bf"
+      }
+    },
+    {
+      "label": "recipe_runner_not_approved",
+      "why": "A recipe that is a readable record of a manual reproduction and not an instruction anything will follow.",
+      "status": "STRUCTURE_UNVERIFIED",
+      "levels": {
+        "schema_valid": true,
+        "canonicalizable": true,
+        "hash_matches": true,
+        "record_integrity_valid": true,
+        "graph_structurally_valid": true,
+        "provenance_closed": true,
+        "claims_resolve": false,
+        "bundles_resolve": true
+      },
+      "findings": [
+        {
+          "code": "RECIPE_RUNNER_NOT_APPROVED",
+          "path": "$.recipe.runner"
+        }
+      ],
+      "typescript_only_findings": [],
+      "package": {
+        "schema_version": "1.0",
+        "hash_rules_id": "study-v1",
+        "package_kind": "KETQAT_RESEARCH_PACKAGE",
+        "distribution": "ONLINE",
+        "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+        "plan_ref": {
+          "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "revision": 2
+        },
+        "report": {
+          "sections": [
+            {
+              "section_id": "findings",
+              "title": "Findings",
+              "segments": [
+                {
+                  "kind": "PROSE",
+                  "level": null,
+                  "text": "The base scenario needs",
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "QUANTITY_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": null
+                },
+                {
+                  "kind": "TABLE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": "results",
+                  "figure_id": null
+                },
+                {
+                  "kind": "FIGURE_REF",
+                  "level": null,
+                  "text": null,
+                  "node_hash": null,
+                  "citation_index": null,
+                  "limitation_index": null,
+                  "table_id": null,
+                  "figure_id": "scaling"
+                }
+              ]
+            }
+          ],
+          "commentary": []
+        },
+        "tables": [
+          {
+            "table_id": "results",
+            "caption": "Resource estimate under the base scenario.",
+            "role": "RESULTS",
+            "columns": [
+              {
+                "column_id": "scenario",
+                "header": "Scenario",
+                "role": "LABEL",
+                "unit": null
+              },
+              {
+                "column_id": "qubits",
+                "header": "Total physical qubits",
+                "role": "VALUE",
+                "unit": "physical qubits"
+              }
+            ],
+            "rows": [
+              {
+                "row_id": "base",
+                "cells": [
+                  {
+                    "column_id": "scenario",
+                    "text": "Base",
+                    "node_hash": null
+                  },
+                  {
+                    "column_id": "qubits",
+                    "text": null,
+                    "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+                  }
+                ]
+              }
+            ],
+            "csv_artifact": {
+              "media_type": "text/csv",
+              "byte_size": "154",
+              "content_hash": "108b4f99388611f5df6afeb3070dad4996e91662eaf47962b41fab5058e88be5"
+            }
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "scaling",
+            "title": "Physical qubits against code distance",
+            "caption": "One point, drawn from the nodes the table reads.",
+            "spec": {
+              "kind": "SCATTER",
+              "x_axis": {
+                "label": "Code distance",
+                "unit": "code distance"
+              },
+              "y_axis": {
+                "label": "Total physical qubits",
+                "unit": "physical qubits"
+              },
+              "series": [
+                {
+                  "series_id": "base",
+                  "label": "Base scenario",
+                  "points": [
+                    {
+                      "x": {
+                        "kind": "NODE",
+                        "node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+                        "table_id": null,
+                        "row_id": null,
+                        "column_id": null
+                      },
+                      "y": {
+                        "kind": "TABLE_CELL",
+                        "node_hash": null,
+                        "table_id": "results",
+                        "row_id": "base",
+                        "column_id": "qubits"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "svg_artifact": null
+          }
+        ],
+        "references": [
+          {
+            "title": "Surface codes: towards practical large-scale quantum computation",
+            "authors": [],
+            "year": 2012
+          }
+        ],
+        "bundle_refs": [],
+        "environment": {
+          "operating_system": "Linux",
+          "architecture": "x86_64",
+          "python_version": "3.11.9",
+          "packages": [],
+          "hardware": []
+        },
+        "recipe": {
+          "runner": "bash",
+          "runner_version": "0.3.0",
+          "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "argv": [
+            "study",
+            "reproduce",
+            "--package",
+            "research-package.json"
+          ],
+          "input_refs": [],
+          "environment_allowlist": [],
+          "expected_output_refs": [],
+          "resource_limits": {
+            "max_runtime": 3600,
+            "max_memory_bytes": "8589934592",
+            "max_credits": null
+          },
+          "network_policy": "NONE",
+          "allowed_hosts": [],
+          "platform": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "minimum_runner_version": null
+          }
+        },
+        "nodes": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Total physical qubits, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 4200000,
+              "unit": "physical qubits",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "quantity",
+            "label": "Code distance, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": {
+              "value": 21,
+              "unit": "code distance",
+              "bound": "UPPER_BOUND",
+              "evidence": "MODELLED",
+              "source": "Resource estimate under the base scenario.",
+              "model": "ketqat-resource-intelligence",
+              "model_version": "0.1.0",
+              "assumptions": [
+                "Physical error rate 0.001."
+              ],
+              "schema_version": "0.1",
+              "limitations": [
+                "Modelled, not measured. No device was run."
+              ]
+            },
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "claim",
+            "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+            "visibility": "PUBLIC",
+            "claim": {
+              "subject_ref": {
+                "record_kind": "quantum_workload",
+                "hash": null,
+                "record_slug": "shor-2048"
+              },
+              "metric": "total_physical_qubits",
+              "comparator": "AT_MOST",
+              "value_ref": {
+                "kind": "value_node",
+                "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+                "field_path": null
+              }
+            },
+            "quantity": null,
+            "reference": null,
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "result",
+            "label": "Resource estimate snapshot, base scenario",
+            "visibility": "PUBLIC",
+            "claim": null,
+            "quantity": null,
+            "reference": {
+              "record_kind": "resource_estimate_snapshot",
+              "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "record_slug": null
+            },
+            "citation": null,
+            "limitations": [],
+            "source_published_on": null,
+            "retrieved_on": null,
+            "content_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa"
+          }
+        ],
+        "edges": [
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "supports",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The claimed ceiling is the estimate's own upper bound.",
+            "content_hash": "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The number is read out of this estimate.",
+            "content_hash": "b34f994e83fd5ba4f324bcf2eb7240a2d645dcabfeeff84c9e2edd0a0ab8aca3"
+          },
+          {
+            "schema_version": "1.0",
+            "hash_rules_id": "study-v1",
+            "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+            "kind": "derived_from",
+            "from_node_hash": "b07ffef12440a63f025926938f12c8bfbff2a0a7e323cc97fdeaaa3a7ee1d932",
+            "to_node_hash": "63a18c15b8a8047aaac00327b51f401ba90f89e3f868630c3f3cbf9b9bae71aa",
+            "asserted_by": "ketqat-resource-intelligence",
+            "rationale": "The code distance is read out of the same estimate.",
+            "content_hash": "942c32a76e68ebc85125906eec37232a77a46c6134df2f69ace6eeae09ac1383"
+          }
+        ],
+        "claim_evidence_map": [
+          {
+            "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "evidence_node_hashes": [
+              "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            ],
+            "edge_hashes": [
+              "61bb24742d6f4d1d7451373bb9e16cea0b70711dac626e346b114c3cadd7573d"
+            ],
+            "bundle_fields": []
+          }
+        ],
+        "reviews": [],
+        "reproductions": [],
+        "check_ledger": [
+          {
+            "check_id": "graph_structure",
+            "status": "PASS",
+            "requirement": "REQUIRED",
+            "tool": {
+              "name": "ketqat-sdk",
+              "version": "0.3.0"
+            },
+            "input_refs": [],
+            "output_ref": null,
+            "reason": "",
+            "limitations": [
+              "Structural only: nothing here weighs the evidence."
+            ],
+            "observed_at": "2026-09-01T00:00:00Z"
+          }
+        ],
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ],
+        "is_demo": false,
+        "reproducibility_hash": "e4b2a13de97a303d66dbc24e7e9593221d21df0d4fa747431c6adc78823f1921"
+      }
+    }
+  ]
+}

@@ -77,14 +77,27 @@ VECTORS = json.loads(
 
 SCHEMA_VERSION = "1.0"
 
-TASK = {
+#: A record carrying only fields its kind declares, which is all a projection reads.
+#:
+#: A ``study_task_authorization`` carries one field of each class and nothing
+#: else: ``plan_ref`` and ``confirmation_receipt_ref`` are what was authorised,
+#: ``study_ref`` is where the record sits, and ``created_at`` is when the server
+#: observed it. It replaced a ``study_task`` that carried a mutable ``status``,
+#: so the roles below are exercised against fields that stand still.
+AUTHORIZATION = {
     "schema_version": SCHEMA_VERSION,
     "hash_rules_id": STUDY_HASH_RULES_ID,
-    "study_ref": "a" * 64,
-    "kind": "SIMULATION",
+    "study_ref": "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
     "plan_ref": {"revision_hash": "b" * 64, "revision": 3},
-    "capsule_ref": "c" * 64,
-    "status": "PENDING",
+    "confirmation_receipt_ref": "c" * 64,
+    "requested_operation": "STUDY_BENCHMARK_RUN",
+    "input_refs": [],
+    "resource_ceiling": {
+        "max_credits": 250,
+        "max_runtime": 3600,
+        "max_memory_bytes": "8589934592",
+        "resource_class": "MANAGED_SIMULATION",
+    },
     "created_at": "2026-09-01T00:00:00.000Z",
     "content_hash": "d" * 64,
 }
@@ -119,7 +132,10 @@ def test_every_record_kind_has_a_vector() -> None:
     assert sorted(entry["record_kind"] for entry in VECTORS["records"]) == sorted(
         STUDY_RECORD_KIND_NAMES
     )
-    assert len(STUDY_RECORD_KIND_NAMES) == 9
+    # A floor rather than an exact count: the family grows, and a test that
+    # pinned the number would fail on every addition without saying anything
+    # about the property it exists for -- that no kind is left unchecked.
+    assert len(STUDY_RECORD_KIND_NAMES) >= 11
 
 
 _HASH_FOR_PURPOSE = {
@@ -180,8 +196,18 @@ def test_the_shape_tables_are_the_emitted_ones() -> None:
         for purpose, entry in STUDY_PURPOSE_FIELD_CLASSES.items()
     }
     classified = flatten_shape_classes(study_record_kind("research_package")["shape"])
-    assert classified["nodes.claim.value.unit"] == "SEMANTIC"
-    assert classified["figures.svg"] == "RECORD_ONLY"
+    assert classified["nodes.claim.value_ref.node_hash"] == "SEMANTIC"
+    assert classified["nodes.claim.subject_ref.record_slug"] == "RECORD_ONLY"
+    assert classified["nodes.quantity.uncertainty.basis"] == "SEMANTIC"
+    # A figure is a specification now rather than markup, so the deep path runs
+    # through the coordinates: a point names a node, and that reference is
+    # semantic even though the figure it is drawn in is presentation.
+    assert classified["figures.spec.series.points.y.node_hash"] == "SEMANTIC"
+    assert classified["figures.title"] == "RECORD_ONLY"
+    assert classified["tables.rows.cells.node_hash"] == "SEMANTIC"
+    assert classified["report.sections.segments.text"] == "RECORD_ONLY"
+    assert classified["recipe.resource_limits.max_memory_bytes"] == "SEMANTIC"
+    assert classified["check_ledger.tool.version"] == "RECEIPT_ONLY"
     assert len(classified) > 60
 
 
@@ -191,8 +217,9 @@ def test_the_shape_tables_are_the_emitted_ones() -> None:
 
 
 def test_two_record_kinds_with_one_body_take_different_digests() -> None:
-    # Not a hypothetical. The receipt projection of a `study`, a `study_task` and
-    # a `problem_specification` is `{"created_at": ...}` in all three cases,
+    # Not a hypothetical. The receipt projection of a `study`, a
+    # `study_task_authorization` and a `problem_specification` is
+    # `{"created_at": ...}` in all three cases,
     # because that is the only RECEIPT_ONLY field each declares.
     created_at = "2026-09-01T00:00:00.000Z"
     shared = {
@@ -200,7 +227,7 @@ def test_two_record_kinds_with_one_body_take_different_digests() -> None:
         "hash_rules_id": STUDY_HASH_RULES_ID,
         "created_at": created_at,
     }
-    kinds = ["study", "study_task", "problem_specification"]
+    kinds = ["study", "study_task_authorization", "problem_specification"]
     bodies = {study_canonical_body(kind, shared, "receipt") for kind in kinds}
     assert bodies == {f'{{"created_at":"{created_at}"}}'}
     assert len({receipt_hash(kind, shared) for kind in kinds}) == 3
@@ -222,7 +249,7 @@ def test_two_purposes_over_one_body_take_different_digests() -> None:
 
 def test_changing_any_header_component_changes_the_preimage() -> None:
     body = b'{"a":1}'
-    base = study_header("study_task", "record", SCHEMA_VERSION, STUDY_HASH_RULES_ID)
+    base = study_header("study_task_authorization", "record", SCHEMA_VERSION, STUDY_HASH_RULES_ID)
     baseline = build_study_preimage(base, body)
     for override in [
         {"domain": "ketqat.other"},
@@ -236,9 +263,11 @@ def test_changing_any_header_component_changes_the_preimage() -> None:
 
 
 def test_the_preimage_layout_is_nul_separated() -> None:
-    preimage = build_study_preimage(study_header("study_task", "record", SCHEMA_VERSION), b"{}")
+    preimage = build_study_preimage(
+        study_header("study_task_authorization", "record", SCHEMA_VERSION), b"{}"
+    )
     assert preimage == (
-        f"{STUDY_HASH_DOMAIN}\x00study_task\x00record\x00{SCHEMA_VERSION}\x00"
+        f"{STUDY_HASH_DOMAIN}\x00study_task_authorization\x00record\x00{SCHEMA_VERSION}\x00"
         f"{STUDY_HASH_RULES_ID}\x00{{}}"
     ).encode("ascii")
 
@@ -261,26 +290,29 @@ def test_an_unknown_record_kind_is_refused() -> None:
 # ---------------------------------------------------------------------------
 
 
+KIND = "study_task_authorization"
+
+
 def test_semantic_hash_ignores_presentation_and_receipt_fields() -> None:
-    base = semantic_hash("study_task", TASK)
-    assert semantic_hash("study_task", {**TASK, "status": "RUNNING"}) == base
-    assert semantic_hash("study_task", {**TASK, "study_ref": "e" * 64}) == base
-    assert semantic_hash("study_task", {**TASK, "created_at": "2020-01-01T00:00:00.000Z"}) == base
-    assert semantic_hash("study_task", {**TASK, "capsule_ref": "f" * 64}) != base
+    base = semantic_hash(KIND, AUTHORIZATION)
+    assert semantic_hash(KIND, {**AUTHORIZATION, "study_ref": "e" * 36}) == base
+    assert semantic_hash(KIND, {**AUTHORIZATION, "created_at": "2020-01-01T00:00:00.000Z"}) == base
+    # And moves when what was authorised does.
+    assert semantic_hash(KIND, {**AUTHORIZATION, "confirmation_receipt_ref": "f" * 64}) != base
 
 
 def test_record_hash_moves_for_everything_except_derived_fields() -> None:
-    base = record_hash("study_task", TASK)
-    assert record_hash("study_task", {**TASK, "status": "RUNNING"}) != base
-    assert record_hash("study_task", {**TASK, "created_at": "2020-01-01T00:00:00.000Z"}) != base
+    base = record_hash(KIND, AUTHORIZATION)
+    assert record_hash(KIND, {**AUTHORIZATION, "study_ref": "e" * 36}) != base
+    assert record_hash(KIND, {**AUTHORIZATION, "created_at": "2020-01-01T00:00:00.000Z"}) != base
     # A record's own digest cannot be an input to itself.
-    assert record_hash("study_task", {**TASK, "content_hash": "0" * 64}) == base
+    assert record_hash(KIND, {**AUTHORIZATION, "content_hash": "0" * 64}) == base
 
 
 def test_receipt_hash_covers_the_audit_fields_and_nothing_else() -> None:
-    base = receipt_hash("study_task", TASK)
-    assert receipt_hash("study_task", {**TASK, "created_at": "2020-01-01T00:00:00.000Z"}) != base
-    assert receipt_hash("study_task", {**TASK, "capsule_ref": "f" * 64}) == base
+    base = receipt_hash(KIND, AUTHORIZATION)
+    assert receipt_hash(KIND, {**AUTHORIZATION, "created_at": "2020-01-01T00:00:00.000Z"}) != base
+    assert receipt_hash(KIND, {**AUTHORIZATION, "confirmation_receipt_ref": "f" * 64}) == base
 
 
 def test_artifact_hash_takes_bytes() -> None:
@@ -293,9 +325,9 @@ def test_artifact_hash_takes_bytes() -> None:
 
 
 def test_a_record_without_a_schema_version_is_refused() -> None:
-    without_version = {key: value for key, value in TASK.items() if key != "schema_version"}
+    without_version = {key: value for key, value in AUTHORIZATION.items() if key != "schema_version"}
     with refused("MISSING_HEADER_COMPONENT"):
-        record_hash("study_task", without_version)
+        record_hash(KIND, without_version)
 
 
 def test_the_four_purposes_are_a_closed_list() -> None:
@@ -417,29 +449,39 @@ def test_each_purpose_publishes_both_its_filters_as_immutable_plain_data() -> No
 
 def test_an_undeclared_key_is_refused_rather_than_skipped() -> None:
     with refused("UNDECLARED_FIELD"):
-        record_hash("study_task", {**TASK, "smuggled": 1})
+        record_hash(KIND, {**AUTHORIZATION, "smuggled": 1})
     # No name is special. `__proto__` is refused because nobody declared it, not
     # because it is called something.
     with refused("UNDECLARED_FIELD"):
-        record_hash("study_task", {**TASK, "__proto__": {"evil": 1}})
+        record_hash(KIND, {**AUTHORIZATION, "__proto__": {"evil": 1}})
 
 
 def test_a_nested_undeclared_key_is_refused_at_any_depth() -> None:
-    nested = {**TASK, "plan_ref": {**TASK["plan_ref"], "slug": "looks-harmless"}}
+    nested = {**AUTHORIZATION, "plan_ref": {**AUTHORIZATION["plan_ref"], "slug": "looks-harmless"}}
     with refused("UNDECLARED_FIELD"):
-        record_hash("study_task", nested)
+        record_hash(KIND, nested)
 
 
 def test_a_declared_field_of_the_wrong_shape_is_refused() -> None:
     with refused("SHAPE_MISMATCH"):
-        record_hash("study_task", {**TASK, "plan_ref": "a string"})
+        record_hash(KIND, {**AUTHORIZATION, "plan_ref": "a string"})
 
 
 def test_absent_and_null_are_different_records() -> None:
-    without = {key: value for key, value in TASK.items() if key != "capsule_ref"}
-    assert record_hash("study_task", without) != record_hash(
-        "study_task", {**TASK, "capsule_ref": None}
-    )
+    # "We never recorded this" and "we recorded that there is none" are two
+    # statements, and one digest for both would erase the difference.
+    without = {key: value for key, value in AUTHORIZATION.items() if key != "created_at"}
+    assert record_hash(KIND, without) != record_hash(KIND, {**AUTHORIZATION, "created_at": None})
+
+
+def test_a_control_plane_kind_is_refused_with_its_own_code() -> None:
+    # "We do not hash this" and "we have never heard of this" send a reader to
+    # different places, so an `execution_job` -- queue status, attempt counter,
+    # progress, cancellation -- is refused by name rather than by absence.
+    with refused("NOT_CONTENT_ADDRESSED"):
+        study_record_kind("execution_job")
+    with refused("UNKNOWN_RECORD_KIND"):
+        study_record_kind("execution_jobs")
 
 
 # ---------------------------------------------------------------------------
@@ -541,10 +583,10 @@ def test_a_polluted_mapping_base_does_not_reach_the_projection() -> None:
         def __missing__(self, key):  # pragma: no cover - only reached if asked
             return "POLLUTED"
 
-    record = Forging({key: value for key, value in TASK.items() if key != "status"})
-    body = study_canonical_body("study_task", record, "record")
+    record = Forging({key: value for key, value in AUTHORIZATION.items() if key != "created_at"})
+    body = study_canonical_body(KIND, record, "record")
     assert "POLLUTED" not in body
-    assert '"status"' not in body
+    assert '"created_at"' not in body
 
 
 # ---------------------------------------------------------------------------

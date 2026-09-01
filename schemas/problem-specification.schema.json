@@ -14,7 +14,7 @@
         },
         "study_ref": {
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
         },
         "revision": {
           "type": "integer",
@@ -24,7 +24,8 @@
         "supersedes": {
           "anyOf": [
             {
-              "$ref": "#/definitions/problem-specification/properties/study_ref"
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
             },
             {
               "type": "null"
@@ -73,7 +74,449 @@
         "success_criteria": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/problem-specification/properties/objective"
+            "type": "object",
+            "properties": {
+              "statement": {
+                "$ref": "#/definitions/problem-specification/properties/objective"
+              },
+              "predicate": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "criterion_id": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_]{0,63}$"
+                      },
+                      "metric_ref": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_]{0,63}(?:\\.[a-z][a-z0-9_]{0,63}){0,7}$"
+                      },
+                      "comparator": {
+                        "type": "string",
+                        "enum": [
+                          "LESS_THAN",
+                          "AT_MOST",
+                          "EQUAL",
+                          "AT_LEAST",
+                          "GREATER_THAN",
+                          "EXISTS",
+                          "DOES_NOT_EXIST",
+                          "IS_TRUE",
+                          "IS_FALSE"
+                        ]
+                      },
+                      "threshold": {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "dimension": {
+                                    "type": "string",
+                                    "const": "TIME"
+                                  },
+                                  "value": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "exact_value": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "pattern": "^(?:0|-?[1-9][0-9]{0,63})$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "nanoseconds",
+                                      "microseconds",
+                                      "milliseconds",
+                                      "seconds",
+                                      "minutes",
+                                      "hours",
+                                      "days"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "dimension",
+                                  "value",
+                                  "exact_value",
+                                  "unit"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "dimension": {
+                                    "type": "string",
+                                    "const": "MONEY"
+                                  },
+                                  "value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "exact_value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "USD",
+                                      "EUR",
+                                      "GBP",
+                                      "JPY",
+                                      "CHF",
+                                      "CAD",
+                                      "AUD"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "dimension",
+                                  "value",
+                                  "exact_value",
+                                  "unit"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "dimension": {
+                                    "type": "string",
+                                    "const": "CREDITS"
+                                  },
+                                  "value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "exact_value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "credits"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "dimension",
+                                  "value",
+                                  "exact_value",
+                                  "unit"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "dimension": {
+                                    "type": "string",
+                                    "const": "MEMORY"
+                                  },
+                                  "value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "exact_value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "bytes",
+                                      "kibibytes",
+                                      "mebibytes",
+                                      "gibibytes",
+                                      "tebibytes"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "dimension",
+                                  "value",
+                                  "exact_value",
+                                  "unit"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "dimension": {
+                                    "type": "string",
+                                    "const": "SHOTS"
+                                  },
+                                  "value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "exact_value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "shots"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "dimension",
+                                  "value",
+                                  "exact_value",
+                                  "unit"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "dimension": {
+                                    "type": "string",
+                                    "const": "QUBITS"
+                                  },
+                                  "value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "exact_value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "qubits",
+                                      "physical qubits",
+                                      "logical qubits"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "dimension",
+                                  "value",
+                                  "exact_value",
+                                  "unit"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "dimension": {
+                                    "type": "string",
+                                    "const": "ACCURACY"
+                                  },
+                                  "value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "exact_value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "relative error",
+                                      "percent",
+                                      "probability",
+                                      "ratio"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "dimension",
+                                  "value",
+                                  "exact_value",
+                                  "unit"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "dimension": {
+                                    "type": "string",
+                                    "const": "PROBLEM_SIZE"
+                                  },
+                                  "value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "exact_value": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "pattern": "^(?!(?:AUD|CAD|CHF|EUR|GBP|JPY|USD|bytes|credits|days|gibibytes|hours|kibibytes|mebibytes|microseconds|milliseconds|minutes|nanoseconds|percent|probability|ratio|relative error|seconds|tebibytes)$).+$"
+                                  }
+                                },
+                                "required": [
+                                  "dimension",
+                                  "value",
+                                  "exact_value",
+                                  "unit"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "required_evidence": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/definitions/problem-specification/properties/objective/properties/evidence"
+                        },
+                        "minItems": 1
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "PASS",
+                          "FAIL",
+                          "NOT_RUN",
+                          "INCONCLUSIVE"
+                        ]
+                      },
+                      "explanation": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "criterion_id",
+                      "metric_ref",
+                      "comparator",
+                      "threshold",
+                      "required_evidence",
+                      "status",
+                      "explanation"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "statement",
+              "predicate"
+            ],
+            "additionalProperties": false
           },
           "minItems": 1
         },
@@ -91,7 +534,12 @@
                 },
                 "unit": {
                   "type": "string",
-                  "minLength": 1
+                  "enum": [
+                    "relative error",
+                    "percent",
+                    "probability",
+                    "ratio"
+                  ]
                 },
                 "bound": {
                   "type": "string",
@@ -145,7 +593,7 @@
                     "low": {
                       "anyOf": [
                         {
-                          "type": "number"
+                          "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/value/anyOf/0"
                         },
                         {
                           "type": "null"
@@ -155,7 +603,7 @@
                     "high": {
                       "anyOf": [
                         {
-                          "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/uncertainty/properties/low/anyOf/0"
+                          "$ref": "#/definitions/problem-specification/properties/success_criteria/items/properties/predicate/anyOf/0/properties/threshold/anyOf/0/anyOf/0/properties/value/anyOf/0"
                         },
                         {
                           "type": "null"
@@ -208,13 +656,225 @@
           "additionalProperties": false
         },
         "runtime_constraint": {
-          "$ref": "#/definitions/problem-specification/properties/accuracy_requirement"
+          "type": "object",
+          "properties": {
+            "quantity": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/value"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "nanoseconds",
+                    "microseconds",
+                    "milliseconds",
+                    "seconds",
+                    "minutes",
+                    "hours",
+                    "days"
+                  ]
+                },
+                "bound": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/bound"
+                },
+                "evidence": {
+                  "$ref": "#/definitions/problem-specification/properties/objective/properties/evidence"
+                },
+                "source": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/source"
+                },
+                "model": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/model"
+                },
+                "model_version": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/model_version"
+                },
+                "assumptions": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/assumptions"
+                },
+                "created_at": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/created_at"
+                },
+                "schema_version": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/schema_version"
+                },
+                "uncertainty": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/uncertainty"
+                },
+                "limitations": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/limitations"
+                }
+              },
+              "required": [
+                "value",
+                "unit",
+                "bound",
+                "evidence",
+                "source",
+                "model",
+                "model_version",
+                "assumptions",
+                "schema_version",
+                "limitations"
+              ],
+              "additionalProperties": false
+            },
+            "origin": {
+              "$ref": "#/definitions/problem-specification/properties/objective/properties/origin"
+            }
+          },
+          "required": [
+            "quantity",
+            "origin"
+          ],
+          "additionalProperties": false
         },
         "budget_constraint": {
-          "$ref": "#/definitions/problem-specification/properties/accuracy_requirement"
+          "type": "object",
+          "properties": {
+            "quantity": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/value"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "USD",
+                    "EUR",
+                    "GBP",
+                    "JPY",
+                    "CHF",
+                    "CAD",
+                    "AUD"
+                  ]
+                },
+                "bound": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/bound"
+                },
+                "evidence": {
+                  "$ref": "#/definitions/problem-specification/properties/objective/properties/evidence"
+                },
+                "source": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/source"
+                },
+                "model": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/model"
+                },
+                "model_version": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/model_version"
+                },
+                "assumptions": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/assumptions"
+                },
+                "created_at": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/created_at"
+                },
+                "schema_version": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/schema_version"
+                },
+                "uncertainty": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/uncertainty"
+                },
+                "limitations": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/limitations"
+                }
+              },
+              "required": [
+                "value",
+                "unit",
+                "bound",
+                "evidence",
+                "source",
+                "model",
+                "model_version",
+                "assumptions",
+                "schema_version",
+                "limitations"
+              ],
+              "additionalProperties": false
+            },
+            "origin": {
+              "$ref": "#/definitions/problem-specification/properties/objective/properties/origin"
+            }
+          },
+          "required": [
+            "quantity",
+            "origin"
+          ],
+          "additionalProperties": false
         },
         "problem_size": {
-          "$ref": "#/definitions/problem-specification/properties/accuracy_requirement"
+          "type": "object",
+          "properties": {
+            "quantity": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/value"
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!(?:AUD|CAD|CHF|EUR|GBP|JPY|USD|bytes|credits|days|gibibytes|hours|kibibytes|mebibytes|microseconds|milliseconds|minutes|nanoseconds|percent|probability|ratio|relative error|seconds|tebibytes)$).+$"
+                },
+                "bound": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/bound"
+                },
+                "evidence": {
+                  "$ref": "#/definitions/problem-specification/properties/objective/properties/evidence"
+                },
+                "source": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/source"
+                },
+                "model": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/model"
+                },
+                "model_version": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/model_version"
+                },
+                "assumptions": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/assumptions"
+                },
+                "created_at": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/created_at"
+                },
+                "schema_version": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/schema_version"
+                },
+                "uncertainty": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/uncertainty"
+                },
+                "limitations": {
+                  "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/limitations"
+                }
+              },
+              "required": [
+                "value",
+                "unit",
+                "bound",
+                "evidence",
+                "source",
+                "model",
+                "model_version",
+                "assumptions",
+                "schema_version",
+                "limitations"
+              ],
+              "additionalProperties": false
+            },
+            "origin": {
+              "$ref": "#/definitions/problem-specification/properties/objective/properties/origin"
+            }
+          },
+          "required": [
+            "quantity",
+            "origin"
+          ],
+          "additionalProperties": false
         },
         "current_classical_method": {
           "$ref": "#/definitions/problem-specification/properties/objective"
@@ -225,8 +885,146 @@
         "open_questions": {
           "type": "array",
           "items": {
-            "type": "string",
-            "minLength": 1
+            "type": "object",
+            "properties": {
+              "question_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,63}$"
+              },
+              "targets": {
+                "type": "string",
+                "pattern": "^(?:objective|success_criteria(?:\\[[0-9]{1,3}\\])?|accuracy_requirement|runtime_constraint|budget_constraint|problem_size|current_classical_method|why_quantum|limitations(?:\\[[0-9]{1,3}\\])?)$"
+              },
+              "question": {
+                "type": "string",
+                "minLength": 1
+              },
+              "answer_type": {
+                "type": "string",
+                "enum": [
+                  "TEXT",
+                  "QUANTITY",
+                  "CHOICE",
+                  "BOOLEAN"
+                ]
+              },
+              "requirement": {
+                "type": "string",
+                "enum": [
+                  "REQUIRED",
+                  "OPTIONAL"
+                ]
+              },
+              "why_needed": {
+                "type": "string",
+                "minLength": 1
+              },
+              "blocks": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "SPECIFICATION_SIGN_OFF",
+                    "PLAN_CONSTRUCTION",
+                    "PLAN_CONFIRMATION",
+                    "TASK_EXECUTION",
+                    "REPORT_EXPORT"
+                  ]
+                },
+                "minItems": 1
+              },
+              "allowed_choices": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "minItems": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "answer_provenance": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "USER",
+                          "DOCUMENT",
+                          "MEASUREMENT",
+                          "MODEL",
+                          "THIRD_PARTY"
+                        ]
+                      },
+                      "actor": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "reference": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "recorded_at": {
+                        "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/created_at"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "actor",
+                      "reference"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "resolution": {
+                "type": "string",
+                "enum": [
+                  "UNANSWERED",
+                  "ANSWERED",
+                  "CONFIRMED_UNKNOWN",
+                  "NOT_APPLICABLE",
+                  "DECLINED"
+                ]
+              }
+            },
+            "required": [
+              "question_id",
+              "targets",
+              "question",
+              "answer_type",
+              "requirement",
+              "why_needed",
+              "blocks",
+              "allowed_choices",
+              "answer_provenance",
+              "resolution"
+            ],
+            "additionalProperties": false
           }
         },
         "limitations": {
@@ -240,7 +1038,7 @@
           "$ref": "#/definitions/problem-specification/properties/accuracy_requirement/properties/quantity/properties/created_at"
         },
         "content_hash": {
-          "$ref": "#/definitions/problem-specification/properties/study_ref"
+          "$ref": "#/definitions/problem-specification/properties/supersedes/anyOf/0"
         }
       },
       "required": [

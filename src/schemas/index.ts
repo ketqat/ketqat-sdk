@@ -63,10 +63,19 @@ export {
 } from "../study/study.js"
 export { ProblemSpecificationSchema } from "../study/specification.js"
 export { StudyPlanSchema } from "../study/plan.js"
-export { StudyTaskSchema } from "../study/task.js"
+export { ConfirmationReceiptSchema } from "../study/receipt.js"
+export {
+  StudyExecutionJobSchema,
+  StudyTaskAuthorizationSchema,
+  TaskOutcomeSchema,
+} from "../study/task.js"
 export {
   EvidenceNodeSchema,
   EvidenceEdgeSchema,
 } from "../study/evidence.js"
+export {
+  ReviewRecordSchema,
+  ReproductionRecordSchema,
+} from "../study/review.js"
 export { ExecutionCapsuleSchema } from "../study/capsule.js"
 export { ResearchPackageSchema } from "../study/research-package.js"

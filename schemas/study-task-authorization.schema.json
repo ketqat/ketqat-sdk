@@ -1,0 +1,235 @@
+{
+  "$ref": "#/definitions/study-task-authorization",
+  "definitions": {
+    "study-task-authorization": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash_rules_id": {
+          "type": "string",
+          "const": "study-v1"
+        },
+        "study_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "plan_ref": {
+          "type": "object",
+          "properties": {
+            "revision_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "revision": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "revision_hash",
+            "revision"
+          ],
+          "additionalProperties": false
+        },
+        "confirmation_receipt_ref": {
+          "$ref": "#/definitions/study-task-authorization/properties/plan_ref/properties/revision_hash"
+        },
+        "requested_operation": {
+          "type": "string",
+          "enum": [
+            "STUDY_BASELINE_RUN",
+            "STUDY_RESOURCE_ESTIMATE",
+            "STUDY_BENCHMARK_RUN",
+            "STUDY_REPRODUCTION"
+          ]
+        },
+        "input_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "CIRCUIT",
+                  "PARAMETERS",
+                  "DATASET",
+                  "NOISE_MODEL",
+                  "MANIFEST",
+                  "MEASUREMENTS",
+                  "RESULT",
+                  "METRICS",
+                  "LOG"
+                ]
+              },
+              "media_type": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]{0,126}\\/[a-z0-9][a-z0-9!#$&^_.+-]{0,126}$"
+              },
+              "byte_size": {
+                "type": "string",
+                "pattern": "^(?:0|-?[1-9][0-9]{0,63})$"
+              },
+              "content_hash": {
+                "$ref": "#/definitions/study-task-authorization/properties/plan_ref/properties/revision_hash"
+              },
+              "resolution": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "INLINE_IN_BUNDLE",
+                      "CONTENT_ADDRESSED_STORE",
+                      "PROVIDER_HELD",
+                      "NOT_RETAINED"
+                    ]
+                  },
+                  "locator": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "locator"
+                ],
+                "additionalProperties": false
+              },
+              "completeness": {
+                "type": "string",
+                "enum": [
+                  "COMPLETE",
+                  "PARTIAL"
+                ]
+              },
+              "partial_reason": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "redaction": {
+                "type": "string",
+                "enum": [
+                  "NONE",
+                  "REDACTED"
+                ]
+              },
+              "redaction_reason": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "role",
+              "media_type",
+              "byte_size",
+              "content_hash",
+              "resolution",
+              "completeness",
+              "partial_reason",
+              "redaction",
+              "redaction_reason"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "resource_ceiling": {
+          "type": "object",
+          "properties": {
+            "max_credits": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "max_runtime": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "max_memory_bytes": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/study-task-authorization/properties/input_refs/items/properties/byte_size"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "resource_class": {
+              "type": "string",
+              "enum": [
+                "MANAGED_SIMULATION",
+                "LOCAL_SIMULATION",
+                "HARDWARE"
+              ]
+            }
+          },
+          "required": [
+            "max_credits",
+            "max_runtime",
+            "max_memory_bytes",
+            "resource_class"
+          ],
+          "additionalProperties": false
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content_hash": {
+          "$ref": "#/definitions/study-task-authorization/properties/plan_ref/properties/revision_hash"
+        }
+      },
+      "required": [
+        "schema_version",
+        "hash_rules_id",
+        "study_ref",
+        "plan_ref",
+        "confirmation_receipt_ref",
+        "requested_operation",
+        "input_refs",
+        "resource_ceiling",
+        "content_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

@@ -51,6 +51,7 @@ test("each single-record fixture verifies against its own contents and its pin",
     ["study_plan_revision", "study-plan-revision.json", StudyPlanSchema],
     ["study_capsule", "study-capsule.json", ExecutionCapsuleSchema],
     ["study_capsule_64_bit_integers", "study-capsule-64-bit-integers.json", ExecutionCapsuleSchema],
+    ["study_capsule_hardware", "study-capsule-hardware.json", ExecutionCapsuleSchema],
     ["study_research_package_as_written", "study-research-package-as-written.json", ResearchPackageSchema],
   ]
 
@@ -186,9 +187,12 @@ test("textual variation that is not value variation does not move a digest", () 
 test("the four roles answer four questions about the pinned capsule", () => {
   const capsule = fixture("study-capsule.json")
 
-  // Same science, later run: the timestamps are receipt evidence and the
-  // semantic digest does not read them.
-  const rerun = { ...capsule, started_at: "2027-06-06T00:00:00.000Z" }
+  // Same science, later run: who ran it, on which job, which attempt and when
+  // are receipt evidence, and the semantic digest does not read any of them.
+  const rerun = {
+    ...capsule,
+    execution_receipt: { ...capsule.execution_receipt, attempt: 4, started_at: "2027-06-06T00:00:00.000Z" },
+  }
   assert.equal(semanticHash("execution_capsule", rerun), semanticHash("execution_capsule", capsule))
   assert.notEqual(recordHash("execution_capsule", rerun), recordHash("execution_capsule", capsule))
 
@@ -200,6 +204,30 @@ test("the four roles answer four questions about the pinned capsule", () => {
     semanticHash("execution_capsule", { ...capsule, seed: "20260102" }),
     semanticHash("execution_capsule", capsule),
   )
+})
+
+test("the pinned hardware capsule carries the evidence only a hardware run can produce", () => {
+  // A hardware result is not a simulated one with a different label. The fields
+  // below are what a reader has instead of a re-run they cannot perform: which
+  // adapter spoke to the device, which calibration it ran under, which approval
+  // it was submitted on, the provider's own result, and what it cost against
+  // what was allowed.
+  const capsule = fixture("study-capsule-hardware.json")
+  assert.equal(capsule.execution_class, "HARDWARE")
+  assert.equal(capsule.execution.kind, "HARDWARE")
+  assert.equal(capsule.execution.cost_confirmation.source, "PROVIDER_REPORTED")
+  assert.ok(
+    capsule.execution.cost_confirmation.credits_charged <=
+      capsule.execution.cost_confirmation.authorized_maximum,
+  )
+  // The bytes are the provider's, and a third party cannot fetch them. Saying so
+  // is what stops the capsule from implying a reproduction only the account
+  // holder could perform.
+  assert.equal(capsule.outputs[0].resolution.kind, "PROVIDER_HELD")
+  assert.equal(capsule.outputs[0].completeness, "PARTIAL")
+  assert.equal(capsule.attestation_level, "hash_only")
+  // And no credential reached the file, at any depth.
+  assert.equal(/token|secret|api[_-]?key|password/i.test(bytesOf("study-capsule-hardware.json").toString("utf8")), false)
 })
 
 test("a record that does not name its schema version is refused, not defaulted", () => {
@@ -224,6 +252,7 @@ test("every fixture is read from its raw bytes without a refusal", () => {
     "study-plan-revision.json",
     "study-capsule.json",
     "study-capsule-64-bit-integers.json",
+    "study-capsule-hardware.json",
     "study-research-package-as-written.json",
     "study-evidence-graph.json",
     "study-float-edge-cases.json",

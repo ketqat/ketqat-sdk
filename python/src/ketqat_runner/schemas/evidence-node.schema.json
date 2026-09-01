@@ -14,16 +14,18 @@
         },
         "study_ref": {
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
         },
         "kind": {
           "type": "string",
           "enum": [
             "claim",
             "quantity",
+            "assumption",
             "input",
             "model_ref",
             "result",
+            "capsule_ref",
             "source",
             "dataset_ref",
             "snapshot_ref"
@@ -33,14 +35,89 @@
           "type": "string",
           "minLength": 1
         },
+        "visibility": {
+          "type": "string",
+          "enum": [
+            "PUBLIC",
+            "PRIVATE"
+          ]
+        },
         "claim": {
           "anyOf": [
             {
               "type": "object",
               "properties": {
-                "subject": {
-                  "type": "string",
-                  "minLength": 1
+                "subject_ref": {
+                  "type": "object",
+                  "properties": {
+                    "record_kind": {
+                      "type": "string",
+                      "enum": [
+                        "artifact",
+                        "benchmark_suite",
+                        "qec_experiment_manifest",
+                        "algorithm_experiment_manifest",
+                        "protocol_experiment_manifest",
+                        "qec_benchmark_result",
+                        "algorithm_benchmark_result",
+                        "protocol_benchmark_result",
+                        "reproducibility_bundle",
+                        "verification_evidence",
+                        "quantum_workload",
+                        "classical_baseline",
+                        "resource_scenario",
+                        "hardware_model_snapshot",
+                        "qec_model_snapshot",
+                        "economic_model",
+                        "resource_estimate_snapshot",
+                        "advantage_threshold",
+                        "decision_assessment",
+                        "resource_intelligence_bundle",
+                        "study",
+                        "study_event",
+                        "problem_specification",
+                        "study_plan",
+                        "confirmation_receipt",
+                        "study_task_authorization",
+                        "task_outcome",
+                        "evidence_node",
+                        "evidence_edge",
+                        "execution_capsule",
+                        "research_package",
+                        "review_record",
+                        "reproduction_record"
+                      ],
+                      "description": "Record kinds an evidence reference may name, vocabulary evidence-record-kinds-v1."
+                    },
+                    "hash": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9a-f]{64}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "record_slug": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "record_kind",
+                    "hash",
+                    "record_slug"
+                  ],
+                  "additionalProperties": false
                 },
                 "metric": {
                   "type": "string",
@@ -56,136 +133,44 @@
                     "GREATER_THAN"
                   ]
                 },
-                "value": {
+                "value_ref": {
                   "type": "object",
                   "properties": {
-                    "value": {
-                      "type": [
-                        "number",
-                        "null"
-                      ]
-                    },
-                    "unit": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "bound": {
+                    "kind": {
                       "type": "string",
                       "enum": [
-                        "POINT",
-                        "UPPER_BOUND",
-                        "LOWER_BOUND"
+                        "value_node",
+                        "result_field"
                       ]
                     },
-                    "evidence": {
-                      "type": "string",
-                      "enum": [
-                        "MEASURED",
-                        "USER_PROVIDED",
-                        "DERIVED",
-                        "MODELLED",
-                        "UNKNOWN"
-                      ]
+                    "node_hash": {
+                      "$ref": "#/definitions/evidence-node/properties/claim/anyOf/0/properties/subject_ref/properties/hash/anyOf/0"
                     },
-                    "source": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "model": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "model_version": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "assumptions": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "minLength": 1
-                      }
-                    },
-                    "created_at": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "schema_version": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "uncertainty": {
-                      "type": "object",
-                      "properties": {
-                        "kind": {
+                    "field_path": {
+                      "anyOf": [
+                        {
                           "type": "string",
-                          "enum": [
-                            "SENSITIVITY_RANGE",
-                            "MODEL_SPREAD",
-                            "NOT_CHARACTERIZED"
-                          ]
+                          "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]*(?:\\/[A-Za-z0-9_][A-Za-z0-9_.-]*)*$"
                         },
-                        "low": {
-                          "anyOf": [
-                            {
-                              "type": "number"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "high": {
-                          "anyOf": [
-                            {
-                              "$ref": "#/definitions/evidence-node/properties/claim/anyOf/0/properties/value/properties/uncertainty/properties/low/anyOf/0"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "basis": {
-                          "type": "string",
-                          "minLength": 1
+                        {
+                          "type": "null"
                         }
-                      },
-                      "required": [
-                        "kind",
-                        "low",
-                        "high",
-                        "basis"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "limitations": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "minLength": 1
-                      }
+                      ]
                     }
                   },
                   "required": [
-                    "value",
-                    "unit",
-                    "bound",
-                    "evidence",
-                    "source",
-                    "model",
-                    "model_version",
-                    "assumptions",
-                    "schema_version",
-                    "limitations"
+                    "kind",
+                    "node_hash",
+                    "field_path"
                   ],
                   "additionalProperties": false
                 }
               },
               "required": [
-                "subject",
+                "subject_ref",
                 "metric",
                 "comparator",
-                "value"
+                "value_ref"
               ],
               "additionalProperties": false
             },
@@ -197,7 +182,128 @@
         "quantity": {
           "anyOf": [
             {
-              "$ref": "#/definitions/evidence-node/properties/claim/anyOf/0/properties/value"
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "bound": {
+                  "type": "string",
+                  "enum": [
+                    "POINT",
+                    "UPPER_BOUND",
+                    "LOWER_BOUND"
+                  ]
+                },
+                "evidence": {
+                  "type": "string",
+                  "enum": [
+                    "MEASURED",
+                    "USER_PROVIDED",
+                    "DERIVED",
+                    "MODELLED",
+                    "UNKNOWN"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "model": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "model_version": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "assumptions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "schema_version": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uncertainty": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "SENSITIVITY_RANGE",
+                        "MODEL_SPREAD",
+                        "NOT_CHARACTERIZED"
+                      ]
+                    },
+                    "low": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "high": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/definitions/evidence-node/properties/quantity/anyOf/0/properties/uncertainty/properties/low/anyOf/0"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "basis": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "low",
+                    "high",
+                    "basis"
+                  ],
+                  "additionalProperties": false
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": [
+                "value",
+                "unit",
+                "bound",
+                "evidence",
+                "source",
+                "model",
+                "model_version",
+                "assumptions",
+                "schema_version",
+                "limitations"
+              ],
+              "additionalProperties": false
             },
             {
               "type": "null"
@@ -207,40 +313,7 @@
         "reference": {
           "anyOf": [
             {
-              "type": "object",
-              "properties": {
-                "record_kind": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "hash": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/definitions/evidence-node/properties/study_ref"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "record_slug": {
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                }
-              },
-              "required": [
-                "record_kind",
-                "hash",
-                "record_slug"
-              ],
-              "additionalProperties": false
+              "$ref": "#/definitions/evidence-node/properties/claim/anyOf/0/properties/subject_ref"
             },
             {
               "type": "null"
@@ -324,7 +397,7 @@
           "format": "date-time"
         },
         "content_hash": {
-          "$ref": "#/definitions/evidence-node/properties/study_ref"
+          "$ref": "#/definitions/evidence-node/properties/claim/anyOf/0/properties/subject_ref/properties/hash/anyOf/0"
         }
       },
       "required": [
@@ -333,6 +406,7 @@
         "study_ref",
         "kind",
         "label",
+        "visibility",
         "claim",
         "quantity",
         "reference",

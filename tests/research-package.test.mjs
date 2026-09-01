@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import test from "node:test"
 import {
   STUDY_HASH_RULES_ID,
@@ -14,37 +15,47 @@ import {
   buildResearchPackage,
   verifyResearchPackage,
 } from "../dist/study/research-package.js"
+import { renderReportMarkdown } from "../dist/study/report.js"
+import { renderTableCsv, tableCsvArtifact } from "../dist/study/tables.js"
+import { indexTableCells, renderFigureSvg, sanitizeStudySvg } from "../dist/study/figures.js"
+import { renderRecipeCommand } from "../dist/study/recipe.js"
+import { checkLedgerSummary } from "../dist/study/ledger.js"
 
 /**
- * Tests for the research package export (ketqat-sdk#259, WP4).
+ * Tests for the research package export (ketqat-sdk#259, WP4; goal §13, §14).
  *
  * One property is on trial, from both ends. Going out, a number cannot leave the
- * building without a node under it: every refusal below is the same rule seen
- * from a different table, and the export returns refusals rather than a package
- * with a caveat, because a caveat and a number travel separately the moment
- * either is copied.
+ * building without a node under it -- and "the building" now means every surface
+ * a reader quotes from, not just the tables: the report's prose, the CSV that
+ * gets forwarded, the figure that gets screenshotted. Every refusal below is the
+ * same rule seen from a different surface, and the export returns findings
+ * rather than a package with a caveat, because a caveat and a number travel
+ * separately the moment either is copied.
  *
  * Coming in, a recipient holding only the file has to be able to tell a study
  * from a story. Editing a figure breaks the package hash; editing it and
  * re-hashing everything that mentions it does not -- so the structural checks
- * are what catch the second case, and the two are reported apart so a reader
- * knows whether they are looking at a corrupted file or at a fabricated one.
+ * catch the second case, and the levels report them apart so a reader knows
+ * whether they are looking at a corrupted file or a fabricated one.
  *
- * Refusals are asserted by code throughout. A test that matched the message text
- * would break the day somebody improved the wording, which is the day it would
- * be least welcome.
+ * Findings are asserted by `code` and by `path`. A test that matched the message
+ * text would break the day somebody improved the wording, which is the day it
+ * would be least welcome -- and the message is deliberately not a contract
+ * between the two languages either.
  */
 
-const STUDY_REF = "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9"
+const STUDY_REF = "d5a370a6-8b65-4ae8-8f57-8c06f313afac"
 const PLAN_REF = { revision_hash: "c".repeat(64), revision: 2 }
 const ABSENT_HASH = "9".repeat(64)
 const MODEL = "ketqat-resource-intelligence"
 
-const codesOf = (refusals) => refusals.map((refusal) => refusal.code)
+const codesOf = (findings) => findings.map((item) => item.code)
+const pathsFor = (findings, code) =>
+  findings.filter((item) => item.code === code).map((item) => item.path)
 
-const knownQuantity = (value = 4200000) => ({
+const knownQuantity = (value = 4200000, unit = "physical qubits") => ({
   value,
-  unit: "physical qubits",
+  unit,
   bound: "UPPER_BOUND",
   evidence: "MODELLED",
   source: "Resource estimate under the base scenario.",
@@ -74,6 +85,7 @@ const nodeBody = (changes = {}) => ({
   study_ref: STUDY_REF,
   kind: "quantity",
   label: "a node",
+  visibility: "PUBLIC",
   claim: null,
   quantity: null,
   reference: null,
@@ -104,21 +116,28 @@ const stampNode = (body) =>
 const stampEdge = (body) =>
   EvidenceEdgeSchema.parse({ ...body, content_hash: studySelfHash("evidence_edge", body) })
 
+const quantityNode = stampNode(
+  nodeBody({ kind: "quantity", label: "Total physical qubits, base scenario", quantity: knownQuantity() }),
+)
+
+const distanceNode = stampNode(
+  nodeBody({ kind: "quantity", label: "Code distance, base scenario", quantity: knownQuantity(21, "code distance") }),
+)
+
+// The claim names the node its number lives in rather than carrying a copy of
+// it. Two copies of one decision-bearing figure are free to disagree, and the
+// copy inside the sentence is the one that gets quoted.
 const claimNode = stampNode(
   nodeBody({
     kind: "claim",
     label: "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
     claim: {
-      subject: "shor-2048",
+      subject_ref: { record_kind: "quantum_workload", hash: null, record_slug: "shor-2048" },
       metric: "total_physical_qubits",
       comparator: "AT_MOST",
-      value: knownQuantity(),
+      value_ref: { kind: "value_node", node_hash: quantityNode.content_hash, field_path: null },
     },
   }),
-)
-
-const quantityNode = stampNode(
-  nodeBody({ kind: "quantity", label: "Total physical qubits, base scenario", quantity: knownQuantity() }),
 )
 
 const resultNode = stampNode(
@@ -167,6 +186,15 @@ const derivedEdge = stampEdge(
   }),
 )
 
+const distanceDerivedEdge = stampEdge(
+  edgeBody({
+    kind: "derived_from",
+    from_node_hash: distanceNode.content_hash,
+    to_node_hash: resultNode.content_hash,
+    rationale: "The code distance is read out of the same estimate snapshot.",
+  }),
+)
+
 const usedInputEdge = stampEdge(
   edgeBody({
     kind: "used_input",
@@ -176,19 +204,133 @@ const usedInputEdge = stampEdge(
   }),
 )
 
+const segment = (kind, changes = {}) => ({
+  kind,
+  level: null,
+  text: null,
+  node_hash: null,
+  citation_index: null,
+  limitation_index: null,
+  table_id: null,
+  figure_id: null,
+  ...changes,
+})
+
+const report = (changes = {}) => ({
+  sections: [
+    {
+      section_id: "findings",
+      title: "Findings",
+      segments: [
+        segment("HEADING", { level: 1, text: "Under the base scenario" }),
+        segment("PROSE", { text: "The estimate puts the workload at" }),
+        segment("QUANTITY_REF", { node_hash: quantityNode.content_hash }),
+        segment("PROSE", { text: "before any allowance for factory idling." }),
+        segment("CLAIM_REF", { node_hash: claimNode.content_hash }),
+        segment("CITATION_REF", { citation_index: 0 }),
+        segment("LIMITATION_REF", { limitation_index: 0 }),
+        segment("TABLE_REF", { table_id: "results" }),
+        segment("FIGURE_REF", { figure_id: "scaling" }),
+      ],
+    },
+  ],
+  commentary: [
+    {
+      commentary_id: "outlook",
+      title: "What we would try next",
+      // Unrestricted on purpose: this is where an author writes 4.2 million in
+      // words if they want to, and the renderer labels the whole block.
+      text: "At a physical error rate of 1e-4 the 4.2 million figure would be an overestimate.",
+    },
+  ],
+  ...changes,
+})
+
+const resultsTable = (changes = {}) => ({
+  table_id: "results",
+  caption: "Resource estimate under the base scenario.",
+  role: "RESULTS",
+  columns: [
+    { column_id: "scenario", header: "Scenario", role: "LABEL", unit: null },
+    { column_id: "qubits", header: "Total physical qubits", role: "VALUE", unit: "physical qubits" },
+    { column_id: "distance", header: "Code distance", role: "VALUE", unit: "code distance" },
+  ],
+  rows: [
+    {
+      row_id: "base",
+      cells: [
+        { column_id: "scenario", text: "Base", node_hash: null },
+        { column_id: "qubits", text: null, node_hash: quantityNode.content_hash },
+        { column_id: "distance", text: null, node_hash: distanceNode.content_hash },
+      ],
+    },
+  ],
+  ...changes,
+})
+
+const scalingFigure = (changes = {}) => ({
+  figure_id: "scaling",
+  title: "Physical qubits against code distance",
+  caption: "One point: the base scenario, drawn from the same nodes the table reads.",
+  spec: {
+    kind: "SCATTER",
+    x_axis: { label: "Code distance", unit: "code distance" },
+    y_axis: { label: "Total physical qubits", unit: "physical qubits" },
+    series: [
+      {
+        series_id: "base",
+        label: "Base scenario",
+        points: [
+          {
+            x: { kind: "NODE", node_hash: distanceNode.content_hash, table_id: null, row_id: null, column_id: null },
+            y: { kind: "TABLE_CELL", node_hash: null, table_id: "results", row_id: "base", column_id: "qubits" },
+          },
+        ],
+      },
+    ],
+  },
+  svg_artifact: null,
+  ...changes,
+})
+
+const recipe = (changes = {}) => ({
+  runner: "ketqat-runner",
+  runner_version: "0.3.0",
+  container_digest: `sha256:${"a".repeat(64)}`,
+  argv: ["study", "reproduce", "--package", "research-package.json"],
+  input_refs: [],
+  environment_allowlist: ["KETQAT_CACHE_DIR"],
+  expected_output_refs: [],
+  resource_limits: { max_runtime: 3600, max_memory_bytes: "8589934592", max_credits: null },
+  network_policy: "NONE",
+  allowed_hosts: [],
+  platform: { operating_system: "linux", architecture: "x86_64", minimum_runner_version: null },
+  ...changes,
+})
+
+const ledgerEntry = (changes = {}) => ({
+  check_id: "graph_structure",
+  status: "PASS",
+  requirement: "REQUIRED",
+  tool: { name: "ketqat-sdk", version: "0.3.0" },
+  input_refs: [],
+  output_ref: null,
+  reason: "",
+  limitations: ["Structural only: nothing here weighs the evidence."],
+  observed_at: "2026-09-01T00:00:00Z",
+  ...changes,
+})
+
 const packageInput = (changes = {}) => ({
   studyRef: STUDY_REF,
   planRef: PLAN_REF,
-  reportMarkdown: "# Shor-2048 feasibility\n\nOne claim, and the numbers it rests on.",
-  methods: "Surface-code resource estimation under the base scenario, as pinned by the confirmed plan.",
-  assumptionRows: [{ label: "Physical error rate", node_hash: inputNode.content_hash }],
-  resultRows: [{ label: "Total physical qubits", node_hash: quantityNode.content_hash }],
-  csv: "label,node_hash\nTotal physical qubits," + quantityNode.content_hash + "\n",
-  figures: [{ label: "Physical qubits by code distance", svg: "<svg viewBox='0 0 1 1'></svg>" }],
-  // The author list is written down rather than defaulted. `StudyCitationSchema` requires it
-  // where the shared `CitationSchema` fills one in, because a container the parser materialises
-  // is a container the file does not contain -- and that was the last split left between what
-  // this builder hashed and what a verifier reading the file hashes.
+  distribution: "ONLINE",
+  report: report(),
+  tables: [resultsTable()],
+  figures: [scalingFigure()],
+  // The author list is written down rather than defaulted. `StudyCitationSchema`
+  // requires it where the shared `CitationSchema` fills one in, because a
+  // container the parser materialises is a container the file does not contain.
   references: [
     {
       title: "Surface codes: towards practical large-scale quantum computation",
@@ -196,18 +338,26 @@ const packageInput = (changes = {}) => ({
       year: 2012,
     },
   ],
-  bundleRefs: ["f".repeat(64)],
+  bundleRefs: [],
   environment: { operating_system: "linux", architecture: "arm64", packages: [], hardware: [] },
-  reproductionCommand: "ketqat-engine study verify <this-file>",
-  nodes: [claimNode, quantityNode, resultNode, inputNode],
-  edges: [supportsEdge, resultSupportsEdge, derivedEdge, usedInputEdge],
+  recipe: recipe(),
+  nodes: [claimNode, quantityNode, distanceNode, resultNode, inputNode],
+  edges: [supportsEdge, resultSupportsEdge, derivedEdge, distanceDerivedEdge, usedInputEdge],
+  // The map cites the number and not the snapshot behind it. Citing the snapshot
+  // is legitimate and is what the bundle tests below do -- it is evidence that
+  // points into a resource intelligence bundle, so an entry naming it has to say
+  // which field of which bundle the claim reads.
   claimEvidenceMap: [
     {
       claim_node_hash: claimNode.content_hash,
-      evidence_node_hashes: [quantityNode.content_hash, resultNode.content_hash],
-      edge_hashes: [supportsEdge.content_hash, resultSupportsEdge.content_hash],
+      evidence_node_hashes: [quantityNode.content_hash],
+      edge_hashes: [supportsEdge.content_hash],
+      bundle_fields: [],
     },
   ],
+  reviews: [],
+  reproductions: [],
+  checkLedger: [ledgerEntry()],
   limitations: ["Modelled, not measured. No device was run."],
   isDemo: true,
   ...changes,
@@ -215,168 +365,707 @@ const packageInput = (changes = {}) => ({
 
 const buildOrThrow = (changes = {}) => {
   const built = buildResearchPackage(packageInput(changes))
-  assert.equal(built.ok, true, `the package was refused: ${built.ok ? "" : codesOf(built.refusals).join(", ")}`)
+  assert.equal(built.ok, true, `the package was refused: ${built.ok ? "" : codesOf(built.findings).join(", ")}`)
   return built.package
 }
 
 const clone = (value) => JSON.parse(JSON.stringify(value))
 
-// ------------------------------------------------------------ claim resolution
+// ------------------------------------------------------------ the happy path
 
-test("a package whose rows, claims and edges all resolve is built and verifies", () => {
+test("a package whose report, tables, figures and claims all resolve is built and verifies", () => {
   const pkg = buildOrThrow()
 
   assert.equal(pkg.package_kind, "KETQAT_RESEARCH_PACKAGE")
   assert.equal(pkg.hash_rules_id, STUDY_HASH_RULES_ID)
   assert.equal(pkg.schema_version, STUDY_SCHEMA_VERSION)
-  // The graph travels with the report; a recipient resolves the rows from the
+  // The graph travels with the report; a recipient resolves every cell from the
   // file rather than from a store they were never given.
-  assert.equal(pkg.nodes.length, 4)
-  assert.equal(pkg.edges.length, 4)
-  assert.equal(pkg.result_rows[0].node_hash, quantityNode.content_hash)
+  assert.equal(pkg.nodes.length, 5)
+  assert.equal(pkg.edges.length, 5)
+  assert.equal(pkg.tables[0].rows[0].cells[1].node_hash, quantityNode.content_hash)
 
   const verification = verifyResearchPackage(pkg)
   assert.deepEqual(verification.problems, [])
-  assert.equal(verification.valid, true)
-  assert.equal(verification.hash_matches, true)
-  assert.equal(verification.claims_resolve, true)
-  assert.equal(verification.graph_valid, true)
   assert.equal(verification.expected_hash, pkg.reproducibility_hash)
   assert.equal(verification.actual_hash, pkg.reproducibility_hash)
+  assert.equal(verification.status, "STRUCTURE_VERIFIED")
 })
 
-test("every claim node's map entry resolves to nodes and edges the package carries", () => {
-  const pkg = buildOrThrow()
-  const nodeHashes = new Set(pkg.nodes.map((node) => node.content_hash))
-  const edgeHashes = new Set(pkg.edges.map((edge) => edge.content_hash))
+test("the twelve levels are reported separately, and the status is derived from them", () => {
+  // The whole of goal §13.1: one boolean hides which check passed, and the
+  // reader quotes the strongest reading of whichever one they were given.
+  const verification = verifyResearchPackage(buildOrThrow())
 
-  for (const claim of pkg.nodes.filter((node) => node.kind === "claim")) {
-    const entry = pkg.claim_evidence_map.find((row) => row.claim_node_hash === claim.content_hash)
-    assert.ok(entry, `claim '${claim.label}' must appear in the claim evidence map`)
-    assert.ok(entry.evidence_node_hashes.length >= 1)
-    for (const hash of entry.evidence_node_hashes) assert.ok(nodeHashes.has(hash))
-    for (const hash of entry.edge_hashes) assert.ok(edgeHashes.has(hash))
+  assert.deepEqual(Object.keys(verification.levels).sort(), [
+    "attestation_level",
+    "bundles_resolve",
+    "canonicalizable",
+    "claims_resolve",
+    "graph_structurally_valid",
+    "hash_matches",
+    "independent_reproduction_present",
+    "provenance_closed",
+    "record_integrity_valid",
+    "review_present",
+    "schema_valid",
+    "science_recomputed",
+  ])
+  for (const level of [
+    "schema_valid",
+    "canonicalizable",
+    "hash_matches",
+    "record_integrity_valid",
+    "graph_structurally_valid",
+    "provenance_closed",
+    "claims_resolve",
+    "bundles_resolve",
+  ]) {
+    assert.equal(verification.levels[level], true, level)
+  }
+  // And the three that are false, each for a stated reason rather than folded
+  // into a verdict: no bundle was cited, so nothing was recomputed; nobody
+  // reproduced it; nobody reviewed it.
+  assert.equal(verification.levels.science_recomputed, false)
+  assert.equal(verification.levels.independent_reproduction_present, false)
+  assert.equal(verification.levels.review_present, false)
+  assert.equal(verification.levels.attestation_level, "hash_only")
+  assert.equal(verification.status, "STRUCTURE_VERIFIED")
+
+  // ADR 0014's wording rule, discharged in the result rather than in a comment.
+  const sentences = verification.not_established.join(" ")
+  assert.match(sentences, /Nothing here is signed/)
+  assert.match(sentences, /No model was re-run/)
+  for (const forbidden of [/\bauthentic\b/i, /scientifically correct/i]) {
+    assert.equal(forbidden.test(sentences), false, `${forbidden} must not appear`)
   }
 })
 
-// --------------------------------------------------- the export refuses, not warns
+test("a review and a matched reproduction move two levels and one rung", () => {
+  const observedBody = nodeBody({
+    kind: "quantity",
+    label: "Total physical qubits, second run",
+    quantity: knownQuantity(4200000),
+    limitations: ["Re-run under the same capsule."],
+  })
+  const observedNode = stampNode(observedBody)
+  const reviewBody = {
+    schema_version: STUDY_SCHEMA_VERSION,
+    [STUDY_HASH_RULES_KEY]: STUDY_HASH_RULES_ID,
+    study_ref: STUDY_REF,
+    subject_node_hash: quantityNode.content_hash,
+    verdict: "ACCEPTED",
+    rationale: "The bound is read from a pinned model at a pinned version.",
+    reviewer: "reviewer@example.invalid",
+  }
+  const review = { ...reviewBody, content_hash: studySelfHash("review_record", reviewBody) }
+  const reproductionBody = {
+    schema_version: STUDY_SCHEMA_VERSION,
+    [STUDY_HASH_RULES_KEY]: STUDY_HASH_RULES_ID,
+    study_ref: STUDY_REF,
+    original_node_hash: quantityNode.content_hash,
+    reproduction_capsule_ref: "d".repeat(64),
+    observed_node_hash: observedNode.content_hash,
+    outcome: "MATCHED",
+    notes: "Same figure, same envelope.",
+    asserted_by: "runner@example.invalid",
+  }
+  const reproduction = {
+    ...reproductionBody,
+    content_hash: studySelfHash("reproduction_record", reproductionBody),
+  }
 
-test("a result row naming a node the package does not carry is refused", () => {
+  const pkg = buildOrThrow({
+    nodes: [claimNode, quantityNode, distanceNode, resultNode, inputNode, observedNode],
+    reviews: [review],
+    reproductions: [reproduction],
+  })
+  const verification = verifyResearchPackage(pkg)
+
+  assert.equal(verification.levels.review_present, true)
+  assert.equal(verification.levels.independent_reproduction_present, true)
+  // Still `STRUCTURE_VERIFIED`, because no bundle was recomputed: the ladder is
+  // ordered, and a reproduction record does not carry a package past a rung it
+  // has not reached.
+  assert.equal(verification.status, "STRUCTURE_VERIFIED")
+  assert.match(
+    verification.not_established.join(" "),
+    /Whether the party that ran it was independent/,
+    "a record of a match is not a claim of independence",
+  )
+})
+
+// -------------------------------------- a number cannot reach a verified section
+
+test("a number typed into verified prose is refused; the same number by reference is not", () => {
+  // The definition-of-done property, and the one the previous shape could not
+  // hold at all: `report_markdown` hashed a sentence and established nothing
+  // about the figure inside it.
+  const typed = report()
+  typed.sections[0].segments[1] = segment("PROSE", {
+    text: "The estimate puts the workload at 4.2 million physical qubits.",
+  })
+  const built = buildResearchPackage(packageInput({ report: typed }))
+
+  assert.equal(built.ok, false)
+  assert.deepEqual(codesOf(built.findings), ["VERIFIED_PROSE_NOT_GROUNDED"])
+  assert.deepEqual(pathsFor(built.findings, "VERIFIED_PROSE_NOT_GROUNDED"), [
+    "$.report.sections[0].segments[1].text",
+  ])
+
+  // The same sentence, with the figure read from the node it lives in, is the
+  // package that builds -- and the rendered Markdown carries the number.
+  const pkg = buildOrThrow()
+  const markdown = renderReportMarkdown(pkg.report, {
+    nodes: new Map(pkg.nodes.map((node) => [node.content_hash, node])),
+    tables: pkg.tables,
+    figures: pkg.figures,
+    citations: pkg.references,
+    limitations: pkg.limitations,
+  })
+  assert.match(markdown, /4200000 physical qubits/)
+  assert.match(markdown, new RegExp(quantityNode.content_hash))
+  // And the author's free prose is rendered, under a heading that says what it is.
+  assert.match(markdown, /## Unverified commentary/)
+  assert.match(markdown, /At a physical error rate of 1e-4/)
+})
+
+test("a name carrying digits is prose; a measurement is not", () => {
+  // The rule is "a digit inside a name, never a number standing on its own", so
+  // a study of Shor-2048 can say so.
+  const named = report()
+  named.sections[0].segments[3] = segment("PROSE", {
+    text: "Shor-2048 under the surface-17 layout, at v1.2 of the model.",
+  })
+  assert.equal(buildResearchPackage(packageInput({ report: named })).ok, true)
+
+  const titled = report()
+  titled.sections[0].title = "Findings at distance 21"
+  const built = buildResearchPackage(packageInput({ report: titled }))
+  assert.equal(built.ok, false)
+  assert.deepEqual(pathsFor(built.findings, "VERIFIED_PROSE_NOT_GROUNDED"), [
+    "$.report.sections[0].title",
+  ])
+})
+
+test("a report segment naming a node the package does not carry is refused", () => {
+  const dangling = report()
+  dangling.sections[0].segments[2] = segment("QUANTITY_REF", { node_hash: ABSENT_HASH })
+  const built = buildResearchPackage(packageInput({ report: dangling }))
+
+  assert.equal(built.ok, false)
+  assert.deepEqual(pathsFor(built.findings, "REPORT_REFERENCE_UNRESOLVED"), [
+    "$.report.sections[0].segments[2].node_hash",
+  ])
+})
+
+test("a quantity segment naming a claim renders an assertion where a number belongs", () => {
+  const wrongKind = report()
+  wrongKind.sections[0].segments[2] = segment("QUANTITY_REF", { node_hash: claimNode.content_hash })
+  const built = buildResearchPackage(packageInput({ report: wrongKind }))
+
+  assert.equal(built.ok, false)
+  assert.deepEqual(codesOf(built.findings), ["REPORT_REFERENCE_KIND_MISMATCH"])
+})
+
+test("a citation or limitation marker pointing past the end of its list is refused", () => {
+  const dangling = report()
+  dangling.sections[0].segments[5] = segment("CITATION_REF", { citation_index: 7 })
+  dangling.sections[0].segments[6] = segment("LIMITATION_REF", { limitation_index: 7 })
+  const built = buildResearchPackage(packageInput({ report: dangling }))
+
+  assert.equal(built.ok, false)
+  assert.deepEqual(pathsFor(built.findings, "REPORT_REFERENCE_UNRESOLVED"), [
+    "$.report.sections[0].segments[5].citation_index",
+    "$.report.sections[0].segments[6].limitation_index",
+  ])
+})
+
+// ------------------------------------------------------------ tables and CSV
+
+test("a table and its CSV are one statement: the file is generated, hashed and comparable", () => {
+  const pkg = buildOrThrow()
+  const sources = new Map(pkg.nodes.map((node) => [node.content_hash, node]))
+  const csv = renderTableCsv(pkg.tables[0], sources)
+
+  // Every value column contributes the number and the node it came from, so the
+  // traceability survives the format everyone forwards.
+  assert.equal(
+    csv,
+    "Scenario,Total physical qubits (physical qubits),Total physical qubits node," +
+      "Code distance (code distance),Code distance node\n" +
+      `Base,4200000,${quantityNode.content_hash},21,${distanceNode.content_hash}\n`,
+  )
+  assert.deepEqual(
+    tableCsvArtifact(pkg.tables[0], sources, STUDY_SCHEMA_VERSION),
+    pkg.tables[0].csv_artifact,
+  )
+  assert.equal(pkg.tables[0].csv_artifact.byte_size, String(new TextEncoder().encode(csv).length))
+})
+
+test("a CSV artifact that is not the digest of these rows is refused", () => {
+  const tampered = clone(buildOrThrow())
+  tampered.tables[0].csv_artifact.content_hash = "b".repeat(64)
+  tampered.reproducibility_hash = studySelfHash("research_package", tampered)
+
+  const verification = verifyResearchPackage(tampered)
+
+  assert.equal(verification.levels.hash_matches, true)
+  assert.equal(verification.levels.claims_resolve, false)
+  assert.deepEqual(pathsFor(verification.findings, "TABLE_CSV_ARTIFACT_MISMATCH"), [
+    "$.tables[0].csv_artifact.content_hash",
+  ])
+})
+
+test("a value cell with no node is refused: a number typed into a table is not a measurement", () => {
+  const typed = resultsTable()
+  typed.rows[0].cells[1] = { column_id: "qubits", text: "4200000", node_hash: null }
+  const built = buildResearchPackage(packageInput({ tables: [typed] }))
+
+  assert.equal(built.ok, false)
+  assert.deepEqual(pathsFor(built.findings, "TABLE_CELL_WITHOUT_NODE"), [
+    "$.tables[0].rows[0].cells[1].node_hash",
+  ])
+})
+
+test("a value cell naming a node the package does not carry is refused", () => {
+  const dangling = resultsTable()
+  dangling.rows[0].cells[1].node_hash = ABSENT_HASH
+  const built = buildResearchPackage(packageInput({ tables: [dangling] }))
+
+  assert.equal(built.ok, false)
+  assert.deepEqual(pathsFor(built.findings, "EVIDENCE_NODE_UNRESOLVED"), [
+    "$.tables[0].rows[0].cells[1].node_hash",
+  ])
+})
+
+test("a value cell naming a node that carries no number is refused", () => {
+  // The claim node is the tempting one: it holds a number, inside a sentence.
+  // A cell reading from it would print the assertion as a measurement.
+  const wrong = resultsTable()
+  wrong.rows[0].cells[1].node_hash = claimNode.content_hash
+  const built = buildResearchPackage(packageInput({ tables: [wrong] }))
+
+  assert.equal(built.ok, false)
+  assert.deepEqual(codesOf(built.findings), ["RESULT_ROW_WITHOUT_VALUE"])
+})
+
+test("a column claims its cells are comparable, so a unit mismatch is refused", () => {
+  const mixed = resultsTable()
+  mixed.rows[0].cells[2].node_hash = quantityNode.content_hash
+  const built = buildResearchPackage(packageInput({ tables: [mixed] }))
+
+  assert.equal(built.ok, false)
+  assert.deepEqual(pathsFor(built.findings, "TABLE_SHAPE_MISMATCH"), [
+    "$.tables[0].rows[0].cells[2].node_hash",
+  ])
+})
+
+test("a row missing a declared column is refused rather than rendered as a blank", () => {
+  const gappy = resultsTable()
+  gappy.rows[0].cells = gappy.rows[0].cells.slice(0, 2)
+  const built = buildResearchPackage(packageInput({ tables: [gappy] }))
+
+  assert.equal(built.ok, false)
+  assert.deepEqual(pathsFor(built.findings, "TABLE_SHAPE_MISMATCH"), ["$.tables[0].rows[0].cells"])
+})
+
+// ------------------------------------------------------------------- figures
+
+test("a figure supplied as raw SVG is refused, by name and with a reason", () => {
   const built = buildResearchPackage(
-    packageInput({ resultRows: [{ label: "Total physical qubits", node_hash: ABSENT_HASH }] }),
+    packageInput({ figures: [{ ...scalingFigure(), svg: "<svg viewBox='0 0 1 1'></svg>" }] }),
   )
 
   assert.equal(built.ok, false)
-  assert.ok(codesOf(built.refusals).includes("EVIDENCE_NODE_UNRESOLVED"))
-  // No package at all, rather than a package with the row quietly dropped: an
-  // export missing a row reads to a recipient exactly like one that never had it.
+  assert.deepEqual(codesOf(built.findings), ["FIGURE_RAW_SVG_REFUSED"])
+  assert.deepEqual(pathsFor(built.findings, "FIGURE_RAW_SVG_REFUSED"), ["$.figures[0].svg"])
   assert.equal(built.package, undefined)
 })
 
-test("an assumption row naming a node the package does not carry is refused the same way", () => {
-  const built = buildResearchPackage(
-    packageInput({ assumptionRows: [{ label: "Physical error rate", node_hash: ABSENT_HASH }] }),
-  )
+test("the sanitizer refuses script, foreignObject, external references and handlers", () => {
+  const cases = [
+    ["<svg><script>fetch('//x')</script></svg>", "SVG_SCRIPT_REFUSED"],
+    ["<svg><a href=\"javascript:alert(1)\">x</a></svg>", "SVG_SCRIPT_REFUSED"],
+    ["<svg>&#x73;cript</svg>", "SVG_SCRIPT_REFUSED"],
+    ["<svg><foreignObject><b>x</b></foreignObject></svg>", "SVG_FOREIGN_OBJECT_REFUSED"],
+    ["<svg><image href=\"https://example.invalid/x.png\"/></svg>", "SVG_EXTERNAL_REFERENCE_REFUSED"],
+    ["<svg><image href=\"data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=\"/></svg>", "SVG_EXTERNAL_REFERENCE_REFUSED"],
+    ["<!DOCTYPE svg [<!ENTITY x SYSTEM \"file:///etc/passwd\">]><svg/>", "SVG_EXTERNAL_REFERENCE_REFUSED"],
+    ["<svg><rect onclick=\"steal()\"/></svg>", "SVG_EVENT_HANDLER_REFUSED"],
+    ["<svg><iframe/></svg>", "SVG_FOREIGN_OBJECT_REFUSED"],
+    ["<svg><marquee>x</marquee></svg>", "SVG_ELEMENT_NOT_PERMITTED"],
+  ]
+  for (const [svg, code] of cases) {
+    const result = sanitizeStudySvg(svg)
+    assert.equal(result.ok, false, svg)
+    assert.equal(result.bytes, null)
+    assert.ok(codesOf(result.findings).includes(code), `${svg} -> ${codesOf(result.findings).join(",")}`)
+  }
+})
+
+test("the reviewed renderer draws from the spec, and its own output passes the sanitizer", () => {
+  // The other half of the rule: refusing supplied markup is only tenable if a
+  // study can still have a figure.
+  const pkg = buildOrThrow()
+  const sources = new Map(pkg.nodes.map((node) => [node.content_hash, node]))
+  const svg = renderFigureSvg(pkg.figures[0], sources, indexTableCells(pkg.tables))
+
+  assert.match(svg, /^<svg /)
+  assert.match(svg, /<circle /)
+  const sanitized = sanitizeStudySvg(svg)
+  assert.equal(sanitized.ok, true, codesOf(sanitized.findings).join(", "))
+  assert.ok(sanitized.bytes instanceof Uint8Array)
+})
+
+test("a figure coordinate that resolves to nothing is refused", () => {
+  const dangling = scalingFigure()
+  dangling.spec.series[0].points[0].y = {
+    kind: "TABLE_CELL",
+    node_hash: null,
+    table_id: "results",
+    row_id: "no-such-row",
+    column_id: "qubits",
+  }
+  const built = buildResearchPackage(packageInput({ figures: [dangling] }))
 
   assert.equal(built.ok, false)
-  assert.ok(codesOf(built.refusals).includes("EVIDENCE_NODE_UNRESOLVED"))
+  assert.deepEqual(pathsFor(built.findings, "FIGURE_POINT_UNRESOLVED"), [
+    "$.figures[0].spec.series[0].points[0].y",
+  ])
 })
+
+// ------------------------------------------------------------------- recipe
+
+test("the display command is generated from the recipe, with nothing to escape", () => {
+  const pkg = buildOrThrow()
+  assert.equal(
+    renderRecipeCommand(pkg.recipe),
+    "ketqat-runner study reproduce --package research-package.json",
+  )
+})
+
+test("an argv element a shell would act on is refused where it is written", () => {
+  for (const argument of ["rm -rf /", "$(whoami)", "a;b", "x'y", "a\nb", "`id`"]) {
+    assert.throws(
+      () => buildResearchPackage(packageInput({ recipe: recipe({ argv: ["run", argument] }) })),
+      /argv element/,
+      argument,
+    )
+  }
+})
+
+test("an environment allowlist carries names, never values", () => {
+  assert.throws(
+    () =>
+      buildResearchPackage(
+        packageInput({ recipe: recipe({ environment_allowlist: ["KETQAT_TOKEN=secret"] }) }),
+      ),
+    /environment allowlist carries variable names/,
+  )
+})
+
+test("a runner this build does not approve is a record, not an instruction", () => {
+  const built = buildResearchPackage(
+    packageInput({ recipe: recipe({ runner: "bash" }) }),
+  )
+  assert.equal(built.ok, false)
+  assert.deepEqual(pathsFor(built.findings, "RECIPE_RUNNER_NOT_APPROVED"), ["$.recipe.runner"])
+})
+
+test("a policy that forbids the network and then names hosts is two policies", () => {
+  assert.throws(
+    () =>
+      buildResearchPackage(
+        packageInput({ recipe: recipe({ allowed_hosts: ["api.example.invalid"] }) }),
+      ),
+    /no network and then names hosts/,
+  )
+})
+
+// -------------------------------------------------------------- check ledger
+
+test("a check that did not run is recorded as NOT_RUN, not as an absence", () => {
+  const pkg = buildOrThrow({
+    checkLedger: [
+      ledgerEntry(),
+      ledgerEntry({
+        check_id: "hardware_reproduction",
+        status: "NOT_RUN",
+        requirement: "OPTIONAL",
+        reason: "No device was booked: this study is a resource estimate.",
+        limitations: [],
+      }),
+      ledgerEntry({
+        check_id: "classical_baseline",
+        status: "INCONCLUSIVE",
+        requirement: "OPTIONAL",
+        reason: "The published baseline does not state its hardware.",
+        limitations: [],
+      }),
+    ],
+  })
+
+  const summary = checkLedgerSummary(pkg.check_ledger)
+  assert.deepEqual(summary, {
+    total: 3,
+    passed: 1,
+    failed: 0,
+    not_run: 1,
+    inconclusive: 1,
+    required_checks_passed: true,
+  })
+  assert.equal(verifyResearchPackage(pkg).check_ledger.not_run, 1)
+  // A package that records what it did not do still verifies: recording it is
+  // the honest outcome, not a defect in the export.
+  assert.equal(verifyResearchPackage(pkg).status, "STRUCTURE_VERIFIED")
+})
+
+test("a failure, a skip and an inconclusive must each say why", () => {
+  for (const status of ["FAIL", "NOT_RUN", "INCONCLUSIVE"]) {
+    assert.throws(
+      () =>
+        buildResearchPackage(
+          packageInput({ checkLedger: [ledgerEntry({ status, requirement: "OPTIONAL", reason: "" })] }),
+        ),
+      /must say why/,
+      status,
+    )
+  }
+})
+
+test("two entries for one check id give the ledger two answers", () => {
+  const pkg = clone(buildOrThrow())
+  pkg.check_ledger = [ledgerEntry(), ledgerEntry({ status: "FAIL", reason: "It did not." })]
+  pkg.reproducibility_hash = studySelfHash("research_package", pkg)
+
+  const verification = verifyResearchPackage(pkg)
+  assert.equal(verification.status, "REFUSED")
+  assert.deepEqual(pathsFor(verification.findings, "CHECK_LEDGER_DUPLICATE_ID"), [
+    "$.check_ledger[1].check_id",
+  ])
+})
+
+test("a required check the ledger does not mention is not a check that passed", () => {
+  const pkg = buildOrThrow()
+  const verification = verifyResearchPackage(pkg, { requiredChecks: ["independent_reproduction"] })
+
+  assert.equal(verification.levels.claims_resolve, false)
+  assert.deepEqual(pathsFor(verification.findings, "CHECK_LEDGER_REQUIRED_CHECK_ABSENT"), [
+    "$.check_ledger",
+  ])
+})
+
+// ------------------------------------------------------------------- bundles
+
+const bundleDocument = () => ({
+  schema_version: "0.1",
+  bundle_kind: "RESOURCE_INTELLIGENCE",
+  reproducibility_hash: "1".repeat(64),
+  is_demo: true,
+  generator: { name: "ketqat", version: "0.3.0", schema_version: "0.1" },
+})
+
+test("a cited bundle that resolves to nothing is reported at its own level", () => {
+  const pkg = buildOrThrow({
+    bundleRefs: [
+      { bundle_kind: "RESOURCE_INTELLIGENCE", reproducibility_hash: "1".repeat(64), embedded: null },
+    ],
+  })
+  const verification = verifyResearchPackage(pkg)
+
+  assert.equal(verification.levels.bundles_resolve, false)
+  assert.equal(verification.levels.science_recomputed, false)
+  assert.equal(verification.status, "STRUCTURE_UNVERIFIED")
+  assert.deepEqual(pathsFor(verification.findings, "BUNDLE_UNRESOLVED"), [
+    "$.bundle_refs[0].reproducibility_hash",
+  ])
+})
+
+test("a resolved document of the wrong kind is not the bundle the reference names", () => {
+  const pkg = buildOrThrow({
+    bundleRefs: [
+      { bundle_kind: "RESOURCE_INTELLIGENCE", reproducibility_hash: "1".repeat(64), embedded: null },
+    ],
+  })
+  const verification = verifyResearchPackage(pkg, {
+    bundles: new Map([["1".repeat(64), { bundle_kind: "SOMETHING_ELSE" }]]),
+  })
+
+  assert.deepEqual(pathsFor(verification.findings, "BUNDLE_KIND_MISMATCH"), [
+    "$.bundle_refs[0].bundle_kind",
+  ])
+})
+
+test("an offline export that does not carry a bundle it cites is refused", () => {
+  // Refused at the build boundary, unlike an online package citing a bundle held
+  // in a store: an offline export's whole claim is that the recipient needs
+  // nothing else, so the builder can and must check it.
+  const built = buildResearchPackage(
+    packageInput({
+      distribution: "OFFLINE_EXPORT",
+      bundleRefs: [
+        { bundle_kind: "RESOURCE_INTELLIGENCE", reproducibility_hash: "1".repeat(64), embedded: null },
+      ],
+    }),
+  )
+  assert.equal(built.ok, false)
+  assert.deepEqual(pathsFor(built.findings, "OFFLINE_EXPORT_BUNDLE_NOT_EMBEDDED"), [
+    "$.bundle_refs[0].embedded",
+  ])
+
+  // And the same package assembled by hand fails verification the same way.
+  const forged = clone(buildOrThrow())
+  forged.distribution = "OFFLINE_EXPORT"
+  forged.bundle_refs = [
+    { bundle_kind: "RESOURCE_INTELLIGENCE", reproducibility_hash: "1".repeat(64), embedded: null },
+  ]
+  forged.reproducibility_hash = studySelfHash("research_package", forged)
+  const verification = verifyResearchPackage(forged)
+  assert.equal(verification.levels.hash_matches, true)
+  assert.equal(verification.levels.bundles_resolve, false)
+  assert.deepEqual(pathsFor(verification.findings, "OFFLINE_EXPORT_BUNDLE_NOT_EMBEDDED"), [
+    "$.bundle_refs[0].embedded",
+  ])
+})
+
+test("a claim reading a bundle must say which field of which bundle", () => {
+  const bundleNode = stampNode(
+    nodeBody({
+      kind: "result",
+      label: "Resource intelligence bundle, base scenario",
+      reference: { record_kind: "resource_intelligence_bundle", hash: "1".repeat(64), record_slug: null },
+    }),
+  )
+  const bundleSupports = stampEdge(
+    edgeBody({
+      kind: "supports",
+      from_node_hash: bundleNode.content_hash,
+      to_node_hash: claimNode.content_hash,
+      rationale: "The claimed ceiling is the bundle's own estimate.",
+    }),
+  )
+  const bundleDerived = stampEdge(
+    edgeBody({
+      kind: "derived_from",
+      from_node_hash: quantityNode.content_hash,
+      to_node_hash: bundleNode.content_hash,
+      rationale: "The number is read out of this bundle.",
+    }),
+  )
+  const withBundle = (bundleFields) =>
+    packageInput({
+      nodes: [claimNode, quantityNode, distanceNode, resultNode, inputNode, bundleNode],
+      edges: [
+        supportsEdge,
+        resultSupportsEdge,
+        derivedEdge,
+        distanceDerivedEdge,
+        usedInputEdge,
+        bundleSupports,
+        bundleDerived,
+      ],
+      claimEvidenceMap: [
+        {
+          claim_node_hash: claimNode.content_hash,
+          evidence_node_hashes: [quantityNode.content_hash, bundleNode.content_hash],
+          edge_hashes: [supportsEdge.content_hash, bundleSupports.content_hash],
+          bundle_fields: bundleFields,
+        },
+      ],
+      bundleRefs: [
+        { bundle_kind: "RESOURCE_INTELLIGENCE", reproducibility_hash: "1".repeat(64), embedded: null },
+      ],
+    })
+
+  const silent = buildResearchPackage(withBundle([]))
+  assert.equal(silent.ok, false)
+  assert.deepEqual(pathsFor(silent.findings, "CLAIM_BUNDLE_FIELD_MISSING"), [
+    "$.claim_evidence_map[0].bundle_fields",
+  ])
+
+  // Naming the field is what the entry owed, so the package builds -- and the
+  // recipient is still told that nothing checked the bundle, because they do not
+  // have it. Two separate answers rather than one.
+  const named = buildResearchPackage(
+    withBundle([{ bundle_hash: "1".repeat(64), field_path: "estimates[0].total_physical_qubits.value" }]),
+  )
+  assert.equal(named.ok, true, named.ok ? "" : codesOf(named.findings).join(", "))
+  const unchecked = verifyResearchPackage(named.package)
+  assert.equal(unchecked.levels.bundles_resolve, false)
+  assert.equal(unchecked.levels.science_recomputed, false)
+  assert.deepEqual(pathsFor(unchecked.findings, "BUNDLE_UNRESOLVED"), [
+    "$.bundle_refs[0].reproducibility_hash",
+  ])
+
+  // A claim citing a bundle the file does not list is a defect wherever it is
+  // checked, because the citation names nothing the recipient can look up.
+  const strayBundle = buildResearchPackage(
+    withBundle([{ bundle_hash: "7".repeat(64), field_path: "estimates[0].runtime.value" }]),
+  )
+  assert.equal(strayBundle.ok, false)
+  assert.deepEqual(pathsFor(strayBundle.findings, "BUNDLE_UNRESOLVED"), [
+    "$.claim_evidence_map[0].bundle_fields[0].bundle_hash",
+  ])
+})
+
+test("a bundle field path that resolves to nothing is a citation of a document, not a number", () => {
+  const pkg = buildOrThrow({
+    bundleRefs: [
+      { bundle_kind: "RESOURCE_INTELLIGENCE", reproducibility_hash: "1".repeat(64), embedded: null },
+    ],
+    claimEvidenceMap: [
+      {
+        claim_node_hash: claimNode.content_hash,
+        evidence_node_hashes: [quantityNode.content_hash, resultNode.content_hash],
+        edge_hashes: [supportsEdge.content_hash, resultSupportsEdge.content_hash],
+        bundle_fields: [{ bundle_hash: "1".repeat(64), field_path: "estimates[0].nothing_here" }],
+      },
+    ],
+    edges: [supportsEdge, resultSupportsEdge, derivedEdge, distanceDerivedEdge, usedInputEdge],
+  })
+  const verification = verifyResearchPackage(pkg, {
+    bundles: new Map([["1".repeat(64), bundleDocument()]]),
+  })
+
+  assert.deepEqual(pathsFor(verification.findings, "BUNDLE_FIELD_UNRESOLVED"), [
+    "$.claim_evidence_map[0].bundle_fields[0].field_path",
+  ])
+  // A prototype walk would have resolved `constructor.name` on every object in
+  // the process and reported the claim as grounded in a field nobody wrote.
+  const prototypeWalk = verifyResearchPackage(
+    { ...pkg, claim_evidence_map: [{ ...pkg.claim_evidence_map[0], bundle_fields: [{ bundle_hash: "1".repeat(64), field_path: "constructor" }] }] },
+    { bundles: new Map([["1".repeat(64), bundleDocument()]]) },
+  )
+  assert.ok(codesOf(prototypeWalk.findings).includes("BUNDLE_FIELD_UNRESOLVED"))
+})
+
+// --------------------------------------------------- the map against the graph
 
 test("a claim node absent from the claim evidence map is refused", () => {
   const built = buildResearchPackage(packageInput({ claimEvidenceMap: [] }))
 
   assert.equal(built.ok, false)
-  assert.ok(codesOf(built.refusals).includes("CLAIM_WITHOUT_EVIDENCE_NODE"))
+  assert.ok(codesOf(built.findings).includes("CLAIM_WITHOUT_EVIDENCE_NODE"))
 })
-
-test("a claim mapped to an empty evidence list is refused as a claim with nothing behind it", () => {
-  const built = buildResearchPackage(
-    packageInput({
-      claimEvidenceMap: [
-        { claim_node_hash: claimNode.content_hash, evidence_node_hashes: [], edge_hashes: [] },
-      ],
-    }),
-  )
-
-  assert.equal(built.ok, false)
-  assert.ok(codesOf(built.refusals).includes("CLAIM_WITHOUT_EVIDENCE_NODE"))
-})
-
-test("a claim map naming evidence the package does not carry is refused", () => {
-  const built = buildResearchPackage(
-    packageInput({
-      claimEvidenceMap: [
-        {
-          claim_node_hash: claimNode.content_hash,
-          evidence_node_hashes: [ABSENT_HASH],
-          edge_hashes: [supportsEdge.content_hash],
-        },
-      ],
-    }),
-  )
-
-  assert.equal(built.ok, false)
-  assert.ok(codesOf(built.refusals).includes("EVIDENCE_NODE_UNRESOLVED"))
-})
-
-test("an edge whose endpoint is not in the graph is refused", () => {
-  const dangling = stampEdge(
-    edgeBody({
-      kind: "reviewed_by",
-      from_node_hash: claimNode.content_hash,
-      to_node_hash: ABSENT_HASH,
-      rationale: "Reviewed by a node this package forgot to carry.",
-    }),
-  )
-  const built = buildResearchPackage(
-    packageInput({ edges: [supportsEdge, resultSupportsEdge, derivedEdge, usedInputEdge, dangling] }),
-  )
-
-  assert.equal(built.ok, false)
-  assert.ok(codesOf(built.refusals).includes("EVIDENCE_EDGE_ENDPOINT_UNRESOLVED"))
-})
-
-test("a claim map citing an edge the package does not carry is refused", () => {
-  const built = buildResearchPackage(
-    packageInput({
-      claimEvidenceMap: [
-        {
-          claim_node_hash: claimNode.content_hash,
-          evidence_node_hashes: [quantityNode.content_hash],
-          edge_hashes: [ABSENT_HASH],
-        },
-      ],
-    }),
-  )
-
-  assert.equal(built.ok, false)
-  assert.ok(codesOf(built.refusals).includes("EVIDENCE_EDGE_ENDPOINT_UNRESOLVED"))
-})
-
-// ------------------------------------------- the map is checked against the graph
-
-// Resolution was the weaker half of this check, and these are the three packages
-// that got through it. Every hash in them resolves; what none of them has is a
-// graph that says the evidence bears on the claim. The relation lives on an
-// edge, with a rationale and an asserter on it, and an entry the edges do not
-// corroborate is the map and the graph disagreeing -- which the module docstring
-// calls a finding rather than a rounding error.
 
 test("a claim citing itself as its own evidence is refused", () => {
-  const selfCiting = packageInput({
-    edges: [],
-    claimEvidenceMap: [
-      {
-        claim_node_hash: claimNode.content_hash,
-        evidence_node_hashes: [claimNode.content_hash],
-        edge_hashes: [],
-      },
-    ],
-  })
-  const built = buildResearchPackage(selfCiting)
+  const built = buildResearchPackage(
+    packageInput({
+      edges: [],
+      claimEvidenceMap: [
+        {
+          claim_node_hash: claimNode.content_hash,
+          evidence_node_hashes: [claimNode.content_hash],
+          edge_hashes: [],
+          bundle_fields: [],
+        },
+      ],
+    }),
+  )
 
   assert.equal(built.ok, false)
-  const codes = codesOf(built.refusals)
+  const codes = codesOf(built.findings)
   assert.ok(codes.includes("CLAIM_EVIDENCE_SELF_REFERENTIAL"))
   // Nothing supports it in the graph either, and the entry cites no edge at all.
   // Three findings rather than one, because they take three different fixes.
@@ -384,53 +1073,29 @@ test("a claim citing itself as its own evidence is refused", () => {
   assert.ok(codes.includes("CLAIM_EVIDENCE_UNLINKED"))
 })
 
-test("a claim citing a node no edge joins to it is refused", () => {
-  const unrelated = stampNode(
-    nodeBody({ kind: "quantity", label: "An unrelated number nobody wired up", quantity: knownQuantity(17) }),
-  )
-  const built = buildResearchPackage(
-    packageInput({
-      nodes: [claimNode, quantityNode, resultNode, inputNode, unrelated],
-      claimEvidenceMap: [
-        {
-          claim_node_hash: claimNode.content_hash,
-          evidence_node_hashes: [unrelated.content_hash],
-          edge_hashes: [supportsEdge.content_hash],
-        },
-      ],
-    }),
-  )
-
-  assert.equal(built.ok, false)
-  assert.ok(codesOf(built.refusals).includes("CLAIM_EVIDENCE_UNLINKED"))
-})
-
 test("provenance is not support: a derived_from chain does not join evidence to a claim", () => {
   // The snapshot really is behind the number, and `derived_from` says where the
   // number came from. It does not say anyone claims the snapshot backs the
   // sentence -- that is a separate assertion, with its own rationale and its own
   // asserter, and this is the package that leaves it unmade.
-  const built = buildResearchPackage(packageInput({ edges: [supportsEdge, derivedEdge, usedInputEdge] }))
-
-  assert.equal(built.ok, false)
-  assert.ok(codesOf(built.refusals).includes("CLAIM_EVIDENCE_UNLINKED"))
-})
-
-test("a claim map citing evidence and no edge at all is refused", () => {
   const built = buildResearchPackage(
     packageInput({
+      edges: [supportsEdge, derivedEdge, distanceDerivedEdge, usedInputEdge],
       claimEvidenceMap: [
         {
           claim_node_hash: claimNode.content_hash,
-          evidence_node_hashes: [quantityNode.content_hash],
-          edge_hashes: [],
+          evidence_node_hashes: [quantityNode.content_hash, resultNode.content_hash],
+          edge_hashes: [supportsEdge.content_hash],
+          bundle_fields: [],
         },
       ],
     }),
   )
 
   assert.equal(built.ok, false)
-  assert.ok(codesOf(built.refusals).includes("CLAIM_EVIDENCE_UNLINKED"))
+  assert.deepEqual(pathsFor(built.findings, "CLAIM_EVIDENCE_UNLINKED"), [
+    "$.claim_evidence_map[0].evidence_node_hashes[1]",
+  ])
 })
 
 test("evidence that argues with a claim is joined by a contradicts edge, read either way round", () => {
@@ -455,113 +1120,77 @@ test("evidence that argues with a claim is joined by a contradicts edge, read ei
     )
     const built = buildResearchPackage(
       packageInput({
-        nodes: [claimNode, quantityNode, resultNode, inputNode, objection],
-        edges: [supportsEdge, resultSupportsEdge, derivedEdge, usedInputEdge, contradicts],
+        nodes: [claimNode, quantityNode, distanceNode, resultNode, inputNode, objection],
+        edges: [
+          supportsEdge,
+          resultSupportsEdge,
+          derivedEdge,
+          distanceDerivedEdge,
+          usedInputEdge,
+          contradicts,
+        ],
         claimEvidenceMap: [
           {
             claim_node_hash: claimNode.content_hash,
-            evidence_node_hashes: [quantityNode.content_hash, resultNode.content_hash, objection.content_hash],
-            edge_hashes: [supportsEdge.content_hash, resultSupportsEdge.content_hash, contradicts.content_hash],
+            evidence_node_hashes: [quantityNode.content_hash, objection.content_hash],
+            edge_hashes: [supportsEdge.content_hash, contradicts.content_hash],
+            bundle_fields: [],
           },
         ],
       }),
     )
-    assert.equal(built.ok, true, built.ok ? "" : codesOf(built.refusals).join(", "))
+    assert.equal(built.ok, true, built.ok ? "" : codesOf(built.findings).join(", "))
   }
 })
 
-test("a result row naming a node that carries no value is refused", () => {
-  // The claim node is the tempting one: it holds a number, inside a sentence.
-  // A table row reading from it would print the assertion as a measurement.
-  const built = buildResearchPackage(
-    packageInput({ resultRows: [{ label: "Total physical qubits", node_hash: claimNode.content_hash }] }),
-  )
-
-  assert.equal(built.ok, false)
-  assert.deepEqual(codesOf(built.refusals), ["RESULT_ROW_WITHOUT_VALUE"])
-
-  // An assumption row may name a node of any kind: an assumption is a stated
-  // input, not a number read out of one.
-  assert.equal(
-    buildResearchPackage(packageInput({ assumptionRows: [{ label: "Base scenario", node_hash: inputNode.content_hash }] }))
-      .ok,
-    true,
-  )
-})
-
-test("the verifier makes the same checks as the builder, on a package the builder never wrote", () => {
-  // A recipient is who the checks are for. This package was assembled by
-  // something other than `buildResearchPackage` -- by hand here, by an older
-  // build or a different service in the field -- and it is cryptographically
-  // perfect: every node is its own hash, and the package's digest is its own
-  // contents. What it has lost is the edge that carried the relation.
-  const forged = clone(buildOrThrow())
-  forged.edges = forged.edges.filter((edge) => edge.kind !== "supports")
-  forged.claim_evidence_map[0].edge_hashes = []
-  forged.reproducibility_hash = studySelfHash("research_package", forged)
-
-  const verification = verifyResearchPackage(forged)
-
-  assert.equal(verification.hash_matches, true)
-  assert.equal(verification.claims_resolve, false)
-  assert.equal(verification.valid, false)
-  const codes = new Set(verification.problems.map((problem) => problem.split(" (")[0]))
-  assert.ok(codes.has("CLAIM_WITHOUT_EVIDENCE_NODE"))
-  assert.ok(codes.has("CLAIM_EVIDENCE_UNLINKED"))
-})
-
-test("a self-citing package is refused by the verifier too, not only by the builder", () => {
-  const forged = clone(buildOrThrow())
-  forged.claim_evidence_map = [
-    {
-      claim_node_hash: claimNode.content_hash,
-      evidence_node_hashes: [claimNode.content_hash],
-      edge_hashes: [supportsEdge.content_hash],
-    },
-  ]
-  forged.reproducibility_hash = studySelfHash("research_package", forged)
-
-  const verification = verifyResearchPackage(forged)
-
-  assert.equal(verification.hash_matches, true)
-  assert.equal(verification.valid, false)
-  assert.ok(
-    verification.problems.some((problem) => problem.startsWith("CLAIM_EVIDENCE_SELF_REFERENTIAL")),
-  )
-})
-
-test("a claim asserting an unknown value is refused rather than thrown", () => {
-  // Assembled without the node schema on purpose: the schema refuses an unknown
-  // claim by throwing, and the export owes its caller a refusal it can read
-  // beside the others instead of an exception it has to catch.
-  const body = nodeBody({
+test("a claim reading its value from an unknown is refused rather than thrown", () => {
+  // The value lives in the node the claim names, so this is a question about the
+  // graph rather than about one record -- and it is still answered before the
+  // node schema sees the input, because the export owes its caller a refusal it
+  // can read beside the others instead of an exception it has to catch.
+  const unknownBody = nodeBody({
+    kind: "quantity",
+    label: "Total physical qubits, base scenario",
+    quantity: unknownQuantity(),
+  })
+  const unknownNode = { ...unknownBody, content_hash: studySelfHash("evidence_node", unknownBody) }
+  const claimBody = nodeBody({
     kind: "claim",
     label: "Shor-2048 fits within an unknown number of physical qubits",
     claim: {
-      subject: "shor-2048",
+      subject_ref: { record_kind: "quantum_workload", hash: null, record_slug: "shor-2048" },
       metric: "total_physical_qubits",
       comparator: "AT_MOST",
-      value: unknownQuantity(),
+      value_ref: { kind: "value_node", node_hash: unknownNode.content_hash, field_path: null },
     },
   })
-  const unknownClaimNode = { ...body, content_hash: studySelfHash("evidence_node", body) }
+  const unknownClaimNode = { ...claimBody, content_hash: studySelfHash("evidence_node", claimBody) }
 
   const built = buildResearchPackage(
     packageInput({
-      nodes: [unknownClaimNode, quantityNode, resultNode, inputNode],
+      nodes: [unknownClaimNode, unknownNode, resultNode, inputNode],
       edges: [],
+      tables: [],
+      figures: [],
+      report: {
+        sections: [
+          { section_id: "s", title: "Findings", segments: [segment("PROSE", { text: "Nothing resolved." })] },
+        ],
+        commentary: [],
+      },
       claimEvidenceMap: [
         {
           claim_node_hash: unknownClaimNode.content_hash,
-          evidence_node_hashes: [quantityNode.content_hash],
+          evidence_node_hashes: [unknownNode.content_hash],
           edge_hashes: [],
+          bundle_fields: [],
         },
       ],
     }),
   )
 
   assert.equal(built.ok, false)
-  assert.deepEqual(codesOf(built.refusals), ["CLAIM_VALUE_UNKNOWN"])
+  assert.deepEqual(codesOf(built.findings), ["CLAIM_VALUE_UNKNOWN"])
 })
 
 // ------------------------------------------------- tampered-study detection
@@ -573,8 +1202,8 @@ test("an edited package fails its hash check", () => {
 
   const verification = verifyResearchPackage(tampered)
 
-  assert.equal(verification.hash_matches, false)
-  assert.equal(verification.valid, false)
+  assert.equal(verification.levels.hash_matches, false)
+  assert.equal(verification.status, "STRUCTURE_UNVERIFIED")
   assert.equal(verification.actual_hash, tampered.reproducibility_hash)
   assert.notEqual(verification.expected_hash, tampered.reproducibility_hash)
 })
@@ -591,46 +1220,83 @@ test("an edited and re-hashed package fails structurally, not cryptographically"
   const verification = verifyResearchPackage(tampered)
 
   // Cryptographically the file is now beyond reproach.
-  assert.equal(verification.hash_matches, true)
-  // Structurally it has fallen apart: the node's identity moved, so the result
-  // row, the supporting edges and the claim map all name something that is no
-  // longer in the package.
-  assert.equal(verification.claims_resolve, false)
-  assert.equal(verification.graph_valid, false)
-  assert.equal(verification.valid, false)
-  assert.ok(verification.problems.some((problem) => problem.includes("EVIDENCE_NODE_UNRESOLVED")))
+  assert.equal(verification.levels.hash_matches, true)
+  assert.equal(verification.levels.record_integrity_valid, true)
+  // Structurally it has fallen apart: the node's identity moved, so the table
+  // cell, the report segment, the figure point, the supporting edges and the
+  // claim map all name something that is no longer in the package.
+  assert.equal(verification.levels.claims_resolve, false)
+  assert.equal(verification.levels.graph_structurally_valid, false)
+  assert.equal(verification.status, "STRUCTURE_UNVERIFIED")
+  const paths = new Set(verification.findings.map((item) => item.path))
+  assert.ok(paths.has("$.tables[0].rows[0].cells[1].node_hash"))
+  assert.ok(paths.has("$.report.sections[0].segments[2].node_hash"))
+  assert.ok(paths.has("$.figures[0].spec.series[0].points[0].y"))
 })
 
-test("a re-hashed node alone breaks the rows that named it", () => {
+test("a re-hashed node alone breaks the cells that named it", () => {
   const tampered = clone(buildOrThrow())
   const edited = tampered.nodes.find((node) => node.kind === "quantity")
   edited.quantity.value = 42
   edited.content_hash = studySelfHash("evidence_node", edited)
-  tampered.reproducibility_hash = studySelfHash("research_package", tampered)
 
-  const rowHashes = new Set(tampered.nodes.map((node) => node.content_hash))
-  assert.equal(rowHashes.has(tampered.result_rows[0].node_hash), false)
+  const carried = new Set(tampered.nodes.map((node) => node.content_hash))
+  assert.equal(carried.has(tampered.tables[0].rows[0].cells[1].node_hash), false)
 })
 
-// ------------------------------------------------------------ recorded, not omitted
+test("a review whose recorded hash is not its contents is a verdict that was edited", () => {
+  const reviewBody = {
+    schema_version: STUDY_SCHEMA_VERSION,
+    [STUDY_HASH_RULES_KEY]: STUDY_HASH_RULES_ID,
+    study_ref: STUDY_REF,
+    subject_node_hash: quantityNode.content_hash,
+    verdict: "ACCEPTED",
+    rationale: "Looks right.",
+    reviewer: "reviewer@example.invalid",
+  }
+  const pkg = clone(
+    buildOrThrow({
+      reviews: [{ ...reviewBody, content_hash: studySelfHash("review_record", reviewBody) }],
+    }),
+  )
+  pkg.reviews[0].verdict = "REJECTED"
+  pkg.reproducibility_hash = studySelfHash("research_package", pkg)
 
-test("failed checks are carried through the build rather than dropped", () => {
-  const failedChecks = [
-    "Independent reproduction of the base-scenario estimate was not attempted.",
-    "No measured classical baseline was available at this problem size.",
-  ]
-  const pkg = buildOrThrow({ failedChecks })
-
-  assert.deepEqual(pkg.failed_checks, failedChecks)
-  // A package that records its failures still verifies: recording them is the
-  // honest outcome, not a defect in the export.
-  assert.equal(verifyResearchPackage(pkg).valid, true)
+  const verification = verifyResearchPackage(pkg)
+  assert.equal(verification.levels.hash_matches, true)
+  assert.equal(verification.levels.record_integrity_valid, false)
+  assert.deepEqual(pathsFor(verification.findings, "STUDY_RECORD_NOT_HASHABLE"), [
+    "$.reviews[0].content_hash",
+  ])
 })
 
-test("a package with no failed checks says so with an empty list, not an absent field", () => {
-  const pkg = buildOrThrow()
-  assert.deepEqual(pkg.failed_checks, [])
-  assert.ok(Object.prototype.hasOwnProperty.call(pkg, "failed_checks"))
+// ------------------------------------------------------------------ ceilings
+
+test("a package past a declared ceiling is refused before anything walks it", () => {
+  const pkg = clone(buildOrThrow())
+  // The ceiling is checked from the record as written and before the schema, so
+  // this does not have to be a well-formed package to be refused as too large.
+  pkg.nodes = new Array(5001).fill(pkg.nodes[0])
+
+  const verification = verifyResearchPackage(pkg)
+  assert.equal(verification.status, "REFUSED")
+  assert.equal(verification.levels.schema_valid, false)
+  assert.deepEqual(pathsFor(verification.findings, "PACKAGE_LIMIT_EXCEEDED"), ["$.nodes"])
+})
+
+test("a package built to be deep is refused by the nesting ceiling", () => {
+  const pkg = clone(buildOrThrow())
+  let nest = {}
+  const root = nest
+  for (let depth = 0; depth < 40; depth += 1) {
+    nest.child = {}
+    nest = nest.child
+  }
+  pkg.limitations = [root]
+
+  const verification = verifyResearchPackage(pkg)
+  assert.equal(verification.status, "REFUSED")
+  assert.deepEqual(pathsFor(verification.findings, "PACKAGE_LIMIT_EXCEEDED"), ["$"])
 })
 
 // ------------------------------------------------------------------ round trip
@@ -640,45 +1306,39 @@ test("the package round-trips through JSON and keeps its schema and interface in
   const roundTripped = ResearchPackageSchema.parse(clone(pkg))
 
   assert.deepEqual(roundTripped, pkg)
-  assert.equal(verifyResearchPackage(roundTripped).valid, true)
+  assert.equal(verifyResearchPackage(roundTripped).status, "STRUCTURE_VERIFIED")
 
   // The field list is asserted rather than inferred, so a field added to the
   // hand-written interface and forgotten in the schema -- or the reverse -- is a
   // failing test rather than a key that silently never survives a parse.
   assert.deepEqual(Object.keys(roundTripped).sort(), [
-    "assumption_rows",
     "bundle_refs",
+    "check_ledger",
     "claim_evidence_map",
     "created_at",
-    "csv",
+    "distribution",
     "edges",
     "environment",
-    "failed_checks",
     "figures",
     "hash_rules_id",
     "is_demo",
     "limitations",
-    "methods",
     "nodes",
     "package_kind",
     "plan_ref",
+    "recipe",
     "references",
-    "report_markdown",
+    "report",
     "reproducibility_hash",
-    "reproduction_command",
-    "result_rows",
+    "reproductions",
+    "reviews",
     "schema_version",
     "study_ref",
+    "tables",
   ])
 })
 
 // A timestamp is receipt evidence, and the two digests answer differently about it.
-//
-// Under the retired rules `created_at` was dropped by name, everywhere and for every purpose, so
-// one digest said "the same package" and `verifyResearchPackage` reported it as "the file was not
-// edited" -- two claims from one number, and the second was false. Classified, the same timestamp
-// is out of the semantic digest, where it belongs, and in the record digest, which is the one a
-// package's `reproducibility_hash` is.
 test("a timestamp is receipt evidence: outside the semantic digest, inside the record one", () => {
   const withoutTimestamp = buildOrThrow()
   const withTimestamp = buildOrThrow({ createdAt: "2026-06-30T12:00:00.000Z" })
@@ -694,67 +1354,71 @@ test("a timestamp is receipt evidence: outside the semantic digest, inside the r
     withoutTimestamp.reproducibility_hash,
     "and they are two different files, which is what the record digest answers",
   )
-  assert.equal(verifyResearchPackage(withTimestamp).valid, true)
-  assert.equal(verifyResearchPackage(withoutTimestamp).valid, true)
+  assert.equal(verifyResearchPackage(withTimestamp).status, "STRUCTURE_VERIFIED")
 })
 
-test("a candidate that is not a research package is refused with named problems", () => {
+test("a check ledger is receipt evidence, and so is a review", () => {
+  // The class change from `failed_checks`, which was semantic: re-running the
+  // same checks tomorrow produces the same science and a different ledger.
+  const first = buildOrThrow()
+  const second = buildOrThrow({
+    checkLedger: [ledgerEntry({ observed_at: "2027-01-01T00:00:00Z" })],
+  })
+
+  assert.equal(
+    semanticHash("research_package", first),
+    semanticHash("research_package", second),
+    "when a check ran is not part of what the study says",
+  )
+  assert.notEqual(
+    recordHash("research_package", first),
+    recordHash("research_package", second),
+    "and the record digest still covers it",
+  )
+})
+
+test("a candidate that is not a research package is refused with named findings", () => {
   const verification = verifyResearchPackage({ package_kind: "NOT_A_PACKAGE" })
 
-  assert.equal(verification.valid, false)
-  assert.equal(verification.hash_matches, false)
-  assert.equal(verification.claims_resolve, false)
-  assert.equal(verification.graph_valid, false)
-  assert.ok(verification.problems.length > 0)
+  assert.equal(verification.status, "REFUSED")
+  assert.equal(verification.levels.schema_valid, false)
+  assert.equal(verification.levels.canonicalizable, false)
+  assert.ok(verification.findings.length > 0)
+  assert.equal(verifyResearchPackage(null).status, "REFUSED")
 })
 
-// A package's digest is over the file, and there is no longer a second reading of the file.
-//
-// `CitationSchema.authors` carries `.default([])`, and that was the last default any study record
-// hashed. The two halves of this module disagreed because of it: `buildResearchPackage` parsed
-// its inputs and then hashed, so it hashed a list the caller never wrote, while
-// `verifyResearchPackage` hashed what it read. One logical citation therefore had two content
-// addresses depending on which side of the parse you stood, and `verify_research_package` in
-// Python -- which fills in nothing at all -- agreed with whichever of them had happened to write
-// the file. `StudyCitationSchema` requires the list instead, so the build path and the verify
-// path address one record.
+// A package's digest is over the file, and there is no second reading of the file.
 test("one record has one digest through the build path and the verify path alike", () => {
   const pkg = buildOrThrow()
   assert.deepEqual(pkg.references[0].authors, [], "the builder writes what it hashed")
   assert.deepEqual(pkg.environment.packages, [])
 
-  // The two paths, asked the same question about the same bytes.
   const asWritten = JSON.parse(JSON.stringify(pkg))
   const built = pkg.reproducibility_hash
   const verified = verifyResearchPackage(asWritten)
   assert.equal(verified.expected_hash, built, "the verifier recomputes the digest the builder wrote")
   assert.deepEqual(verified.problems, [])
-  assert.equal(verified.valid, true)
 
-  // And parsing the file changes nothing about it, which is the property that makes those two the
-  // same digest: no schema in this family materialises a field at parse time any more.
+  // And parsing the file changes nothing about it, which is the property that
+  // makes those two the same digest: no schema in this family materialises a
+  // field at parse time.
   const parsed = ResearchPackageSchema.parse(asWritten)
   assert.deepEqual(parsed, asWritten, "the parse must not rewrite its own subject")
   assert.equal(studySelfHash("research_package", parsed), built)
 
-  // A file that omits the list is refused rather than filled in. Previously it parsed, gained an
-  // empty array nobody wrote, and was reported valid against a digest of a record it was not.
   const omitted = clone(pkg)
   delete omitted.references[0].authors
   assert.equal(ResearchPackageSchema.safeParse(omitted).success, false)
   const stale = verifyResearchPackage(omitted)
-  assert.equal(stale.valid, false)
+  assert.equal(stale.status, "REFUSED")
   assert.equal(
-    stale.problems.some((problem) => problem.includes("references.0.authors")),
+    stale.findings.some((item) => item.path.includes("references[0].authors")),
     true,
     stale.problems.join(" "),
   )
 })
 
-// An environment recording a dependency named `id` was dropped before hashing, and two packages
-// differing only there were content-addressed identically. The map that made that possible is
-// gone -- `StudyEnvironment` puts the dependency name in a declared field -- so the shape is now
-// refused by the schema rather than by the hashing walk, which is a refusal one level earlier.
+// An environment recording a dependency named `id` was dropped before hashing.
 test("an environment shaped as a map of run-time keys is no longer a package at all", () => {
   assert.throws(
     () =>
@@ -765,15 +1429,8 @@ test("an environment shaped as a map of run-time keys is no longer a package at 
   )
 })
 
-// A key hidden inside a `Quantity` envelope, refused twice over -- and refused now for a reason
-// that does not depend on what the key is called.
-//
-// The name used to be the whole of it: `id` was on a global exclusion list, so a key called that
-// vanished from the digest at every depth, and a `Quantity` envelope was treated as an embedded
-// record whose own top level the exclusions did not bite at. Two nodes differing only there were
-// content-addressed identically. The projection asks a different question -- *is this key
-// declared* rather than *is this key called something suspicious* -- so the same forgery is
-// refused, and so is `{ smuggled: "x" }`, which no exclusion list would ever have named.
+// A key hidden inside a `Quantity` envelope, refused for a reason that does not
+// depend on what the key is called.
 test("a package whose graph hides an undeclared key is refused, not hashed", () => {
   for (const key of ["id", "slug", "smuggled", "__proto__"]) {
     const forged = clone(buildOrThrow())
@@ -785,11 +1442,8 @@ test("a package whose graph hides an undeclared key is refused, not hashed", () 
       configurable: true,
     })
 
-    const verification = verifyResearchPackage(forged)
-    assert.equal(verification.valid, false, `${key} must not pass inside a Quantity`)
+    assert.notEqual(verifyResearchPackage(forged).status, "STRUCTURE_VERIFIED", key)
 
-    // The backstop, on the same node with no schema in the way: the digest is refused rather than
-    // taken over contents a reader cannot see in it.
     assert.throws(
       () => studySelfHash("evidence_node", node),
       (error) => error.code === "UNDECLARED_FIELD" && error.path === `quantity.${key}`,
@@ -797,16 +1451,11 @@ test("a package whose graph hides an undeclared key is refused, not hashed", () 
     )
   }
 
-  // And the mirror image, which is what makes the rule a classification rather than a denylist:
-  // `created_at` is a declared field of a `Quantity` envelope, so it is not smuggled at all. It
-  // is `RECORD_ONLY`, so rebuilding an envelope around the same measurement does not read as new
-  // science, and the record digest still covers it.
+  // And the mirror image, which is what makes the rule a classification rather
+  // than a denylist: `created_at` is a declared field of a `Quantity` envelope.
   const honest = clone(buildOrThrow())
   const node = honest.nodes.find((candidate) => candidate.quantity !== null)
-  const rebuilt = {
-    ...node,
-    quantity: { ...node.quantity, created_at: "2027-01-01T00:00:00.000Z" },
-  }
+  const rebuilt = { ...node, quantity: { ...node.quantity, created_at: "2027-01-01T00:00:00.000Z" } }
   assert.equal(
     semanticHash("evidence_node", rebuilt),
     semanticHash("evidence_node", node),
@@ -815,34 +1464,27 @@ test("a package whose graph hides an undeclared key is refused, not hashed", () 
   assert.notEqual(recordHash("evidence_node", rebuilt), recordHash("evidence_node", node))
 })
 
-// The same key, caught at the build boundary, where the parts a builder passes through
-// unvalidated meet the record it assembles. A refusal is the ordinary outcome here, not an
-// exception a caller has to catch.
-//
-// One code rather than two: `STUDY_EXCLUDED_KEY_NESTED` and `STUDY_VALUE_NOT_REPRESENTABLE`
-// both described the retired rules rather than the failure, and there is no key the digest
-// drops any more. Which refusal fired, and at which path, is in the message.
-test("a row hiding a key nobody declared is refused before the package is assembled", () => {
-  const built = buildResearchPackage(
-    packageInput({
-      assumptionRows: [{ label: "Physical error rate", node_hash: inputNode.content_hash, id: "smuggled" }],
-    }),
-  )
+test("a table cell hiding a key nobody declared is refused before the package is assembled", () => {
+  const smuggled = resultsTable()
+  smuggled.rows[0].cells[0] = { column_id: "scenario", text: "Base", node_hash: null, id: "smuggled" }
+  const built = buildResearchPackage(packageInput({ tables: [smuggled] }))
+
   assert.equal(built.ok, false)
-  assert.deepEqual(codesOf(built.refusals), ["STUDY_RECORD_NOT_HASHABLE"])
-  assert.match(built.refusals[0].message, /^UNDECLARED_FIELD: /)
-  assert.equal(built.refusals[0].message.includes("assumption_rows[0].id"), true, built.refusals[0].message)
+  assert.deepEqual(codesOf(built.findings), ["STUDY_RECORD_NOT_HASHABLE"])
+  assert.match(built.findings[0].message, /^research_package: UNDECLARED_FIELD: /)
+  assert.equal(
+    built.findings[0].message.includes("tables[0].rows[0].cells[0].id"),
+    true,
+    built.findings[0].message,
+  )
 })
 
-// Undeclared keys are refused rather than stripped, so the two languages give one answer for one
-// file. Zod's default is to strip, while the generated JSON Schema has always said
-// `additionalProperties: false`: a package carrying `owner_username` parsed here, kept its hash --
-// the key is excluded from the digest -- and was reported `valid: true, problems: []`, while
-// `validate_study_record` in Python raised "Additional properties are not allowed".
+// Undeclared keys are refused rather than stripped, so the two languages give
+// one answer for one file.
 test("a package carrying a key no schema declares is refused, not stripped", () => {
   for (const undeclared of [{ owner_username: "somebody-else" }, { smuggled_root_key: "not declared" }]) {
     const verification = verifyResearchPackage({ ...buildOrThrow(), ...undeclared })
-    assert.equal(verification.valid, false, `${Object.keys(undeclared)[0]} must not pass as a package`)
+    assert.equal(verification.status, "REFUSED", `${Object.keys(undeclared)[0]} must not pass as a package`)
     assert.equal(
       verification.problems.some((problem) => /[Uu]nrecognized key/.test(problem)),
       true,
@@ -850,9 +1492,54 @@ test("a package carrying a key no schema declares is refused, not stripped", () 
     )
   }
 
-  // And one level down, in the citation the shared contracts declare: `.strict()` derives a
-  // stricter reading for this family without moving the schema every legacy record uses.
   const withStrayCitationKey = clone(buildOrThrow())
   withStrayCitationKey.references[0].publisher = "not a citation field"
-  assert.equal(verifyResearchPackage(withStrayCitationKey).valid, false)
+  assert.equal(verifyResearchPackage(withStrayCitationKey).status, "REFUSED")
+})
+
+// ------------------------------------------------ the cross-language contract
+
+// The vectors are checked in place here and reproduced from the same packages by
+// `python/tests/test_study_package.py`. What is pinned is a code and a JSON path
+// per defect: a caller branches on the code and a reader follows the path, and
+// those two are what the two implementations owe each other. Messages are
+// written for people and are deliberately not compared -- a test that compared
+// English would fail on an improved sentence and pass on a wrong path.
+test("the committed verification vectors are the ones this build produces", () => {
+  const vectors = JSON.parse(
+    readFileSync(new URL("../fixtures/study/verification-vectors.json", import.meta.url), "utf8"),
+  )
+  assert.equal(vectors.hash_rules_id, STUDY_HASH_RULES_ID)
+  assert.ok(vectors.cases.length >= 10, `${vectors.cases.length} cases is not a corpus`)
+  // A passing case is required: a vector set in which every package is broken
+  // cannot tell a strict verifier from one that refuses everything.
+  assert.ok(vectors.cases.some((entry) => entry.findings.length === 0))
+
+  const collectionPaths = new Set(["$.nodes", "$.edges"])
+  const sortFindings = (findings) =>
+    findings
+      .map((item) => ({ code: item.code, path: item.path }))
+      .sort((left, right) =>
+        left.code === right.code
+          ? left.path.localeCompare(right.path)
+          : left.code.localeCompare(right.code),
+      )
+
+  for (const entry of vectors.cases) {
+    const verification = verifyResearchPackage(entry.package)
+    assert.equal(verification.status, entry.status, entry.label)
+    for (const [level, expected] of Object.entries(entry.levels)) {
+      assert.equal(verification.levels[level], expected, `${entry.label}.${level}`)
+    }
+    assert.deepEqual(
+      sortFindings(verification.findings.filter((item) => !collectionPaths.has(item.path))),
+      entry.findings,
+      entry.label,
+    )
+    assert.deepEqual(
+      sortFindings(verification.findings.filter((item) => collectionPaths.has(item.path))),
+      entry.typescript_only_findings,
+      entry.label,
+    )
+  }
 })

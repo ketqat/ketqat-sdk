@@ -109,11 +109,21 @@ Three more differences from the versioned registry, all deliberate:
   against the other implementation.
 
 Which of the four digests a record kind writes into its own hash field is declared per kind,
-in the same tables. `Study` and `StudyTask` carry denormalized state that moves under them —
-a status, the pointers at the newest revisions — so their `content_hash` is the *semantic*
-digest and does not move when that state does. Every other kind is immutable once written, so
-its self-hash is the *record* digest and answers "was this file edited after it was written",
-which is the question its verifier actually reports on.
+in the same tables. `Study` carries denormalized state that moves under it — a status, the
+pointers at the newest revisions — so its `content_hash` is the *semantic* digest and does not
+move when that state does. Every other kind is immutable once written, so its self-hash is the
+*record* digest and answers "was this file edited after it was written", which is the question
+its verifier actually reports on.
+
+`Study` is the only exception, and it used not to be. `StudyTask` mixed an authorization with a
+status the execution system overwrote, so its digest could only stand still by excluding the
+status — which left the record with no digest that could answer whether it had been edited.
+Splitting it into `StudyTaskAuthorization`, `ExecutionJob`, `TaskOutcome` and `ExecutionCapsule`
+removed the mixture rather than working around it: the three content-addressed pieces are
+immutable and take the record digest, and the one piece that genuinely moves is not
+content-addressed at all. `ExecutionJob` is declared in the registry as a control-plane kind, so
+hashing it is refused with `NOT_CONTENT_ADDRESSED` rather than with "unknown kind" — the two
+answers send a reader to different places.
 
 **`study-v1` changed once, before publication, and that is why it kept its name.** Nothing has
 ever been released under it — npm 404, PyPI 404, no GitHub releases, no study surface in the

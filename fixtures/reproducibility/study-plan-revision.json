@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "hash_rules_id": "study-v1",
-  "study_ref": "3f1c0a8b6d5e4f2a9c7b8e0d1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+  "study_ref": "3f1c0a8b-6d5e-4f2a-9c7b-8e0d1a2b3c4d",
   "specification_ref": {
     "revision_hash": "9a8b7c6d5e4f30211f2e3d4c5b6a798887766554433221100ffeeddccbbaa998",
     "revision": 2
@@ -35,12 +35,24 @@
   "pinned_versions": {
     "adapter": null,
     "model": {
-      "name": "ketqat-resource-intelligence",
-      "version": "0.1.0"
+      "package_name": "ketqat-resource-intelligence",
+      "package_version": "0.1.0",
+      "artifact_digest": null,
+      "source_commit": "4f2a9c7b8e0d1a2b3c4d5e6f4f2a9c7b8e0d1a2b",
+      "container_digest": null,
+      "model_snapshot_hash": "7c6d5e4f30211f2e3d4c5b6a7c6d5e4f30211f2e3d4c5b6a7c6d5e4f30211f2e",
+      "schema_hash": "3d4c5b6a798887766554433d4c5b6a798887766554433d4c5b6a798887766554",
+      "adapter_configuration_hash": null
     },
     "engine": {
-      "name": "ketqat-engine",
-      "version": "0.3.0"
+      "package_name": "ketqat-engine",
+      "package_version": "0.3.0",
+      "artifact_digest": "sha256:1f2e3d4c5b6a79888776651f2e3d4c5b6a79888776651f2e3d4c5b6a79888776",
+      "source_commit": "90aabbccddeeff001122334490aabbccddeeff00",
+      "container_digest": "sha256:5b6a7988877665544332215b6a7988877665544332215b6a7988877665544332",
+      "model_snapshot_hash": null,
+      "schema_hash": null,
+      "adapter_configuration_hash": null
     }
   },
   "expected_runtime": {
@@ -79,19 +91,104 @@
     ]
   },
   "max_credits": 2500,
-  "data_handling": "Inputs and outputs stay in the customer's tenancy; only hashes leave it.",
+  "data_handling": {
+    "visibility": "PRIVATE",
+    "retention": {
+      "kind": "DELETE_AFTER_DAYS",
+      "days": 90
+    },
+    "third_party_transfer": "NONE",
+    "model_training_use": "FORBIDDEN",
+    "public_dataset_opt_in": false,
+    "allowed_egress": [
+      {
+        "kind": "HASHES_ONLY",
+        "host": null
+      }
+    ],
+    "export_permission": "HASHES_ONLY",
+    "deletion_policy": {
+      "kind": "ON_REQUEST",
+      "within_days": 7
+    },
+    "secret_handling": "PER_JOB_NEVER_PERSISTED",
+    "pii_handling": "NONE_PRESENT",
+    "policy_version": "1.0"
+  },
   "reproducibility_level": "STATISTICAL",
   "success_criteria": [
-    "A physical-qubit count for each pinned scenario, with its assumptions stated.",
-    "A stated condition under which the quantum workflow would beat the measured baseline."
+    {
+      "criterion_id": "physical_qubits_within_ceiling",
+      "metric_ref": "scenario.total_physical_qubits",
+      "comparator": "AT_MOST",
+      "threshold": {
+        "dimension": "QUBITS",
+        "value": 4200000,
+        "exact_value": null,
+        "unit": "physical qubits"
+      },
+      "required_evidence": [
+        "MODELLED"
+      ],
+      "status": "NOT_RUN",
+      "explanation": "A physical-qubit count for each pinned scenario, with its assumptions stated."
+    },
+    {
+      "criterion_id": "sampling_budget_respected",
+      "metric_ref": "run.shots",
+      "comparator": "AT_MOST",
+      "threshold": {
+        "dimension": "SHOTS",
+        "value": null,
+        "exact_value": "20000000000000000",
+        "unit": "shots"
+      },
+      "required_evidence": [
+        "MEASURED"
+      ],
+      "status": "NOT_RUN",
+      "explanation": "A shot budget past 2^53, written as digits so both languages read the same number."
+    },
+    {
+      "criterion_id": "advantage_condition_stated",
+      "metric_ref": "advantage.crossover_problem_size",
+      "comparator": "EXISTS",
+      "threshold": null,
+      "required_evidence": [
+        "DERIVED"
+      ],
+      "status": "NOT_RUN",
+      "explanation": "A stated condition under which the quantum workflow would beat the measured baseline."
+    }
   ],
   "refusal_criteria": [
-    "No classical baseline survives review, so no economic comparison can be drawn.",
-    "The estimate is infeasible at every pinned scenario, so there is no condition to state."
+    {
+      "criterion_id": "no_surviving_baseline",
+      "metric_ref": "baseline.surviving",
+      "comparator": "DOES_NOT_EXIST",
+      "threshold": null,
+      "required_evidence": [
+        "MEASURED",
+        "USER_PROVIDED"
+      ],
+      "status": "NOT_RUN",
+      "explanation": "No classical baseline survives review, so no economic comparison can be drawn."
+    },
+    {
+      "criterion_id": "infeasible_at_every_scenario",
+      "metric_ref": "scenario.feasible_anywhere",
+      "comparator": "IS_FALSE",
+      "threshold": null,
+      "required_evidence": [
+        "MODELLED"
+      ],
+      "status": "NOT_RUN",
+      "explanation": "The estimate is infeasible at every pinned scenario, so there is no condition to state."
+    }
   ],
   "execution_limitations": [
     "One QEC scheme is modelled. Other codes are not costed by this plan.",
     "A fixture. It pins the study-v1 projection and float rendering, and describes no real study."
   ],
-  "content_hash": "ec6ecced3974c4cf9be630319c8b00f1309ca9a4e2deb02dfbbee78f0340e03d"
+  "content_hash": "2c0aa708cf6e2b21208525e82a0717490465a97f38e5ea77981336c588a1e9fd"
 }

@@ -14,7 +14,7 @@
         },
         "study_ref": {
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
         },
         "kind": {
           "type": "string",
@@ -24,16 +24,15 @@
             "used_input",
             "supports",
             "contradicts",
-            "supersedes",
-            "reproduces",
-            "reviewed_by"
+            "supersedes"
           ]
         },
         "from_node_hash": {
-          "$ref": "#/definitions/evidence-edge/properties/study_ref"
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
         },
         "to_node_hash": {
-          "$ref": "#/definitions/evidence-edge/properties/study_ref"
+          "$ref": "#/definitions/evidence-edge/properties/from_node_hash"
         },
         "asserted_by": {
           "type": "string",
@@ -48,7 +47,7 @@
           "format": "date-time"
         },
         "content_hash": {
-          "$ref": "#/definitions/evidence-edge/properties/study_ref"
+          "$ref": "#/definitions/evidence-edge/properties/from_node_hash"
         }
       },
       "required": [

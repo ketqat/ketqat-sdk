@@ -50,6 +50,7 @@ SINGLE_RECORDS = [
     ("study_plan_revision", "study-plan-revision.json"),
     ("study_capsule", "study-capsule.json"),
     ("study_capsule_64_bit_integers", "study-capsule-64-bit-integers.json"),
+    ("study_capsule_hardware", "study-capsule-hardware.json"),
     ("study_research_package_as_written", "study-research-package-as-written.json"),
 ]
 
@@ -91,9 +92,13 @@ def test_which_digest_a_kind_writes_into_its_own_field_is_the_same_in_both_langu
         "study_event": "record",
         "problem_specification": "record",
         "study_plan": "record",
-        "study_task": "semantic",
+        "confirmation_receipt": "record",
+        "study_task_authorization": "record",
+        "task_outcome": "record",
         "evidence_node": "record",
         "evidence_edge": "record",
+        "review_record": "record",
+        "reproduction_record": "record",
         "execution_capsule": "record",
         "research_package": "record",
     }
@@ -169,7 +174,16 @@ def test_the_hash_is_over_the_parsed_value_not_the_source_text() -> None:
 def test_the_roles_answer_different_questions_about_the_pinned_capsule() -> None:
     capsule = _fixture("study-capsule.json")
 
-    rerun = {**capsule, "started_at": "2027-06-06T00:00:00.000Z"}
+    # Who ran it, on which job, which attempt and when are receipt evidence, and
+    # they live on the execution receipt rather than on the capsule proper.
+    rerun = {
+        **capsule,
+        "execution_receipt": {
+            **capsule["execution_receipt"],
+            "attempt": 4,
+            "started_at": "2027-06-06T00:00:00.000Z",
+        },
+    }
     assert semantic_hash("execution_capsule", rerun) == semantic_hash("execution_capsule", capsule)
     assert record_hash("execution_capsule", rerun) != record_hash("execution_capsule", capsule)
 
@@ -192,7 +206,10 @@ def test_a_64_bit_seed_and_byte_count_are_carried_as_digits_in_both_languages() 
     """
     capsule = _fixture("study-capsule-64-bit-integers.json")
     assert int(capsule["seed"]) > 2**53
-    assert int(capsule["resource_limits"]["max_memory_bytes"]) > 2**53
+    assert int(capsule["execution"]["resource_limits"]["max_memory_bytes"]) > 2**53
+    # And a byte count on an artifact reference, which is the third place in this
+    # family where an integer routinely outgrows a double.
+    assert int(capsule["outputs"][0]["byte_size"]) > 2**53
     assert study_self_hash("execution_capsule", capsule) == PINS["study_capsule_64_bit_integers"]["self_hash"]
 
     # Two integers one apart, which one double cannot tell apart and the digits can.
@@ -225,6 +242,7 @@ def test_every_fixture_is_read_from_its_raw_bytes_without_a_refusal() -> None:
         "study-plan-revision.json",
         "study-capsule.json",
         "study-capsule-64-bit-integers.json",
+        "study-capsule-hardware.json",
         "study-research-package-as-written.json",
         "study-evidence-graph.json",
         "study-float-edge-cases.json",

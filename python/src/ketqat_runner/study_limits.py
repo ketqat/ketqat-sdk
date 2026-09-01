@@ -52,6 +52,11 @@ STUDY_HASH_REFUSAL_CODES: tuple[str, ...] = (
     "DUPLICATE_PROPERTY",
     # Projection and preimage.
     "UNKNOWN_RECORD_KIND",
+    # A kind this build knows and deliberately does not hash. Separate from
+    # ``UNKNOWN_RECORD_KIND`` because the two send a reader to different places:
+    # one says nobody declared this, the other says we declared it as
+    # control-plane state whose whole point is that it changes.
+    "NOT_CONTENT_ADDRESSED",
     "UNKNOWN_HASH_RULES_ID",
     "MISSING_HEADER_COMPONENT",
     "INVALID_HEADER_COMPONENT",

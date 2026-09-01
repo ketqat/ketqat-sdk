@@ -14,13 +14,14 @@
         },
         "study_ref": {
           "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
         },
         "specification_ref": {
           "type": "object",
           "properties": {
             "revision_hash": {
-              "$ref": "#/definitions/study-plan/properties/study_ref"
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
             },
             "revision": {
               "type": "integer",
@@ -40,7 +41,7 @@
         "supersedes": {
           "anyOf": [
             {
-              "$ref": "#/definitions/study-plan/properties/study_ref"
+              "$ref": "#/definitions/study-plan/properties/specification_ref/properties/revision_hash"
             },
             {
               "type": "null"
@@ -53,7 +54,7 @@
             "type": "object",
             "properties": {
               "baseline_ref": {
-                "$ref": "#/definitions/study-plan/properties/study_ref"
+                "$ref": "#/definitions/study-plan/properties/specification_ref/properties/revision_hash"
               },
               "source_class": {
                 "type": "string",
@@ -97,7 +98,7 @@
               "workload_ref": {
                 "anyOf": [
                   {
-                    "$ref": "#/definitions/study-plan/properties/study_ref"
+                    "$ref": "#/definitions/study-plan/properties/specification_ref/properties/revision_hash"
                   },
                   {
                     "type": "null"
@@ -121,7 +122,7 @@
         "scenario_refs": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/study-plan/properties/study_ref"
+            "$ref": "#/definitions/study-plan/properties/specification_ref/properties/revision_hash"
           },
           "minItems": 1
         },
@@ -133,18 +134,87 @@
                 {
                   "type": "object",
                   "properties": {
-                    "name": {
+                    "package_name": {
                       "type": "string",
                       "minLength": 1
                     },
-                    "version": {
+                    "package_version": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "artifact_digest": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^sha256:[0-9a-f]{64}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "source_commit": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9a-f]{40}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "container_digest": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^sha256:[0-9a-f]{64}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "model_snapshot_hash": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/definitions/study-plan/properties/specification_ref/properties/revision_hash"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "schema_hash": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/definitions/study-plan/properties/specification_ref/properties/revision_hash"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "adapter_configuration_hash": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/definitions/study-plan/properties/specification_ref/properties/revision_hash"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "required": [
-                    "name",
-                    "version"
+                    "package_name",
+                    "package_version",
+                    "artifact_digest",
+                    "source_commit",
+                    "container_digest",
+                    "model_snapshot_hash",
+                    "schema_hash",
+                    "adapter_configuration_hash"
                   ],
                   "additionalProperties": false
                 },
@@ -178,7 +248,15 @@
             },
             "unit": {
               "type": "string",
-              "minLength": 1
+              "enum": [
+                "nanoseconds",
+                "microseconds",
+                "milliseconds",
+                "seconds",
+                "minutes",
+                "hours",
+                "days"
+              ]
             },
             "bound": {
               "type": "string",
@@ -292,15 +370,234 @@
           "additionalProperties": false
         },
         "expected_credits": {
-          "$ref": "#/definitions/study-plan/properties/expected_runtime"
+          "type": "object",
+          "properties": {
+            "value": {
+              "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/value"
+            },
+            "unit": {
+              "type": "string",
+              "enum": [
+                "credits"
+              ]
+            },
+            "bound": {
+              "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/bound"
+            },
+            "evidence": {
+              "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/evidence"
+            },
+            "source": {
+              "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/source"
+            },
+            "model": {
+              "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/model"
+            },
+            "model_version": {
+              "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/model_version"
+            },
+            "assumptions": {
+              "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/assumptions"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/created_at"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/schema_version"
+            },
+            "uncertainty": {
+              "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/uncertainty"
+            },
+            "limitations": {
+              "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/limitations"
+            }
+          },
+          "required": [
+            "value",
+            "unit",
+            "bound",
+            "evidence",
+            "source",
+            "model",
+            "model_version",
+            "assumptions",
+            "schema_version",
+            "limitations"
+          ],
+          "additionalProperties": false
         },
         "max_credits": {
           "type": "number",
           "exclusiveMinimum": 0
         },
         "data_handling": {
-          "type": "string",
-          "minLength": 1
+          "type": "object",
+          "properties": {
+            "visibility": {
+              "type": "string",
+              "enum": [
+                "PRIVATE",
+                "ORGANISATION",
+                "PUBLIC"
+              ]
+            },
+            "retention": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DELETE_AFTER_DAYS",
+                    "RETAIN_WHILE_STUDY_LIVES",
+                    "RETAIN_INDEFINITELY"
+                  ]
+                },
+                "days": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "days"
+              ],
+              "additionalProperties": false
+            },
+            "third_party_transfer": {
+              "type": "string",
+              "enum": [
+                "NONE",
+                "QUANTUM_PROVIDER_ONLY",
+                "NAMED_PROCESSORS"
+              ]
+            },
+            "model_training_use": {
+              "type": "string",
+              "enum": [
+                "FORBIDDEN",
+                "PERMITTED_ON_AGGREGATES",
+                "PERMITTED"
+              ]
+            },
+            "public_dataset_opt_in": {
+              "type": "boolean"
+            },
+            "allowed_egress": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "HASHES_ONLY",
+                      "QUANTUM_PROVIDER_API",
+                      "NAMED_HOST"
+                    ]
+                  },
+                  "host": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "host"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1
+            },
+            "export_permission": {
+              "type": "string",
+              "enum": [
+                "NONE",
+                "HASHES_ONLY",
+                "SUMMARY",
+                "FULL"
+              ]
+            },
+            "deletion_policy": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "ON_REQUEST",
+                    "ON_SCHEDULE",
+                    "NOT_OFFERED"
+                  ]
+                },
+                "within_days": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "within_days"
+              ],
+              "additionalProperties": false
+            },
+            "secret_handling": {
+              "type": "string",
+              "enum": [
+                "NONE_PRESENT",
+                "PER_JOB_NEVER_PERSISTED",
+                "REFERENCED_BY_VAULT"
+              ]
+            },
+            "pii_handling": {
+              "type": "string",
+              "enum": [
+                "NONE_PRESENT",
+                "PSEUDONYMISED",
+                "PRESENT_RESTRICTED"
+              ]
+            },
+            "policy_version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "visibility",
+            "retention",
+            "third_party_transfer",
+            "model_training_use",
+            "public_dataset_opt_in",
+            "allowed_egress",
+            "export_permission",
+            "deletion_policy",
+            "secret_handling",
+            "pii_handling",
+            "policy_version"
+          ],
+          "additionalProperties": false
         },
         "reproducibility_level": {
           "type": "string",
@@ -313,16 +610,436 @@
         "success_criteria": {
           "type": "array",
           "items": {
-            "type": "string",
-            "minLength": 1
+            "type": "object",
+            "properties": {
+              "criterion_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,63}$"
+              },
+              "metric_ref": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,63}(?:\\.[a-z][a-z0-9_]{0,63}){0,7}$"
+              },
+              "comparator": {
+                "type": "string",
+                "enum": [
+                  "LESS_THAN",
+                  "AT_MOST",
+                  "EQUAL",
+                  "AT_LEAST",
+                  "GREATER_THAN",
+                  "EXISTS",
+                  "DOES_NOT_EXIST",
+                  "IS_TRUE",
+                  "IS_FALSE"
+                ]
+              },
+              "threshold": {
+                "anyOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "dimension": {
+                            "type": "string",
+                            "const": "TIME"
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/uncertainty/properties/low/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "exact_value": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^(?:0|-?[1-9][0-9]{0,63})$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "nanoseconds",
+                              "microseconds",
+                              "milliseconds",
+                              "seconds",
+                              "minutes",
+                              "hours",
+                              "days"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "dimension",
+                          "value",
+                          "exact_value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "dimension": {
+                            "type": "string",
+                            "const": "MONEY"
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/uncertainty/properties/low/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "exact_value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/success_criteria/items/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "USD",
+                              "EUR",
+                              "GBP",
+                              "JPY",
+                              "CHF",
+                              "CAD",
+                              "AUD"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "dimension",
+                          "value",
+                          "exact_value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "dimension": {
+                            "type": "string",
+                            "const": "CREDITS"
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/uncertainty/properties/low/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "exact_value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/success_criteria/items/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "credits"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "dimension",
+                          "value",
+                          "exact_value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "dimension": {
+                            "type": "string",
+                            "const": "MEMORY"
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/uncertainty/properties/low/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "exact_value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/success_criteria/items/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "bytes",
+                              "kibibytes",
+                              "mebibytes",
+                              "gibibytes",
+                              "tebibytes"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "dimension",
+                          "value",
+                          "exact_value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "dimension": {
+                            "type": "string",
+                            "const": "SHOTS"
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/uncertainty/properties/low/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "exact_value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/success_criteria/items/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "shots"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "dimension",
+                          "value",
+                          "exact_value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "dimension": {
+                            "type": "string",
+                            "const": "QUBITS"
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/uncertainty/properties/low/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "exact_value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/success_criteria/items/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "qubits",
+                              "physical qubits",
+                              "logical qubits"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "dimension",
+                          "value",
+                          "exact_value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "dimension": {
+                            "type": "string",
+                            "const": "ACCURACY"
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/uncertainty/properties/low/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "exact_value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/success_criteria/items/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "relative error",
+                              "percent",
+                              "probability",
+                              "ratio"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "dimension",
+                          "value",
+                          "exact_value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "dimension": {
+                            "type": "string",
+                            "const": "PROBLEM_SIZE"
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/uncertainty/properties/low/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "exact_value": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/study-plan/properties/success_criteria/items/properties/threshold/anyOf/0/anyOf/0/properties/exact_value/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "unit": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^(?!(?:AUD|CAD|CHF|EUR|GBP|JPY|USD|bytes|credits|days|gibibytes|hours|kibibytes|mebibytes|microseconds|milliseconds|minutes|nanoseconds|percent|probability|ratio|relative error|seconds|tebibytes)$).+$"
+                          }
+                        },
+                        "required": [
+                          "dimension",
+                          "value",
+                          "exact_value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "required_evidence": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/evidence"
+                },
+                "minItems": 1
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PASS",
+                  "FAIL",
+                  "NOT_RUN",
+                  "INCONCLUSIVE"
+                ]
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "criterion_id",
+              "metric_ref",
+              "comparator",
+              "threshold",
+              "required_evidence",
+              "status",
+              "explanation"
+            ],
+            "additionalProperties": false
           },
           "minItems": 1
         },
         "refusal_criteria": {
           "type": "array",
           "items": {
-            "type": "string",
-            "minLength": 1
+            "$ref": "#/definitions/study-plan/properties/success_criteria/items"
           },
           "minItems": 1
         },
@@ -337,7 +1054,7 @@
           "$ref": "#/definitions/study-plan/properties/expected_runtime/properties/created_at"
         },
         "content_hash": {
-          "$ref": "#/definitions/study-plan/properties/study_ref"
+          "$ref": "#/definitions/study-plan/properties/specification_ref/properties/revision_hash"
         }
       },
       "required": [

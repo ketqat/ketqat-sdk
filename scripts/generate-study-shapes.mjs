@@ -25,7 +25,9 @@ import { fileURLToPath } from "node:url"
 
 import { STUDY_HASH_LIMITS } from "../dist/study/limits.js"
 import { STUDY_FIELD_CLASSES, STUDY_PURPOSE_FIELD_CLASSES } from "../dist/study/projection.js"
-import { STUDY_RECORD_KINDS } from "../dist/study/registry.js"
+import { STUDY_CONTROL_PLANE_KINDS, STUDY_RECORD_KINDS } from "../dist/study/registry.js"
+import { EVIDENCE_EDGE_MATRIX, EVIDENCE_GROUND_RULES } from "../dist/study/evidence.js"
+import { STUDY_PACKAGE_LIMITS } from "../dist/study/package-limits.js"
 import { STUDY_HASH_DOMAIN, STUDY_HASH_RULES_ID } from "../dist/study/rules.js"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
@@ -62,6 +64,31 @@ const document = {
     nested_classes: [...entry.nested_classes],
   })),
   limits: { ...STUDY_HASH_LIMITS },
+  // The kinds this build knows and deliberately does not hash. Emitted rather
+  // than restated in Python for the same reason the shapes are: "we do not hash
+  // this" and "we have never heard of this" are different answers, and a second
+  // hand-written list is a second thing that can drift into giving the wrong one.
+  control_plane_kinds: STUDY_CONTROL_PLANE_KINDS.map((entry) => ({
+    record_kind: entry.record_kind,
+    address_instead: entry.address_instead,
+    why: entry.why,
+  })),
+  package_limits: { ...STUDY_PACKAGE_LIMITS },
+  // The graph's own rules, emitted for the reason the shapes are: a structural
+  // check is not science, so both languages may make it -- and a second,
+  // hand-written copy of a fifty-seven row matrix in Python would be a second
+  // thing that can drift, with nothing watching it. Which triples mean something
+  // and which node kinds end a supporting chain are decisions this repository
+  // makes once.
+  evidence_ground_rules: EVIDENCE_GROUND_RULES.map((rule) => ({
+    node_kind: rule.node_kind,
+    grounds: rule.grounds,
+  })),
+  evidence_edge_matrix: EVIDENCE_EDGE_MATRIX.map((rule) => ({
+    from_kind: rule.from_kind,
+    edge_kind: rule.edge_kind,
+    to_kind: rule.to_kind,
+  })),
   record_kinds: STUDY_RECORD_KINDS.map((entry) => ({
     record_kind: entry.record_kind,
     self_hash_field: entry.self_hash_field,

@@ -2,21 +2,142 @@
   "schema_version": "1.0",
   "hash_rules_id": "study-v1",
   "package_kind": "KETQAT_RESEARCH_PACKAGE",
-  "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+  "distribution": "ONLINE",
+  "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
   "plan_ref": {
     "revision_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
     "revision": 2
   },
-  "report_markdown": "# Shor-2048 feasibility\n\nOne claim, one number, one source.",
-  "methods": "Resource estimation under the base scenario; no device was run.",
-  "assumption_rows": [],
-  "result_rows": [
+  "report": {
+    "sections": [
+      {
+        "section_id": "findings",
+        "title": "Findings",
+        "segments": [
+          {
+            "kind": "PROSE",
+            "level": null,
+            "text": "Under the base scenario the workload needs",
+            "node_hash": null,
+            "citation_index": null,
+            "limitation_index": null,
+            "table_id": null,
+            "figure_id": null
+          },
+          {
+            "kind": "QUANTITY_REF",
+            "level": null,
+            "text": null,
+            "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+            "citation_index": null,
+            "limitation_index": null,
+            "table_id": null,
+            "figure_id": null
+          },
+          {
+            "kind": "PROSE",
+            "level": null,
+            "text": "before any allowance for factory idling.",
+            "node_hash": null,
+            "citation_index": null,
+            "limitation_index": null,
+            "table_id": null,
+            "figure_id": null
+          },
+          {
+            "kind": "CLAIM_REF",
+            "level": null,
+            "text": null,
+            "node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
+            "citation_index": null,
+            "limitation_index": null,
+            "table_id": null,
+            "figure_id": null
+          },
+          {
+            "kind": "CITATION_REF",
+            "level": null,
+            "text": null,
+            "node_hash": null,
+            "citation_index": 0,
+            "limitation_index": null,
+            "table_id": null,
+            "figure_id": null
+          },
+          {
+            "kind": "LIMITATION_REF",
+            "level": null,
+            "text": null,
+            "node_hash": null,
+            "citation_index": null,
+            "limitation_index": 0,
+            "table_id": null,
+            "figure_id": null
+          },
+          {
+            "kind": "TABLE_REF",
+            "level": null,
+            "text": null,
+            "node_hash": null,
+            "citation_index": null,
+            "limitation_index": null,
+            "table_id": "results",
+            "figure_id": null
+          }
+        ]
+      }
+    ],
+    "commentary": [
+      {
+        "commentary_id": "outlook",
+        "title": "What we would try next",
+        "text": "If the physical error rate came down to 1e-4 the factory share would fall sharply, and the 4.2 million figure above would be an overestimate. Nothing here checks that sentence."
+      }
+    ]
+  },
+  "tables": [
     {
-      "label": "Total physical qubits",
-      "node_hash": "787b2615470fbc51849829c735080275c2ce3616d7d4a94cd5e3edd4e591e687"
+      "table_id": "results",
+      "caption": "Resource estimate under the base scenario.",
+      "role": "RESULTS",
+      "columns": [
+        {
+          "column_id": "scenario",
+          "header": "Scenario",
+          "role": "LABEL",
+          "unit": null
+        },
+        {
+          "column_id": "qubits",
+          "header": "Total physical qubits",
+          "role": "VALUE",
+          "unit": "physical qubits"
+        }
+      ],
+      "rows": [
+        {
+          "row_id": "base",
+          "cells": [
+            {
+              "column_id": "scenario",
+              "text": "Base",
+              "node_hash": null
+            },
+            {
+              "column_id": "qubits",
+              "text": null,
+              "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
+            }
+          ]
+        }
+      ],
+      "csv_artifact": {
+        "media_type": "text/csv",
+        "byte_size": "154",
+        "content_hash": "108b4f99388611f5df6afeb3070dad4996e91662eaf47962b41fab5058e88be5"
+      }
     }
   ],
-  "csv": "label,node_hash\nTotal physical qubits,787b2615470fbc51849829c735080275c2ce3616d7d4a94cd5e3edd4e591e687\n",
   "figures": [],
   "references": [
     {
@@ -33,14 +154,40 @@
     "packages": [],
     "hardware": []
   },
-  "reproduction_command": "ketqat study reproduce --package research-package.json",
+  "recipe": {
+    "runner": "ketqat-runner",
+    "runner_version": "0.3.0",
+    "container_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "argv": [
+      "study",
+      "reproduce",
+      "--package",
+      "research-package.json"
+    ],
+    "input_refs": [],
+    "environment_allowlist": [],
+    "expected_output_refs": [],
+    "resource_limits": {
+      "max_runtime": 3600,
+      "max_memory_bytes": "8589934592",
+      "max_credits": null
+    },
+    "network_policy": "NONE",
+    "allowed_hosts": [],
+    "platform": {
+      "operating_system": "linux",
+      "architecture": "x86_64",
+      "minimum_runner_version": null
+    }
+  },
   "nodes": [
     {
       "schema_version": "1.0",
       "hash_rules_id": "study-v1",
-      "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
       "kind": "quantity",
       "label": "Total physical qubits, base scenario",
+      "visibility": "PUBLIC",
       "claim": null,
       "quantity": {
         "value": 4200000,
@@ -63,33 +210,47 @@
       "limitations": [],
       "source_published_on": null,
       "retrieved_on": null,
-      "content_hash": "787b2615470fbc51849829c735080275c2ce3616d7d4a94cd5e3edd4e591e687"
+      "content_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
     },
     {
       "schema_version": "1.0",
       "hash_rules_id": "study-v1",
-      "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "result",
+      "label": "Resource estimate snapshot, base scenario",
+      "visibility": "PUBLIC",
+      "claim": null,
+      "quantity": null,
+      "reference": {
+        "record_kind": "resource_estimate_snapshot",
+        "hash": "38773a6648bcf4f7f9536634909ce3864521c79f22b7c9f8d7ef135f79dafa64",
+        "record_slug": null
+      },
+      "citation": null,
+      "limitations": [],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "content_hash": "b33a602b069ac473b1b8a7c200f0d1a03f42d327b0cb6cdc6036aaefed7ca52d"
+    },
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
       "kind": "claim",
       "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+      "visibility": "PUBLIC",
       "claim": {
-        "subject": "shor-2048",
+        "subject_ref": {
+          "record_kind": "quantum_workload",
+          "hash": null,
+          "record_slug": "shor-2048"
+        },
         "metric": "total_physical_qubits",
         "comparator": "AT_MOST",
-        "value": {
-          "value": 4200000,
-          "unit": "physical qubits",
-          "bound": "UPPER_BOUND",
-          "evidence": "MODELLED",
-          "source": "Resource estimate under the base scenario.",
-          "model": "ketqat-resource-intelligence",
-          "model_version": "0.1.0",
-          "assumptions": [
-            "Physical error rate 0.001."
-          ],
-          "schema_version": "0.1",
-          "limitations": [
-            "Modelled, not measured. No device was run."
-          ]
+        "value_ref": {
+          "kind": "value_node",
+          "node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+          "field_path": null
         }
       },
       "quantity": null,
@@ -98,37 +259,82 @@
       "limitations": [],
       "source_published_on": null,
       "retrieved_on": null,
-      "content_hash": "2f53232cac19c207018b9b690441256b8d1c01114d110dc86cca9f9d53878d82"
+      "content_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755"
     }
   ],
   "edges": [
     {
       "schema_version": "1.0",
       "hash_rules_id": "study-v1",
-      "study_ref": "da5370a68b65fae82f578c06f313afac786e0b5e9d3caf543b1e37319d9720d9",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
       "kind": "supports",
-      "from_node_hash": "787b2615470fbc51849829c735080275c2ce3616d7d4a94cd5e3edd4e591e687",
-      "to_node_hash": "2f53232cac19c207018b9b690441256b8d1c01114d110dc86cca9f9d53878d82",
+      "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+      "to_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
       "asserted_by": "ketqat-resource-intelligence",
-      "rationale": "The claim reads its bound off this estimate rather than restating it.",
-      "content_hash": "eca66a6e6b0656feb618d5042324ea211071de596017aab11db20296fb1f4c71"
+      "rationale": "The claim reads its bound off this number rather than restating it.",
+      "content_hash": "84ddbd0e347cf491f94fa2b966aecb3b18e72c519a55826512e4644b91a93a71"
+    },
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "derived_from",
+      "from_node_hash": "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042",
+      "to_node_hash": "b33a602b069ac473b1b8a7c200f0d1a03f42d327b0cb6cdc6036aaefed7ca52d",
+      "asserted_by": "ketqat-resource-intelligence",
+      "rationale": "The number is read out of this estimate, which the run produced.",
+      "content_hash": "b2463648f09a2521b496a7f675446f42e7e6816efab17b96561693ad80d73490"
     }
   ],
   "claim_evidence_map": [
     {
-      "claim_node_hash": "2f53232cac19c207018b9b690441256b8d1c01114d110dc86cca9f9d53878d82",
+      "claim_node_hash": "b621efb6fb49fb7614c9c3cbbe835d9bdd69ad8e4ac156f7922085f91a043755",
       "evidence_node_hashes": [
-        "787b2615470fbc51849829c735080275c2ce3616d7d4a94cd5e3edd4e591e687"
+        "4d178bb7b878a98037943528bac2472a598a3255ddb7a12db229461f243d2042"
       ],
       "edge_hashes": [
-        "eca66a6e6b0656feb618d5042324ea211071de596017aab11db20296fb1f4c71"
-      ]
+        "84ddbd0e347cf491f94fa2b966aecb3b18e72c519a55826512e4644b91a93a71"
+      ],
+      "bundle_fields": []
+    }
+  ],
+  "reviews": [],
+  "reproductions": [],
+  "check_ledger": [
+    {
+      "check_id": "graph_structure",
+      "status": "PASS",
+      "requirement": "REQUIRED",
+      "tool": {
+        "name": "ketqat-sdk",
+        "version": "0.3.0"
+      },
+      "input_refs": [],
+      "output_ref": null,
+      "reason": "",
+      "limitations": [
+        "Structural only: nothing here weighs the evidence."
+      ],
+      "observed_at": "2026-09-01T00:00:00Z"
+    },
+    {
+      "check_id": "hardware_reproduction",
+      "status": "NOT_RUN",
+      "requirement": "OPTIONAL",
+      "tool": {
+        "name": "ketqat-runner",
+        "version": "0.3.0"
+      },
+      "input_refs": [],
+      "output_ref": null,
+      "reason": "No device was run: this study is a resource estimate.",
+      "limitations": [],
+      "observed_at": "2026-09-01T00:00:00Z"
     }
   ],
   "limitations": [
     "Modelled, not measured. No device was run."
   ],
-  "failed_checks": [],
-  "is_demo": true,
-  "reproducibility_hash": "b0877bb6b471a624616b1f986a6a5ef5e145b5c451d231c4ff5981efa58477b9"
+  "is_demo": false,
+  "reproducibility_hash": "a9ee34816503d2cacd6833d2ce6446090956326d408d7cc62b9210d0e88cbf2b"
 }

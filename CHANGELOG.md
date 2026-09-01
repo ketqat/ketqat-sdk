@@ -34,36 +34,192 @@ life.
 - **The `study` contract family and the Evidence Graph**
   ([#259](https://github.com/ketqat/ketqat-sdk/issues/259)). A new `ketqat-sdk/study`
   export: `Study` and its append-only `StudyEvent` trail, `ProblemSpecification` and
-  `StudyPlan` as immutable revisions, `StudyTask`, `EvidenceNode`, `EvidenceEdge`,
-  `ExecutionCapsule` and `ResearchPackage`, with nine generated JSON Schemas.
+  `StudyPlan` as immutable revisions, `ConfirmationReceipt`, `StudyTaskAuthorization`,
+  `ExecutionJob`, `TaskOutcome`, `EvidenceNode`, `EvidenceEdge`, `ExecutionCapsule` and
+  `ResearchPackage`, with a generated JSON Schema for each.
 
   Additive throughout. No existing contract gains a field, no exclusion set is edited, and
   `fixtures/reproducibility/expected-hashes.json` is byte-identical — the family's own pins
   live in a separate `study-expected-hashes.json` sidecar.
 
-  Eight properties are structural rather than documented:
+  The properties below are structural rather than documented -- a count in this sentence would
+  be a number somebody has to keep in step with the list under it:
 
-  - **A number in a report is a node in a graph.** A `ResearchPackage` reads every result
-    row's value out of an `EvidenceNode` it carries, and that node has to carry a value: a row
-    naming a claim or a reference has no number to read out. A claim's cited evidence has to be
-    joined to it by a `supports` or `contradicts` edge the package carries — the edge is where
-    the relation is asserted, with its rationale and its asserter — so a claim citing itself,
-    or citing a node no edge connects to it, fails with a named code instead of a warning, at
-    build and again at verification. What is *not* checked is whether the evidence supports the
-    conclusion: the edges are the study's own assertions, checked for being present, joined up
-    and attributed, never for being right.
+  - **A number in a report is a node in a graph, on every surface a reader quotes from.** A
+    `ResearchPackage` has no field a number can be typed into. The report is a structured
+    document whose figures are `QUANTITY_REF` segments naming evidence nodes, and whose prose
+    is refused if it carries a number standing on its own — a digit may appear inside a name
+    (`Shor-2048`, `v1.2`) and never as a value, which is one regular expression both languages
+    apply. A table's value cells name nodes, and the CSV a reader forwards is *generated* from
+    those cells and hashed, so the table and the file cannot drift; every number in it sits
+    beside the hash of the node it came from. A figure is a `FigureSpec` whose coordinates name
+    nodes or table cells, never markup: supplied SVG is refused from any trusted surface, and
+    the SVG that may still travel is checked against a declared element allowlist with script,
+    `foreignObject`, external references and event handlers named separately as they are
+    refused. Free prose stays, in a `commentary` field the renderer puts under its own heading,
+    where it cannot enter a verified section. A claim's cited evidence has to be joined to it by
+    a `supports` or `contradicts` edge the package carries — the edge is where the relation is
+    asserted, with its rationale and its asserter — so a claim citing itself, or citing a node
+    no edge connects to it, fails with a named code instead of a warning, at build and again at
+    verification. What is *not* checked is whether the evidence supports the conclusion: the
+    edges are the study's own assertions, checked for being present, joined up and attributed,
+    never for being right.
+  - **Verification returns twelve answers, not one.** `valid: boolean` hid which check passed,
+    and a reader shown one boolean quotes the strongest reading of it. `verifyResearchPackage`
+    reports `schema_valid`, `canonicalizable`, `hash_matches`, `record_integrity_valid`,
+    `graph_structurally_valid`, `provenance_closed`, `claims_resolve`, `bundles_resolve`,
+    `science_recomputed`, `independent_reproduction_present`, `review_present` and
+    `attestation_level` separately; a status is derived from them by one function and never
+    asserted, and `not_established` returns the sentences a surface must render beside it. A
+    finding is a **code and a JSON path** — `$.tables[0].rows[0].cells[1].node_hash` — and those
+    two are the contract between the languages. Message equality is deliberately not: prose is
+    written for a person, and a cross-language test comparing English would fail on an improved
+    sentence and pass on a wrong path. `fixtures/study/verification-vectors.json` pins the pairs
+    for a corpus of deliberately broken packages, checked in place by
+    `tests/research-package.test.mjs` and reproduced by `python/tests/test_study_package.py`.
+    Where Python does not recompute the science it says so in the value it returns:
+    `verification_performed` is `INTEGRITY_AND_STRUCTURE` there and
+    `INTEGRITY_STRUCTURE_AND_SCIENCE` in TypeScript, so "verified in Python" cannot be rendered
+    as more than it was.
+  - **A reproduction command is a structure, not a shell string.** `reproduction_command` was a
+    free-form command published inside a file, which a reader is invited to paste into a shell
+    and an orchestrator is tempted to execute. `ReproductionRecipe` carries an approved runner
+    and its version, a container image digest (never a tag), an argument vector, typed input and
+    expected-output artifact references, an allowlist of environment variable **names** — never
+    values — a resource ceiling, a network policy with its allowed hosts, and platform
+    requirements. The display command is generated by concatenation, because every argv element
+    has already been refused if it carries a character a shell would act on: there is nothing
+    to escape, which is where this class of bug lives.
+  - **Every check that was meant to run is recorded, including the ones that did not.**
+    `failed_checks: string[]` was empty both when everything passed and when nothing was
+    attempted, and the second reads better than the first. A `CheckLedger` entry carries a check
+    id, a status of `PASS` / `FAIL` / `NOT_RUN` / `INCONCLUSIVE`, whether it was required, the
+    tool and version, what it read, what it produced, why, what it does not cover, and when the
+    server observed it. `required_checks_passed` is deliberately not "no failures": a required
+    check that did not run has not passed.
+  - **A bundle reference is resolved, hashed and recomputed, and each claim names the field it
+    reads.** `bundle_refs: string[]` said only that some bundle existed with that digest.
+    A `BundleRef` is resolved — from the package itself, or from bundles the caller supplies —
+    checked for being the kind it claims, checked for hashing as claimed, and then rebuilt from
+    its own inputs by `verifyBundle`, which is what catches a decision section written by hand
+    and re-hashed. A claim resting on bundle-derived evidence must name the bundle field it
+    draws on, and the path is resolved against the document. A package calling itself an
+    `OFFLINE_EXPORT` must carry every bundle it cites as a content-addressed blob, because a
+    file that says the recipient needs nothing else and cites a document nobody has is
+    self-contained only until somebody checks it. Explicit ceilings — node and edge counts,
+    table rows, report and commentary bytes, CSV bytes, figures, SVG bytes, citations, ledger
+    entries, embedded bundle bytes and nesting depth — are checked before anything walks the
+    document, which is the only point at which a ceiling is worth having.
   - **A confirmation names one plan revision by its hash.** `StudyPlan` revisions are
     immutable and content-addressed, so editing a plan moves its hash and the old
     confirmation stops applying by construction. `verifyPlanConfirmation` recomputes:
     a plan edited by hand and re-stamped with its previous hash is refused.
+  - **A hash somebody passed as an argument does not authorise a run.** A
+    `ConfirmationReceipt` records the plan revision, the plan's semantic hash recomputed at
+    the moment of confirming, the authenticated subject, the tenant, the OAuth client, the
+    scope, the digest of the summary that was actually shown, the estimate and the hard
+    ceiling, the resource class, the data-handling policy revision, the expiry, the nonce and
+    the idempotency key. It says in its own `limitations` that it is not a cryptographic
+    signature by the person named in it, and `attestation_level` stays `hash_only`
+    ([ADR 0014](https://github.com/ketqat/ketqat-planning/blob/main/docs/architecture/adr/0014-evidence-attestation-and-signing.md)).
+    A plan revised after confirmation invalidates the receipt structurally -- the pointer
+    stops matching -- and the answer is a new confirmation, never an edit.
+  - **A task's identity is unchanged by execution.** `StudyTask` mixed an authorization with a
+    status the execution system overwrote and a capsule reference bolted on afterwards, so
+    content-addressing it moved the digest exactly when everything else began pointing at it.
+    It is replaced by four records: an immutable `StudyTaskAuthorization`, a mutable
+    `ExecutionJob` that this family deliberately does not content-address and refuses to hash
+    with its own `NOT_CONTENT_ADDRESSED` code, an immutable `TaskOutcome`, and the
+    `ExecutionCapsule`. Cross-references between study, plan, receipt, authorization, outcome
+    and capsule are checked together, because a graph of individually intact records can still
+    be wrong in every way that matters.
+  - **A capsule carries the evidence its execution class can actually produce.** `execution` is
+    a discriminated union: a managed simulation requires an image digest, a dependency lock, a
+    runner version, its resource limits and an execution receipt; a local simulation may have a
+    null image digest and must then capture the machine and state an explicit attestation
+    limitation; a hardware run requires a provider adapter, a backend snapshot, a confirmation
+    receipt, the provider's result, and cost and quota confirmation, and is filed as execution
+    class `HARDWARE`. Inputs and outputs are typed artifact references -- name, role, media
+    type, byte size, content hash, how to resolve them, complete or partial, redacted or not --
+    where two arrays of bare digests could not say whether an output was truncated or reduced.
+    No field in any class can hold a credential.
+  - **A question answered "I do not know" is not a question nobody answered.** A
+    specification's `open_questions` are records -- id, the field path an answer would fill,
+    expected answer type, required or optional, why it is needed, what it blocks, allowed
+    choices, provenance and a resolution -- and the resolution separates `UNANSWERED` from
+    `CONFIRMED_UNKNOWN`, `NOT_APPLICABLE` and `DECLINED`. On the field all four look
+    identical: a null value under `UNKNOWN` evidence. A field marked confirmed with no value
+    is refused unless a question says which of the three settled states it is in, so
+    `value: null` + `evidence: UNKNOWN` + `origin: CONFIRMED` cannot read as resolved.
+  - **A plan states conditions an orchestrator can evaluate.** Success and refusal criteria
+    are predicates -- metric, comparator, threshold, the evidence classes that satisfy them,
+    and a status of `PASS` / `FAIL` / `NOT_RUN` / `INCONCLUSIVE` -- with the sentence kept
+    beside them as explanation, hashed as presentation rather than as content. A plan whose
+    criteria carry a verdict is refused: nothing has run, so a verdict there is a plan that
+    has decided its own outcome.
+  - **A quantity is a quantity of something.** Accuracy requirement, runtime and budget
+    constraints, problem size, expected runtime and expected credits each declare a
+    dimension, and a criterion threshold declares its own -- so seconds are refused where
+    dollars belong, and shots where qubits belong. Closed families emit a JSON Schema `enum`
+    rather than a Zod refinement, because the Python validator checks the emitted schema and
+    a rule stated in a refinement is a rule only one of the two languages applies.
+  - **Data handling is a policy, and its summary is generated from it.** Eleven decisions --
+    visibility, retention, third-party transfer, model-training use, public-dataset opt-in,
+    allowed egress, export permission, deletion policy, secret handling, PII handling and
+    the policy version -- replace a free-text paragraph. There is no field to store the
+    paragraph in: `dataHandlingSummary` derives it, so the sentence a user confirms cannot
+    say anything the enforceable fields do not. Policies that contradict themselves, such as
+    a private study offered as a public dataset, are refused where they are written.
+  - **A pinned version names a program, not a label.** `PinnedVersions` carries package name
+    and version beside artifact digest, source commit, container digest, model snapshot hash,
+    schema hash and adapter configuration hash. Which of them a plan needs before it may run
+    is declared as data and reported by `planExecutability`, which names what is missing
+    rather than refusing a draft: a version string is a pointer a registry can move, and a
+    plan pinned only by one produces a capsule nobody can reproduce.
+  - **A study is identified by an id, not by a digest.** `Study` carries `study_id`, minted
+    once by `newStudyId` and derived from nothing, and every `study_ref` in the family points
+    at it. Content-addressing an aggregate was inconsistent in a way that showed the first
+    time it was used: renaming a study changed its identity and invalidated every reference to
+    it, while a status change — a real change — invalidated nothing. The record now splits an
+    immutable `core` (study type, project, demo flag) from mutable `presentation` (title,
+    status, revision pointers), and `updateStudyPresentation` returns a study with the same
+    `content_hash`. `project_ref` is an immutable ref rather than a registry slug, for the same
+    reason. Specification, plan and report revisions stay content-addressed, which is where
+    content addressing earns its keep.
+  - **The lifecycle is a typed event union, and the endings are separate words.** `StudyEvent`
+    is a discriminated union over twenty-two event types, each carrying only the payload its
+    meaning needs: a `task_started` event cannot carry a package reference, and a
+    `conclusion_retracted` event cannot omit its reason. `STUDY_EVENT_TYPES` declares which
+    event is legal from which status, because a pair of statuses was never the rule — a study
+    at `RUNNING` can reach `SUPERSEDED`, which says nothing about whether *this* event belongs
+    there. The pairwise `STUDY_STATUS_TRANSITIONS` view is derived from that table rather than
+    maintained beside it. `CONCLUDED -> REFUSED` had been standing for five different things;
+    they are now `REFUSED` (the evidence to conclude on is not there), `NEEDS_INPUT` (waiting,
+    and a study resumes from it to exactly the status it was waiting from), `CANCELLED` (the
+    user stopped it), `RETRACTED` (a conclusion was drawn and is withdrawn) and `SUPERSEDED`.
   - **History is hash-chained, and the chain is honest about its limit.** Each `StudyEvent`
     names its predecessor's hash and its own sequence number, so reordering, splicing, replay
     and a rewritten middle event are all detectable offline by `verifyStudyEventChain` rather
     than only by database discipline. Truncation is not: a trail cut short is a shorter valid
-    chain, and `Study.status` and the `latest_*` pointers are excluded from the study's hash
-    by design, so no record anchors the head. `verifyStudyEventChain` therefore takes an
-    optional expected head hash from the caller, which is what makes a dropped suffix — or an
-    event fabricated onto one — detectable offline.
+    chain, and nothing in the study record anchors the head. `verifyStudyEventChain` therefore
+    takes an expected head hash from the caller, and reports `head_checked` and an `undetected`
+    list naming `TRUNCATION` when it did not get one — silence would have looked the same as a
+    check that passed. `appendStudyEvent` *requires* the head rather than accepting it, because
+    appending to a stale read is how two events come to name one predecessor.
+  - **A revision is refused unless four statements about its base agree**
+    (goal §9). `revisePlan` and `reviseSpecification` compare the hash written on the current
+    record, the hash recomputed from its contents, the hash the caller asserts, and — where the
+    caller supplies it — the newest revision the store knows. Each disagreement returns a
+    distinct structured refusal (`REVISION_BASE_EDITED`, `REVISION_BASE_MISMATCH`,
+    `REVISION_BRANCH_DETECTED`) rather than throwing, and both functions now return
+    `{ ok, plan | specification } | { ok: false, refusal }`. The caller's asserted hash used to
+    be written into `supersedes` unexamined.
+  - **What a store must enforce is declared, not implied.** `STUDY_PERSISTENCE_INVARIANTS`
+    names the unique indexes and compare-and-set predicates the persistence layer owes —
+    `(study_ref, sequence)` on events, `(study_ref, revision)` per revisable kind, and the two
+    compare-and-sets that close the concurrent-write window — beside what the SDK does check
+    from the records in hand. Two events at one sequence are two trails, and each verifies
+    perfectly on its own; no amount of checking here can see the one it was not handed.
   - **The family names its own hash rules, and nothing is inferred.** Study records carry
     `hash_rules_id: "study-v1"` and are refused without it. This is a *different field* from
     `reproducibility_hash_version` on purpose: the legacy marker reads as version 1 for any

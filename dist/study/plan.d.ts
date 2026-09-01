@@ -1,6 +1,9 @@
 import { z } from "zod";
 import type { Contract, Quantity } from "../intelligence/measurement.js";
 import { type RevisionRef } from "./common.js";
+import { type StudyCriterion } from "./criteria.js";
+import { type VersionPin, type VersionPinShortfall } from "./pins.js";
+import { type DataHandlingPolicy } from "./policy.js";
 import type { StudyRefusal } from "./refusals.js";
 /**
  * What the study intends to do, and the exact thing a user confirms
@@ -16,17 +19,33 @@ import type { StudyRefusal } from "./refusals.js";
  * to invalidate the old approval, because nothing invalidates it; it simply
  * stops matching.
  *
- * Two smaller decisions carry weight.
+ * Four smaller decisions carry weight.
  *
- * **Success and refusal criteria are both required.** A plan that says only what
- * would count as success has pre-committed to succeeding: every outcome can be
- * read as partial progress after the fact. Stating in advance what would make
- * the study stop is what makes the eventual conclusion falsifiable (RFC §3).
+ * **Success and refusal criteria are both required, and both are predicates.** A
+ * plan that says only what would count as success has pre-committed to
+ * succeeding: every outcome can be read as partial progress after the fact.
+ * Stating in advance what would make the study stop is what makes the eventual
+ * conclusion falsifiable (RFC §3) -- and stating it as prose leaves the reading
+ * of it to whoever writes the report, which is the same failure one step later.
+ * So each criterion is a metric, a comparator, a threshold and the kinds of
+ * evidence that satisfy it, with the sentence kept beside it as explanation.
  *
  * **`max_credits` is a plain number, not a `Quantity`.** Every estimate in this
  * family wears the measurement envelope because an estimate has a provenance and
  * an uncertainty. A spending ceiling has neither: it is a decision the user made,
- * exact by construction, in the same way `error_budget` is on a scenario.
+ * exact by construction, in the same way `error_budget` is on a scenario. It is
+ * denominated in credits, which is why `expected_credits` is a `CREDITS`
+ * quantity and cannot be stated in dollars -- a ceiling and an estimate that
+ * could not be compared would be two numbers about nothing.
+ *
+ * **Data handling is a policy, and its summary is generated.** See `policy.ts`:
+ * a stored paragraph beside the fields is a second statement free to disagree
+ * with them, and the reader believes the paragraph.
+ *
+ * **A pinned version is not a name and a version.** See `pins.ts`: a version
+ * string is a label a registry resolves to whatever is published under it today.
+ * Whether a plan is executable is asked of the pins by `planExecutability`,
+ * rather than assumed by whatever runs it.
  */
 export declare const PlannedBaselineSchema: z.ZodObject<{
     /** Hash of an existing `ClassicalBaseline` record. Referenced, never inlined and never re-stated. */
@@ -67,6 +86,11 @@ export declare const CandidateWorkflowSchema: z.ZodObject<{
     rationale: string;
 }>;
 export type CandidateWorkflow = z.infer<typeof CandidateWorkflowSchema>;
+export interface PinnedVersions {
+    adapter: VersionPin | null;
+    model: VersionPin;
+    engine: VersionPin;
+}
 /**
  * The versions this plan is pinned to.
  *
@@ -74,67 +98,9 @@ export type CandidateWorkflow = z.infer<typeof CandidateWorkflowSchema>;
  * produced this" is only answerable in hindsight if it was decided in advance.
  * The adapter is nullable -- some studies have no vendor adapter -- while the
  * model and the engine are not: something computed the numbers, and it has a
- * version.
+ * version, a digest and, where the source is public, a commit.
  */
-export declare const PinnedVersionsSchema: z.ZodObject<{
-    adapter: z.ZodNullable<z.ZodObject<{
-        name: z.ZodString;
-        version: z.ZodString;
-    }, "strict", z.ZodTypeAny, {
-        name: string;
-        version: string;
-    }, {
-        name: string;
-        version: string;
-    }>>;
-    model: z.ZodObject<{
-        name: z.ZodString;
-        version: z.ZodString;
-    }, "strict", z.ZodTypeAny, {
-        name: string;
-        version: string;
-    }, {
-        name: string;
-        version: string;
-    }>;
-    engine: z.ZodObject<{
-        name: z.ZodString;
-        version: z.ZodString;
-    }, "strict", z.ZodTypeAny, {
-        name: string;
-        version: string;
-    }, {
-        name: string;
-        version: string;
-    }>;
-}, "strict", z.ZodTypeAny, {
-    adapter: {
-        name: string;
-        version: string;
-    } | null;
-    model: {
-        name: string;
-        version: string;
-    };
-    engine: {
-        name: string;
-        version: string;
-    };
-}, {
-    adapter: {
-        name: string;
-        version: string;
-    } | null;
-    model: {
-        name: string;
-        version: string;
-    };
-    engine: {
-        name: string;
-        version: string;
-    };
-}>;
-export type PinnedVersions = z.infer<typeof PinnedVersionsSchema>;
+export declare const PinnedVersionsSchema: Contract<PinnedVersions>;
 /**
  * How exactly a rerun is expected to match.
  *
@@ -159,10 +125,10 @@ export interface StudyPlan {
     expected_runtime: Quantity;
     expected_credits: Quantity;
     max_credits: number;
-    data_handling: string;
+    data_handling: DataHandlingPolicy;
     reproducibility_level: ReproducibilityLevel;
-    success_criteria: string[];
-    refusal_criteria: string[];
+    success_criteria: StudyCriterion[];
+    refusal_criteria: StudyCriterion[];
     execution_limitations: string[];
     created_at?: string;
     content_hash: string;
@@ -176,6 +142,32 @@ export declare const StudyPlanSchema: Contract<StudyPlan>;
  * bound to a database id that survives an edit the hash would not have.
  */
 export declare function planConfirmationTarget(plan: StudyPlan): string;
+/**
+ * The data-handling paragraph a user is shown, generated from the policy they
+ * are confirming.
+ *
+ * Named here so that a surface asking for confirmation has one place to reach
+ * for it, and so that no surface is tempted to write its own -- a second
+ * rendering is a second thing that can say what the fields do not.
+ */
+export declare function planDataHandlingSummary(plan: StudyPlan): string;
+export interface PlanExecutability {
+    readonly executable: boolean;
+    readonly shortfalls: readonly VersionPinShortfall[];
+}
+/**
+ * Whether this plan's pins name programs rather than labels.
+ *
+ * A report rather than a refusal, and the distinction is the point. A plan is
+ * drafted before an image is built, and refusing to record one would push the
+ * drafting out of the record; but running a plan whose engine is pinned only by
+ * a version string produces a capsule nobody can reproduce, and the runner has
+ * to be able to see that before it spends anything.
+ *
+ * The adapter is checked only when there is one. A study with no vendor adapter
+ * is not a study with an unpinned adapter.
+ */
+export declare function planExecutability(plan: StudyPlan): PlanExecutability;
 /**
  * Whether a confirmation still authorises this plan.
  *
@@ -207,7 +199,22 @@ export declare function verifyPlanConfirmation(plan: StudyPlan, confirmedHash: s
  *
  * `currentHash` comes from the caller for the same reason it does in
  * `reviseSpecification` -- the field on the record is a claim, the argument is
- * what the caller checked.
+ * what the caller checked -- and it is now checked rather than written into
+ * `supersedes` on trust. All four statements that have to agree are compared in
+ * `revision.ts`, which is also where what the SDK checks and what a store must
+ * is spelled out; `latestRevision` is how a caller brings the store's answer
+ * into the comparison and gets the concurrent case detected.
+ *
+ * This one matters more than the specification's. A plan is the thing a user
+ * confirms, so a revision built on a stale or edited base is a plan somebody is
+ * about to be asked to approve on the strength of a chain that points at a
+ * record it did not come from.
  */
-export declare function revisePlan(current: StudyPlan, changes: Partial<Omit<StudyPlan, "revision" | "supersedes" | "schema_version" | "hash_rules_id" | "content_hash">>, currentHash: string): StudyPlan;
+export declare function revisePlan(current: StudyPlan, changes: Partial<Omit<StudyPlan, "revision" | "supersedes" | "schema_version" | "hash_rules_id" | "content_hash">>, currentHash: string, latestRevision?: RevisionRef | null): {
+    ok: true;
+    plan: StudyPlan;
+} | {
+    ok: false;
+    refusal: StudyRefusal;
+};
 //# sourceMappingURL=plan.d.ts.map

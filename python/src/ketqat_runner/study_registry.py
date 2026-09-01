@@ -57,8 +57,25 @@ STUDY_RECORD_KIND_NAMES: tuple[str, ...] = tuple(
     entry["record_kind"] for entry in STUDY_RECORD_KINDS
 )
 
-#: The working lookup, module-private and built from the published tuple.
+#: The kinds this build knows and deliberately does not hash, as immutable data.
+#:
+#: An ``execution_job`` is queue status, an attempt counter, a progress figure
+#: and a cancellation flag: every one of them is overwritten while the work runs,
+#: which is exactly what a content address cannot survive. Read from the emitted
+#: tables rather than restated here, so the two languages give the same answer to
+#: "why will you not hash this".
+STUDY_CONTROL_PLANE_KINDS: tuple[Mapping[str, Any], ...] = tuple(
+    MappingProxyType(entry) for entry in _DOCUMENT.get("control_plane_kinds", ())
+)
+
+#: The control-plane kind names, as immutable plain data.
+STUDY_CONTROL_PLANE_KIND_NAMES: tuple[str, ...] = tuple(
+    entry["record_kind"] for entry in STUDY_CONTROL_PLANE_KINDS
+)
+
+#: The working lookups, module-private and built from the published tuples.
 _KINDS_BY_NAME = {entry["record_kind"]: entry for entry in STUDY_RECORD_KINDS}
+_CONTROL_PLANE_BY_NAME = {entry["record_kind"]: entry for entry in STUDY_CONTROL_PLANE_KINDS}
 
 
 def study_record_kind(record_kind: str) -> Mapping[str, Any]:
@@ -68,9 +85,22 @@ def study_record_kind(record_kind: str) -> Mapping[str, Any]:
     hierarchy: a record kind is a preimage header component, so an unknown one is
     a digest namespace nobody declared rather than a record to hash under a
     guess.
+
+    A control-plane kind gets its own code. "We do not hash this" and "we have
+    never heard of this" send a reader to two different places, and the second
+    answer for the first question would send them looking for a missing
+    declaration instead of at the record they should be addressing.
     """
     entry = _KINDS_BY_NAME.get(record_kind)
     if entry is None:
+        control_plane = _CONTROL_PLANE_BY_NAME.get(record_kind)
+        if control_plane is not None:
+            refuse(
+                "NOT_CONTENT_ADDRESSED",
+                f"{record_kind!r} is control-plane state and this family does not hash it: "
+                f"{control_plane['why']}. Reference {control_plane['address_instead']} instead, "
+                "whose digest does not move while the work runs.",
+            )
         refuse(
             "UNKNOWN_RECORD_KIND",
             f"this build does not know the record kind {record_kind!r}. Known kinds: "
