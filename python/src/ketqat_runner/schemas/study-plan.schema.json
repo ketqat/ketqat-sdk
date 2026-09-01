@@ -984,7 +984,7 @@
                           "unit": {
                             "type": "string",
                             "minLength": 1,
-                            "pattern": "^(?!(?:AUD|CAD|CHF|EUR|GBP|JPY|USD|bytes|credits|days|gibibytes|hours|kibibytes|mebibytes|microseconds|milliseconds|minutes|nanoseconds|percent|probability|ratio|relative error|seconds|tebibytes)$).+$"
+                            "pattern": "^(?!(?:AUD|CAD|CHF|EUR|GBP|JPY|USD|bytes|credits|days|gibibytes|hours|kibibytes|mebibytes|microseconds|milliseconds|minutes|nanoseconds|percent|probability|ratio|relative error|seconds|tebibytes)$)[^\\x00-\\x1f\\x7f-\\x9f\\u2028\\u2029\\x20\\xa0\\u1680\\u2000-\\u200a\\u202f\\u205f\\u3000\\ufeff](?:[^\\x00-\\x1f\\x7f-\\x9f\\u2028\\u2029]*[^\\x00-\\x1f\\x7f-\\x9f\\u2028\\u2029\\x20\\xa0\\u1680\\u2000-\\u200a\\u202f\\u205f\\u3000\\ufeff])?$"
                           }
                         },
                         "required": [

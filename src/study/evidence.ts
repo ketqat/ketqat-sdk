@@ -464,9 +464,9 @@ export const EvidenceNodeSchema: Contract<EvidenceNode> = z
     /** What this node does not account for. Travels with the node, not with the report. */
     limitations: z.array(z.string().min(1)),
     /** ISO date the underlying source was published, where there is one. */
-    source_published_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+    source_published_on: z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/).nullable(),
     /** ISO date it was read. Distinct from publication: a page can change after it is cited. */
-    retrieved_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+    retrieved_on: z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/).nullable(),
     /** `RECEIPT_ONLY`: the moment the server observed this record, not part of what it says. */
     created_at: z.string().datetime({ offset: true }).optional(),
     /** A node's identity is the hash of its content. Excluded from its own digest. */

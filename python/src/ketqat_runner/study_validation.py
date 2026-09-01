@@ -25,10 +25,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from jsonschema import Draft7Validator
+from jsonschema import Draft7Validator, exceptions as jsonschema_exceptions, validators as jsonschema_validators
 
 from .study_hash import study_self_hash
 from .study_limits import StudyHashRefusal
+from .study_pattern import matches_ecmascript
 from .study_rules import STUDY_HASH_RULES_KEY, STUDY_KNOWN_HASH_RULES_IDS
 from .validation import KetQatValidationError, load_schema
 
@@ -118,6 +119,37 @@ def _load_study_schema(kind: str) -> dict[str, Any]:
         ) from exc
 
 
+def _pattern_the_way_ecmascript_reads_it(validator, pattern, instance, schema):
+    """The `pattern` keyword, evaluated with ECMAScript semantics.
+
+    `jsonschema` compiles `pattern` with Python's `re`, and the pattern text in
+    a study schema was written for ECMAScript -- it is the same text the
+    TypeScript contract compiles, which is what makes the two halves one
+    contract. Where the engines disagree Python is the more permissive one, so
+    without this every anchored pattern accepted a trailing newline that
+    TypeScript refused, and a value and that value plus a newline hash to
+    different digests.
+
+    See `study_pattern.to_python_pattern` for what is translated and why.
+    """
+    if not isinstance(instance, str):
+        return
+    if not matches_ecmascript(pattern, instance):
+        yield jsonschema_exceptions.ValidationError(
+            f"{instance!r} does not match {pattern!r}"
+        )
+
+
+#: Draft 7, with one keyword replaced.
+#:
+#: Everything else is `jsonschema`'s: only the regex dialect changes, so a
+#: schema that validates here validates there for every reason except the one
+#: the two languages disagreed about.
+_STUDY_VALIDATOR = jsonschema_validators.extend(
+    Draft7Validator, {"pattern": _pattern_the_way_ecmascript_reads_it}
+)
+
+
 def validate_study_record(value: dict[str, Any], kind: str) -> None:
     """Check one study record against its packaged schema.
 
@@ -174,7 +206,7 @@ def validate_study_record(value: dict[str, Any], kind: str) -> None:
             f"Invalid study {kind} record: {exc.code}: {exc}"
         ) from exc
 
-    validator = Draft7Validator(_load_study_schema(kind))
+    validator = _STUDY_VALIDATOR(_load_study_schema(kind))
     errors = sorted(validator.iter_errors(value), key=lambda error: list(error.path))
     if not errors:
         return

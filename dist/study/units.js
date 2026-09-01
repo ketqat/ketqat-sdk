@@ -124,12 +124,45 @@ const escapeForPattern = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
  * alternative -- a `.refine` listing the same units -- is a rule the generated
  * JSON Schema would not carry, and the Python validator reads that schema.
  */
+/**
+ * Character classes whose meaning survives being read by two regex engines.
+ *
+ * A pattern in a study schema is written once and read twice: ECMAScript
+ * compiles it from the TypeScript contract, and Python's `re` compiles the same
+ * text out of the generated JSON Schema. Every shorthand class differs between
+ * them somewhere -- `\s`, `\d`, `\w` and `.` all do, and `\p{...}` is not
+ * Python syntax at all -- so the family spells its classes with literal ranges.
+ * `tests/study-pattern-parity.test.mjs` fails on any shipped pattern that
+ * reintroduces a shorthand.
+ *
+ * The ranges: C0 controls and space, DEL and C1, then the Unicode space
+ * separators and the zero-width no-break space.
+ */
+const CONTROL_CHARACTERS = "\\x00-\\x1f\\x7f-\\x9f\\u2028\\u2029";
+const SPACE_CHARACTERS = "\\x20\\xa0\\u1680\\u2000-\\u200a\\u202f\\u205f\\u3000\\ufeff";
+const VISIBLE_CHARACTER = `[^${CONTROL_CHARACTERS}${SPACE_CHARACTERS}]`;
 function openUnitPattern(entry) {
     const foreign = entry.foreign
         .flatMap((dimension) => [...studyUnitFamily(dimension).units])
         .sort()
         .map(escapeForPattern);
-    return new RegExp(`^(?!(?:${foreign.join("|")})$).+$`);
+    // Spelled out rather than `.`, `\\s` or `\\p{C}`, all three of which mean
+    // different things in the two engines that read this pattern.
+    //
+    // `.` excludes four line terminators in ECMAScript and only `\n` in Python's
+    // `re`, so a unit carrying a carriage return or U+2028 was refused here and
+    // accepted there. `\\s` differs too -- Python's includes `\x1c-\x1f` and
+    // `\x85`, ECMAScript's includes `\ufeff`. `\\p{C}` is not syntax Python's
+    // `re` parses at all. VISIBLE_CHARACTER is literal ranges, which both engines
+    // read the same way.
+    //
+    // Pinning both ends to a visible character is a separate fix from the engine
+    // one: `.` accepted NUL and surrounding spaces in *both* engines, and
+    // " seconds" is not a unit -- it is a value that reads identically to another
+    // and hashes differently.
+    const visible = VISIBLE_CHARACTER;
+    const inner = `[^${CONTROL_CHARACTERS}]`;
+    return new RegExp(`^(?!(?:${foreign.join("|")})$)${visible}(?:${inner}*${visible})?$`);
 }
 /** Whether a unit belongs to a dimension, under the same rule the schema applies. */
 export function unitBelongsToDimension(unit, dimension) {
