@@ -49,11 +49,11 @@ from ketqat_runner.study_hash import (
 from ketqat_runner.study_limits import StudyHashRefusal
 from ketqat_runner.study_registry import STUDY_RECORD_KIND_NAMES, study_shape_document
 from ketqat_runner.study_rules import STUDY_HASH_RULES_ID
+from ketqat_runner.study_package import verify_research_package
 from ketqat_runner.study_validation import (
     STUDY_SCHEMA_FILES,
     KetQatValidationError,
     validate_study_record,
-    verify_research_package,
 )
 
 RECORDS = Path(os.environ.get("KETQAT_RECORDS", "/tmp/ketqat-records"))
