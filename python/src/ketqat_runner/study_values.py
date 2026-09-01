@@ -106,15 +106,39 @@ def is_safe_integer(value: Any) -> bool:
 
 
 def is_exact_integer_string(value: Any) -> bool:
-    return isinstance(value, str) and _EXACT_INTEGER_STRING.match(value) is not None
+    """Exactly the strings `EXACT_INTEGER_STRING` accepts in src/study/values.ts.
+
+    ``fullmatch``, not ``match``, and the difference is not cosmetic: Python's
+    ``$`` matches at the end of the string **or just before a trailing
+    newline**, and ECMAScript's does not. Sharing the pattern text with the
+    TypeScript mirror -- which is required, because
+    ``zod-to-json-schema`` emits that same text into the shipped JSON Schemas --
+    therefore does not by itself make the two contracts agree. With ``match``,
+    ``"1\\n"`` was an exact integer string here and was not one there: two
+    spellings of one value, one accepted by this language's validator and
+    refused by the other's, hashing to two different digests. That is the
+    injectivity failure this contract exists to close, arriving through the
+    regex engine instead of through the number.
+
+    ``fullmatch`` requires the whole string to be consumed, so the zero-width
+    ``$`` can still match before the newline and the newline itself is then
+    left over and fails. The pattern stays byte-identical to the emitted schema,
+    which is the property the module docstring depends on.
+
+    Found by `tests/study-properties.test.mjs` and
+    `python/tests/test_study_properties.py`, which pin the answer for a
+    trailing newline in `fixtures/study/property-corpus.json`.
+    """
+    return isinstance(value, str) and _EXACT_INTEGER_STRING.fullmatch(value) is not None
 
 
 def is_exact_decimal_string(value: Any) -> bool:
+    """The same, and the same reason: `"1.5\\n"` was accepted here and nowhere else."""
     if not isinstance(value, str):
         return False
-    if _EXACT_DECIMAL_STRING.match(value) is None:
+    if _EXACT_DECIMAL_STRING.fullmatch(value) is None:
         return False
-    return _MINUS_ZERO_DECIMAL.match(value) is None
+    return _MINUS_ZERO_DECIMAL.fullmatch(value) is None
 
 
 def assert_exact_integer_string(value: Any, path: str) -> None:

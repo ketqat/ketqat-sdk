@@ -1034,10 +1034,19 @@ def resolve_bundle_field(document: Any, field_path: str) -> Any:
     Own keys only and no attribute walk: a path of ``constructor`` would
     otherwise resolve on objects nobody wrote and report a claim as grounded in a
     field that does not exist.
+
+    ``fullmatch`` rather than ``match``, for the reason spelled out in
+    `study_values.py`: Python's ``$`` also matches just before a trailing
+    newline, so ``"estimates\\n"`` matched this anchored pattern here and did not
+    match the identical pattern in `resolveBundleField` in src/study/bundles.ts.
+    A claim whose ``field_path`` carried a stray newline therefore resolved in
+    this language and did not resolve in the other, and the two verifiers
+    disagreed about whether the claim was grounded -- which is the one thing a
+    second implementation exists to prevent.
     """
     current = document
     for part in field_path.split("."):
-        match = _BUNDLE_FIELD_PART.match(part)
+        match = _BUNDLE_FIELD_PART.fullmatch(part)
         if match is None or not isinstance(current, Mapping) or match.group(1) not in current:
             return None
         current = current[match.group(1)]

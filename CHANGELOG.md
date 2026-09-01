@@ -354,6 +354,27 @@ life.
   Extending the exclusion set would have been a new hash version, and a new hash version
   invalidates comparison with every record already stored.
 
+- **Property and cross-language differential tests for the study hashing family.**
+  `tests/study-properties.test.mjs` (`fast-check`) and
+  `python/tests/test_study_properties.py` (`hypothesis`) state five rules the existing
+  fixtures were instances of: identical records reach identical canonical bytes; a digest
+  moves *exactly* when its purpose's projection reaches the field it changed, at every depth
+  rather than only at the top level; the two languages return the same bytes or the same
+  refusal code and JSON path; and a record read back from a file hashes as it did in memory.
+
+  Both read one corpus, `fixtures/study/property-corpus.json`, generated from a seed recorded
+  in the file: every record kind at three levels of completeness, every declared leaf mutated
+  in turn, every top-level field deleted, `__proto__` and `constructor` as keys and as values,
+  NFC against NFD, lone surrogates, minus zero, subnormals, both sides of
+  `Number.MAX_SAFE_INTEGER`, duplicate JSON keys at byte level, and the structural bounds. One
+  corpus rather than two random walks, because two independently seeded generators would
+  explore disjoint ground and a disagreement would be found only where they happened to
+  overlap.
+
+  Both generators are development dependencies. The runtime dependency set is unchanged and
+  is asserted to be `zod` and `zod-to-json-schema` by
+  `tests/dependency-advisory-floors.test.mjs`.
+
 ### Changed
 
 - The npm package size policy moved again, from 2.5 MB to 2.8 MB, for the study family
@@ -387,8 +408,47 @@ life.
 - **A clean-room workflow** installs only the built artifacts into fresh environments and
   runs an algorithm and a three-decoder QEC comparison there, with the checkout nowhere on
   the path.
+- **The clean room now verifies the `study` contracts as a consumer**
+  ([#259](https://github.com/ketqat/ketqat-sdk/issues/259)). From the tarball and the wheel
+  alone, with no checkout: a `Study` parsed, a `StudyPlan` built and verified, a
+  `ConfirmationReceipt` exercised through expiry and plan supersession, an
+  `ExecutionCapsule` verified in **both** languages with the digests cross-checked, an
+  Evidence Graph and a `ResearchPackage` verified, a tampered package rejected by both, and
+  TypeScript/Python hash parity over every record under all four purposes — refusal codes
+  included, because two languages refusing one projection for one reason is as much a
+  parity statement as two languages producing one hex. Records are validated against the
+  JSON Schemas the *installed* packages carry, and those schemas are compared byte for byte
+  between the two artifacts: `npm run verify:schema-sync` compares the two source copies,
+  and nothing before this compared the two shipped ones. `scripts/clean-room/` holds the
+  suite and `npm run verify:clean-room` runs it locally the way CI does; the first thing it
+  does is prove no source tree is reachable from where it sits, because a consumer test
+  that accidentally imports `../src` passes for a package that ships nothing.
 
 ### Fixed
+
+- **Python's `$` accepted a trailing newline that TypeScript's did not.** Every anchored
+  pattern in the study family is written once and used twice — the TypeScript source is what
+  `zod-to-json-schema` emits into the shipped JSON Schemas, and Python compiles the same text
+  — so the two were assumed to mean the same thing. They did not: Python's `re` lets `$` match
+  just before a final newline and ECMAScript's does not. `is_exact_integer_string("1\n")` and
+  `is_exact_decimal_string("1.5\n")` therefore returned true in Python and false in
+  TypeScript, which is two spellings of one value admitted by a contract whose whole purpose
+  is to admit one — and the two spellings hash to two different digests. The same mismatch let
+  `resolve_bundle_field` resolve a `field_path` with a stray newline in it, so the Python
+  verifier could report a claim as grounded where the TypeScript one reported it ungrounded.
+  Both now use `fullmatch`, which requires the whole string to be consumed and leaves the
+  shared pattern text byte-identical to the emitted schema.
+
+  Found by the cross-language property suite added below, and pinned in
+  `fixtures/study/property-corpus.json` so it stays found.
+
+  **Still open, same root cause, not fixed here:** the `pattern` keyword in the shipped JSON
+  Schemas is evaluated by `jsonschema` through Python's `re`, so
+  `{"type":"string","pattern":"^[0-9a-f]{64}$"}` still accepts a 64-hex digest with a newline
+  after it in Python and is refused by the zod schema it was generated from. That affects
+  every anchored pattern in every emitted schema rather than two functions, and the fix is a
+  pattern-semantics shim in the validator rather than a one-word change, so it wants its own
+  issue and its own review.
 
 - **The TypeScript CLI accepts `KETQAT_API_TOKEN`** ([#218](https://github.com/ketqat/ketqat-sdk/issues/218)).
   It read `KETQAT_TOKEN` while the Settings page that mints the token, this README, the

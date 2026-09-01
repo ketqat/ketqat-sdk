@@ -44,6 +44,13 @@ benchmarks = ["mqt.bench>=2.2", "qiskit>=1.0", "supermarq>=0.5", "cirq-core>=1.4
 ibm = ["qiskit>=1.2", "qiskit-ibm-runtime>=0.30", "qiskit-aer>=0.15"]
 braket = ["amazon-braket-sdk>=1.80"]
 all = ["qualtran>=0.7", "mitiq>=1.0", "qdk>=1.30", "numpy>=1.26", "stim>=1.13", "pymatching>=2.2", "mqt.bench>=2.2", "qiskit>=1.0", "supermarq>=0.5", "cirq-core>=1.4", "qedcbench>=2.0", "pennylane>=0.40", "pennylane-qiskit>=0.40", "pytket>=2.0", "pyqir>=0.10"]
+# What the test suite needs and the runner does not. `hypothesis` generates the
+# study hashing properties in `python/tests/test_study_properties.py`, which
+# imports it at module scope rather than through `importorskip`: a generative
+# suite that skips reads as a pass, and that file exists to find what the fixtures
+# did not. An extra rather than a core dependency, for the reason every other
+# extra here is one -- an installed runner must not carry a test generator.
+dev = ["pytest>=8.0", "hypothesis>=6.100"]
 
 [project.scripts]
 ketqat = "ketqat_runner.cli:main"

@@ -94,8 +94,7 @@ jobs:
       - name: Install runner with real QEC dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e "python[qec,resources,mitigation,interop]"
-          python -m pip install pytest
+          python -m pip install -e "python[qec,resources,mitigation,interop,dev]"
 
       # The surface-code model is differentially tested against Qualtran, which is
       # Python, while the model itself is TypeScript -- so this needs both, and this
