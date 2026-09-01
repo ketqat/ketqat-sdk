@@ -16,7 +16,7 @@ import {
   verifyResearchPackage,
 } from "../dist/study/research-package.js"
 import { renderReportMarkdown } from "../dist/study/report.js"
-import { renderTableCsv, tableCsvArtifact } from "../dist/study/tables.js"
+import { renderTableCsv, renderTableMarkdown, tableCsvArtifact } from "../dist/study/tables.js"
 import { indexTableCells, renderFigureSvg, sanitizeStudySvg } from "../dist/study/figures.js"
 import { renderRecipeCommand } from "../dist/study/recipe.js"
 import { checkLedgerSummary } from "../dist/study/ledger.js"
@@ -1542,4 +1542,120 @@ test("the committed verification vectors are the ones this build produces", () =
       entry.label,
     )
   }
+})
+
+// --- three CodeQL findings, reproduced and fenced ------------------------
+//
+// All three shipped in this branch and were demonstrated before being fixed.
+// Each test below fails against the code as it was written.
+
+test("a figure title cannot close the attribute it is rendered into", () => {
+  // `escapeSvgText` escaped `&`, `<` and `>` -- enough for an element body, and
+  // not enough for `aria-label="..."`, which it was also used for. A title of
+  // `" onload="alert(1)` produced `aria-label="" onload="alert(1)">`: an event
+  // handler in a document this family generates precisely so that supplied SVG
+  // never has to be trusted.
+  const pkg = buildOrThrow()
+  const sources = new Map(pkg.nodes.map((node) => [node.content_hash, node]))
+  const hostile = {
+    ...pkg.figures[0],
+    title: '" onload="alert(1)',
+    caption: "</desc><script>alert(2)</script><desc>",
+  }
+
+  const svg = renderFigureSvg(hostile, sources, indexTableCells(pkg.tables))
+
+  // The property is about the attribute, not about the characters. `onload=`
+  // sitting inside an escaped attribute value is inert text; what must not
+  // happen is a `"` that ends `aria-label` and starts something else.
+  const ariaLabel = /aria-label="([^"]*)"/.exec(svg)
+  assert.ok(ariaLabel !== null, `no aria-label in ${svg}`)
+  assert.equal(ariaLabel[1], "&quot; onload=&quot;alert(1)")
+  assert.doesNotMatch(svg, /<script/i, "a script element reached the output")
+  assert.equal((svg.match(/aria-label=/g) ?? []).length, 1)
+
+  // The sanitizer refuses this output, and that is correct rather than a
+  // contradiction. Its event-handler pattern reads the bytes as they are, so
+  // `&quot; onload=` matches even though the quote is an entity and cannot
+  // delimit anything. A sanitizer that decoded entities before deciding would
+  // be reasoning about one parse of a document that several parsers will read,
+  // which is how sanitizers are evaded; refusing more than it must is the safe
+  // direction for it to be wrong in. The consequence is bounded and worth
+  // stating: a figure whose title genuinely contains `on…=` after a quote
+  // cannot be rendered, and the study says so rather than drawing it.
+  const sanitized = sanitizeStudySvg(svg)
+  assert.equal(sanitized.ok, false)
+  assert.deepEqual(codesOf(sanitized.findings), ["SVG_EVENT_HANDLER_REFUSED"])
+
+  // A title with nothing hostile in it still renders and still passes.
+  const benign = renderFigureSvg(
+    { ...pkg.figures[0], title: 'Physical qubits vs "distance"' },
+    sources,
+    indexTableCells(pkg.tables),
+  )
+  assert.match(benign, /aria-label="Physical qubits vs &quot;distance&quot;"/)
+  assert.equal(sanitizeStudySvg(benign).ok, true)
+})
+
+test("scanning element names stays linear on a long run of separators", () => {
+  // `<\s*\/?\s*` gave the engine an ambiguous split to backtrack through:
+  // 2,000 spaces after a `<` took 3.9 ms and 32,000 took 689 ms -- quadratic,
+  // on input the sanitizer exists to read from strangers.
+  const timeFor = (spaces) => {
+    const started = process.hrtime.bigint()
+    sanitizeStudySvg(`<svg xmlns="http://www.w3.org/2000/svg"><${" ".repeat(spaces)}`)
+    return Number(process.hrtime.bigint() - started) / 1e6
+  }
+
+  timeFor(1000) // warm the JIT so the ratio measures the pattern, not the compile
+  const small = Math.max(timeFor(8_000), 0.5)
+  const large = timeFor(64_000)
+
+  // Eight times the input. Linear would be ~8x; the old pattern was ~64x.
+  assert.ok(large < small * 24, `8x input took ${(large / small).toFixed(1)}x the time`)
+  // And it still finds what it is for.
+  assert.equal(sanitizeStudySvg("<svg><script>x</script></svg>").ok, false)
+  assert.equal(sanitizeStudySvg("<svg></ script></svg>").ok, false)
+})
+
+test("a table cell cannot split its own row", () => {
+  // Escaping only the pipe turned `a\|b` into `a\\|b`, where the doubled
+  // backslash is a literal and the pipe delimits again. A newline ends the row
+  // outright, moving every later value into the wrong column.
+  const pkg = buildOrThrow()
+  const sources = new Map(pkg.nodes.map((node) => [node.content_hash, node]))
+  const table = pkg.tables[0]
+  const hostile = {
+    ...table,
+    columns: table.columns.map((column, index) =>
+      index === 0 ? { ...column, header: "a\\|b\nc" } : column,
+    ),
+  }
+
+  // The property is that a hostile label changes the *text* of a cell and
+  // nothing about the shape of the table. Comparing against the same table
+  // rendered with a benign label tests exactly that, without assuming how many
+  // columns the header derives from the spec.
+  const benign = {
+    ...table,
+    columns: table.columns.map((column, index) =>
+      index === 0 ? { ...column, header: "safe" } : column,
+    ),
+  }
+  const cellCount = (markdown) => markdown.split("\n")[0].split(/(?<!\\)\|/).length
+
+  const hostileMarkdown = renderTableMarkdown(hostile, sources)
+  const benignMarkdown = renderTableMarkdown(benign, sources)
+
+  assert.equal(hostileMarkdown.split("\n").length, benignMarkdown.split("\n").length,
+    "the hostile label added a row")
+  assert.equal(cellCount(hostileMarkdown), cellCount(benignMarkdown),
+    `the hostile label added a cell: ${hostileMarkdown.split("\n")[0]}`)
+  // And the hostile text is present, escaped, inside one cell: the backslash
+  // doubled so it cannot escape anything, the pipe escaped so it cannot
+  // delimit, and the newline replaced so it cannot end the row.
+  assert.ok(
+    hostileMarkdown.includes("a\\\\\\|b c"),
+    `escaped label missing from: ${hostileMarkdown.split("\n")[0]}`,
+  )
 })

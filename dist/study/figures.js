@@ -168,7 +168,13 @@ const PERMITTED_SVG_ELEMENTS = Object.freeze([
 ]);
 const permittedSvgElements = new Set(PERMITTED_SVG_ELEMENTS);
 /** Every `<name` and `</name` in the document, in the order they appear. */
-const ELEMENT_NAME = /<\s*\/?\s*([A-Za-z_][A-Za-z0-9_.:-]*)/g;
+// `[\s/]*` rather than `\s*\/?\s*`: two adjacent optional-whitespace groups
+// around an optional slash give the engine an ambiguous split to backtrack
+// through, and on a long run of spaces after a `<` that is quadratic -- 32,000
+// spaces took 689 ms, against 3.9 ms for 2,000. One quantified class has no
+// ambiguity to explore. It also accepts `//` and `/ /`, which a stricter
+// pattern would let past a detector whose whole job is to be hard to evade.
+const ELEMENT_NAME = /<[\s/]*([A-Za-z_][A-Za-z0-9_.:-]*)/g;
 /** `onclick=`, `onload=`, and every other handler attribute, whatever the spacing. */
 const EVENT_HANDLER = /[\s"'`]on[a-zA-Z-]+\s*=/;
 /**
@@ -402,8 +408,27 @@ function plottableValue(ref, cells, sources) {
 function coordinate(value) {
     return (Math.round(value * 1000) / 1000).toFixed(3);
 }
+/**
+ * Escape a value for either an element body or a quoted attribute value.
+ *
+ * The quotes are the point. This function was written for element bodies, where
+ * `&`, `<` and `>` are enough, and then used for `aria-label="..."` as well --
+ * where they are not. A title of `" onload="alert(1)` closed the attribute and
+ * opened an event handler, in a document the family generates precisely so that
+ * supplied SVG never has to be trusted. One escaper covering both contexts is
+ * safer than two that a call site can choose between wrongly, and escaping
+ * quotes inside an element body is harmless.
+ *
+ * The apostrophe is escaped as `&#39;` rather than `&apos;`: the latter is not
+ * an HTML4 entity, and these bytes are read by SVG and HTML parsers alike.
+ */
 function escapeSvgText(value) {
-    return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 const WIDTH = 640;
 const HEIGHT = 400;

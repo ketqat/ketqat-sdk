@@ -22,7 +22,7 @@ from the published data, and never handed out.
 from __future__ import annotations
 
 from types import MappingProxyType
-from typing import Mapping
+from typing import Mapping, NoReturn
 
 #: Every way the hashing core can refuse, named.
 #:
@@ -89,7 +89,7 @@ class StudyHashRefusal(ValueError):
         self.path = path
 
 
-def refuse(code: str, message: str, path: str | None = None) -> "NoReturn":  # type: ignore[name-defined]
+def refuse(code: str, message: str, path: str | None = None) -> NoReturn:
     raise StudyHashRefusal(code, message, path)
 
 

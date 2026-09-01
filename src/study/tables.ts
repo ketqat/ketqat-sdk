@@ -360,7 +360,16 @@ export function renderTableMarkdown(
   sources: ReadonlyMap<string, TableValueSource>,
 ): string {
   const headers = csvHeaderFields(table)
-  const escape = (value: string): string => value.replace(/\|/g, "\\|")
+  // Backslash first, then pipe. Escaping only the pipe turns `a\|b` into
+  // `a\\|b`, where the doubled backslash is a literal and the pipe is a cell
+  // delimiter again -- so a value could split its own row. Newlines go too: a
+  // Markdown table row ends at one, and a cell that ends the row early moves
+  // every value after it into the wrong column.
+  const escape = (value: string): string =>
+    value
+      .replace(/\\/g, "\\\\")
+      .replace(/\|/g, "\\|")
+      .replace(/\r\n|\r|\n/g, " ")
   const lines = [
     `| ${headers.map(escape).join(" | ")} |`,
     `| ${headers.map(() => "---").join(" | ")} |`,

@@ -28,7 +28,6 @@ from typing import Any
 from jsonschema import Draft7Validator
 
 from .study_hash import study_self_hash
-from .study_package import verify_research_package as package_verification
 from .study_limits import StudyHashRefusal
 from .study_rules import STUDY_HASH_RULES_KEY, STUDY_KNOWN_HASH_RULES_IDS
 from .validation import KetQatValidationError, load_schema
@@ -218,4 +217,12 @@ def verify_research_package(
         raise KetQatValidationError(
             f"A research package must be a JSON object, not {type(value).__name__}."
         )
-    return package_verification(value, validate_schema=validate_schema, **options)
+    # Imported here rather than at module scope. `study_package` genuinely depends
+    # on this module -- it validates records against the shipped schemas -- while
+    # this function is only a convenience re-export in the other direction. Making
+    # the convenience edge the deferred one leaves a single direction of
+    # dependency at import time instead of a cycle both modules had to work
+    # around.
+    from .study_package import verify_research_package
+
+    return verify_research_package(value, validate_schema=validate_schema, **options)

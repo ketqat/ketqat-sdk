@@ -73,6 +73,14 @@ STUDY_CONTROL_PLANE_KIND_NAMES: tuple[str, ...] = tuple(
     entry["record_kind"] for entry in STUDY_CONTROL_PLANE_KINDS
 )
 
+#: Declared public, because it is one half of a cross-language pair.
+#:
+#: `src/study/registry.ts` exports the same name, and the two are meant to be
+#: read together. Nothing inside this package consumes it, which is the ordinary
+#: state of an exported constant -- saying so here is what distinguishes it from
+#: a name that was left behind.
+__all__ = ["STUDY_CONTROL_PLANE_KIND_NAMES"]
+
 #: The working lookups, module-private and built from the published tuples.
 _KINDS_BY_NAME = {entry["record_kind"]: entry for entry in STUDY_RECORD_KINDS}
 _CONTROL_PLANE_BY_NAME = {entry["record_kind"]: entry for entry in STUDY_CONTROL_PLANE_KINDS}

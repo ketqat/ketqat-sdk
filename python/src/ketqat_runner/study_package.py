@@ -52,6 +52,7 @@ from .study_jcs import serialize_jcs_number
 from .study_limits import StudyHashRefusal
 from .study_registry import study_shape_document
 from .study_rules import STUDY_HASH_RULES_KEY, STUDY_KNOWN_HASH_RULES_IDS
+from .study_validation import KetQatValidationError, validate_study_record
 
 #: Ceilings, the package limits and the graph's own rules, read from the emitted
 #: document rather than restated here.
@@ -1775,11 +1776,15 @@ def derive_status(levels: Mapping[str, Any]) -> str:
 def not_established(levels: Mapping[str, Any]) -> list[str]:
     """What this result does not establish, in sentences a surface can render."""
     sentences = [
-        "Nothing here is signed. The attestation level is hash_only: a matching digest establishes that two "
-        "byte sequences are the same byte sequence, and not that anyone authorised, produced, or stands "
-        "behind them.",
-        "This is structural verification, not reproduction. No model was re-run: the Python verifier hashes, "
-        "validates and walks structure, and ADR 0010 withholds the science from it on purpose.",
+        (
+            "Nothing here is signed. The attestation level is hash_only: a matching digest establishes that "
+            "two byte sequences are the same byte sequence, and not that anyone authorised, produced, or "
+            "stands behind them."
+        ),
+        (
+            "This is structural verification, not reproduction. No model was re-run: the Python verifier "
+            "hashes, validates and walks structure, and ADR 0010 withholds the science from it on purpose."
+        ),
     ]
     if levels["hash_matches"]:
         sentences.append(
@@ -1921,11 +1926,6 @@ def verify_research_package(
         return result([rules])
 
     if validate_schema:
-        # Imported here rather than at module scope: `study_validation` imports
-        # this module for the package checks, and a top-level import in both
-        # directions is a cycle.
-        from .study_validation import KetQatValidationError, validate_study_record
-
         try:
             validate_study_record(dict(value), "research_package")
         except KetQatValidationError as error:
