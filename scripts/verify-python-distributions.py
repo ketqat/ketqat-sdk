@@ -19,6 +19,21 @@ REQUIRED_SCHEMAS = {
     "algorithm-experiment-manifest.schema.json",
     "qec-benchmark-result.schema.json",
     "qec-experiment-manifest.schema.json",
+    # The study family. `study_validation.py` resolves these from the installed
+    # package, so an artifact that omits one validates in a checkout and refuses
+    # the same record for everyone who installed the wheel.
+    "study.schema.json",
+    "study-event.schema.json",
+    "problem-specification.schema.json",
+    "study-plan.schema.json",
+    "confirmation-receipt.schema.json",
+    "study-task-authorization.schema.json",
+    "execution-job.schema.json",
+    "task-outcome.schema.json",
+    "evidence-node.schema.json",
+    "evidence-edge.schema.json",
+    "execution-capsule.schema.json",
+    "research-package.schema.json",
 }
 REQUIRED_EXAMPLES = {
     "examples/algorithms/grover-search.yaml",

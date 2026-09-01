@@ -1,0 +1,105 @@
+{
+  "schema_version": "1.0",
+  "hash_rules_id": "study-v1",
+  "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+  "authorization_ref": "2971a56ad76a051450f464fe6a3b345eadb7e562c9988a2693bc5ec2ac89635f",
+  "manifest_hash": "be783cbd348189a0415c0ac94a67276a803ccaa24ca54e8d62b3deeca5a8769c",
+  "versions": {
+    "schema": "1.0",
+    "adapter": {
+      "name": "ketqat-provider-ionq",
+      "version": "2.1.0"
+    },
+    "engine": {
+      "name": "ketqat-engine",
+      "version": "0.3.0"
+    }
+  },
+  "source_hash": "489411c005d3b7e54ebed1ee0d39b823f4eaa80121cda982b62a3548fa8e255b",
+  "seed": null,
+  "environment": {
+    "operating_system": "Linux",
+    "architecture": "x86_64",
+    "python_version": "3.11.9",
+    "packages": [
+      {
+        "name": "ketqat-provider-ionq",
+        "version": "2.1.0"
+      }
+    ],
+    "hardware": [
+      {
+        "name": "submitter",
+        "value": "ketqat-runner"
+      }
+    ]
+  },
+  "inputs": [
+    {
+      "name": "surface-code-memory.stim",
+      "role": "CIRCUIT",
+      "media_type": "text/plain",
+      "byte_size": "48213",
+      "content_hash": "c8bdc362e6c50b7c7177445e379017a1df308237b5790f1c7952b0d91677ba93",
+      "resolution": {
+        "kind": "CONTENT_ADDRESSED_STORE",
+        "locator": "cas://c8/bd/c362e6c50b7c"
+      },
+      "completeness": "COMPLETE",
+      "partial_reason": null,
+      "redaction": "NONE",
+      "redaction_reason": null
+    }
+  ],
+  "outputs": [
+    {
+      "name": "provider-counts.json",
+      "role": "MEASUREMENTS",
+      "media_type": "application/json",
+      "byte_size": "16384",
+      "content_hash": "1c4e5a0d7b96f238e41a0c5b7d3e962f84a10bd5e7c3021f6b98d4a70e5c3182",
+      "resolution": {
+        "kind": "PROVIDER_HELD",
+        "locator": "ionq:job/8f31c7e0-5b46-4d2a-9c18-73e5f19b4602"
+      },
+      "completeness": "PARTIAL",
+      "partial_reason": "The provider returned aggregate counts; per-shot records are not retained on this plan.",
+      "redaction": "REDACTED",
+      "redaction_reason": "Queue and account identifiers removed under data-handling policy dh-2026-07."
+    }
+  ],
+  "execution_class": "HARDWARE",
+  "execution": {
+    "kind": "HARDWARE",
+    "provider_adapter": {
+      "name": "ketqat-provider-ionq",
+      "version": "2.1.0"
+    },
+    "backend_snapshot": {
+      "provider": "ionq",
+      "backend": "aria-1",
+      "snapshot_hash": "5b7d3e962f84a10bd5e7c3021f6b98d4a70e5c31821c4e5a0d7b96f238e41a0c"
+    },
+    "confirmation_receipt_ref": "7f1c9d4a3b6e28051c74af9d0e6b32c85d47a1e9f30b6c25843df70a19e5b6c3",
+    "provider_result_ref": "a70e5c31821c4e5a0d7b96f238e41a0c5b7d3e962f84a10bd5e7c3021f6b98d4",
+    "cost_confirmation": {
+      "credits_charged": 182.5,
+      "authorized_maximum": 250,
+      "source": "PROVIDER_REPORTED"
+    },
+    "quota_confirmation": {
+      "quota": "monthly_shots",
+      "within_quota": true,
+      "source": "PROVIDER_REPORTED",
+      "exceeded_reason": null
+    }
+  },
+  "logs_ref": null,
+  "cancellation": {
+    "cancelled": false,
+    "reason": null
+  },
+  "attestation_level": "hash_only",
+  "created_at": "2026-01-02T09:14:07.000Z",
+  "reproducibility_hash": "9ccfcc9b9740cbffa5a4d9885eb74f9fbe1d89e0b4962dd06a77b0d55842b6a3"
+}

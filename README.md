@@ -167,6 +167,109 @@ Above the code threshold the estimator reports infeasible with the reason, never
 large number -- a large number reads as "expensive but possible", which is the opposite of
 true.
 
+## Studies and the Evidence Graph
+
+`ketqat-sdk/study` holds a whole investigation rather than a single run: what was asked
+(`ProblemSpecification`), what was going to be done about it (`StudyPlan`), what somebody
+approved (`ConfirmationReceipt`), what that approval authorised (`StudyTaskAuthorization`),
+what actually ran (`ExecutionCapsule`, `TaskOutcome`), and what may be claimed afterwards
+(`EvidenceNode`, `EvidenceEdge`, `ResearchPackage`).
+
+A confirmation is a record rather than a hash somebody passed as an argument. It names the plan
+revision, the plan's semantic hash recomputed at the moment of confirming, the authenticated
+subject, the tenant, the OAuth client, the scope, the digest of the summary that was actually
+shown, the credit ceiling, the resource class, the data-handling policy revision, the expiry,
+the nonce and the idempotency key — and it states in its own `limitations` that it is not a
+cryptographic signature by the person named in it. Nothing here is signed; `attestation_level`
+stays `hash_only`.
+
+A task's identity does not change when it runs. The authorization is immutable and carries no
+status, so queueing, retrying and finishing move nothing that other records point at; the
+mutable half is an `ExecutionJob`, which this family deliberately does not content-address and
+refuses to hash. An `ExecutionCapsule` requires the evidence its execution class can actually
+produce: a managed simulation names its image digest, dependency lock, runner version, limits
+and execution receipt; a local simulation may have no image and must then capture the machine
+and state what that does not establish; a hardware run names its provider adapter, backend
+snapshot, confirmation receipt, provider result, and what it cost against what was allowed. No
+capsule field can hold a credential, in any class. A `Study` is an aggregate with a stable
+opaque id; everything that changes flows through an append-only, hash-chained `StudyEvent`
+trail. Each event names its predecessor's hash, so no event inside a trail can be reordered,
+spliced in or replayed without breaking the next link. Whether the trail is the *whole* trail
+is a different question: a truncated trail is still a valid chain, so `verifyStudyEventChain`
+takes an expected head hash — held by whoever read the events out of the store — and its
+verdict says whether it got one, because a verdict that stayed silent about that would look
+exactly like one that had checked.
+
+Several things are enforced by the types rather than by convention:
+
+- **A study is identified by an id, not by a digest.** `study_id` is minted once and derived
+  from nothing, and every `study_ref` in the family points at it. Content addressing an
+  aggregate reads strangely as soon as you use it: renaming a study changed its identity and
+  orphaned every record referring to it, while changing its status — a real change — changed
+  nothing. The record splits an immutable `core` from mutable `presentation`, and
+  `updateStudyPresentation` returns a study with the same `content_hash` it started with.
+  Specification, plan and report *revisions* stay content-addressed, because there a changed
+  record genuinely is a different record.
+- **The trail is a typed union, and the endings are separate words.** `StudyEvent` is a
+  discriminated union over twenty-two event types — created, revised, elicited, confirmed,
+  planned, superseded, authorised, queued, started, completed, failed, cancelled, concluded,
+  retracted, published, reproduced, reviewed — each carrying only the payload its meaning
+  needs, so a `task_started` event cannot carry a package reference. Which event is legal from
+  which status is declared per event type rather than inferred from a pair of statuses, since
+  a pair never distinguished `task_started` from `study_superseded`. `REFUSED` (no evidence to
+  conclude on), `NEEDS_INPUT` (waiting), `CANCELLED` (the user stopped it), `RETRACTED` (a
+  conclusion withdrawn) and `SUPERSEDED` (replaced) are five statuses, where one word used to
+  stand for all of them.
+- **A revision is refused unless four statements agree.** The hash written on the record being
+  revised, the hash recomputed from its contents, the hash the caller asserts, and — where the
+  caller supplies it — the newest revision the store knows. Each disagreement is a different
+  accident and comes back as a different code, as a refusal rather than a throw. What the SDK
+  cannot see is a record it was not handed: two callers revising revision 2 at the same moment
+  each produce a well-formed revision 3. `STUDY_PERSISTENCE_INVARIANTS` names the unique
+  indexes and compare-and-set predicates a store owes for that, beside what the SDK checks.
+
+- **A number in a report is a node in the graph.** Every result row in a `ResearchPackage`
+  names the `EvidenceNode` its value is read from, and that node has to carry a value — a row
+  pointing at a claim or at a reference has no number to read out. Every claim has to be
+  joined to the evidence it cites by a `supports` or `contradicts` edge the package carries,
+  which is where the relation is written down with its rationale and its asserter, so a claim
+  cannot be its own evidence and a citation the graph does not corroborate is refused.
+  `buildResearchPackage` refuses rather than exporting with a warning attached, and
+  `verifyResearchPackage` makes the same checks on a file it did not write. What none of this
+  weighs is whether the evidence supports the conclusion: the edges are the study's own
+  assertions, checked for being present, joined up and attributed — never for being right.
+- **A confirmation is a hash, not an intention.** Plan revisions are immutable and
+  content-addressed, so a changed plan needs a new confirmation by construction: its hash
+  moved. `verifyPlanConfirmation` recomputes the hash, so a plan edited and re-stamped with
+  the confirmed value is refused too.
+- **One digest cannot answer two questions, so there are four.** `semanticHash` asks whether
+  two records describe the same scientific content, `recordHash` whether a file was edited
+  after it was written, `receiptHash` whether a server observed an action in a given order,
+  and `artifactHash` whether some bytes are the bytes that were produced. A timestamp has to
+  be outside the first and inside the second, which is why one digest doing both jobs ends up
+  answering whichever question the reader happened to be asking. **None of them establishes
+  authenticity**: `attestation_level` is `hash_only`, and a matching hash is never described
+  here as "signed", "authentic" or "scientifically correct".
+- **What a digest covers is declared, not pattern-matched.** Each record kind classifies every
+  field it has, and the digest is built from those declarations — so a key nobody declared is
+  never read, at any nesting depth, and is refused rather than silently dropped. A test walks
+  each schema against the classification and fails on any field it does not classify, in
+  either direction, so adding a field is a decision a reviewer sees rather than a default.
+  Serialization is RFC 8785 (JCS), implemented against the RFC in both languages and pinned to
+  the RFC's own test vectors.
+- **Nothing is inferred about how a record was hashed.** Study records name their rule set
+  in `hash_rules_id` (`study-v1`) and are refused without it — see
+  [Schema Versioning](#schema-versioning) for why that is a different field from
+  `reproducibility_hash_version`.
+
+Unknowns stay representable everywhere the family carries a value, with one exception: a
+claim asserts something, so a claim whose quantity is `UNKNOWN` is refused at parse. The
+unknown belongs in a `quantity` node or in the specification's open questions, where a
+reader can see that the question was asked and not answered.
+
+Python validates, hashes, and resolves the claim map and graph structurally. It does not
+recompute the science, and `verify_research_package` says so in its own result.
+
 ## Schema Versioning
 
 The npm package version and research schema version are separate. `SDK_VERSION` is currently `0.2.0`; `SCHEMA_VERSION` is currently `0.1`.

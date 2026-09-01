@@ -4,6 +4,7 @@ export * from "./circuit/index.js";
 export * from "./hardware/profile.js";
 export * from "./engine/index.js";
 export * from "./intelligence/index.js";
+export * from "./study/index.js";
 export * from "./cli/index.js";
 export * from "./mcp/index.js";
 export * from "./mcp/transport.js";

@@ -1,0 +1,1409 @@
+{
+  "$ref": "#/definitions/study-event",
+  "definitions": {
+    "study-event": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "study_created"
+            },
+            "schema_version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "hash_rules_id": {
+              "type": "string",
+              "const": "study-v1"
+            },
+            "study_ref": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "previous_event_hash": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "from_status": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "DRAFT",
+                    "SPECIFIED",
+                    "PLANNED",
+                    "AWAITING_CONFIRMATION",
+                    "RUNNING",
+                    "NEEDS_INPUT",
+                    "CONCLUDED",
+                    "REFUSED",
+                    "RETRACTED",
+                    "CANCELLED",
+                    "SUPERSEDED"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "type": "string",
+              "minLength": 1
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "specification_revised"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "specification_ref": {
+              "type": "object",
+              "properties": {
+                "revision_hash": {
+                  "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+                },
+                "revision": {
+                  "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+                }
+              },
+              "required": [
+                "revision_hash",
+                "revision"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "specification_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "question_elicited"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "question": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "question"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "answer_confirmed"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "question": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "question"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "plan_created"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "plan_ref": {
+              "$ref": "#/definitions/study-event/anyOf/1/properties/specification_ref"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "plan_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "plan_superseded"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "plan_ref": {
+              "$ref": "#/definitions/study-event/anyOf/1/properties/specification_ref"
+            },
+            "superseded_plan_ref": {
+              "$ref": "#/definitions/study-event/anyOf/1/properties/specification_ref"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "plan_ref",
+            "superseded_plan_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "confirmation_requested"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "plan_ref": {
+              "$ref": "#/definitions/study-event/anyOf/1/properties/specification_ref"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "plan_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "confirmation_recorded"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "plan_ref": {
+              "$ref": "#/definitions/study-event/anyOf/1/properties/specification_ref"
+            },
+            "confirmed_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "receipt_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "plan_ref",
+            "confirmed_hash",
+            "receipt_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "task_authorised"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "task_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "plan_ref": {
+              "$ref": "#/definitions/study-event/anyOf/1/properties/specification_ref"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "task_ref",
+            "plan_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "task_queued"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "task_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "task_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "task_started"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "task_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "task_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "task_completed"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "task_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "capsule_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "task_ref",
+            "capsule_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "task_failed"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "task_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "task_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "task_cancelled"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "task_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "task_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "conclusion_created"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "package_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "package_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "conclusion_retracted"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "package_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "package_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "study_refused"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "study_cancelled"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "study_superseded"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "superseding_study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "superseding_study_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "study_published"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "package_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "package_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "reproduction_submitted"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "package_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "reproduction_capsule_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "package_ref",
+            "reproduction_capsule_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "const": "review_recorded"
+            },
+            "schema_version": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/schema_version"
+            },
+            "hash_rules_id": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/hash_rules_id"
+            },
+            "study_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/study_ref"
+            },
+            "sequence": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/sequence"
+            },
+            "previous_event_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash"
+            },
+            "from_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status"
+            },
+            "to_status": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/from_status/anyOf/0"
+            },
+            "actor": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/actor"
+            },
+            "reason": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/reason"
+            },
+            "created_at": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/created_at"
+            },
+            "content_hash": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "package_ref": {
+              "$ref": "#/definitions/study-event/anyOf/0/properties/previous_event_hash/anyOf/0"
+            },
+            "review_verdict": {
+              "type": "string",
+              "enum": [
+                "ACCEPTED",
+                "CHANGES_REQUESTED",
+                "REJECTED"
+              ]
+            }
+          },
+          "required": [
+            "event_type",
+            "schema_version",
+            "hash_rules_id",
+            "study_ref",
+            "sequence",
+            "previous_event_hash",
+            "from_status",
+            "to_status",
+            "actor",
+            "reason",
+            "content_hash",
+            "package_ref",
+            "review_verdict"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

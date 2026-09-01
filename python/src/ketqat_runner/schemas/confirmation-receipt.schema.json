@@ -1,0 +1,153 @@
+{
+  "$ref": "#/definitions/confirmation-receipt",
+  "definitions": {
+    "confirmation-receipt": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash_rules_id": {
+          "type": "string",
+          "const": "study-v1"
+        },
+        "study_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "plan_ref": {
+          "type": "object",
+          "properties": {
+            "revision_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "revision": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "revision_hash",
+            "revision"
+          ],
+          "additionalProperties": false
+        },
+        "plan_semantic_hash": {
+          "$ref": "#/definitions/confirmation-receipt/properties/plan_ref/properties/revision_hash"
+        },
+        "shown_summary_hash": {
+          "$ref": "#/definitions/confirmation-receipt/properties/plan_ref/properties/revision_hash"
+        },
+        "authorization_scope": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,63}:[a-z][a-z0-9_]{0,63}$"
+          },
+          "minItems": 1
+        },
+        "estimated_credits": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_credits": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "resource_class": {
+          "type": "string",
+          "enum": [
+            "MANAGED_SIMULATION",
+            "LOCAL_SIMULATION",
+            "HARDWARE"
+          ]
+        },
+        "data_handling_policy_revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "attestation_level": {
+          "type": "string",
+          "enum": [
+            "hash_only"
+          ]
+        },
+        "actor_subject_id": {
+          "type": "string",
+          "pattern": "^[\\x21-\\x7e]{1,255}$"
+        },
+        "tenant_id": {
+          "$ref": "#/definitions/confirmation-receipt/properties/actor_subject_id"
+        },
+        "oauth_client_id": {
+          "$ref": "#/definitions/confirmation-receipt/properties/actor_subject_id"
+        },
+        "confirmation_channel": {
+          "type": "string",
+          "enum": [
+            "WEB_CONSOLE",
+            "REST_API",
+            "CLI",
+            "MCP_CLIENT"
+          ]
+        },
+        "confirmed_at": {
+          "$ref": "#/definitions/confirmation-receipt/properties/expires_at"
+        },
+        "nonce": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32,128}$"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{16,128}$"
+        },
+        "content_hash": {
+          "$ref": "#/definitions/confirmation-receipt/properties/plan_ref/properties/revision_hash"
+        }
+      },
+      "required": [
+        "schema_version",
+        "hash_rules_id",
+        "study_ref",
+        "plan_ref",
+        "plan_semantic_hash",
+        "shown_summary_hash",
+        "authorization_scope",
+        "estimated_credits",
+        "max_credits",
+        "resource_class",
+        "data_handling_policy_revision",
+        "expires_at",
+        "limitations",
+        "attestation_level",
+        "actor_subject_id",
+        "tenant_id",
+        "oauth_client_id",
+        "confirmation_channel",
+        "confirmed_at",
+        "nonce",
+        "idempotency_key",
+        "content_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

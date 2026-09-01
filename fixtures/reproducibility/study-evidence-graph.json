@@ -1,0 +1,164 @@
+{
+  "nodes": [
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "quantity",
+      "label": "Total physical qubits, base scenario",
+      "visibility": "PUBLIC",
+      "claim": null,
+      "quantity": {
+        "value": 4200000,
+        "unit": "physical qubits",
+        "bound": "UPPER_BOUND",
+        "evidence": "MODELLED",
+        "source": "Resource estimate under the base scenario.",
+        "model": "ketqat-resource-intelligence",
+        "model_version": "0.1.0",
+        "assumptions": [
+          "Physical error rate 0.001.",
+          "Rotated surface code with the conventional fitted prefactor."
+        ],
+        "created_at": "2026-01-01T00:00:02.000Z",
+        "schema_version": "0.1",
+        "limitations": [
+          "Modelled, not measured. No device was run."
+        ]
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "1b1dba334ce8f78437a1f3cece5bf49851926c3467f80f8246b5bc6a52ede1df"
+    },
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "claim",
+      "label": "Shor-2048 fits within 4.2 million physical qubits under the base scenario",
+      "visibility": "PUBLIC",
+      "claim": {
+        "subject_ref": {
+          "record_kind": "quantum_workload",
+          "hash": null,
+          "record_slug": "shor-2048"
+        },
+        "metric": "total_physical_qubits",
+        "comparator": "AT_MOST",
+        "value_ref": {
+          "kind": "value_node",
+          "node_hash": "1b1dba334ce8f78437a1f3cece5bf49851926c3467f80f8246b5bc6a52ede1df",
+          "field_path": null
+        }
+      },
+      "quantity": null,
+      "reference": null,
+      "citation": null,
+      "limitations": [
+        "The claim holds only under the base scenario's assumptions, which are listed on the quantity it reads."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "09ed6e11c15603dc4f5e770b6e0c03ccad0c2b114e894f1238878442122c1a92"
+    },
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "quantity",
+      "label": "Classical baseline runtime for RSA-2048 factoring",
+      "visibility": "PUBLIC",
+      "claim": null,
+      "quantity": {
+        "value": null,
+        "unit": "seconds",
+        "bound": "POINT",
+        "evidence": "UNKNOWN",
+        "source": "Not computed.",
+        "model": "ketqat-resource-intelligence",
+        "model_version": "0.1.0",
+        "assumptions": [],
+        "created_at": "2026-01-01T00:00:02.000Z",
+        "schema_version": "0.1",
+        "limitations": [
+          "No measured classical runtime was supplied at this problem size, so no speedup or economic conclusion is drawn."
+        ]
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [
+        "An unknown here is why this study makes a qubit-count claim and no economic one."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "3b32f068709097618a78b8d4f5d09d58f611c4ea8645761c9f99547638147431"
+    },
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "result",
+      "label": "Resource estimate snapshot, base scenario",
+      "visibility": "PUBLIC",
+      "claim": null,
+      "quantity": null,
+      "reference": {
+        "record_kind": "resource_estimate_snapshot",
+        "hash": "38773a6648bcf4f7f9536634909ce3864521c79f22b7c9f8d7ef135f79dafa64",
+        "record_slug": null
+      },
+      "citation": null,
+      "limitations": [
+        "One scenario. Conservative and optimistic scenarios are separate results, never averaged with this one."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "f4d19fe67cffaa01d685482893cba72656298428cc2b1996d682a1a85c98a8ed"
+    }
+  ],
+  "edges": [
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "supports",
+      "from_node_hash": "1b1dba334ce8f78437a1f3cece5bf49851926c3467f80f8246b5bc6a52ede1df",
+      "to_node_hash": "09ed6e11c15603dc4f5e770b6e0c03ccad0c2b114e894f1238878442122c1a92",
+      "asserted_by": "ketqat-resource-intelligence",
+      "rationale": "The claimed bound is this number, read from the node the claim names rather than restated beside it.",
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "8bc93ece0486e8d5cfb0066cb9151ae1d1a5552a98d15dcb8babba2a6e43c9fd"
+    },
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "derived_from",
+      "from_node_hash": "1b1dba334ce8f78437a1f3cece5bf49851926c3467f80f8246b5bc6a52ede1df",
+      "to_node_hash": "f4d19fe67cffaa01d685482893cba72656298428cc2b1996d682a1a85c98a8ed",
+      "asserted_by": "ketqat-resource-intelligence",
+      "rationale": "The qubit count is read out of this estimate. Without this edge the claim rests on a number with no run behind it.",
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "49163a9a5eb331c871a6f7b50f2d162593ca952fe5c4ed7b73bd3178ee1a1ce7"
+    },
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "used_input",
+      "from_node_hash": "f4d19fe67cffaa01d685482893cba72656298428cc2b1996d682a1a85c98a8ed",
+      "to_node_hash": "3b32f068709097618a78b8d4f5d09d58f611c4ea8645761c9f99547638147431",
+      "asserted_by": "ketqat-resource-intelligence",
+      "rationale": "The estimate consumed the classical baseline runtime, which was never established; the edge records the dependency an absent number would otherwise hide.",
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "a2840248706d0a55f32e55ddfc88021f284a5b2da4bfaa19cdd88320d9b68acd"
+    }
+  ]
+}

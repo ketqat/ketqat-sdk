@@ -1,0 +1,1789 @@
+{
+  "$ref": "#/definitions/research-package",
+  "definitions": {
+    "research-package": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash_rules_id": {
+          "type": "string",
+          "const": "study-v1"
+        },
+        "package_kind": {
+          "type": "string",
+          "const": "KETQAT_RESEARCH_PACKAGE"
+        },
+        "distribution": {
+          "type": "string",
+          "enum": [
+            "ONLINE",
+            "OFFLINE_EXPORT"
+          ]
+        },
+        "study_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "plan_ref": {
+          "type": "object",
+          "properties": {
+            "revision_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "revision": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "revision_hash",
+            "revision"
+          ],
+          "additionalProperties": false
+        },
+        "report": {
+          "type": "object",
+          "properties": {
+            "sections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "section_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "segments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "HEADING",
+                            "PROSE",
+                            "CLAIM_REF",
+                            "QUANTITY_REF",
+                            "CITATION_REF",
+                            "LIMITATION_REF",
+                            "TABLE_REF",
+                            "FIGURE_REF"
+                          ]
+                        },
+                        "level": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 6
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "text": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 8192
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "node_hash": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "citation_index": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "limitation_index": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "table_id": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "figure_id": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "level",
+                        "text",
+                        "node_hash",
+                        "citation_index",
+                        "limitation_index",
+                        "table_id",
+                        "figure_id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 1024
+                  }
+                },
+                "required": [
+                  "section_id",
+                  "title",
+                  "segments"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 256
+            },
+            "commentary": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "commentary_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 262144
+                  }
+                },
+                "required": [
+                  "commentary_id",
+                  "title",
+                  "text"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 256
+            }
+          },
+          "required": [
+            "sections",
+            "commentary"
+          ],
+          "additionalProperties": false
+        },
+        "tables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "table_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "caption": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "ASSUMPTIONS",
+                  "RESULTS",
+                  "OTHER"
+                ]
+              },
+              "columns": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "column_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "header": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "LABEL",
+                        "VALUE"
+                      ]
+                    },
+                    "unit": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "column_id",
+                    "header",
+                    "role",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 64
+              },
+              "rows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "row_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "cells": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "column_id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "text": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "maxLength": 1024
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "node_hash": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "column_id",
+                          "text",
+                          "node_hash"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 1
+                    }
+                  },
+                  "required": [
+                    "row_id",
+                    "cells"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 5000
+              },
+              "csv_artifact": {
+                "type": "object",
+                "properties": {
+                  "media_type": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]{0,126}\\/[a-z0-9][a-z0-9!#$&^_.+-]{0,126}$"
+                  },
+                  "byte_size": {
+                    "type": "string",
+                    "pattern": "^(?:0|-?[1-9][0-9]{0,63})$"
+                  },
+                  "content_hash": {
+                    "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                  }
+                },
+                "required": [
+                  "media_type",
+                  "byte_size",
+                  "content_hash"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "table_id",
+              "caption",
+              "role",
+              "columns",
+              "rows",
+              "csv_artifact"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "figures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "figure_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "caption": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "spec": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "LINE",
+                      "BAR",
+                      "SCATTER"
+                    ]
+                  },
+                  "x_axis": {
+                    "type": "object",
+                    "properties": {
+                      "label": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256
+                      },
+                      "unit": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "label",
+                      "unit"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "y_axis": {
+                    "$ref": "#/definitions/research-package/properties/figures/items/properties/spec/properties/x_axis"
+                  },
+                  "series": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "series_id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 256
+                        },
+                        "points": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "x": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "NODE",
+                                      "TABLE_CELL"
+                                    ]
+                                  },
+                                  "node_hash": {
+                                    "anyOf": [
+                                      {
+                                        "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "table_id": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 64
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "row_id": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 64
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "column_id": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 64
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "node_hash",
+                                  "table_id",
+                                  "row_id",
+                                  "column_id"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "y": {
+                                "$ref": "#/definitions/research-package/properties/figures/items/properties/spec/properties/series/items/properties/points/items/properties/x"
+                              }
+                            },
+                            "required": [
+                              "x",
+                              "y"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 1,
+                          "maxItems": 4096
+                        }
+                      },
+                      "required": [
+                        "series_id",
+                        "label",
+                        "points"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 64
+                  }
+                },
+                "required": [
+                  "kind",
+                  "x_axis",
+                  "y_axis",
+                  "series"
+                ],
+                "additionalProperties": false
+              },
+              "svg_artifact": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/research-package/properties/tables/items/properties/csv_artifact"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "figure_id",
+              "title",
+              "caption",
+              "spec",
+              "svg_artifact"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "authors": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "year": {
+                "type": "integer",
+                "minimum": 1900,
+                "maximum": 2200
+              },
+              "doi": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "bibtex": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "authors"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "bundle_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "bundle_kind": {
+                "type": "string",
+                "enum": [
+                  "RESOURCE_INTELLIGENCE"
+                ]
+              },
+              "reproducibility_hash": {
+                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+              },
+              "embedded": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "media_type": {
+                        "type": "string",
+                        "const": "application/json"
+                      },
+                      "byte_size": {
+                        "$ref": "#/definitions/research-package/properties/tables/items/properties/csv_artifact/properties/byte_size"
+                      },
+                      "content_hash": {
+                        "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                      },
+                      "base64": {
+                        "type": "string",
+                        "maxLength": 33554432,
+                        "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+                      }
+                    },
+                    "required": [
+                      "media_type",
+                      "byte_size",
+                      "content_hash",
+                      "base64"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "bundle_kind",
+              "reproducibility_hash",
+              "embedded"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "environment": {
+          "type": "object",
+          "properties": {
+            "operating_system": {
+              "type": "string"
+            },
+            "architecture": {
+              "type": "string"
+            },
+            "python_version": {
+              "type": "string"
+            },
+            "node_version": {
+              "type": "string"
+            },
+            "packages": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "version": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "name",
+                  "version"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "hardware": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "value": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "name",
+                  "value"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "packages",
+            "hardware"
+          ],
+          "additionalProperties": false
+        },
+        "recipe": {
+          "type": "object",
+          "properties": {
+            "runner": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "runner_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "container_digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "argv": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024,
+                "pattern": "^[A-Za-z0-9_@%+=:,./-]+$"
+              },
+              "minItems": 1,
+              "maxItems": 256
+            },
+            "input_refs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "CIRCUIT",
+                      "PARAMETERS",
+                      "DATASET",
+                      "NOISE_MODEL",
+                      "MANIFEST",
+                      "MEASUREMENTS",
+                      "RESULT",
+                      "METRICS",
+                      "LOG"
+                    ]
+                  },
+                  "media_type": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]{0,126}\\/[a-z0-9][a-z0-9!#$&^_.+-]{0,126}$"
+                  },
+                  "byte_size": {
+                    "$ref": "#/definitions/research-package/properties/tables/items/properties/csv_artifact/properties/byte_size"
+                  },
+                  "content_hash": {
+                    "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                  },
+                  "resolution": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "INLINE_IN_BUNDLE",
+                          "CONTENT_ADDRESSED_STORE",
+                          "PROVIDER_HELD",
+                          "NOT_RETAINED"
+                        ]
+                      },
+                      "locator": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "locator"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "completeness": {
+                    "type": "string",
+                    "enum": [
+                      "COMPLETE",
+                      "PARTIAL"
+                    ]
+                  },
+                  "partial_reason": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "redaction": {
+                    "type": "string",
+                    "enum": [
+                      "NONE",
+                      "REDACTED"
+                    ]
+                  },
+                  "redaction_reason": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "role",
+                  "media_type",
+                  "byte_size",
+                  "content_hash",
+                  "resolution",
+                  "completeness",
+                  "partial_reason",
+                  "redaction",
+                  "redaction_reason"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 256
+            },
+            "environment_allowlist": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9_]{0,127}$"
+              },
+              "maxItems": 64
+            },
+            "expected_output_refs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/research-package/properties/recipe/properties/input_refs/items"
+              },
+              "maxItems": 256
+            },
+            "resource_limits": {
+              "type": "object",
+              "properties": {
+                "max_runtime": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "max_memory_bytes": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/research-package/properties/tables/items/properties/csv_artifact/properties/byte_size"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "max_credits": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "max_runtime",
+                "max_memory_bytes",
+                "max_credits"
+              ],
+              "additionalProperties": false
+            },
+            "network_policy": {
+              "type": "string",
+              "enum": [
+                "NONE",
+                "ALLOWLIST"
+              ]
+            },
+            "allowed_hosts": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$",
+                "maxLength": 253
+              },
+              "maxItems": 64
+            },
+            "platform": {
+              "type": "object",
+              "properties": {
+                "operating_system": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "architecture": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "minimum_runner_version": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "operating_system",
+                "architecture",
+                "minimum_runner_version"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "runner",
+            "runner_version",
+            "container_digest",
+            "argv",
+            "input_refs",
+            "environment_allowlist",
+            "expected_output_refs",
+            "resource_limits",
+            "network_policy",
+            "allowed_hosts",
+            "platform"
+          ],
+          "additionalProperties": false
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "hash_rules_id": {
+                "type": "string",
+                "const": "study-v1"
+              },
+              "study_ref": {
+                "$ref": "#/definitions/research-package/properties/study_ref"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "claim",
+                  "quantity",
+                  "assumption",
+                  "input",
+                  "model_ref",
+                  "result",
+                  "capsule_ref",
+                  "source",
+                  "dataset_ref",
+                  "snapshot_ref"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "PUBLIC",
+                  "PRIVATE"
+                ]
+              },
+              "claim": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "subject_ref": {
+                        "type": "object",
+                        "properties": {
+                          "record_kind": {
+                            "type": "string",
+                            "enum": [
+                              "artifact",
+                              "benchmark_suite",
+                              "qec_experiment_manifest",
+                              "algorithm_experiment_manifest",
+                              "protocol_experiment_manifest",
+                              "qec_benchmark_result",
+                              "algorithm_benchmark_result",
+                              "protocol_benchmark_result",
+                              "reproducibility_bundle",
+                              "verification_evidence",
+                              "quantum_workload",
+                              "classical_baseline",
+                              "resource_scenario",
+                              "hardware_model_snapshot",
+                              "qec_model_snapshot",
+                              "economic_model",
+                              "resource_estimate_snapshot",
+                              "advantage_threshold",
+                              "decision_assessment",
+                              "resource_intelligence_bundle",
+                              "study",
+                              "study_event",
+                              "problem_specification",
+                              "study_plan",
+                              "confirmation_receipt",
+                              "study_task_authorization",
+                              "task_outcome",
+                              "evidence_node",
+                              "evidence_edge",
+                              "execution_capsule",
+                              "research_package",
+                              "review_record",
+                              "reproduction_record"
+                            ],
+                            "description": "Record kinds an evidence reference may name, vocabulary evidence-record-kinds-v1."
+                          },
+                          "hash": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "record_slug": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "record_kind",
+                          "hash",
+                          "record_slug"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "metric": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "comparator": {
+                        "type": "string",
+                        "enum": [
+                          "LESS_THAN",
+                          "AT_MOST",
+                          "EQUAL",
+                          "AT_LEAST",
+                          "GREATER_THAN"
+                        ]
+                      },
+                      "value_ref": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "value_node",
+                              "result_field"
+                            ]
+                          },
+                          "node_hash": {
+                            "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                          },
+                          "field_path": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]*(?:\\/[A-Za-z0-9_][A-Za-z0-9_.-]*)*$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "node_hash",
+                          "field_path"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "subject_ref",
+                      "metric",
+                      "comparator",
+                      "value_ref"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "quantity": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "unit": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "bound": {
+                        "type": "string",
+                        "enum": [
+                          "POINT",
+                          "UPPER_BOUND",
+                          "LOWER_BOUND"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "string",
+                        "enum": [
+                          "MEASURED",
+                          "USER_PROVIDED",
+                          "DERIVED",
+                          "MODELLED",
+                          "UNKNOWN"
+                        ]
+                      },
+                      "source": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "model": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "model_version": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "assumptions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "schema_version": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "uncertainty": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "SENSITIVITY_RANGE",
+                              "MODEL_SPREAD",
+                              "NOT_CHARACTERIZED"
+                            ]
+                          },
+                          "low": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "high": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/definitions/research-package/properties/nodes/items/properties/quantity/anyOf/0/properties/uncertainty/properties/low/anyOf/0"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "basis": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "low",
+                          "high",
+                          "basis"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "limitations": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "unit",
+                      "bound",
+                      "evidence",
+                      "source",
+                      "model",
+                      "model_version",
+                      "assumptions",
+                      "schema_version",
+                      "limitations"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reference": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/research-package/properties/nodes/items/properties/claim/anyOf/0/properties/subject_ref"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "citation": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/research-package/properties/references/items"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "limitations": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "source_published_on": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "retrieved_on": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "content_hash": {
+                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+              }
+            },
+            "required": [
+              "schema_version",
+              "hash_rules_id",
+              "study_ref",
+              "kind",
+              "label",
+              "visibility",
+              "claim",
+              "quantity",
+              "reference",
+              "citation",
+              "limitations",
+              "source_published_on",
+              "retrieved_on",
+              "content_hash"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "hash_rules_id": {
+                "type": "string",
+                "const": "study-v1"
+              },
+              "study_ref": {
+                "$ref": "#/definitions/research-package/properties/study_ref"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "derived_from",
+                  "used_model",
+                  "used_input",
+                  "supports",
+                  "contradicts",
+                  "supersedes"
+                ]
+              },
+              "from_node_hash": {
+                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+              },
+              "to_node_hash": {
+                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+              },
+              "asserted_by": {
+                "type": "string",
+                "minLength": 1
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "content_hash": {
+                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+              }
+            },
+            "required": [
+              "schema_version",
+              "hash_rules_id",
+              "study_ref",
+              "kind",
+              "from_node_hash",
+              "to_node_hash",
+              "asserted_by",
+              "rationale",
+              "content_hash"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "claim_evidence_map": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "claim_node_hash": {
+                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+              },
+              "evidence_node_hashes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                },
+                "minItems": 1
+              },
+              "edge_hashes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                }
+              },
+              "bundle_fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "bundle_hash": {
+                      "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                    },
+                    "field_path": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(?:\\[[0-9]{1,6}\\]|\\.[A-Za-z_][A-Za-z0-9_]*)*$"
+                    }
+                  },
+                  "required": [
+                    "bundle_hash",
+                    "field_path"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 64
+              }
+            },
+            "required": [
+              "claim_node_hash",
+              "evidence_node_hashes",
+              "edge_hashes",
+              "bundle_fields"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "hash_rules_id": {
+                "type": "string",
+                "const": "study-v1"
+              },
+              "study_ref": {
+                "$ref": "#/definitions/research-package/properties/study_ref"
+              },
+              "subject_node_hash": {
+                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+              },
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "ACCEPTED",
+                  "CHANGES_REQUESTED",
+                  "REJECTED"
+                ]
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reviewer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "content_hash": {
+                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+              }
+            },
+            "required": [
+              "schema_version",
+              "hash_rules_id",
+              "study_ref",
+              "subject_node_hash",
+              "verdict",
+              "rationale",
+              "reviewer",
+              "content_hash"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "reproductions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "schema_version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "hash_rules_id": {
+                "type": "string",
+                "const": "study-v1"
+              },
+              "study_ref": {
+                "$ref": "#/definitions/research-package/properties/study_ref"
+              },
+              "original_node_hash": {
+                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+              },
+              "reproduction_capsule_ref": {
+                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+              },
+              "observed_node_hash": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "outcome": {
+                "type": "string",
+                "enum": [
+                  "MATCHED",
+                  "DIVERGED",
+                  "INCONCLUSIVE"
+                ]
+              },
+              "notes": {
+                "type": "string"
+              },
+              "asserted_by": {
+                "type": "string",
+                "minLength": 1
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "content_hash": {
+                "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+              }
+            },
+            "required": [
+              "schema_version",
+              "hash_rules_id",
+              "study_ref",
+              "original_node_hash",
+              "reproduction_capsule_ref",
+              "observed_node_hash",
+              "outcome",
+              "notes",
+              "asserted_by",
+              "content_hash"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "check_ledger": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "check_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PASS",
+                  "FAIL",
+                  "NOT_RUN",
+                  "INCONCLUSIVE"
+                ]
+              },
+              "requirement": {
+                "type": "string",
+                "enum": [
+                  "REQUIRED",
+                  "OPTIONAL"
+                ]
+              },
+              "tool": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "version": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "name",
+                  "version"
+                ],
+                "additionalProperties": false
+              },
+              "input_refs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                }
+              },
+              "output_ref": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "limitations": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "observed_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "check_id",
+              "status",
+              "requirement",
+              "tool",
+              "input_refs",
+              "output_ref",
+              "reason",
+              "limitations",
+              "observed_at"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "is_demo": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "$ref": "#/definitions/research-package/properties/nodes/items/properties/quantity/anyOf/0/properties/created_at"
+        },
+        "reproducibility_hash": {
+          "$ref": "#/definitions/research-package/properties/plan_ref/properties/revision_hash"
+        }
+      },
+      "required": [
+        "schema_version",
+        "hash_rules_id",
+        "package_kind",
+        "distribution",
+        "study_ref",
+        "plan_ref",
+        "report",
+        "tables",
+        "figures",
+        "references",
+        "bundle_refs",
+        "environment",
+        "recipe",
+        "nodes",
+        "edges",
+        "claim_evidence_map",
+        "reviews",
+        "reproductions",
+        "check_ledger",
+        "limitations",
+        "is_demo",
+        "reproducibility_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

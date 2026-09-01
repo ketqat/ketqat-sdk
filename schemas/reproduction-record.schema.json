@@ -1,0 +1,75 @@
+{
+  "$ref": "#/definitions/reproduction-record",
+  "definitions": {
+    "reproduction-record": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash_rules_id": {
+          "type": "string",
+          "const": "study-v1"
+        },
+        "study_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "original_node_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "reproduction_capsule_ref": {
+          "$ref": "#/definitions/reproduction-record/properties/original_node_hash"
+        },
+        "observed_node_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/reproduction-record/properties/original_node_hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "MATCHED",
+            "DIVERGED",
+            "INCONCLUSIVE"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "asserted_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content_hash": {
+          "$ref": "#/definitions/reproduction-record/properties/original_node_hash"
+        }
+      },
+      "required": [
+        "schema_version",
+        "hash_rules_id",
+        "study_ref",
+        "original_node_hash",
+        "reproduction_capsule_ref",
+        "observed_node_hash",
+        "outcome",
+        "notes",
+        "asserted_by",
+        "content_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

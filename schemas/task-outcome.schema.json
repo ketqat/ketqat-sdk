@@ -1,0 +1,81 @@
+{
+  "$ref": "#/definitions/task-outcome",
+  "definitions": {
+    "task-outcome": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hash_rules_id": {
+          "type": "string",
+          "const": "study-v1"
+        },
+        "study_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "authorization_ref": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "capsule_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/task-outcome/properties/authorization_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "terminal_status": {
+          "type": "string",
+          "enum": [
+            "SUCCEEDED",
+            "FAILED",
+            "CANCELLED",
+            "REFUSED"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content_hash": {
+          "$ref": "#/definitions/task-outcome/properties/authorization_ref"
+        }
+      },
+      "required": [
+        "schema_version",
+        "hash_rules_id",
+        "study_ref",
+        "authorization_ref",
+        "capsule_ref",
+        "terminal_status",
+        "reason",
+        "attempts",
+        "content_hash"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

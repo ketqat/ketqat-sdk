@@ -1,0 +1,161 @@
+{
+  "nodes": [
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "quantity",
+      "label": "whole-number float",
+      "visibility": "PUBLIC",
+      "claim": null,
+      "quantity": {
+        "value": 3,
+        "unit": "logical_qubits",
+        "bound": "POINT",
+        "evidence": "MEASURED",
+        "source": "fixture",
+        "model": "ketqat-study-fixture",
+        "model_version": "0.1.0",
+        "assumptions": [],
+        "created_at": "2026-01-01T00:00:02.000Z",
+        "schema_version": "0.1",
+        "limitations": []
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [
+        "A fixture. It pins float rendering across two languages and describes no real study."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "907b1220cf48819f505d0095db4a7f5565edee652980acacda754a7cdd7ab3f1"
+    },
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "quantity",
+      "label": "inside the window where Python switches notation and JavaScript does not",
+      "visibility": "PUBLIC",
+      "claim": null,
+      "quantity": {
+        "value": 0.00005,
+        "unit": "probability",
+        "bound": "UPPER_BOUND",
+        "evidence": "MODELLED",
+        "source": "fixture",
+        "model": "ketqat-study-fixture",
+        "model_version": "0.1.0",
+        "assumptions": [],
+        "created_at": "2026-01-01T00:00:02.000Z",
+        "schema_version": "0.1",
+        "limitations": []
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [
+        "A fixture. It pins float rendering across two languages and describes no real study."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "32462d9a50578441297569e682e51960c5ae6766f028cc230316906d188f7c3b"
+    },
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "quantity",
+      "label": "below both notation thresholds",
+      "visibility": "PUBLIC",
+      "claim": null,
+      "quantity": {
+        "value": 1e-7,
+        "unit": "probability",
+        "bound": "UPPER_BOUND",
+        "evidence": "MODELLED",
+        "source": "fixture",
+        "model": "ketqat-study-fixture",
+        "model_version": "0.1.0",
+        "assumptions": [],
+        "created_at": "2026-01-01T00:00:02.000Z",
+        "schema_version": "0.1",
+        "limitations": []
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [
+        "A fixture. It pins float rendering across two languages and describes no real study."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "d9239b0638a7a90b03e359a933d5fb33e6a5e0ac21150ad1b4069629ebfedbe6"
+    },
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "quantity",
+      "label": "negative zero",
+      "visibility": "PUBLIC",
+      "claim": null,
+      "quantity": {
+        "value": -0.0,
+        "unit": "seconds",
+        "bound": "POINT",
+        "evidence": "DERIVED",
+        "source": "fixture",
+        "model": "ketqat-study-fixture",
+        "model_version": "0.1.0",
+        "assumptions": [],
+        "created_at": "2026-01-01T00:00:02.000Z",
+        "schema_version": "0.1",
+        "limitations": []
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [
+        "A fixture. It pins float rendering across two languages and describes no real study."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "edbbf8898942e4f3634cc59294e4994fab860394d8280021a83f87e5a5c17ca7"
+    },
+    {
+      "schema_version": "1.0",
+      "hash_rules_id": "study-v1",
+      "study_ref": "d5a370a6-8b65-4ae8-8f57-8c06f313afac",
+      "kind": "quantity",
+      "label": "no value at all",
+      "visibility": "PUBLIC",
+      "claim": null,
+      "quantity": {
+        "value": null,
+        "unit": "credits",
+        "bound": "POINT",
+        "evidence": "UNKNOWN",
+        "source": "fixture",
+        "model": "ketqat-study-fixture",
+        "model_version": "0.1.0",
+        "assumptions": [],
+        "created_at": "2026-01-01T00:00:02.000Z",
+        "schema_version": "0.1",
+        "limitations": [
+          "No cost model was supplied, so no credit figure was computed."
+        ]
+      },
+      "reference": null,
+      "citation": null,
+      "limitations": [
+        "A fixture. It pins float rendering across two languages and describes no real study."
+      ],
+      "source_published_on": null,
+      "retrieved_on": null,
+      "created_at": "2026-01-01T00:00:02.000Z",
+      "content_hash": "763352d6b64cbf69d8463d5ff0c6a8136e16a3aff8cf0786eb27def5502631be"
+    }
+  ]
+}

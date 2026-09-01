@@ -1,0 +1,194 @@
+{
+  "schema_version": "1.0",
+  "hash_rules_id": "study-v1",
+  "study_ref": "3f1c0a8b-6d5e-4f2a-9c7b-8e0d1a2b3c4d",
+  "specification_ref": {
+    "revision_hash": "9a8b7c6d5e4f30211f2e3d4c5b6a798887766554433221100ffeeddccbbaa998",
+    "revision": 2
+  },
+  "revision": 2,
+  "supersedes": "1122334455667788990011223344556677889900aabbccddeeff001122334455",
+  "created_at": "2026-02-01T09:00:00.000Z",
+  "baselines": [
+    {
+      "baseline_ref": "aa11bb22cc33dd44ee55ff6677889900aabbccddeeff00112233445566778899",
+      "source_class": "measured",
+      "note": "Timed on the customer's own cluster; the run log is attached to the baseline record."
+    },
+    {
+      "baseline_ref": "bb22cc33dd44ee55ff6677889900aabbccddeeff001122334455667788990011",
+      "source_class": "cited_primary_source",
+      "note": null
+    }
+  ],
+  "candidates": [
+    {
+      "name": "Qubitized quantum phase estimation",
+      "workload_ref": "cc33dd44ee55ff6677889900aabbccddeeff0011223344556677889900112233",
+      "rationale": "The only candidate with a published resource analysis for an instance of this size."
+    }
+  ],
+  "scenario_refs": [
+    "dd44ee55ff6677889900aabbccddeeff00112233445566778899001122334455",
+    "ee55ff6677889900aabbccddeeff001122334455667788990011223344556677"
+  ],
+  "pinned_versions": {
+    "adapter": null,
+    "model": {
+      "package_name": "ketqat-resource-intelligence",
+      "package_version": "0.1.0",
+      "artifact_digest": null,
+      "source_commit": "4f2a9c7b8e0d1a2b3c4d5e6f4f2a9c7b8e0d1a2b",
+      "container_digest": null,
+      "model_snapshot_hash": "7c6d5e4f30211f2e3d4c5b6a7c6d5e4f30211f2e3d4c5b6a7c6d5e4f30211f2e",
+      "schema_hash": "3d4c5b6a798887766554433d4c5b6a798887766554433d4c5b6a798887766554",
+      "adapter_configuration_hash": null
+    },
+    "engine": {
+      "package_name": "ketqat-engine",
+      "package_version": "0.3.0",
+      "artifact_digest": "sha256:1f2e3d4c5b6a79888776651f2e3d4c5b6a79888776651f2e3d4c5b6a79888776",
+      "source_commit": "90aabbccddeeff001122334490aabbccddeeff00",
+      "container_digest": "sha256:5b6a7988877665544332215b6a7988877665544332215b6a7988877665544332",
+      "model_snapshot_hash": null,
+      "schema_hash": null,
+      "adapter_configuration_hash": null
+    }
+  },
+  "expected_runtime": {
+    "value": 0.432,
+    "unit": "seconds",
+    "bound": "POINT",
+    "evidence": "MODELLED",
+    "source": "Surface-code runtime model at the plan's pinned scenarios.",
+    "model": "ketqat-resource-intelligence",
+    "model_version": "0.1.0",
+    "assumptions": [
+      "One microsecond surface-code cycle.",
+      "No queueing delay is charged to the run."
+    ],
+    "created_at": "2026-02-03T11:30:00.000Z",
+    "schema_version": "0.1",
+    "limitations": [
+      "Modelled, not measured. No device was run to produce this figure."
+    ]
+  },
+  "expected_credits": {
+    "value": 1800,
+    "unit": "credits",
+    "bound": "UPPER_BOUND",
+    "evidence": "DERIVED",
+    "source": "Expected runtime at the tariff pinned in this plan.",
+    "model": "ketqat-resource-intelligence",
+    "model_version": "0.1.0",
+    "assumptions": [
+      "The tariff in force on the plan date applies for the whole run."
+    ],
+    "created_at": "2026-02-03T11:30:00.000Z",
+    "schema_version": "0.1",
+    "limitations": [
+      "An estimate. The ceiling that actually binds the run is max_credits."
+    ]
+  },
+  "max_credits": 2500,
+  "data_handling": {
+    "visibility": "PRIVATE",
+    "retention": {
+      "kind": "DELETE_AFTER_DAYS",
+      "days": 90
+    },
+    "third_party_transfer": "NONE",
+    "model_training_use": "FORBIDDEN",
+    "public_dataset_opt_in": false,
+    "allowed_egress": [
+      {
+        "kind": "HASHES_ONLY",
+        "host": null
+      }
+    ],
+    "export_permission": "HASHES_ONLY",
+    "deletion_policy": {
+      "kind": "ON_REQUEST",
+      "within_days": 7
+    },
+    "secret_handling": "PER_JOB_NEVER_PERSISTED",
+    "pii_handling": "NONE_PRESENT",
+    "policy_version": "1.0"
+  },
+  "reproducibility_level": "STATISTICAL",
+  "success_criteria": [
+    {
+      "criterion_id": "physical_qubits_within_ceiling",
+      "metric_ref": "scenario.total_physical_qubits",
+      "comparator": "AT_MOST",
+      "threshold": {
+        "dimension": "QUBITS",
+        "value": 4200000,
+        "exact_value": null,
+        "unit": "physical qubits"
+      },
+      "required_evidence": [
+        "MODELLED"
+      ],
+      "status": "NOT_RUN",
+      "explanation": "A physical-qubit count for each pinned scenario, with its assumptions stated."
+    },
+    {
+      "criterion_id": "sampling_budget_respected",
+      "metric_ref": "run.shots",
+      "comparator": "AT_MOST",
+      "threshold": {
+        "dimension": "SHOTS",
+        "value": null,
+        "exact_value": "20000000000000000",
+        "unit": "shots"
+      },
+      "required_evidence": [
+        "MEASURED"
+      ],
+      "status": "NOT_RUN",
+      "explanation": "A shot budget past 2^53, written as digits so both languages read the same number."
+    },
+    {
+      "criterion_id": "advantage_condition_stated",
+      "metric_ref": "advantage.crossover_problem_size",
+      "comparator": "EXISTS",
+      "threshold": null,
+      "required_evidence": [
+        "DERIVED"
+      ],
+      "status": "NOT_RUN",
+      "explanation": "A stated condition under which the quantum workflow would beat the measured baseline."
+    }
+  ],
+  "refusal_criteria": [
+    {
+      "criterion_id": "no_surviving_baseline",
+      "metric_ref": "baseline.surviving",
+      "comparator": "DOES_NOT_EXIST",
+      "threshold": null,
+      "required_evidence": [
+        "MEASURED",
+        "USER_PROVIDED"
+      ],
+      "status": "NOT_RUN",
+      "explanation": "No classical baseline survives review, so no economic comparison can be drawn."
+    },
+    {
+      "criterion_id": "infeasible_at_every_scenario",
+      "metric_ref": "scenario.feasible_anywhere",
+      "comparator": "IS_FALSE",
+      "threshold": null,
+      "required_evidence": [
+        "MODELLED"
+      ],
+      "status": "NOT_RUN",
+      "explanation": "The estimate is infeasible at every pinned scenario, so there is no condition to state."
+    }
+  ],
+  "execution_limitations": [
+    "One QEC scheme is modelled. Other codes are not costed by this plan.",
+    "A fixture. It pins the study-v1 projection and float rendering, and describes no real study."
+  ],
+  "content_hash": "2c0aa708cf6e2b21208525e82a0717490465a97f38e5ea77981336c588a1e9fd"
+}

@@ -1,0 +1,56 @@
+{
+  "note": "An independent copy of the digests written inside the study fixtures, so that editing a fixture and restamping its own hash still fails. Written by TypeScript and reproduced by python/tests/test_study_hashing.py from the same files. Each entry names the record kind, because a study digest is taken under a preimage header that includes it -- there is no hash of an object in the abstract any more.",
+  "study-v1": {
+    "study_plan_revision": {
+      "record_kind": "study_plan",
+      "self_hash_field": "content_hash",
+      "self_hash": "2c0aa708cf6e2b21208525e82a0717490465a97f38e5ea77981336c588a1e9fd"
+    },
+    "study_capsule": {
+      "record_kind": "execution_capsule",
+      "self_hash_field": "reproducibility_hash",
+      "self_hash": "96810bbcdbe0d2f319c5efd029bfe0308fcbb067105c7f1107082b06b4df18a8"
+    },
+    "study_capsule_64_bit_integers": {
+      "record_kind": "execution_capsule",
+      "self_hash_field": "reproducibility_hash",
+      "self_hash": "917b41980c36772a1060e890ddcf2d0a7029ec76fa7731c7f3b34d7fc2768205"
+    },
+    "study_capsule_hardware": {
+      "record_kind": "execution_capsule",
+      "self_hash_field": "reproducibility_hash",
+      "self_hash": "9ccfcc9b9740cbffa5a4d9885eb74f9fbe1d89e0b4962dd06a77b0d55842b6a3"
+    },
+    "study_research_package_as_written": {
+      "record_kind": "research_package",
+      "self_hash_field": "reproducibility_hash",
+      "self_hash": "a9ee34816503d2cacd6833d2ce6446090956326d408d7cc62b9210d0e88cbf2b"
+    },
+    "study_float_edge_cases": {
+      "record_kind": "evidence_node",
+      "self_hash_field": "content_hash",
+      "nodes": [
+        "907b1220cf48819f505d0095db4a7f5565edee652980acacda754a7cdd7ab3f1",
+        "32462d9a50578441297569e682e51960c5ae6766f028cc230316906d188f7c3b",
+        "d9239b0638a7a90b03e359a933d5fb33e6a5e0ac21150ad1b4069629ebfedbe6",
+        "edbbf8898942e4f3634cc59294e4994fab860394d8280021a83f87e5a5c17ca7",
+        "763352d6b64cbf69d8463d5ff0c6a8136e16a3aff8cf0786eb27def5502631be"
+      ]
+    },
+    "study_evidence_graph": {
+      "record_kind": "evidence_node",
+      "self_hash_field": "content_hash",
+      "nodes": [
+        "1b1dba334ce8f78437a1f3cece5bf49851926c3467f80f8246b5bc6a52ede1df",
+        "09ed6e11c15603dc4f5e770b6e0c03ccad0c2b114e894f1238878442122c1a92",
+        "3b32f068709097618a78b8d4f5d09d58f611c4ea8645761c9f99547638147431",
+        "f4d19fe67cffaa01d685482893cba72656298428cc2b1996d682a1a85c98a8ed"
+      ],
+      "edges": [
+        "8bc93ece0486e8d5cfb0066cb9151ae1d1a5552a98d15dcb8babba2a6e43c9fd",
+        "49163a9a5eb331c871a6f7b50f2d162593ca952fe5c4ed7b73bd3178ee1a1ce7",
+        "a2840248706d0a55f32e55ddfc88021f284a5b2da4bfaa19cdd88320d9b68acd"
+      ]
+    }
+  }
+}

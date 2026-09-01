@@ -67,9 +67,36 @@ jobs:
           path: dist-release/
           retention-days: 14
 
+      # The consumer suite, uploaded separately and deliberately not part of
+      # `release-artifacts`.
+      #
+      # Something has to carry the test driver into a job with no checkout, and the
+      # alternative -- inlining several hundred lines of record building and
+      # verification into `run:` heredocs -- puts the checks somewhere nobody reviews
+      # and nobody can run locally. This is the same trust boundary either way: a
+      # `run:` block comes from this repository too.
+      #
+      # What must not blur is the boundary that matters. The suite is the *driver*;
+      # the tarball and the wheel are what is *under test*. So the suite carries no
+      # copy of the library, imports nothing by path, and `assert-clean-room.mjs`
+      # proves before anything else runs that no source tree is reachable from where
+      # it sits. It is uploaded under its own name so that `verify-release-artifacts`
+      # keeps failing on any file in `dist-release/` that SHA256SUMS does not cover.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: clean-room-suite
+          path: scripts/clean-room/
+          retention-days: 14
+
   clean-room:
     needs: build
     runs-on: ubuntu-latest
+    # Where the consumer install and the records the study suite exchanges live.
+    # Stated rather than left to the suite's defaults: the two happen to agree, and
+    # a coupling that holds by coincidence is one nobody notices breaking.
+    env:
+      KETQAT_CONSUMER: /tmp/node
+      KETQAT_RECORDS: /tmp/ketqat-records
     steps:
       # Deliberately **no checkout**. If this job can see the repository, it is not a
       # clean room, and a missing file in an artifact resolves from the source tree
@@ -180,14 +207,81 @@ jobs:
             console.log(tools.length + ' MCP tools, all readOnly')
           "
 
-      - name: A three-decoder QEC comparison runs, from published packages only
+      # ------------------------------------------------------------------ study
+      #
+      # The `study` contract family, exercised as a consumer rather than as this
+      # repository. Everything above proves the packaging; the five steps below
+      # prove that the contracts a stranger installs actually work, in both
+      # languages, against each other.
+      #
+      # The suite is downloaded *into the consumer directory*. Node resolves a bare
+      # specifier from the importing module's own location, so a driver sitting
+      # anywhere else could not reach `node_modules/ketqat-sdk` without being handed
+      # a path -- and a path is exactly what must not appear here.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: clean-room-suite
+          path: /tmp/node/suite
+
+      - name: The room is clean before anything is checked in it
+        # Asserted, not assumed. A consumer test that accidentally imports `../src`
+        # passes for a package that ships an empty dist/, which is the defect this
+        # whole job exists to catch.
+        run: cd /tmp/node && node suite/assert-clean-room.mjs
+
+      - name: Every study record a consumer would produce, built by the shipped builders
+        run: cd /tmp/node && node suite/build-records.mjs
+
+      - name: The TypeScript contracts verify those records, from the tarball
+        run: cd /tmp/node && node suite/verify-typescript.mjs
+
+      - name: The Python contracts verify the same files, from the wheel
+        # A recipient of a research package does not have to own the toolchain that
+        # wrote it (ADR 0010). This is the consumer-side half of that: the same JSON,
+        # validated against the schemas the wheel carries and hashed by an
+        # independent implementation.
+        run: cd /tmp && /tmp/py/bin/python /tmp/node/suite/verify_python.py
+
+      - name: The two languages agree about the study family
+        # The claim neither half can make alone, and the only one here that fails by
+        # leaving a reader unable to check rather than merely told that something is
+        # wrong: one language calling a file intact while the other calls it edited.
+        run: cd /tmp/node && node suite/compare-languages.mjs
+
+      - name: A three-decoder QEC comparison runs, from a pinned benchmarks commit and pinned decoder wheels
         # ketqat-benchmarks holds the heavy scientific dependencies so this package stays
         # zod-only, so the QEC half of the clean room installs it from its own repository
         # rather than from anything in this one.
+        #
+        # The reference is a commit SHA, not `refs/heads/main`. ketqat-benchmarks publishes
+        # no release and carries no tag, so the SHA is the strongest immutable reference it
+        # has to offer. It is also content-addressed by git, which is why no SHA-256 of the
+        # tarball is recorded alongside it: the bytes GitHub's `archive/` endpoint returns
+        # are not guaranteed stable across server-side git versions, so a recorded hash
+        # would eventually fail for a reason that has nothing to do with the content it is
+        # there to protect. `pkg[extra] @ url` is the PEP 508 spelling of a direct
+        # reference; the `#egg=` fragment it replaces is deprecated and pip 25.1 rejects it.
+        #
+        # tesseract-decoder is pinned because its published Linux wheels are not built for a
+        # fixed microarchitecture. Upstream's build takes `-march=native` by default and
+        # `-march=x86-64` only under `--config=wheel` (quantumlib/tesseract-decoder: see
+        # `.bazelrc` and `OPT_COPTS` in `src/BUILD`), and the wheels published from
+        # 2026-08-25 onward came off the native path. 0.1.1.dev20260827012621 -- what the
+        # floating reference resolved to -- carries unconditional AVX-512 (vpscatterqq,
+        # vpermt2q, kmovb, zmm operands) inside ordinary decoder functions, with no cpuid
+        # test and no IFUNC anywhere in the object, so on a runner without AVX-512 it dies
+        # with SIGILL and this job exits 132. 0.1.1.dev20260822020007 is the newest wheel
+        # built the portable way: its disassembly contains no AVX-512, no AVX2 and no BMI2
+        # at all, so it runs on any x86-64. Bump this pin only after checking the
+        # replacement the same way -- `>=` here means the next native build lands silently.
         run: |
           python -m venv /tmp/qec
           /tmp/qec/bin/pip install --quiet \
-            "https://github.com/ketqat/ketqat-benchmarks/archive/refs/heads/main.tar.gz#egg=ketqat-benchmarks[decoders]"
+            "ketqat-benchmarks[decoders] @ https://github.com/ketqat/ketqat-benchmarks/archive/8d429a8e5d4211c15babef458170c3a05e33596f.tar.gz" \
+            "tesseract-decoder==0.1.1.dev20260822020007"
+          # The run that found the SIGILL installed --quiet and so never said which decoder
+          # builds it had resolved, which is most of what made it hard to read. It does now.
+          /tmp/qec/bin/pip list --format=freeze
           cd /tmp
           /tmp/qec/bin/python -m ketqat_benchmarks.decoder_comparison \
             --distance 3 --rounds 3 --noise 0.02 --max-shots 2000 --output /tmp/qec.json

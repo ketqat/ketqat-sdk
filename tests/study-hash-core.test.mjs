@@ -1,0 +1,775 @@
+// The hashing core: domain separation, the four roles, the public API limits,
+// the number contracts, raw-byte file verification, and the attacks against the
+// exported rule data.
+//
+// Everything here is checked by running it. A rule that is only stated in a
+// comment is a rule that holds until someone changes the code under it, and the
+// three properties this file exists for -- that a digest names one record kind
+// and one purpose, that the exported rules cannot be edited by a consumer, and
+// that a value outside the JSON data model is refused by name -- are exactly the
+// properties whose failure is silent.
+//
+// `python/tests/test_study_hash_core.py` mirrors it, so the two languages
+// refuse the same inputs rather than agreeing only about the ones they accept.
+import test from "node:test"
+import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+
+import {
+  STUDY_HASH_DOMAIN,
+  STUDY_HASH_LIMITS,
+  STUDY_HASH_PURPOSES,
+  STUDY_HASH_REFUSAL_CODES,
+  STUDY_HASH_RULES_ID,
+  STUDY_KNOWN_HASH_RULES_IDS,
+  STUDY_NUMBER_CONTRACTS,
+  STUDY_PURPOSE_FIELD_CLASSES,
+  STUDY_RECORD_KINDS,
+  STUDY_RECORD_KIND_NAMES,
+  StudyHashRefusalError,
+  artifactHash,
+  assertExactDecimalString,
+  assertExactIntegerString,
+  buildStudyPreimage,
+  canonicalizeJcs,
+  exactIntegerStringFromBigInt,
+  fieldClassesForPurpose,
+  isExactDecimalString,
+  isExactIntegerString,
+  isFiniteFloat,
+  isSafeInteger,
+  isStudyHashRefusalCode,
+  nestedFieldClassesForPurpose,
+  readStudyFileBytes,
+  receiptHash,
+  recordHash,
+  semanticHash,
+  studyCanonicalBody,
+  studyHeader,
+  studyRecordKind,
+} from "../dist/study/index.js"
+
+const SCHEMA_VERSION = "1.0"
+
+/**
+ * A record carrying only fields its kind declares, which is all a projection
+ * reads.
+ *
+ * A `study_task_authorization` is the record the rest of this file exercises the
+ * four roles against, because it carries one field of each class and nothing
+ * else: `plan_ref` and `confirmation_receipt_ref` are what was authorised,
+ * `study_ref` is where the record sits, and `created_at` is when the server
+ * observed it. It replaced a `study_task` that carried a mutable `status`, and
+ * the tests below changed with it: there is no longer a field the execution
+ * system overwrites, which is the property `tests/study-execution.test.mjs`
+ * proves and this file now simply has nothing to say about.
+ */
+const authorization = Object.freeze({
+  schema_version: SCHEMA_VERSION,
+  hash_rules_id: STUDY_HASH_RULES_ID,
+  study_ref: "9b1d5c40-2ea7-4b6f-8c31-7f0a6d2e4b58",
+  plan_ref: { revision_hash: "b".repeat(64), revision: 3 },
+  confirmation_receipt_ref: "c".repeat(64),
+  requested_operation: "STUDY_BENCHMARK_RUN",
+  input_refs: [],
+  resource_ceiling: Object.freeze({
+    max_credits: 250,
+    max_runtime: 3600,
+    max_memory_bytes: "8589934592",
+    resource_class: "MANAGED_SIMULATION",
+  }),
+  created_at: "2026-09-01T00:00:00.000Z",
+  content_hash: "d".repeat(64),
+})
+
+const refusalCode = (code) => (error) =>
+  error instanceof StudyHashRefusalError && error.code === code
+
+// ---------------------------------------------------------------------------
+// Cross-language agreement
+// ---------------------------------------------------------------------------
+
+const VECTORS = JSON.parse(
+  readFileSync(new URL("../fixtures/study/hash-core-vectors.json", import.meta.url), "utf8"),
+)
+
+const HASH_FOR_PURPOSE = { semantic: semanticHash, record: recordHash, receipt: receiptHash }
+
+test("the committed cross-language vectors are the ones this build produces", () => {
+  // This side checks the fixture too, and that is the point of the test rather
+  // than a duplicate of the Python one. The vectors are written by a script that
+  // nothing runs automatically, so without this a change to the projection or
+  // the header would leave the file stale: Python would go on passing against
+  // the old digests, and the two languages would drift with every suite green.
+  // Checked here, a TypeScript change that moves a digest fails here, and
+  // regenerating the file becomes a deliberate act with a diff a reviewer reads.
+  assert.equal(VECTORS.hash_rules_id, STUDY_HASH_RULES_ID)
+  assert.deepEqual(
+    VECTORS.records.map((entry) => entry.record_kind),
+    [...STUDY_RECORD_KIND_NAMES],
+    "every declared record kind needs a vector; a kind with none is a kind nothing checks",
+  )
+  for (const entry of VECTORS.records) {
+    const { record_kind: kind, record } = entry
+    for (const purpose of ["semantic", "record", "receipt"]) {
+      const expectedRefusal = entry.refusals[purpose]
+      if (expectedRefusal !== undefined) {
+        assert.equal(entry.digests[purpose], undefined, `${kind}/${purpose}`)
+        assert.throws(
+          () => HASH_FOR_PURPOSE[purpose](kind, record),
+          refusalCode(expectedRefusal),
+          `${kind}/${purpose} must refuse with ${expectedRefusal}`,
+        )
+        continue
+      }
+      assert.equal(
+        studyCanonicalBody(kind, record, purpose),
+        entry.canonical_bodies[purpose],
+        `${kind}/${purpose} canonical body`,
+      )
+      assert.equal(
+        HASH_FOR_PURPOSE[purpose](kind, record),
+        entry.digests[purpose],
+        `${kind}/${purpose} digest`,
+      )
+    }
+  }
+  for (const artifact of VECTORS.artifacts) {
+    assert.equal(
+      artifactHash(
+        artifact.record_kind,
+        new TextEncoder().encode(artifact.text),
+        VECTORS.schema_version,
+      ),
+      artifact.digest,
+      `artifact ${artifact.label}`,
+    )
+  }
+})
+
+// ---------------------------------------------------------------------------
+// Domain separation
+// ---------------------------------------------------------------------------
+
+test("two record kinds that project to the same body take different digests", () => {
+  // Not a hypothetical. The receipt projection of a `study`, a
+  // `study_task_authorization` and
+  // a `problem_specification` is `{"created_at": ...}` in all three cases,
+  // because that is the only RECEIPT_ONLY field each of them declares. Without
+  // the record kind in the header, one digest would stand for three records and
+  // identify none of them.
+  const created_at = "2026-09-01T00:00:00.000Z"
+  const shared = { schema_version: SCHEMA_VERSION, hash_rules_id: STUDY_HASH_RULES_ID, created_at }
+  const kinds = ["study", "study_task_authorization", "problem_specification"]
+
+  const bodies = kinds.map((kind) => studyCanonicalBody(kind, shared, "receipt"))
+  assert.deepEqual(new Set(bodies), new Set([`{"created_at":"${created_at}"}`]))
+
+  const digests = kinds.map((kind) => receiptHash(kind, shared))
+  assert.equal(new Set(digests).size, 3, "one body, three record kinds, three digests")
+})
+
+test("two purposes over the same body take different digests", () => {
+  // The same argument one axis over. A record whose every field is SEMANTIC has
+  // identical semantic and record bodies, and the two digests must still differ
+  // -- they answer different questions and a reader must not be able to satisfy
+  // one by quoting the other.
+  const edge = {
+    schema_version: SCHEMA_VERSION,
+    hash_rules_id: STUDY_HASH_RULES_ID,
+    kind: "SUPPORTS",
+    from_node_hash: "a".repeat(64),
+    to_node_hash: "b".repeat(64),
+  }
+  assert.equal(
+    studyCanonicalBody("evidence_edge", edge, "semantic"),
+    studyCanonicalBody("evidence_edge", edge, "record"),
+  )
+  assert.notEqual(semanticHash("evidence_edge", edge), recordHash("evidence_edge", edge))
+})
+
+test("changing any header component changes the digest", () => {
+  const body = new TextEncoder().encode('{"a":1}')
+  const base = studyHeader("study_task_authorization", "record", SCHEMA_VERSION, STUDY_HASH_RULES_ID)
+  const variants = [
+    { ...base, domain: "ketqat.other" },
+    { ...base, record_kind: "study" },
+    { ...base, purpose: "semantic" },
+    { ...base, schema_version: "2.0" },
+  ]
+  const hex = (header) => Buffer.from(buildStudyPreimage(header, body)).toString("hex")
+  const baseline = hex(base)
+  for (const header of variants) {
+    assert.notEqual(hex(header), baseline, `${JSON.stringify(header)} must not share a preimage`)
+  }
+  // The rules id is the fifth component and is checked against the known list,
+  // so an unknown one is a refusal rather than a different digest.
+  assert.throws(
+    () => buildStudyPreimage({ ...base, hash_rules_id: "study-v2" }, body),
+    refusalCode("UNKNOWN_HASH_RULES_ID"),
+  )
+})
+
+test("the NUL separator cannot be forged into a component", () => {
+  // The separator is unambiguous only because no component can contain one.
+  // Every component is validated as printable ASCII, which excludes NUL by
+  // construction -- and excludes space, control characters and everything
+  // non-ASCII, so the header has one encoding rather than a question about one.
+  const body = new TextEncoder().encode("{}")
+  for (const bad of ["study task", "study task", "стади", "study\ttask", ""]) {
+    assert.throws(
+      () => buildStudyPreimage(studyHeader(bad, "record", SCHEMA_VERSION), body),
+      (error) =>
+        error instanceof StudyHashRefusalError &&
+        (error.code === "INVALID_HEADER_COMPONENT" || error.code === "MISSING_HEADER_COMPONENT"),
+      `${JSON.stringify(bad)} must not be accepted as a record kind`,
+    )
+  }
+})
+
+test("the preimage is the domain, kind, purpose, schema version and rules id, NUL-separated", () => {
+  const body = new TextEncoder().encode("{}")
+  const preimage = Buffer.from(
+    buildStudyPreimage(studyHeader("study_task_authorization", "record", SCHEMA_VERSION), body),
+  )
+  assert.equal(
+    preimage.toString("latin1"),
+    `${STUDY_HASH_DOMAIN} study_task_authorization record ${SCHEMA_VERSION} ${STUDY_HASH_RULES_ID} {}`,
+  )
+})
+
+test("an unknown record kind is a refusal, including one named after Object.prototype", () => {
+  assert.throws(() => studyRecordKind("study_plans"), refusalCode("UNKNOWN_RECORD_KIND"))
+  // An object literal would answer to every inherited name and hand back
+  // `Function.prototype.toString` as a rule set. The lookup is a Map.
+  for (const inherited of ["toString", "constructor", "__proto__", "hasOwnProperty"]) {
+    assert.throws(() => studyRecordKind(inherited), refusalCode("UNKNOWN_RECORD_KIND"))
+  }
+})
+
+// ---------------------------------------------------------------------------
+// The four roles
+// ---------------------------------------------------------------------------
+
+test("semanticHash ignores presentation and receipt fields", () => {
+  const base = semanticHash("study_task_authorization", authorization)
+  assert.equal(
+    semanticHash("study_task_authorization", { ...authorization, study_ref: "e".repeat(36) }),
+    base,
+  )
+  assert.equal(
+    semanticHash("study_task_authorization", { ...authorization, created_at: "2020-01-01T00:00:00.000Z" }),
+    base,
+  )
+  // And moves when what was authorised does.
+  assert.notEqual(
+    semanticHash("study_task_authorization", { ...authorization, confirmation_receipt_ref: "f".repeat(64) }),
+    base,
+  )
+})
+
+test("recordHash moves when anything except a DERIVED field changes", () => {
+  const base = recordHash("study_task_authorization", authorization)
+  assert.notEqual(recordHash("study_task_authorization", { ...authorization, study_ref: "e".repeat(36) }), base)
+  assert.notEqual(
+    recordHash("study_task_authorization", { ...authorization, created_at: "2020-01-01T00:00:00.000Z" }),
+    base,
+  )
+  assert.notEqual(
+    recordHash("study_task_authorization", { ...authorization, confirmation_receipt_ref: "f".repeat(64) }),
+    base,
+  )
+  // The record's own digest is DERIVED and cannot be an input to itself.
+  assert.equal(recordHash("study_task_authorization", { ...authorization, content_hash: "0".repeat(64) }), base)
+})
+
+test("receiptHash covers the audit fields and nothing else", () => {
+  const base = receiptHash("study_task_authorization", authorization)
+  assert.notEqual(
+    receiptHash("study_task_authorization", { ...authorization, created_at: "2020-01-01T00:00:00.000Z" }),
+    base,
+  )
+  assert.equal(
+    receiptHash("study_task_authorization", { ...authorization, confirmation_receipt_ref: "f".repeat(64) }),
+    base,
+  )
+  assert.equal(receiptHash("study_task_authorization", { ...authorization, study_ref: "e".repeat(36) }), base)
+})
+
+test("artifactHash takes bytes and is not defined over a parsed value", () => {
+  const bytes = new TextEncoder().encode("label,value\r\na,1\r\n")
+  const hex = artifactHash("research_package", bytes, SCHEMA_VERSION)
+  assert.match(hex, /^[0-9a-f]{64}$/)
+  // Two files whose meaning is identical and whose bytes are not take different
+  // artifact digests. That is the question the role answers.
+  const unixLineEndings = new TextEncoder().encode("label,value\na,1\n")
+  assert.notEqual(artifactHash("research_package", unixLineEndings, SCHEMA_VERSION), hex)
+  // A string is not bytes, and the encoding is not chosen on the caller's behalf.
+  assert.throws(
+    () => artifactHash("research_package", "label,value", SCHEMA_VERSION),
+    refusalCode("NOT_JSON_VALUE"),
+  )
+})
+
+test("a record that does not name its schema version is refused, not defaulted", () => {
+  const { schema_version, ...withoutVersion } = authorization
+  assert.throws(
+    () => recordHash("study_task_authorization", withoutVersion),
+    refusalCode("MISSING_HEADER_COMPONENT"),
+  )
+})
+
+test("the four purposes are a closed list", () => {
+  assert.deepEqual([...STUDY_HASH_PURPOSES], ["semantic", "record", "receipt", "artifact"])
+})
+
+test("a purpose that reads no field of a kind refuses rather than returning a constant", () => {
+  // Every field of a `study_event` is audit evidence, so a semantic projection
+  // reads nothing and the body is `{}` for every event ever written. That is one
+  // digest standing for every pair of unrelated events, answered `yes`. A
+  // constant is worse than a refusal because it answers, so the structural fact
+  // is raised by name.
+  const event = {
+    schema_version: SCHEMA_VERSION,
+    hash_rules_id: STUDY_HASH_RULES_ID,
+    study_ref: "a".repeat(64),
+    sequence: 1,
+    previous_event_hash: "b".repeat(64),
+    from_status: "DRAFT",
+    to_status: "PLANNED",
+    actor: "curator@example.invalid",
+    reason: "specification confirmed",
+    plan_ref: { revision_hash: "c".repeat(64), revision: 1 },
+    created_at: "2026-09-01T00:00:00.000Z",
+    content_hash: "d".repeat(64),
+  }
+  assert.throws(() => semanticHash("study_event", event), refusalCode("EMPTY_PROJECTION"))
+  assert.throws(
+    () => studyCanonicalBody("study_event", event, "semantic"),
+    refusalCode("EMPTY_PROJECTION"),
+  )
+  // The purposes the kind does have content for still work.
+  assert.match(recordHash("study_event", event), /^[0-9a-f]{64}$/)
+  assert.match(receiptHash("study_event", event), /^[0-9a-f]{64}$/)
+})
+
+test("no other record kind and purpose projects to a constant", () => {
+  // The structural sweep behind the refusal above: for every kind and every
+  // purpose, either the projection reads a field or it refuses by name. A pair
+  // that silently returned `{}` would be a digest that identifies nothing, and
+  // this is what stops one being added without anybody deciding to.
+  const degenerate = []
+  for (const entry of STUDY_RECORD_KINDS) {
+    for (const purpose of ["semantic", "record", "receipt"]) {
+      const reads = entry.shape.fields.some((declaration) =>
+        fieldClassesForPurpose(purpose).includes(declaration.field_class),
+      )
+      if (!reads) degenerate.push(`${entry.record_kind}/${purpose}`)
+    }
+  }
+  assert.deepEqual(degenerate, ["study_event/semantic"])
+})
+
+test("a selected field's value is projected in full, not re-filtered at every depth", () => {
+  // The composition rule. A `study_event`'s `plan_ref` is RECEIPT_ONLY and
+  // `RevisionRef`'s own fields are SEMANTIC, so applying the top-level filter
+  // again inside the pointer emptied it: the receipt body carried
+  // `"plan_ref":{}` and two events adopting two different plan revisions took
+  // one receipt digest. The audit record of *which* plan was adopted did not
+  // commit to the plan.
+  const event = {
+    schema_version: SCHEMA_VERSION,
+    hash_rules_id: STUDY_HASH_RULES_ID,
+    actor: "curator@example.invalid",
+    created_at: "2026-09-01T00:00:00.000Z",
+    plan_ref: { revision_hash: "c".repeat(64), revision: 1 },
+  }
+  const other = { ...event, plan_ref: { revision_hash: "e".repeat(64), revision: 42 } }
+  const body = studyCanonicalBody("study_event", event, "receipt")
+  assert.ok(body.includes('"plan_ref":{"revision":1,'), body)
+  assert.ok(!body.includes("{}"), "no selected value may project to an empty object")
+  assert.notEqual(receiptHash("study_event", event), receiptHash("study_event", other))
+})
+
+test("semantic still strips envelope annotation inside a selected value", () => {
+  // The other half of the composition rule, and the reason inner classes exist
+  // at all: a `Quantity`'s `created_at`, `source` and `schema_version` are
+  // annotation on the envelope. Rebuilding an envelope around the same number
+  // must not read as new science.
+  const quantity = {
+    value: 0.001,
+    unit: "logical_error_rate",
+    bound: "ESTIMATE",
+    evidence: "MODELLED",
+    model: "surface-code",
+    model_version: "0.4.1",
+  }
+  const node = {
+    schema_version: SCHEMA_VERSION,
+    hash_rules_id: STUDY_HASH_RULES_ID,
+    kind: "MEASURED_RESULT",
+    quantity,
+  }
+  const reserialized = {
+    ...node,
+    quantity: { ...quantity, created_at: "2020-01-01T00:00:00.000Z", source: "a rebuild" },
+  }
+  assert.equal(semanticHash("evidence_node", node), semanticHash("evidence_node", reserialized))
+  // And the record digest, which answers a question about the file, does move.
+  assert.notEqual(recordHash("evidence_node", node), recordHash("evidence_node", reserialized))
+  // The number itself is semantic.
+  assert.notEqual(
+    semanticHash("evidence_node", node),
+    semanticHash("evidence_node", { ...node, quantity: { ...quantity, value: 0.002 } }),
+  )
+})
+
+test("each purpose publishes both its filters as immutable plain data", () => {
+  const purposes = STUDY_PURPOSE_FIELD_CLASSES.map((entry) => entry.purpose)
+  assert.deepEqual(purposes, [...STUDY_HASH_PURPOSES])
+  for (const entry of STUDY_PURPOSE_FIELD_CLASSES) {
+    assert.ok(Array.isArray(entry.classes) && Object.isFrozen(entry.classes))
+    assert.ok(Array.isArray(entry.nested_classes) && Object.isFrozen(entry.nested_classes))
+    assert.deepEqual([...entry.classes], [...fieldClassesForPurpose(entry.purpose)])
+    assert.deepEqual([...entry.nested_classes], [...nestedFieldClassesForPurpose(entry.purpose)])
+    // DERIVED is never read, at any depth, by any purpose: a value cannot be an
+    // input to the digest that covers it.
+    assert.ok(!entry.classes.includes("DERIVED"))
+    assert.ok(!entry.nested_classes.includes("DERIVED"))
+  }
+  // `semantic` is the only purpose that strips annotation below the top level.
+  assert.deepEqual([...nestedFieldClassesForPurpose("semantic")], ["SEMANTIC"])
+  for (const purpose of ["record", "receipt"]) {
+    assert.deepEqual(
+      [...nestedFieldClassesForPurpose(purpose)],
+      ["SEMANTIC", "RECORD_ONLY", "RECEIPT_ONLY"],
+    )
+  }
+})
+
+// ---------------------------------------------------------------------------
+// The projection reads declared fields and refuses the rest
+// ---------------------------------------------------------------------------
+
+test("an undeclared key is refused rather than skipped", () => {
+  // Skipping is what an allowlist does by default, and by itself it is a
+  // collision: the record and the record plus one key would take one digest, so
+  // a field could be added to a finished file for nothing.
+  assert.throws(
+    () => recordHash("study_task_authorization", { ...authorization, smuggled: 1 }),
+    refusalCode("UNDECLARED_FIELD"),
+  )
+  // No name is special. `__proto__` is refused for the same reason `smuggled`
+  // is -- because nobody declared it, not because it is called something.
+  // A computed key, because a bare `__proto__:` in an object literal sets the
+  // prototype instead of creating a property -- which is the asymmetry that
+  // makes the name dangerous in the first place. `JSON.parse` produces the own
+  // property this line does.
+  assert.throws(
+    () => recordHash("study_task_authorization", { ...authorization, ["__proto__"]: { evil: 1 } }),
+    refusalCode("UNDECLARED_FIELD"),
+  )
+  assert.throws(
+    () => recordHash("study_task_authorization", JSON.parse(`{"__proto__":{"evil":1}}`)),
+    (error) => error instanceof StudyHashRefusalError,
+  )
+})
+
+test("a nested key nobody declared is refused at any depth", () => {
+  // The five holes the retired rule kept producing were all nested. Under a
+  // projection the depth is irrelevant: an undeclared key is undeclared.
+  const nested = { ...authorization, plan_ref: { ...authorization.plan_ref, slug: "looks-harmless" } }
+  assert.throws(() => recordHash("study_task_authorization", nested), refusalCode("UNDECLARED_FIELD"))
+})
+
+test("a declared field of the wrong shape is refused, not serialized under a guess", () => {
+  assert.throws(
+    () => recordHash("study_task_authorization", { ...authorization, plan_ref: "a string" }),
+    refusalCode("SHAPE_MISMATCH"),
+  )
+})
+
+test("an absent field and a null field are different records", () => {
+  // "We never recorded this" and "we recorded that there is none" are two
+  // statements, and a projection that turned one into the other would give two
+  // different records one digest.
+  const { created_at, ...withoutCreatedAt } = authorization
+  assert.notEqual(
+    recordHash("study_task_authorization", withoutCreatedAt),
+    recordHash("study_task_authorization", { ...authorization, created_at: null }),
+  )
+})
+
+// ---------------------------------------------------------------------------
+// Public API limits (goal 3.5)
+// ---------------------------------------------------------------------------
+
+test("values outside the JSON data model are refused by name", () => {
+  const cases = [
+    [undefined, "NOT_JSON_UNDEFINED"],
+    [() => 1, "NOT_JSON_FUNCTION"],
+    [Symbol("s"), "NOT_JSON_SYMBOL"],
+    [1n, "NOT_JSON_BIGINT"],
+    [new Date(0), "NOT_JSON_VALUE"],
+    [new Map(), "NOT_JSON_VALUE"],
+  ]
+  for (const [value, code] of cases) {
+    assert.throws(() => canonicalizeJcs({ x: value }), refusalCode(code), `${String(value)}`)
+  }
+  // A symbol-keyed property cannot be canonicalized either, and is refused
+  // rather than dropped: dropping would let two objects that differ share a
+  // digest.
+  const withSymbolKey = { a: 1 }
+  withSymbolKey[Symbol("hidden")] = 2
+  assert.throws(() => canonicalizeJcs(withSymbolKey), refusalCode("NOT_JSON_SYMBOL"))
+})
+
+test("a cycle is refused, and two references to one object are not a cycle", () => {
+  const cyclic = { name: "a" }
+  cyclic.self = cyclic
+  assert.throws(() => canonicalizeJcs(cyclic), refusalCode("CYCLE"))
+
+  const shared = { v: 1 }
+  assert.equal(canonicalizeJcs({ a: shared, b: shared }), '{"a":{"v":1},"b":{"v":1}}')
+})
+
+test("depth, node count and canonical size are bounded", () => {
+  let deep = 1
+  for (let level = 0; level <= STUDY_HASH_LIMITS.max_depth + 1; level += 1) deep = { n: deep }
+  assert.throws(() => canonicalizeJcs(deep), refusalCode("MAX_DEPTH_EXCEEDED"))
+
+  const wide = new Array(STUDY_HASH_LIMITS.max_nodes + 2).fill(0)
+  assert.throws(() => canonicalizeJcs(wide), refusalCode("MAX_NODES_EXCEEDED"))
+
+  const huge = "x".repeat(STUDY_HASH_LIMITS.max_canonical_bytes + 16)
+  assert.throws(() => canonicalizeJcs(huge), refusalCode("MAX_CANONICAL_BYTES_EXCEEDED"))
+})
+
+test("every refusal code the core can raise is in the published list", () => {
+  assert.ok(STUDY_HASH_REFUSAL_CODES.length >= 20)
+  for (const code of STUDY_HASH_REFUSAL_CODES) assert.equal(isStudyHashRefusalCode(code), true)
+  assert.equal(isStudyHashRefusalCode("NOT_A_CODE"), false)
+})
+
+// ---------------------------------------------------------------------------
+// Immutability of the exported rule data
+// ---------------------------------------------------------------------------
+
+test("the exported rule data is plain frozen data, never a Set", () => {
+  for (const exported of [
+    STUDY_HASH_REFUSAL_CODES,
+    STUDY_KNOWN_HASH_RULES_IDS,
+    STUDY_RECORD_KINDS,
+    STUDY_RECORD_KIND_NAMES,
+    STUDY_HASH_PURPOSES,
+    STUDY_NUMBER_CONTRACTS,
+  ]) {
+    assert.ok(Array.isArray(exported), "a rule list is an array, not a Set")
+    assert.equal(exported instanceof Set, false)
+    assert.equal(exported instanceof Map, false)
+    assert.equal(Object.isFrozen(exported), true)
+  }
+  assert.equal(Object.isFrozen(STUDY_HASH_LIMITS), true)
+})
+
+test("Set.prototype.add.call on an exported rule list does not add a rule", () => {
+  // The attack the `Set` shape invited. `Object.freeze` on a `Set` does not
+  // freeze its members -- they live in an internal slot -- so a frozen `Set` is
+  // a rule list a consumer can still edit. A frozen array has no such slot, and
+  // the borrowed method has nothing to work on.
+  assert.throws(() => Set.prototype.add.call(STUDY_HASH_REFUSAL_CODES, "FORGED"))
+  assert.throws(() => Set.prototype.add.call(STUDY_KNOWN_HASH_RULES_IDS, "study-v2"))
+  assert.equal(STUDY_HASH_REFUSAL_CODES.includes("FORGED"), false)
+  assert.equal(isStudyHashRefusalCode("FORGED"), false)
+  assert.equal(STUDY_KNOWN_HASH_RULES_IDS.includes("study-v2"), false)
+})
+
+test("borrowed array mutators cannot edit an exported rule list", () => {
+  for (const method of ["push", "pop", "splice", "shift", "unshift", "sort", "reverse", "fill"]) {
+    assert.throws(
+      () => Array.prototype[method].call(STUDY_HASH_REFUSAL_CODES, "FORGED"),
+      `${method} must not edit a frozen rule list`,
+    )
+  }
+  assert.equal(STUDY_HASH_REFUSAL_CODES.includes("FORGED"), false)
+})
+
+test("replacing a property on exported rule data throws rather than succeeding", () => {
+  assert.throws(() => {
+    STUDY_HASH_LIMITS.max_depth = 1
+  })
+  assert.throws(() => {
+    STUDY_HASH_REFUSAL_CODES[0] = "FORGED"
+  })
+  assert.throws(() => {
+    STUDY_RECORD_KINDS[0].record_kind = "forged"
+  })
+  assert.throws(() => Object.defineProperty(STUDY_HASH_LIMITS, "max_depth", { value: 1 }))
+  assert.equal(STUDY_HASH_LIMITS.max_depth, 64)
+  assert.equal(STUDY_RECORD_KINDS[0].record_kind, "study")
+})
+
+test("Object.prototype pollution reaches neither the lookups nor the projection", () => {
+  const polluted = ["max_depth", "status", "capsule_ref", "study_plan", "smuggled"]
+  try {
+    for (const key of polluted) {
+      Object.defineProperty(Object.prototype, key, {
+        value: "POLLUTED",
+        writable: true,
+        configurable: true,
+        enumerable: false,
+      })
+    }
+    // The limits are own properties of a frozen object.
+    assert.equal(STUDY_HASH_LIMITS.max_depth, 64)
+    // The record-kind lookup is a Map, so an inherited name is absent rather
+    // than accidentally present.
+    assert.throws(() => studyRecordKind("smuggled"), refusalCode("UNKNOWN_RECORD_KIND"))
+    // The projection reads own properties only, so a record missing `created_at`
+    // does not project the polluted value -- which would give every record in
+    // the process the same forged field.
+    const { created_at, ...withoutCreatedAt } = authorization
+    const body = studyCanonicalBody("study_task_authorization", withoutCreatedAt, "record")
+    assert.equal(body.includes("POLLUTED"), false)
+    assert.equal(body.includes('"created_at"'), false)
+  } finally {
+    for (const key of polluted) delete Object.prototype[key]
+  }
+  assert.equal(Object.prototype.max_depth, undefined)
+})
+
+// ---------------------------------------------------------------------------
+// Exact numbers (goal 11)
+// ---------------------------------------------------------------------------
+
+test("the five number contracts are published as immutable data", () => {
+  assert.deepEqual(
+    STUDY_NUMBER_CONTRACTS.map((entry) => entry.contract),
+    ["finite_float", "safe_integer", "exact_integer_string", "exact_decimal_string", "unknown"],
+  )
+  for (const entry of STUDY_NUMBER_CONTRACTS) {
+    assert.equal(Object.isFrozen(entry), true)
+    assert.ok(entry.use_for.length > 0)
+    assert.ok(entry.refuses.length > 0)
+  }
+})
+
+test("finite float and safe integer accept and refuse the right values", () => {
+  assert.equal(isFiniteFloat(1.5), true)
+  assert.equal(isFiniteFloat(Number.NaN), false)
+  assert.equal(isFiniteFloat(Number.POSITIVE_INFINITY), false)
+  assert.equal(isSafeInteger(1000), true)
+  assert.equal(isSafeInteger(1.5), false)
+  assert.equal(isSafeInteger(Number.MAX_SAFE_INTEGER), true)
+  assert.equal(isSafeInteger(Number.MAX_SAFE_INTEGER + 2), false)
+})
+
+test("an exact integer string admits exactly one spelling per value", () => {
+  // A 64-bit seed is an ordinary input -- Stim and NumPy hand them out -- so it
+  // is carried as digits rather than refused. The validation is what makes that
+  // safe: an unvalidated string would accept four spellings of one value, which
+  // is the same injectivity failure moved one layer up.
+  assert.equal(isExactIntegerString("13835058055282163712"), true)
+  assert.equal(isExactIntegerString("0"), true)
+  assert.equal(isExactIntegerString("-7"), true)
+  for (const bad of ["+7", "007", "1e3", "1_000", "-0", " 7", "7 ", "", "7.0", "0x10"]) {
+    assert.equal(isExactIntegerString(bad), false, `${JSON.stringify(bad)} must be refused`)
+    assert.throws(() => assertExactIntegerString(bad, "seed"), refusalCode("INVALID_EXACT_NUMBER_STRING"))
+  }
+  assert.equal(isExactIntegerString("1".repeat(65)), false, "more than 64 digits is refused")
+})
+
+test("an exact decimal string keeps trailing zeros and refuses exponents", () => {
+  assert.equal(isExactDecimalString("1.50"), true)
+  assert.equal(isExactDecimalString("1.5"), true)
+  // Two spellings of two different statements, and therefore two records.
+  assert.notEqual(canonicalizeJcs({ v: "1.50" }), canonicalizeJcs({ v: "1.5" }))
+  for (const bad of ["1.5e3", "-0", "-0.000", "01.5", ".5", "5."]) {
+    assert.equal(isExactDecimalString(bad), false, `${JSON.stringify(bad)} must be refused`)
+    assert.throws(() => assertExactDecimalString(bad, "figure"), refusalCode("INVALID_EXACT_NUMBER_STRING"))
+  }
+})
+
+test("BigInt never reaches JSON, and crosses the boundary as validated digits", () => {
+  assert.throws(() => canonicalizeJcs({ seed: 13835058055282163712n }), refusalCode("NOT_JSON_BIGINT"))
+  assert.equal(exactIntegerStringFromBigInt(13835058055282163712n), "13835058055282163712")
+  // The digits survive, which is the point: JavaScript would read the same
+  // number as 13835058055282164000 if it were a JSON number.
+  assert.notEqual(String(Number("13835058055282163712")), "13835058055282163712")
+})
+
+// ---------------------------------------------------------------------------
+// File verification, over raw bytes
+// ---------------------------------------------------------------------------
+
+const bytesOf = (text) => new TextEncoder().encode(text)
+
+test("duplicate JSON keys are refused at the byte level, before the parse", () => {
+  // `JSON.parse` keeps the last value and leaves no evidence there were two, so
+  // this check cannot be done after it. Parsers disagree about which value
+  // wins, which gives one file two readings and two digests.
+  assert.throws(
+    () => readStudyFileBytes(bytesOf('{"a":1,"a":2}')),
+    refusalCode("DUPLICATE_PROPERTY"),
+  )
+  assert.throws(
+    () => readStudyFileBytes(bytesOf('{"outer":{"a":1,"a":2}}')),
+    refusalCode("DUPLICATE_PROPERTY"),
+  )
+  assert.throws(
+    () => readStudyFileBytes(bytesOf('[{"a":1},{"b":1,"b":2}]')),
+    refusalCode("DUPLICATE_PROPERTY"),
+  )
+  // Escaped and literal spellings of one name are one name.
+  assert.throws(
+    () => readStudyFileBytes(bytesOf('{"a":1,"\\u0061":2}')),
+    refusalCode("DUPLICATE_PROPERTY"),
+  )
+  // The same name in two sibling objects is not a duplicate, and a string
+  // *value* that looks like a name is not one either.
+  assert.deepEqual(readStudyFileBytes(bytesOf('{"x":{"a":1},"y":{"a":2}}')).value, {
+    x: { a: 1 },
+    y: { a: 2 },
+  })
+  assert.deepEqual(readStudyFileBytes(bytesOf('{"a":"a"}')).value, { a: "a" })
+})
+
+test("a byte order mark is refused rather than stripped", () => {
+  const withBom = new Uint8Array([0xef, 0xbb, 0xbf, ...bytesOf('{"a":1}')])
+  assert.throws(() => readStudyFileBytes(withBom), refusalCode("BYTE_ORDER_MARK"))
+  // Stripping would make the digest depend on which reader took it: RFC 8259
+  // §8.1 says a reader MAY ignore a BOM, so an ignoring and a non-ignoring
+  // reader hash two different byte sequences for one file.
+  assert.deepEqual(readStudyFileBytes(bytesOf('{"a":1}')).value, { a: 1 })
+})
+
+test("invalid UTF-8 is refused rather than repaired to U+FFFD", () => {
+  const truncatedMultibyte = new Uint8Array([0x7b, 0x22, 0xe2, 0x82, 0x22, 0x3a, 0x31, 0x7d])
+  assert.throws(() => readStudyFileBytes(truncatedMultibyte), refusalCode("INVALID_UTF8"))
+  const loneContinuation = new Uint8Array([0x7b, 0x22, 0x80, 0x22, 0x3a, 0x31, 0x7d])
+  assert.throws(() => readStudyFileBytes(loneContinuation), refusalCode("INVALID_UTF8"))
+})
+
+test("a unpaired surrogate escape is refused, however it is spelled", () => {
+  assert.throws(() => readStudyFileBytes(bytesOf('{"a":"\\ud800"}')), refusalCode("LONE_SURROGATE"))
+  assert.throws(() => readStudyFileBytes(bytesOf('{"\\udead":1}')), refusalCode("LONE_SURROGATE"))
+  // A well-formed pair is a character and is read.
+  assert.deepEqual(readStudyFileBytes(bytesOf('{"a":"\\ud83d\\ude00"}')).value, { a: "😀" })
+})
+
+test("file verification performs no Unicode normalization", () => {
+  // U+00E9, and U+0065 U+0301. Written as escapes rather than as literals,
+  // because an editor that normalized this file would otherwise turn the test
+  // into a comparison of one string with itself -- which passes by asserting
+  // nothing, and is exactly the failure the test is about.
+  const composed = readStudyFileBytes(bytesOf('{"name":"\\u00e9"}'))
+  const decomposed = readStudyFileBytes(bytesOf('{"name":"e\\u0301"}'))
+  assert.notEqual(composed.value.name, decomposed.value.name)
+  assert.notEqual(canonicalizeJcs(composed.value), canonicalizeJcs(decomposed.value))
+})
+
+test("a file that is not JSON is refused with a code, not an exception from the parser", () => {
+  assert.throws(() => readStudyFileBytes(bytesOf("{")), refusalCode("INVALID_JSON"))
+  assert.throws(() => readStudyFileBytes(bytesOf("not json")), refusalCode("INVALID_JSON"))
+  assert.throws(() => readStudyFileBytes("a string"), refusalCode("NOT_JSON_VALUE"))
+})
