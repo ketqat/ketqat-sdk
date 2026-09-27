@@ -329,3 +329,16 @@ The SDK validates research contracts and computes hashes. It does not authentica
 ## License
 
 Apache License 2.0, see [LICENSE](LICENSE).
+
+## Hosted worker transport
+
+AWS migration tracking: [#272](https://github.com/ketqat/ketqat-sdk/issues/272).
+`KETQAT_WORKER_AUTH_MODE=signed-request` uses a runtime-injected
+`KETQAT_WORKER_CALLBACK_SECRET` (at least 32 bytes) to sign 60-second callbacks
+bound to origin, method, path, attempt and body hash. The key is infrastructure
+identity, not a quantum-provider credential. Missing keys, insecure origins and
+unknown modes fail closed. `google-oidc` remains the compatibility default until
+GCP production cutover and rollback retirement. Local callers can inject an
+`IdentityTokenSource`. Provider adapters and scientific result contracts are unchanged.
+The AWS workflow publishes scanned immutable worker images through GitHub OIDC;
+Web IaC explicitly selects the tested image digest for each environment.

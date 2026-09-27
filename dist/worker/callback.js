@@ -1,37 +1,11 @@
 /**
- * Worker callback transport (RFC 0005).
- *
- * How the worker gets a job and returns a result, without a shared secret and
- * without the payload ever passing through an environment variable or a log
- * line.
- *
- * The worker is started with only a job id and a base URL. It then:
- *
- *   1. mints a Google-signed identity token from the instance metadata server,
- *      audienced to the control plane,
- *   2. claims the job, receiving the validated manifest over TLS,
- *   3. executes it,
- *   4. posts the result back.
- *
- * Three properties follow from that shape, and each is the reason for it:
- *
- * **No secret exists to leak or rotate.** The identity token is minted per call
- * by the platform, expires in an hour, and is bound to one audience. Nothing is
- * stored in the image, in an environment variable, or in a secret manager, so
- * there is no credential whose compromise would matter and none whose rotation
- * anyone has to remember.
- *
- * **The job payload stays out of the process environment.** Passing a manifest
- * through an env var would put a scientific payload into `gcloud run jobs
- * describe` output, into audit entries, and into any crash dump that captures
- * the environment. Fetching it over TLS keeps it in memory only.
- *
- * **The result never travels through stdout.** Worker stdout is captured by the
- * platform's logging, so returning results that way would write every scientific
- * result into a log sink with a different retention and access policy than the
- * registry. The stdout path is kept for local runs; in the callback path stdout
- * carries progress lines and nothing else.
+ * Authenticated worker callbacks. Scientific payloads stay in HTTPS bodies,
+ * never deployment overrides or logs. Google metadata identity remains the
+ * default for the current GCP deployment/rollback; AWS explicitly selects the
+ * request-bound signer with an injected workload key. Local callers can supply
+ * any IdentityTokenSource without coupling the quantum engine to a cloud.
  */
+import { signedRequestIdentity } from "./signed-identity.js";
 export class CallbackError extends Error {
     constructor(message, retryable) {
         super(message);
@@ -80,7 +54,9 @@ function classify(status) {
 async function authorizedFetch(config, path, init) {
     const fetchImpl = config.fetchImpl ?? fetch;
     const identity = config.identity ?? metadataIdentity;
-    const token = await identity.fetchIdentityToken(config.apiBaseUrl);
+    const token = await identity.fetchIdentityToken(config.apiBaseUrl, {
+        method: init.method ?? "GET", path, body: String(init.body ?? ""), attempt: config.attempt,
+    });
     if (!token) {
         throw new CallbackError("No workload identity token is available. The worker authenticates as its service " +
             "account; it has no fallback credential and will not send an unauthenticated request.", false);
@@ -94,6 +70,8 @@ async function authorizedFetch(config, path, init) {
         response = await fetchImpl(`${config.apiBaseUrl.replace(/\/$/, "")}${path}`, {
             ...init,
             headers,
+            redirect: "error",
+            signal: AbortSignal.timeout(75000),
         });
     }
     catch (error) {
@@ -144,10 +122,20 @@ export function callbackConfigFromEnv(env) {
     if (!apiBaseUrl || !jobId)
         return null;
     const attempt = Number.parseInt(env.KETQAT_JOB_ATTEMPT ?? "1", 10);
+    const mode = env.KETQAT_WORKER_AUTH_MODE ?? "google-oidc";
+    if (!["google-oidc", "signed-request"].includes(mode))
+        throw new Error("Unknown worker authentication mode");
+    if (mode === "signed-request") {
+        const origin = new URL(apiBaseUrl);
+        if (origin.protocol !== "https:" || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) {
+            throw new Error("Signed callbacks require an HTTPS origin");
+        }
+    }
     return {
         apiBaseUrl,
         jobId,
         attempt: Number.isFinite(attempt) && attempt > 0 ? attempt : 1,
+        ...(mode === "signed-request" ? { identity: signedRequestIdentity(env.KETQAT_WORKER_CALLBACK_SECRET ?? "") } : {}),
     };
 }
 //# sourceMappingURL=callback.js.map

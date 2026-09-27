@@ -1,0 +1,56 @@
+name: AWS worker image
+on:
+  workflow_run:
+    workflows: [SDK CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: aws-worker-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: vars.AWS_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [staging, production]
+    environment: aws-${{ matrix.environment }}
+    env:
+      AWS_REGION: ap-northeast-1
+      ECR_PREFIX: ${{ vars.ECR_PREFIX }}
+      RELEASE_ID: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.RELEASE_ID }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 dir /repo --redact --no-banner
+      - run: npm ci && npm test
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run verify:worker-image
+      - uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-northeast-1
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+      - name: Publish immutable worker
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$(git ls-remote origin refs/heads/main | cut -f1)"
+          registry=${ECR_PREFIX%%/*}
+          aws ecr get-login-password | docker login --username AWS --password-stdin "$registry"
+          image="$ECR_PREFIX/worker:$RELEASE_ID"
+          if ! aws ecr describe-images --repository-name "${ECR_PREFIX#*/}/worker" --image-ids "imageTag=$RELEASE_ID" >/dev/null 2>&1; then
+            docker build --platform linux/amd64 -f worker/Dockerfile -t "$image" .
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.74.0 image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed "$image"
+            docker push "$image"
+          fi
+          digest=$(aws ecr describe-images --repository-name "${ECR_PREFIX#*/}/worker" --image-ids "imageTag=$RELEASE_ID" --query 'imageDetails[0].imageDigest' --output text)
+          echo "Worker release: $ECR_PREFIX/worker@$digest" >> "$GITHUB_STEP_SUMMARY"
