@@ -93,6 +93,10 @@ jobs:
       - name: Build the worker image and run a job through it
         run: npm run verify:worker-image
 
+      - name: Scan worker image
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.74.0 image --scanners vuln --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed ketqat-worker:verify
+
   python:
     runs-on: ubuntu-latest
     steps:

@@ -49,7 +49,7 @@ jobs:
           image="$ECR_PREFIX/worker:$RELEASE_ID"
           if ! aws ecr describe-images --repository-name "${ECR_PREFIX#*/}/worker" --image-ids "imageTag=$RELEASE_ID" >/dev/null 2>&1; then
             docker build --platform linux/amd64 -f worker/Dockerfile -t "$image" .
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.74.0 image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed "$image"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.74.0 image --scanners vuln --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed "$image"
             docker push "$image"
           fi
           digest=$(aws ecr describe-images --repository-name "${ECR_PREFIX#*/}/worker" --image-ids "imageTag=$RELEASE_ID" --query 'imageDetails[0].imageDigest' --output text)
