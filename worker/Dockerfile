@@ -19,6 +19,10 @@ COPY dist ./dist
 
 FROM node:22-slim AS runtime
 
+# Package managers are build tools; production executes Node directly.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
+ && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
+
 # Non-root. Cloud Run will not grant a privileged container, but running as root
 # inside one would still let an escape write anywhere it could reach.
 RUN groupadd --system --gid 10001 ketqat \
