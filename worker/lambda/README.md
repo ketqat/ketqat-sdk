@@ -55,3 +55,10 @@ AWS Runtime Interface Emulator located the exported handler and exercised its
 invalid-event guard. That check caught missing ESM package metadata that an
 ordinary Node invocation had not caught; the image now includes it explicitly.
 Control-plane/SSM callbacks in local checks are fixtures, not live AWS evidence.
+
+The first CI scan found 11 fixable High/Critical advisories, all in the unused
+AWS base image's npm dependencies. The Lambda target now removes npm/npx/corepack
+and their module trees; dependency metadata is not hidden. The rebuilt ARM64
+image passed the scientific/runtime probe and Trivy 0.74.0 reported zero
+High/Critical findings on September 29. ECR scanning and live AWS verification
+are still required before release.

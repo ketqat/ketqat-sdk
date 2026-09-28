@@ -85,6 +85,10 @@ RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 # Native Lambda execution uses only opaque dispatch metadata. The parent reads
 # its exact SSM callback key; the CPU child receives no cloud credentials.
 FROM public.ecr.aws/lambda/nodejs:22@sha256:88912b213fb91941e0d577355b7753d354eafd99a164cdd2aebe799b49dea1f5 AS lambda
+# AWS's runtime image includes npm for building. Runtime needs only Node and
+# the Lambda bootstrap; remove the unused package manager and its dependencies.
+RUN rm -rf /var/lang/lib/node_modules/npm /var/lang/lib/node_modules/corepack \
+ && rm -f /var/lang/bin/npm /var/lang/bin/npx /var/lang/bin/corepack
 WORKDIR ${LAMBDA_TASK_ROOT}
 COPY --from=builder /build/package.json ./package.json
 COPY --from=builder /build/node_modules ./node_modules
