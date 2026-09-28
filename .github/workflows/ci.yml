@@ -97,6 +97,47 @@ jobs:
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.74.0 image --scanners vuln --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed ketqat-worker:verify
 
+  lambda-worker-image:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci && npm run build
+      - name: Build native Lambda worker
+        run: docker build --platform linux/arm64 --provenance=false --target lambda -f worker/Dockerfile -t ketqat-worker:lambda-ci .
+      - name: Verify scientific execution and AWS runtime handler
+        run: |
+          docker run --rm --read-only --network none --tmpfs /tmp:rw,nosuid,nodev,size=64m \
+            -v "$PWD/scripts/verify-lambda-worker-container.mjs:/verify-lambda-worker-container.mjs:ro" \
+            --entrypoint /var/lang/bin/node ketqat-worker:lambda-ci /verify-lambda-worker-container.mjs
+      - name: Scan all High and Critical findings
+        run: |
+          mkdir -p reports
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/reports:/reports" \
+            aquasec/trivy:0.74.0 image --scanners vuln --format json --output /reports/lambda-worker.json \
+            --severity HIGH,CRITICAL ketqat-worker:lambda-ci
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('reports/lambda-worker.json').read_text())
+          findings = [v for r in report.get('Results', []) for v in r.get('Vulnerabilities', [])]
+          fixable = [v for v in findings if v.get('FixedVersion')]
+          print(f'High/Critical: {len(findings)} total, {len(fixable)} with an available fix')
+          if findings:
+              print('::warning::Review all findings and ECR results before release, including unfixed findings.')
+          raise SystemExit(1 if fixable else 0)
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: lambda-worker-vulnerabilities
+          path: reports/lambda-worker.json
+          retention-days: 30
+
   python:
     runs-on: ubuntu-latest
     steps:

@@ -76,3 +76,24 @@ ENV KETQAT_WORKER_EGRESS=control-plane-only
 # through a hand-written parser precisely so they cannot -- and this turns that
 # from a code-review property into a runtime guarantee.
 ENTRYPOINT ["node", "--disallow-code-generation-from-strings", "/app/worker/entrypoint.mjs"]
+
+FROM builder AS lambda-deps
+WORKDIR /lambda-deps
+COPY worker/lambda/package*.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+
+# Native Lambda execution uses only opaque dispatch metadata. The parent reads
+# its exact SSM callback key; the CPU child receives no cloud credentials.
+FROM public.ecr.aws/lambda/nodejs:22@sha256:88912b213fb91941e0d577355b7753d354eafd99a164cdd2aebe799b49dea1f5 AS lambda
+WORKDIR ${LAMBDA_TASK_ROOT}
+COPY --from=builder /build/package.json ./package.json
+COPY --from=builder /build/node_modules ./node_modules
+COPY --from=builder /build/dist ./dist
+COPY --from=lambda-deps /lambda-deps/node_modules ./worker/lambda/node_modules
+COPY worker/lambda/*.mjs worker/lambda/package.json ./worker/lambda/
+USER 10001:10001
+ENV TMPDIR=/tmp
+CMD ["worker/lambda/handler.handler"]
+
+# Existing GCP and Batch builds retain their stdin/callback entry point.
+FROM runtime AS default

@@ -333,6 +333,11 @@ Apache License 2.0, see [LICENSE](LICENSE).
 ## Hosted worker transport
 
 AWS migration tracking: [#272](https://github.com/ketqat/ketqat-sdk/issues/272).
+
+The [native Lambda worker target](worker/lambda/README.md) supports bounded jobs
+with process-enforced deadlines and request-bound callbacks. It is locally
+verified but not deployed; jobs above 780 seconds still require Batch, and the
+public 900-second scientific contract is unchanged.
 `KETQAT_WORKER_AUTH_MODE=signed-request` uses a runtime-injected
 `KETQAT_WORKER_CALLBACK_SECRET` (at least 32 bytes) to sign 60-second callbacks
 bound to origin, method, path, attempt and body hash. The key is infrastructure
