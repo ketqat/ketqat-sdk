@@ -99,5 +99,11 @@ USER 10001:10001
 ENV TMPDIR=/tmp
 CMD ["worker/lambda/handler.handler"]
 
+# The Batch fallback shares the scanned runtime and isolated scientific runner.
+# It has no public listener and does not run the Lambda entrypoint/emulator.
+FROM lambda AS batch
+ENTRYPOINT ["/var/lang/bin/node", "--disallow-code-generation-from-strings", "/var/task/worker/lambda/batch.mjs"]
+CMD []
+
 # Existing GCP and Batch builds retain their stdin/callback entry point.
 FROM runtime AS default

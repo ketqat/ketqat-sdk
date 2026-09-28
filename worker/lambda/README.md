@@ -1,9 +1,30 @@
-# Native Lambda worker preparation
+# AWS Lambda and Batch worker preparation
 
 This target is implemented and locally verified, **not deployed**. The current
 GCP/Batch entry point remains the default Docker target. Migration tracking:
 [SDK #272](https://github.com/ketqat/ketqat-sdk/issues/272) and
 [planning #149](https://github.com/ketqat/ketqat-planning/issues/149).
+
+The explicit `batch` Docker target now shares the Lambda target's entire
+filesystem and scientific child runner, with a Batch CLI entry point instead of
+the AWS Lambda bootstrap. Build it with `--target batch`. It accepts a canonical
+compute limit through `KETQAT_JOB_TIMEOUT_SECONDS` (up to 900), job ID and attempt
+metadata, requires the platform's `AWS_BATCH_JOB_ID`, and reserves 120 additional
+platform seconds for startup and callbacks. The compute limit itself does not
+increase. Its task role reads the same exact environment-scoped SSM key; no
+secret is injected into job-definition environment variables. Web dispatch and
+Batch IaC must use this target together; do not label a Lambda entrypoint image
+as the Batch image.
+
+Both runtimes claim/validate/report through the same signed path. Batch emits
+only job ID, attempt and final status; exceptions produce a fixed generic error.
+The Batch container probe runs real scientific work with a declared 900-second
+limit on a read-only filesystem (including `/tmp`) and no network. This tests
+eligibility and output, not a 900-second workload under live Fargate. CI verifies
+the two images have identical filesystem layers before applying the shared
+vulnerability scan, and exercises the actual Batch default entrypoint's invalid
+input failure. Peak memory, live long jobs, callbacks and platform termination
+still require staging verification.
 
 The invocation contains only `{version: 1, jobId, attempt, timeoutSeconds}`.
 It cannot choose a URL, manifest, command, package, file or credentials. The

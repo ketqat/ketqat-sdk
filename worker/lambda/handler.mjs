@@ -3,13 +3,14 @@ import { runIsolatedJob } from "./run-isolated.mjs"
 
 export const MAX_LAMBDA_JOB_SECONDS = 780
 
-function invocation(event, context, env) {
+function invocation(event, context, env, mode) {
+  const maximum = mode === "batch" ? 900 : MAX_LAMBDA_JOB_SECONDS
   if (!event || typeof event !== "object" || Array.isArray(event) ||
       Object.keys(event).some(key => !["version", "jobId", "attempt", "timeoutSeconds"].includes(key)) ||
       event.version !== 1 || typeof event.jobId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(event.jobId) ||
       !Number.isSafeInteger(event.attempt) || event.attempt < 1 ||
-      !Number.isInteger(event.timeoutSeconds) || event.timeoutSeconds < 1 || event.timeoutSeconds > MAX_LAMBDA_JOB_SECONDS) {
-    throw new Error("Invalid Lambda worker invocation; longer jobs require Batch")
+      !Number.isInteger(event.timeoutSeconds) || event.timeoutSeconds < 1 || event.timeoutSeconds > maximum) {
+    throw new Error(mode === "batch" ? "Invalid Batch worker invocation" : "Invalid Lambda worker invocation; longer jobs require Batch")
   }
   if (!["staging", "production"].includes(env.KETQAT_DEPLOYMENT_ENV)) throw new Error("Missing worker environment")
   const origin = new URL(env.KETQAT_API_BASE_URL)
@@ -29,10 +30,11 @@ async function ssmSecret(name) {
   finally { client.destroy() }
 }
 
-export function createHandler({ env = process.env, getSecret = ssmSecret, claim = claimJob, report = reportResult, run = runIsolatedJob, fetchImpl = fetch } = {}) {
+export function createHandler({ env = process.env, mode = "lambda", getSecret = ssmSecret, claim = claimJob, report = reportResult, run = runIsolatedJob, fetchImpl = fetch } = {}) {
+  if (!["lambda", "batch"].includes(mode)) throw new Error("Invalid worker runtime mode")
   let secretPromise
   return async (event, context) => {
-    const config = invocation(event, context, env)
+    const config = invocation(event, context, env, mode)
     secretPromise ??= getSecret(config.parameter).catch(() => { secretPromise = undefined; throw new Error("Worker secret initialization failed") })
     const secret = await secretPromise
     const callback = callbackConfigFromEnv({

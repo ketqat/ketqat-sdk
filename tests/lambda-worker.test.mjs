@@ -7,6 +7,7 @@ import { fork } from "node:child_process"
 import { executeJob, validateJob, JobResultSchema } from "../dist/worker/index.js"
 import { createIsolatedRunner, runIsolatedJob } from "../worker/lambda/run-isolated.mjs"
 import { createHandler } from "../worker/lambda/handler.mjs"
+import { runBatch } from "../worker/lambda/batch.mjs"
 
 const makeJob = (timeout = 5) => validateJob({
   schema_version: "1.0", job_id: "lambda-test", idempotency_key: "lambda-test", submitted_by: "test",
@@ -85,4 +86,24 @@ test("failed or mismatched claims never execute and transport errors do not leak
   const dependencies = { env, getSecret: async () => "x".repeat(64), run: async () => { assert.fail("must not execute") } }
   await assert.rejects(() => createHandler({ ...dependencies, claim: async () => { throw new Error("private-response-body") } })(event, context), { message: "Worker claim failed or did not match the dispatch" })
   await assert.rejects(() => createHandler({ ...dependencies, claim: async () => makeJob(900) })(event, context), { message: "Worker claim failed or did not match the dispatch" })
+})
+
+test("Batch preserves the 900-second public limit using the same canonical claim and isolated runner", async () => {
+  let called = 0
+  const batchEnv = { ...env, AWS_BATCH_JOB_ID: "batch-platform-id", KETQAT_JOB_ID: event.jobId, KETQAT_JOB_ATTEMPT: "2", KETQAT_JOB_TIMEOUT_SECONDS: "900" }
+  const result = await runBatch({ env: batchEnv, create: options => {
+    assert.equal(options.mode, "batch")
+    return createHandler({ ...options, getSecret: async () => "x".repeat(64),
+      claim: async config => { assert.equal(config.attempt, 2); return makeJob(900) },
+      run: async job => { called++; assert.equal(job.limits.timeout_seconds, 900); return runIsolatedJob(job) },
+      report: async (_, value) => { assert.equal(value.status, "SUCCEEDED") },
+    })
+  } })
+  assert.deepEqual(result, { jobId: event.jobId, attempt: 2, status: "SUCCEEDED" })
+  assert.equal(called, 1)
+  for (const values of [{ ...batchEnv, AWS_BATCH_JOB_ID: "" }, { ...batchEnv, KETQAT_JOB_TIMEOUT_SECONDS: "901" }]) {
+    await assert.rejects(() => runBatch({ env: values, create: () => { assert.fail("must not initialize worker") } }))
+  }
+  // The public Lambda export still cannot opt into Batch limits via its event.
+  await assert.rejects(() => createHandler({ env, getSecret: async () => { assert.fail("must not read secret") } })({ ...event, timeoutSeconds: 900, mode: "batch" }, context))
 })
