@@ -1,11 +1,21 @@
 // Run inside the actual Batch image, read-only and without external networking.
 import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"
+import { mkdtempSync, writeFileSync, statSync, rmSync } from "node:fs"
 import { runBatch } from "/var/task/worker/lambda/batch.mjs"
 import { createHandler } from "/var/task/worker/lambda/handler.mjs"
 import { JobResultSchema } from "/var/task/dist/worker/index.js"
 
 assert.notEqual(process.getuid(), 0)
+const scratch = mkdtempSync("/tmp/ketqat-batch-volume-")
+try {
+  assert.equal(statSync(scratch).mode & 0o777, 0o700)
+  writeFileSync(`${scratch}/probe`, "synthetic", {mode: 0o600})
+  assert.equal(statSync(`${scratch}/probe`).mode & 0o777, 0o600)
+  assert.throws(() => writeFileSync("/var/task/unexpected-write", "bad"))
+} finally {
+  rmSync(scratch, {recursive: true, force: true})
+}
 const job = {
   schema_version: "1", job_id: "batch-container", idempotency_key: "batch-container", submitted_by: "verification",
   parameters: { operation: "simulate", qasm: 'OPENQASM 3.0; include "stdgates.inc"; qubit[2] q; bit[2] c; h q[0]; cx q[0], q[1]; c[0] = measure q[0]; c[1] = measure q[1];', shots: 64, seed: 17 },

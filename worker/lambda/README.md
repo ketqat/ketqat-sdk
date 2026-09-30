@@ -129,9 +129,12 @@ The workflow additionally requires `AWS_DEPLOY_ENABLED=true` and
 `AWS_WORKER_IMAGES_READY=true`; both remain off/unset during preparation.
 Production also requires `AWS_WORKER_PROMOTION_READY=true`, which must remain
 unset until recorded live staging acceptance and rollback checks pass.
-Production's scoped read permissions are prepared in Web's registry IaC but
-are **not yet verified applied**. Refresh the non-root login and inspect/plan
-that state before enabling publication. Normal protected main and GitHub
+Production's scoped read permissions were applied on October 1 through Web's
+registry IaC. All six release policies/trusts matched the reviewed configuration
+and 60 permission simulations passed; see Web's
+`docs/migration-evidence/aws-registry-policies-applied-2026-10-01.json`.
+Actual GitHub OIDC assumption and staged publication remain unverified. Recheck
+temporary identity and current IAM state before enabling publication. Normal protected main and GitHub
 environment restrictions remain required; do not weaken them for a PR run.
 
 Only `release/worker-images.json` after successful completion authorizes a
@@ -155,3 +158,11 @@ Run the credential-free publication failure tests with:
 ```sh
 python3 -m unittest scripts/test_publish_worker_images.py -v
 ```
+
+The Batch target declares only `VOLUME /tmp`. Web's worker IaC mounts an empty,
+writable task-local volume there while keeping the root filesystem read-only
+and UID/GID 10001. It has no host path or persistent/EFS volume. The publisher
+rejects a Batch image without that declaration and verifies private temporary
+files plus a scientific child using the same empty-volume mount; Lambda probes
+retain their bounded tmpfs. Actual Fargate permissions, storage use and execution
+performance still require live staging verification.

@@ -108,6 +108,9 @@ CMD ["worker/lambda/handler.handler"]
 # The Batch fallback shares the scanned runtime and isolated scientific runner.
 # It has no public listener and does not run the Lambda entrypoint/emulator.
 FROM lambda AS batch
+# Fargate's empty ephemeral volume inherits /tmp's writable image permissions.
+# Lambda supplies its own /tmp; this declaration applies only to the Batch target.
+VOLUME ["/tmp"]
 ENTRYPOINT ["/var/lang/bin/node", "--disallow-code-generation-from-strings", "/var/task/worker/lambda/batch.mjs"]
 CMD []
 

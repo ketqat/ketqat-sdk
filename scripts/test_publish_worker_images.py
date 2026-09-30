@@ -66,6 +66,8 @@ class FakePublisher(module.Publisher):
             config = {'User': '10001:10001', 'Labels': {'org.opencontainers.image.revision': SHA},
                       'Entrypoint': ['/lambda-entrypoint.sh'] if target == 'lambda' else ['/var/lang/bin/node', '--disallow-code-generation-from-strings', '/var/task/worker/lambda/batch.mjs'],
                       'Cmd': ['worker/lambda/handler.handler'] if target == 'lambda' else []}
+            if target == 'batch' and self.case != 'missing-batch-volume':
+                config['Volumes'] = {'/tmp': {}}
             if self.case == 'wrong-entrypoint':
                 config['Entrypoint'] = ['/bin/bash']
             stdout = json.dumps([{'Architecture': 'amd64' if self.case == 'wrong-platform' else 'arm64', 'Os': 'linux', 'Config': config,
@@ -119,6 +121,9 @@ class PublicationTest(unittest.TestCase):
         self.assertEqual(len(scans), 2)
         self.assertLess(max(scans), first_push)
         self.assertFalse(any('--ignore-unfixed' in c for c in calls))
+        batch_probe = next(c for c in calls if '/verify-batch-worker-container.mjs' in c)
+        self.assertIn('type=volume,dst=/tmp', batch_probe)
+        self.assertNotIn('--tmpfs', batch_probe)
 
     def test_existing_pair_is_reverified_without_rebuild(self):
         error, calls, data = self.run_case(case='reuse')
@@ -136,7 +141,7 @@ class PublicationTest(unittest.TestCase):
             self.assertEqual(sum(c[:3] == ['aws', 'lambda', 'get-function'] for c in calls), 2)
 
     def test_invalid_artifacts_never_push(self):
-        for case in ['lookup-denied', 'wrong-role', 'wrong-platform', 'wrong-entrypoint', 'mixed-layers', 'probe-failed', 'trivy-high']:
+        for case in ['lookup-denied', 'wrong-role', 'wrong-platform', 'wrong-entrypoint', 'missing-batch-volume', 'mixed-layers', 'probe-failed', 'trivy-high']:
             error, calls, data = self.run_case(case=case)
             self.assertIsNotNone(error, case)
             self.assertIsNone(data, case)

@@ -89,6 +89,7 @@ class Publisher:
             require(config['Entrypoint'] == ['/lambda-entrypoint.sh'] and config['Cmd'] == ['worker/lambda/handler.handler'], 'Wrong Lambda entrypoint')
         else:
             require(config['Entrypoint'] == ['/var/lang/bin/node', '--disallow-code-generation-from-strings', '/var/task/worker/lambda/batch.mjs'] and not config['Cmd'], 'Wrong Batch entrypoint')
+            require(config.get('Volumes') == {'/tmp': {}}, 'Batch image must declare only disposable /tmp scratch')
         return data['RootFS']['Layers']
 
     def publish(self):
@@ -123,7 +124,8 @@ class Publisher:
         # Verify and scan BOTH targets before pushing either target.
         for target, image in images.items():
             probe = f'verify-{target}-worker-container.mjs'
-            self.command(['docker', 'run', '--rm', '--read-only', '--network', 'none', '--tmpfs', '/tmp:rw,nosuid,nodev,size=64m',
+            scratch = ['--mount', 'type=volume,dst=/tmp'] if target == 'batch' else ['--tmpfs', '/tmp:rw,nosuid,nodev,size=64m']
+            self.command(['docker', 'run', '--rm', '--read-only', '--network', 'none', *scratch,
                           '-v', f'{Path.cwd()}/scripts/{probe}:/{probe}:ro', '--entrypoint', '/var/lang/bin/node', image, f'/{probe}'])
             self.command(['docker', 'run', '--rm', '-v', '/var/run/docker.sock:/var/run/docker.sock', '-v', f'{self.reports.resolve()}:/reports',
                           'aquasec/trivy:0.74.0', 'image', '--scanners', 'vuln', '--exit-code', '1', '--severity', 'HIGH,CRITICAL',

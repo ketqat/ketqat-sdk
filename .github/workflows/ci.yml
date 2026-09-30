@@ -121,14 +121,14 @@ jobs:
         run: |
           docker build --platform linux/arm64 --provenance=false --target batch -f worker/Dockerfile -t ketqat-worker:batch-ci .
           test "$(docker image inspect --format '{{json .RootFS.Layers}}' ketqat-worker:lambda-ci)" = "$(docker image inspect --format '{{json .RootFS.Layers}}' ketqat-worker:batch-ci)"
-          docker run --rm --read-only --network none \
+          docker run --rm --read-only --network none --mount type=volume,dst=/tmp \
             -v "$PWD/scripts/verify-batch-worker-container.mjs:/verify-batch-worker-container.mjs:ro" \
             --entrypoint /var/lang/bin/node ketqat-worker:batch-ci /verify-batch-worker-container.mjs
           set +e
           docker run --rm --read-only --network none ketqat-worker:batch-ci > /tmp/batch-output 2>&1
-          status=$?
+          batch_probe_exit=$?
           set -e
-          test "$status" -eq 1
+          test "$batch_probe_exit" -eq 1
           test "$(cat /tmp/batch-output)" = 'AWS worker execution failed; inspect the control-plane job attempt.'
       - name: Scan all High and Critical findings
         run: |
