@@ -83,3 +83,21 @@ and their module trees; dependency metadata is not hidden. The rebuilt ARM64
 image passed the scientific/runtime probe and Trivy 0.74.0 reported zero
 High/Critical findings on September 29. ECR scanning and live AWS verification
 are still required before release.
+
+October 1 revalidation: fresh CI scanning found twelve fixable High findings in
+the AWS base image's OS packages and unused global SDK. Merely selecting the new
+official Node 22 image did not resolve them. The target now pins the verified
+official image digest, refreshes AL2023 packages before dropping privileges, and
+removes the unused all-service SDK at `/var/runtime/node_modules/@aws-sdk`. The
+application's separately pinned SSM SDK remains present; the AWS bootstrap,
+Runtime Interface Emulator and native runtime client remain intact. OS update
+cache keys can be varied with `KETQAT_OS_REFRESH` per staging release. Build once
+and promote the tested immutable digest; the update repository itself can change.
+See [AWS's AL2023 update guidance](https://docs.aws.amazon.com/linux/al2023/ug/security-inplace-update.html).
+
+The complete `npm test`, both real ARM64 scientific/container probes and the
+Runtime Interface Emulator handler check passed. The refreshed Lambda and Batch
+filesystem layers match and the Batch default entrypoint fails closed on missing
+metadata. Trivy 0.74.0 with its updated database reported **zero High/Critical
+findings**, without exclusions. This is local evidence, not a fresh ECR scan or
+live deployment; old September ECR digests are not this release's artifacts.

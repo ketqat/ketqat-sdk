@@ -84,10 +84,16 @@ RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 
 # Native Lambda execution uses only opaque dispatch metadata. The parent reads
 # its exact SSM callback key; the CPU child receives no cloud credentials.
-FROM public.ecr.aws/lambda/nodejs:22@sha256:88912b213fb91941e0d577355b7753d354eafd99a164cdd2aebe799b49dea1f5 AS lambda
+FROM public.ecr.aws/lambda/nodejs:22@sha256:a24f2b0960e3f173d38c7cdf39dbd12df31b23fc822c0c4a033eaacfd14c5ca9 AS lambda
+# Refresh AL2023 security packages per release. The produced image stays immutable.
+ARG KETQAT_OS_REFRESH=initial
+RUN dnf upgrade -y --releasever=latest && dnf clean all
 # AWS's runtime image includes npm for building. Runtime needs only Node and
 # the Lambda bootstrap; remove the unused package manager and its dependencies.
+# The application bundles its exact SSM SDK below and never uses AWS's global
+# all-service SDK. Keep the runtime interface/bootstrap and remove that unused tree.
 RUN rm -rf /var/lang/lib/node_modules/npm /var/lang/lib/node_modules/corepack \
+ /var/runtime/node_modules/@aws-sdk \
  && rm -f /var/lang/bin/npm /var/lang/bin/npx /var/lang/bin/corepack
 WORKDIR ${LAMBDA_TASK_ROOT}
 COPY --from=builder /build/package.json ./package.json
