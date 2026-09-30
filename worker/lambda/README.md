@@ -101,3 +101,57 @@ filesystem layers match and the Batch default entrypoint fails closed on missing
 metadata. Trivy 0.74.0 with its updated database reported **zero High/Critical
 findings**, without exclusions. This is local evidence, not a fresh ECR scan or
 live deployment; old September ECR digests are not this release's artifacts.
+
+## Immutable image publication
+
+`scripts/publish-worker-images.py` replaces the old x86 HTTP image publisher.
+The disabled `AWS worker images` workflow publishes staging after successful
+SDK CI on the exact current main commit. A manual production run promotes the
+same Lambda and Batch digests; it never rebuilds production. Images have distinct
+immutable `<source-sha>-lambda` and `<source-sha>-batch` tags in the same worker
+repository. Both targets must have identical filesystem layers, ARM64/Linux,
+the non-root user and their correct entrypoints. Each actual image runs its
+scientific/runtime probe and a full High/Critical Trivy gate before either is
+pushed. Both exact ECR digests must then pass complete ECR scans. No unfixed
+finding is excluded. Registry login uses an isolated temporary Docker config,
+removed on exit; credentials and raw AWS command errors are not printed.
+
+Required configuration is `AWS_REGION=ap-northeast-1`, `AWS_ACCOUNT_ID`,
+`DEPLOYMENT_ENV`, `ECR_PREFIX` and `RELEASE_ID` (the exact source SHA). The caller
+must be that environment's `ketqat-<environment>-github-sdk` assumed role.
+Production additionally requires `STAGING_BATCH_JOB_DEFINITION_ARN`, the exact
+numbered staging definition from Web worker IaC. The publisher checks the
+staging unweighted live Lambda version and active ARM64 Fargate definition against the
+staging pair before and after promotion. An existing production tag must already
+match staging. Permission failures are never interpreted as missing images.
+
+The workflow additionally requires `AWS_DEPLOY_ENABLED=true` and
+`AWS_WORKER_IMAGES_READY=true`; both remain off/unset during preparation.
+Production also requires `AWS_WORKER_PROMOTION_READY=true`, which must remain
+unset until recorded live staging acceptance and rollback checks pass.
+Production's scoped read permissions are prepared in Web's registry IaC but
+are **not yet verified applied**. Refresh the non-root login and inspect/plan
+that state before enabling publication. Normal protected main and GitHub
+environment restrictions remain required; do not weaken them for a PR run.
+
+Only `release/worker-images.json` after successful completion authorizes a
+subsequent deployment to select the pair. Reports may exist after failure, and
+a push/scan failure can leave one immutable image uploaded. Such an image is
+not a deployment. A rerun rechecks existing artifacts; mismatched filesystem
+layers fail closed and require operator reconciliation rather than overwriting
+an immutable tag. Old digests and numbered definitions remain available for
+rollback.
+
+This workflow **publishes images only**. It does not update a live alias,
+register a Batch definition, change Web dispatch permissions or run scientific
+jobs in staging. Deployment must still coordinate the numbered Batch revision,
+Web dispatch configuration, Lambda version, live callback/timeout/duplicate
+tests and rollback acceptance. Deployed image references alone do not prove
+those tests passed. The SDK still owns the scientific runtime; infrastructure
+and control-plane deployment remain in Web.
+
+Run the credential-free publication failure tests with:
+
+```sh
+python3 -m unittest scripts/test_publish_worker_images.py -v
+```

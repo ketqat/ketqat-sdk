@@ -57,6 +57,9 @@ jobs:
       - name: Build and test
         run: npm test
 
+      - name: Check AWS worker publication guards without cloud access
+        run: python3 -m unittest scripts/test_publish_worker_images.py -v
+
       # Validates the shipped templates and example only. Contributed files are
       # validated by the same command on the contributor's machine and in the
       # pull-request job below, which parses data and never executes it.

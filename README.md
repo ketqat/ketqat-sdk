@@ -345,5 +345,8 @@ identity, not a quantum-provider credential. Missing keys, insecure origins and
 unknown modes fail closed. `google-oidc` remains the compatibility default until
 GCP production cutover and rollback retirement. Local callers can inject an
 `IdentityTokenSource`. Provider adapters and scientific result contracts are unchanged.
-The AWS workflow publishes scanned immutable worker images through GitHub OIDC;
-Web IaC explicitly selects the tested image digest for each environment.
+The disabled AWS workflow prepares scanned native ARM64 Lambda/Batch image
+publication through GitHub OIDC and promotes the identical staging pair into
+production. Web owns deployment of those digests and coordinated dispatch;
+live release/rollback acceptance is still pending. See the
+[worker preparation guide](worker/lambda/README.md#immutable-image-publication).
