@@ -35,8 +35,10 @@ jobs:
       - run: npm ci && npm test
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run verify:worker-image
-      - uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
+          translate-env-variables: false
+          unset-current-credentials: true
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ap-northeast-1
           allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
