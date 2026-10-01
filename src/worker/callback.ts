@@ -7,6 +7,7 @@
  */
 
 import { signedRequestIdentity } from "./signed-identity.js"
+import { createHash } from "node:crypto"
 
 /** How the worker identifies itself. Resolved fresh for each request. */
 export interface IdentityTokenSource {
@@ -23,6 +24,8 @@ export interface CallbackConfig {
   attempt: number
   fetchImpl?: typeof fetch
   identity?: IdentityTokenSource
+  /** Native AWS uses a bounded private S3 transfer; GCP/local stays inline. */
+  resultTransport?: "s3"
 }
 
 export class CallbackError extends Error {
@@ -152,9 +155,48 @@ export async function claimJob(config: CallbackConfig): Promise<unknown> {
  * success.
  */
 export async function reportResult(config: CallbackConfig, result: unknown): Promise<void> {
+  const body = JSON.stringify(result)
+  if (config.resultTransport === "s3") {
+    const size = Buffer.byteLength(body)
+    if (size < 1 || size > 50_000_000) throw new CallbackError("Result exceeds the transfer limit.", false)
+    const sha256 = createHash("sha256").update(body).digest("hex")
+    const response = await authorizedFetch(config, `/api/execution/jobs/${config.jobId}/result-upload`, {
+      method: "POST", body: JSON.stringify({ size, sha256 }),
+    })
+    const upload = await response.json() as { version?: unknown; method?: unknown; url?: unknown; headers?: unknown; transfer?: unknown }
+    // Even a malformed control-plane response cannot send the scientific body
+    // or callback credential to an arbitrary host, redirect or object key.
+    let url: URL
+    try { url = new URL(String(upload.url)) } catch { throw new CallbackError("Invalid result upload capability.", false) }
+    const expectedHeaders = {
+      "content-type": "application/json", "content-length": String(size), "if-none-match": "*",
+      "x-amz-server-side-encryption": "AES256", "x-amz-checksum-sha256": Buffer.from(sha256, "hex").toString("base64"),
+    }
+    if (upload.version !== 1 || upload.method !== "PUT" || url.protocol !== "https:" || url.username || url.password || url.port || url.hash ||
+        !/^ketqat-(staging|production)-result-transfer-[0-9]{12}\.s3\.ap-northeast-1\.amazonaws\.com$/.test(url.hostname) ||
+        url.pathname !== `/results/${config.jobId}/${config.attempt}.json` ||
+        typeof upload.transfer !== "string" || upload.transfer.length > 2048 || !upload.headers || typeof upload.headers !== "object" ||
+        Object.keys(upload.headers).length !== Object.keys(expectedHeaders).length ||
+        Object.entries(expectedHeaders).some(([key, value]) => (upload.headers as Record<string, unknown>)[key] !== value)) {
+      throw new CallbackError("Invalid result upload capability.", false)
+    }
+    let stored: Response | undefined
+    try {
+      stored = await (config.fetchImpl ?? fetch)(url.href, { method: "PUT", headers: expectedHeaders, body, redirect: "error", signal: AbortSignal.timeout(30_000) })
+    } catch {
+      // A lost PUT response can leave a successfully stored object. Only the
+      // control plane may reconcile it using the ticket's exact SHA/size.
+    }
+    // Never echo a presigned URL, S3 error body, result or authorization to logs.
+    if (stored && !stored.ok && stored.status !== 412) throw new CallbackError("Result upload was refused.", classify(stored.status))
+    await authorizedFetch(config, `/api/execution/jobs/${config.jobId}/result`, {
+      method: "POST", body: JSON.stringify({ transfer: upload.transfer }),
+    })
+    return
+  }
   await authorizedFetch(config, `/api/execution/jobs/${config.jobId}/result`, {
     method: "POST",
-    body: JSON.stringify(result),
+    body,
   })
 }
 
@@ -169,6 +211,7 @@ export function callbackConfigFromEnv(
   const attempt = Number.parseInt(env.KETQAT_JOB_ATTEMPT ?? "1", 10)
   const mode = env.KETQAT_WORKER_AUTH_MODE ?? "google-oidc"
   if (!["google-oidc", "signed-request"].includes(mode)) throw new Error("Unknown worker authentication mode")
+  if (env.KETQAT_RESULT_TRANSPORT && (env.KETQAT_RESULT_TRANSPORT !== "s3" || mode !== "signed-request")) throw new Error("Invalid worker result transport")
   if (mode === "signed-request") {
     const origin = new URL(apiBaseUrl)
     if (origin.protocol !== "https:" || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) {
@@ -180,5 +223,6 @@ export function callbackConfigFromEnv(
     jobId,
     attempt: Number.isFinite(attempt) && attempt > 0 ? attempt : 1,
     ...(mode === "signed-request" ? { identity: signedRequestIdentity(env.KETQAT_WORKER_CALLBACK_SECRET ?? "") } : {}),
+    ...(env.KETQAT_RESULT_TRANSPORT === "s3" ? { resultTransport: "s3" as const } : {}),
   }
 }

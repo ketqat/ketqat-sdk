@@ -73,10 +73,10 @@ test("Lambda uses signed callbacks, caches its named secret and returns only con
   let secrets = 0
   let claims = 0
   let reports = 0
-  const handler = createHandler({ env,
+  const handler = createHandler({ env: { ...env, KETQAT_RESULT_TRANSPORT: "s3" },
     getSecret: async name => { assert.equal(name, "/ketqat-staging/worker-callback"); secrets++; return "x".repeat(64) },
     claim: async config => { assert.equal(config.apiBaseUrl, "https://stage.example"); assert.ok(config.identity); claims++; return { job: makeJob() } },
-    report: async (config, result) => { assert.equal(config.attempt, 1); assert.equal(result.status, "SUCCEEDED"); reports++ },
+    report: async (config, result) => { assert.equal(config.resultTransport, "s3"); assert.equal(config.attempt, 1); assert.equal(result.status, "SUCCEEDED"); reports++ },
   })
   for (let i = 0; i < 2; i++) assert.deepEqual(await handler(event, context), { jobId: event.jobId, attempt: 1, status: "SUCCEEDED" })
   assert.deepEqual({ secrets, claims, reports }, { secrets: 1, claims: 2, reports: 2 })

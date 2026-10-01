@@ -26,6 +26,23 @@ vulnerability scan, and exercises the actual Batch default entrypoint's invalid
 input failure. Peak memory, live long jobs, callbacks and platform termination
 still require staging verification.
 
+The prepared Web transfer API accepts native results through private S3 when
+`KETQAT_RESULT_TRANSPORT=s3`. The parent requests a five-minute capability for
+the exact UTF-8 byte length/SHA-256 and job attempt, uploads without callback
+credentials, then signs a small completion ticket. The control plane validates
+the current attempt, reads/checks the object and applies the existing result
+schema before saving to Supabase. This supports the unchanged 50,000,000-byte
+job limit; the worker needs no S3 IAM access. The fixed Tokyo S3 host/key,
+conditional PUT, checksum, encryption and signed size are checked before sending
+data. A lost PUT response or 412 is reconciled only through the server's content
+verification. GCP/default SDK callbacks remain inline.
+
+Web conditionally replaces the body with an empty tombstone after the database
+commit. Keeping the key prevents reuse of the still-valid upload URL; the private
+unversioned bucket's one-day lifecycle removes tombstones and abandoned results.
+Cleanup failure cannot roll back a committed scientific record. Actual S3/IAM
+enforcement, transfer timing and staging delivery are still deployment gates.
+
 The invocation contains only `{version: 1, jobId, attempt, timeoutSeconds}`.
 It cannot choose a URL, manifest, command, package, file or credentials. The
 callback origin and staging/production namespace come from deployment config.
@@ -53,7 +70,7 @@ this handler into production until Web dispatch, IAM, DLQ, concurrency, payload
 compatibility and live callback/timeout/duplicate tests are complete.
 
 Required non-secret configuration: `KETQAT_DEPLOYMENT_ENV`,
-`KETQAT_API_BASE_URL`, and the AWS-supplied region. Runtime IAM must allow only
+`KETQAT_API_BASE_URL`, `KETQAT_RESULT_TRANSPORT=s3`, and the AWS-supplied region. Runtime IAM must allow only
 `ssm:GetParameter` on that environment's callback parameter plus its log stream.
 No Function URL or public invocation permission is needed. Do not give the
 worker database credentials or permissions to change IAM/infrastructure.

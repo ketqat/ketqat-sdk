@@ -24,6 +24,8 @@ export interface CallbackConfig {
     attempt: number;
     fetchImpl?: typeof fetch;
     identity?: IdentityTokenSource;
+    /** Native AWS uses a bounded private S3 transfer; GCP/local stays inline. */
+    resultTransport?: "s3";
 }
 export declare class CallbackError extends Error {
     readonly retryable: boolean;

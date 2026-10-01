@@ -41,6 +41,7 @@ export function createHandler({ env = process.env, mode = "lambda", getSecret = 
       KETQAT_API_BASE_URL: config.origin, KETQAT_JOB_ID: event.jobId,
       KETQAT_JOB_ATTEMPT: String(event.attempt), KETQAT_WORKER_AUTH_MODE: "signed-request",
       KETQAT_WORKER_CALLBACK_SECRET: secret,
+      KETQAT_RESULT_TRANSPORT: env.KETQAT_RESULT_TRANSPORT,
     })
     callback.fetchImpl = (url, init) => fetchImpl(url, {
       ...init, signal: AbortSignal.any([init.signal, AbortSignal.timeout(Math.max(1, Math.min(30_000, context.getRemainingTimeInMillis() - 5000)))]),
