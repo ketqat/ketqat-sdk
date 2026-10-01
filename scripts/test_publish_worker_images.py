@@ -18,14 +18,15 @@ DEFINITION = f'arn:aws:batch:ap-northeast-1:{ACCOUNT}:job-definition/ketqat-stag
 
 
 class FakePublisher(module.Publisher):
-    def __init__(self, environment='staging', case='success'):
+    def __init__(self, environment='staging', case='success', bootstrap=False):
         super().__init__({'AWS_ACCOUNT_ID': ACCOUNT, 'DEPLOYMENT_ENV': environment, 'RELEASE_ID': SHA,
                           'AWS_REGION': 'ap-northeast-1', 'ECR_PREFIX': f'{REGISTRY}/ketqat-{environment}',
-                          'STAGING_BATCH_JOB_DEFINITION_ARN': DEFINITION, 'DOCKER_CONFIG': str(Path.cwd() / 'initial-docker')})
+                          'STAGING_BATCH_JOB_DEFINITION_ARN': DEFINITION, 'DOCKER_CONFIG': str(Path.cwd() / 'initial-docker')}, bootstrap=bootstrap)
         self.case = case
         self.calls = []
         self.pushed = set()
         self.live_reads = 0
+        self.scan_reads = {}
 
     def command(self, args, input_text=None, check=True):
         self.calls.append(args)
@@ -33,9 +34,22 @@ class FakePublisher(module.Publisher):
         def value(flag):
             return args[args.index(flag) + 1]
         if args[:2] == ['aws', 'get-caller-identity'] or args[:3] == ['aws', 'sts', 'get-caller-identity']:
-            stdout = json.dumps({'Account': ACCOUNT, 'Arn': f'arn:aws:sts::{ACCOUNT}:assumed-role/ketqat-{self.environment}-github-sdk/ci'})
+            role = 'KetQatMigrationAdmin' if self.bootstrap or self.case == 'human-normal' else f'ketqat-{self.environment}-github-sdk'
+            if self.case == 'release-role-bootstrap':role='ketqat-staging-github-sdk'
+            stdout = json.dumps({'Account': ACCOUNT, 'Arn': f'arn:aws:sts::{ACCOUNT}:assumed-role/{role}/ci'})
             if self.case == 'wrong-role':
                 stdout = json.dumps({'Account': ACCOUNT, 'Arn': f'arn:aws:iam::{ACCOUNT}:root'})
+        elif args[:2] == ['git', 'rev-parse']:
+            stdout = 'f' * 40 if self.case == 'wrong-source' else SHA
+        elif args[:2] == ['git', 'status']:
+            stdout = ' M worker/lambda/handler.mjs' if self.case == 'dirty-source' else ''
+        elif args[:4] == ['aws', 'ecr', 'wait', 'image-scan-complete']:
+            digest = value('--image-id')
+            self.scan_reads[digest] = self.scan_reads.get(digest, 0) + 1
+            if self.case == 'scan-missing' or self.case == 'scan-late' and self.scan_reads[digest] == 1:
+                code, stderr = 1, 'ScanNotFoundException'
+            elif self.case == 'scan-denied':
+                code, stderr = 1, 'ScanNotFoundException AccessDeniedException'
         elif args[:3] == ['aws', 'ecr', 'get-login-password']:
             stdout = 'test-only-secret\n'
         elif args[:3] == ['aws', 'ecr', 'describe-images']:
@@ -87,12 +101,12 @@ class FakePublisher(module.Publisher):
 
 
 class PublicationTest(unittest.TestCase):
-    def run_case(self, environment='staging', case='success'):
+    def run_case(self, environment='staging', case='success', bootstrap=False):
         with tempfile.TemporaryDirectory() as directory:
             previous = Path.cwd()
             os.chdir(directory)
             try:
-                publisher = FakePublisher(environment, case)
+                publisher = FakePublisher(environment, case, bootstrap=bootstrap)
                 Path('release').mkdir()
                 Path('release/worker-images.json').write_text('stale-manifest')
                 error = None
@@ -102,7 +116,8 @@ class PublicationTest(unittest.TestCase):
                     error = failure
                 manifest = Path('release/worker-images.json')
                 data = json.loads(manifest.read_text()) if manifest.exists() else None
-                self.assertEqual(publisher.calls[-1][:2], ['docker', 'logout'])
+                if any(c[:2] == ['docker', 'login'] for c in publisher.calls):
+                    self.assertEqual(publisher.calls[-1][:2], ['docker', 'logout'])
                 self.assertFalse(Path(publisher.env['DOCKER_CONFIG']).exists())
                 self.assertNotIn('test-only-secret', json.dumps(publisher.calls))
                 return error, publisher.calls, data
@@ -130,6 +145,42 @@ class PublicationTest(unittest.TestCase):
         self.assertIsNone(error)
         self.assertIsNotNone(data)
         self.assertFalse(any(c[:2] in [['docker', 'build'], ['docker', 'push']] for c in calls))
+
+    def test_human_bootstrap_publishes_only_the_verified_staging_pair(self):
+        error, calls, data = self.run_case(bootstrap=True)
+        self.assertIsNone(error)
+        self.assertEqual(data['publicationMode'], 'human-staging-bootstrap')
+        self.assertEqual(set(data['images']), {'lambda', 'batch'})
+        self.assertFalse(any(c[:2] in [['aws', 'ssm'], ['aws', 's3'], ['aws', 'lambda'], ['aws', 'batch']] for c in calls))
+
+    def test_wrong_role_or_source_is_denied_before_registry_login(self):
+        for case, bootstrap in [('wrong-role', True), ('release-role-bootstrap', True),
+                                ('human-normal', False), ('wrong-source', True), ('dirty-source', True)]:
+            error, calls, data = self.run_case(case=case, bootstrap=bootstrap)
+            self.assertIsNotNone(error)
+            self.assertIsNone(data)
+            self.assertFalse(any(c[:2] == ['docker', 'login'] for c in calls))
+        with self.assertRaises(module.ReleaseError):
+            FakePublisher('production', bootstrap=True)
+
+    def test_scan_propagation_is_bounded_to_same_digest_without_restarting(self):
+        error, calls, data = self.run_case(case='scan-late', bootstrap=True)
+        self.assertIsNone(error)
+        waits = [c for c in calls if c[:4] == ['aws', 'ecr', 'wait', 'image-scan-complete']]
+        self.assertEqual(len(waits), 4)
+        self.assertEqual(waits[0], waits[1])
+        self.assertEqual(waits[2], waits[3])
+        self.assertFalse(any(c[:3] == ['aws', 'ecr', 'start-image-scan'] for c in calls))
+        self.assertEqual(len(data['images']), 2)
+
+    def test_missing_scan_or_permissions_never_authorize_a_manifest(self):
+        for case, expected in [('scan-missing', 6), ('scan-denied', 1)]:
+            error, calls, data = self.run_case(case=case, bootstrap=True)
+            self.assertIsNotNone(error)
+            self.assertIsNone(data)
+            waits = [c for c in calls if c[:4] == ['aws', 'ecr', 'wait', 'image-scan-complete']]
+            self.assertEqual(len(waits), expected)
+            self.assertTrue(all(c == waits[0] for c in waits))
 
     def test_production_promotes_pair_without_rebuild(self):
         for case in ['success', 'reuse']:

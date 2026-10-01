@@ -121,6 +121,16 @@ live deployment; old September ECR digests are not this release's artifacts.
 
 ## Immutable image publication
 
+For initial staging IaC, `--bootstrap-image-only` admits only the MFA/expiry-gated
+`KetQatMigrationAdmin` role in account `291877508281`, Tokyo and staging. The
+checkout must be clean and match `RELEASE_ID`; endpoint overrides are refused.
+Normal publication still requires the scoped SDK release role, and production
+cannot use this option. Both native probes and strict scans precede any push;
+only image artifacts/manifest are written, with no workload, alias, SSM or DB
+writes. A briefly absent ECR scan record is reobserved at most six times for the
+same digest; permission/other errors stop immediately and no scan is restarted.
+This human bootstrap does not prove OIDC or live callback/scientific acceptance.
+
 `scripts/publish-worker-images.py` replaces the old x86 HTTP image publisher.
 The disabled `AWS worker images` workflow publishes staging after successful
 SDK CI on the exact current main commit. A manual production run promotes the

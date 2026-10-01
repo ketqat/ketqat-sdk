@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Publish the native worker pair; never change functions, aliases or Batch IAM."""
+import argparse
 import json
 import os
 from pathlib import Path
@@ -18,15 +19,20 @@ def require(condition, message):
 
 
 class Publisher:
-    def __init__(self, env=None):
+    def __init__(self, env=None, bootstrap=False):
         self.env = dict(os.environ if env is None else env)
+        self.bootstrap = bootstrap
         self.account = self.env.get('AWS_ACCOUNT_ID', '')
         self.environment = self.env.get('DEPLOYMENT_ENV', '')
         self.revision = self.env.get('RELEASE_ID', '')
         require(re.fullmatch(r'[0-9]{12}', self.account), 'Invalid account')
         require(self.environment in ['staging', 'production'], 'Invalid environment')
+        if self.bootstrap:
+            require(self.environment == 'staging' and self.account == '291877508281',
+                    'Human image bootstrap is restricted to the KetQat staging account')
         require(re.fullmatch(r'[a-f0-9]{40}', self.revision), 'Invalid source revision')
         require(self.env.get('AWS_REGION') == 'ap-northeast-1', 'Use Tokyo')
+        require(not any(k.startswith('AWS_ENDPOINT_URL') and v for k, v in self.env.items()), 'Endpoint overrides are forbidden')
         self.registry = f'{self.account}.dkr.ecr.ap-northeast-1.amazonaws.com'
         self.repository = f'ketqat-{self.environment}/worker'
         self.prefix = f'{self.registry}/{self.repository}'
@@ -92,9 +98,29 @@ class Publisher:
             require(config.get('Volumes') == {'/tmp': {}}, 'Batch image must declare only disposable /tmp scratch')
         return data['RootFS']['Layers']
 
-    def publish(self):
+    def authorize(self):
         identity = self.aws('sts', 'get-caller-identity')
-        require(identity['Account'] == self.account and identity['Arn'].startswith(f'arn:aws:sts::{self.account}:assumed-role/ketqat-{self.environment}-github-sdk/'), 'Require the scoped SDK release role')
+        role = 'KetQatMigrationAdmin' if self.bootstrap else f'ketqat-{self.environment}-github-sdk'
+        require(identity['Account'] == self.account and identity['Arn'].startswith(f'arn:aws:sts::{self.account}:assumed-role/{role}/'),
+                'Require the exact temporary human bootstrap role' if self.bootstrap else 'Require the scoped SDK release role')
+        require(self.command(['git', 'rev-parse', 'HEAD']).stdout.strip() == self.revision, 'Checkout differs from requested source')
+        require(not self.command(['git', 'status', '--porcelain', '--untracked-files=normal']).stdout.strip(), 'Require a clean source checkout')
+
+    def wait_scan(self, digest):
+        for attempt in range(6):
+            result = self.command(['aws', 'ecr', 'wait', 'image-scan-complete', '--registry-id', self.account,
+                                   '--repository-name', self.repository, '--image-id', f'imageDigest={digest}',
+                                   '--region', 'ap-northeast-1'], check=False)
+            if result.returncode == 0:
+                return
+            require('ScanNotFoundException' in result.stderr and 'AccessDenied' not in result.stderr,
+                    'ECR scan observation failed')
+            if attempt < 5:
+                self.command(['sleep', '5'])
+        raise ReleaseError('ECR scan record did not become observable within the bounded wait')
+
+    def publish(self):
+        self.authorize()
         existing = {target: self.digest(self.repository, target, optional=True) for target in ['lambda', 'batch']}
         stage, proof = self.staging_pair() if self.environment == 'production' else ({}, {})
         for target, digest in existing.items():
@@ -139,8 +165,7 @@ class Publisher:
                 require(digest == stage[target], 'Promotion changed the tested digest')
             elif existing[target]:
                 require(digest == existing[target], 'Immutable tag changed')
-            self.command(['aws', 'ecr', 'wait', 'image-scan-complete', '--repository-name', self.repository,
-                          '--image-id', f'imageDigest={digest}', '--region', 'ap-northeast-1'])
+            self.wait_scan(digest)
             scan = self.aws('ecr', 'describe-image-scan-findings', '--repository-name', self.repository, '--image-id', f'imageDigest={digest}')
             (self.reports / f'{target}-ecr-scan.json').write_text(json.dumps(scan))
             require(scan['imageScanStatus']['status'] == 'COMPLETE', 'ECR scan incomplete')
@@ -151,12 +176,14 @@ class Publisher:
             require(self.staging_pair() == (stage, proof), 'Staging changed during promotion')
         # A manifest exists only after all gates pass. Partial uploads are
         # harmless immutable artifacts, never an instruction to deploy.
-        manifest = {'sourceSha': self.revision, 'environment': self.environment, 'images': published, 'staging': proof}
+        manifest = {'sourceSha': self.revision, 'environment': self.environment, 'images': published, 'staging': proof,
+                    'publicationMode': 'human-staging-bootstrap' if self.bootstrap else 'scoped-release-role'}
         (self.reports / 'worker-images.json').write_text(json.dumps(manifest, indent=2) + '\n')
 
     def run(self):
         self.reports.mkdir(exist_ok=True)
         (self.reports / 'worker-images.json').unlink(missing_ok=True)
+        self.authorize()
         old_config = Path(self.env.get('DOCKER_CONFIG', str(Path.home() / '.docker'))) / 'config.json'
         old = json.loads(old_config.read_text()) if old_config.exists() else {}
         with tempfile.TemporaryDirectory(prefix='ketqat-worker-registry-') as directory:
@@ -173,9 +200,13 @@ class Publisher:
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--bootstrap-image-only', action='store_true',
+                        help='Publish initial staging images with the bounded human migration role; no workload writes')
     try:
         Path('release/worker-images.json').unlink(missing_ok=True)
-        Publisher().run()
+        args = parser.parse_args()
+        Publisher(bootstrap=args.bootstrap_image_only).run()
     except ReleaseError as error:
         print(f'Worker image publication refused: {error}. No release manifest is authorized.', flush=True)
         raise SystemExit(1)
