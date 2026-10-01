@@ -1,9 +1,29 @@
-# AWS Lambda and Batch worker preparation
+# AWS Lambda and Batch worker runtime
 
-This target is implemented and locally verified, **not deployed**. The current
-GCP/Batch entry point remains the default Docker target. Migration tracking:
+The paired native targets from source `f69a86d` are deployed to isolated AWS
+staging. Production remains on GCP, and the GCP/Batch entry point remains the
+default Docker target. Migration tracking:
 [SDK #272](https://github.com/ketqat/ketqat-sdk/issues/272) and
 [planning #149](https://github.com/ketqat/ketqat-planning/issues/149).
+
+On October 1, an authenticated browser job completed on private Lambda and a
+guarded canonical-queue fixture completed on Fargate with a declared 900-second
+limit. Both SDK-valid SIMULATION outputs match local replay, signed callbacks
+persisted the canonical Supabase records, and encrypted conditional S3
+tombstones retired transport bodies. The Fargate case is neither an
+authenticated HTTP submission nor 900 seconds of actual computation. A
+duplicate completed Lambda dispatch was refused without changing the result or
+audit history; one metadata-only failure is retained in its encrypted DLQ.
+
+A legitimate unmeasured 20-qubit statevector also produces about 25.2 MB through
+the native ARM64 isolated child/parent in a local read-only, non-root Docker
+probe with no network. Its scientific output matches local SDK replay, and the
+parent returns only control metadata. This probe uses callback fixtures; actual
+large-result S3 delivery and authenticated cloud download remain unverified.
+Full 50 MB compatibility, real long-work termination, shared capacity/burst
+bounds, confirmed human alerts, OIDC release and coordinated rollback remain
+acceptance gates. See [Web migration PR](https://github.com/ketqat/ketqat-web/pull/390)
+for the deployment-owned evidence and current status.
 
 The explicit `batch` Docker target now shares the Lambda target's entire
 filesystem and scientific child runner, with a Batch CLI entry point instead of
@@ -23,8 +43,8 @@ limit on a read-only filesystem (including `/tmp`) and no network. This tests
 eligibility and output, not a 900-second workload under live Fargate. CI verifies
 the two images have identical filesystem layers before applying the shared
 vulnerability scan, and exercises the actual Batch default entrypoint's invalid
-input failure. Peak memory, live long jobs, callbacks and platform termination
-still require staging verification.
+input failure. Peak memory, real long jobs and platform termination still
+require staging verification beyond the completed small callback cases.
 
 The prepared Web transfer API accepts native results through private S3 when
 `KETQAT_RESULT_TRANSPORT=s3`. The parent requests a five-minute capability for
@@ -40,8 +60,9 @@ verification. GCP/default SDK callbacks remain inline.
 Web conditionally replaces the body with an empty tombstone after the database
 commit. Keeping the key prevents reuse of the still-valid upload URL; the private
 unversioned bucket's one-day lifecycle removes tombstones and abandoned results.
-Cleanup failure cannot roll back a committed scientific record. Actual S3/IAM
-enforcement, transfer timing and staging delivery are still deployment gates.
+Cleanup failure cannot roll back a committed scientific record. Small-result
+S3/IAM enforcement and staging delivery passed; maximum-size compatibility and
+large transfer timing remain deployment gates.
 
 The invocation contains only `{version: 1, jobId, attempt, timeoutSeconds}`.
 It cannot choose a URL, manifest, command, package, file or credentials. The
