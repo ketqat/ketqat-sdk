@@ -335,8 +335,8 @@ Apache License 2.0, see [LICENSE](LICENSE).
 AWS migration tracking: [#272](https://github.com/ketqat/ketqat-sdk/issues/272).
 
 The [native Lambda worker target](worker/lambda/README.md) supports bounded jobs
-with process-enforced deadlines and request-bound callbacks. Current-main paired
-images from `198ab4e` are published through actual main-only OIDC and promoted by
+with process-enforced deadlines and request-bound callbacks. The production paired
+images were built from source `198ab4e`, published through actual main-only OIDC and promoted by
 Web to production Lambda live 2 / Batch definition 2. Production scientific outputs
 match full local SDK replay; a 20-qubit result also completed through the S3
 transport. GCP services/jobs/storage were removed on October 3 JST. The production

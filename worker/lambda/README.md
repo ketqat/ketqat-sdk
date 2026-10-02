@@ -1,6 +1,6 @@
 # AWS Lambda and Batch worker runtime
 
-Current-main native targets from `198ab4e` are published by actual OIDC and
+Production native targets were built from source `198ab4e`, published by actual OIDC and
 promoted through Web to production worker Lambda live 2 / Batch definition 2.
 Signed callbacks and deterministic full SDK replay pass for both execution paths;
 the production 25,166,250-byte statevector result also matches the complete local
@@ -35,7 +35,9 @@ bounds, confirmed human alerts, OIDC release and coordinated rollback remain
 acceptance gates. See [Web migration PR](https://github.com/ketqat/ketqat-web/pull/390)
 for the deployment-owned evidence and current status.
 
-The explicit `batch` Docker target now shares the Lambda target's entire
+## Runtime configuration and deployed behavior
+
+The explicit `batch` Docker target shares the Lambda target's entire
 filesystem and scientific child runner, with a Batch CLI entry point instead of
 the AWS Lambda bootstrap. Build it with `--target batch`. It accepts a canonical
 compute limit through `KETQAT_JOB_TIMEOUT_SECONDS` (up to 900), job ID and attempt
@@ -71,8 +73,9 @@ Web conditionally replaces the body with an empty tombstone after the database
 commit. Keeping the key prevents reuse of the still-valid upload URL; the private
 unversioned bucket's one-day lifecycle removes tombstones and abandoned results.
 Cleanup failure cannot roll back a committed scientific record. Small-result
-S3/IAM enforcement and staging delivery passed; maximum-size compatibility and
-large transfer timing remain deployment gates.
+S3/IAM enforcement and staging delivery passed; an actual production 25.2 MB
+scientific result and full SDK replay now pass. The production browser large
+bundle transfer remains a human handoff; do not infer it from callback success.
 
 The invocation contains only `{version: 1, jobId, attempt, timeoutSeconds}`.
 It cannot choose a URL, manifest, command, package, file or credentials. The
@@ -96,9 +99,11 @@ DLQ/failure alarm. The dispatcher must use Batch for jobs above **780 seconds**;
 the public 900-second job limit is unchanged. At least 90 seconds of remaining
 Lambda time above the requested compute deadline is required before claiming.
 SSM startup is bounded at 15 seconds and each callback at 30 seconds. Jobs whose
-memory or transport needs cannot be supported must also use Batch. Do not wire
-this handler into production until Web dispatch, IAM, DLQ, concurrency, payload
-compatibility and live callback/timeout/duplicate tests are complete.
+memory or transport needs cannot be supported must also use Batch. Production
+Web now dispatches to the qualified Lambda/Batch pair with scoped IAM, failure
+queues and signed callbacks. Future promotions must recheck dispatch, IAM, DLQ,
+concurrency, payload compatibility and callback/timeout/duplicate behavior; the
+current deployed evidence does not waive those gates.
 
 Required non-secret configuration: `KETQAT_DEPLOYMENT_ENV`,
 `KETQAT_API_BASE_URL`, `KETQAT_RESULT_TRANSPORT=s3`, and the AWS-supplied region. Runtime IAM must allow only
@@ -163,7 +168,7 @@ same digest; permission/other errors stop immediately and no scan is restarted.
 This human bootstrap does not prove OIDC or live callback/scientific acceptance.
 
 `scripts/publish-worker-images.py` replaces the old x86 HTTP image publisher.
-The disabled `AWS worker images` workflow publishes staging after successful
+The enabled `AWS worker images` workflow publishes staging after successful
 SDK CI on the exact current main commit. A manual production run promotes the
 same Lambda and Batch digests; it never rebuilds production. Images have distinct
 immutable `<source-sha>-lambda` and `<source-sha>-batch` tags in the same worker
@@ -184,15 +189,16 @@ staging pair before and after promotion. An existing production tag must already
 match staging. Permission failures are never interpreted as missing images.
 
 The workflow additionally requires `AWS_DEPLOY_ENABLED=true` and
-`AWS_WORKER_IMAGES_READY=true`; both remain off/unset during preparation.
-Production also requires `AWS_WORKER_PROMOTION_READY=true`, which must remain
-unset until recorded live staging acceptance and rollback checks pass.
+`AWS_WORKER_IMAGES_READY=true`. Production also requires
+`AWS_WORKER_PROMOTION_READY=true`; enable it only for a qualified staging pair.
+The October 2 actual OIDC staging/production publication from `198ab4e` succeeded.
 Production's scoped read permissions were applied on October 1 through Web's
 registry IaC. All six release policies/trusts matched the reviewed configuration
 and 60 permission simulations passed; see Web's
 `docs/migration-evidence/aws-registry-policies-applied-2026-10-01.json`.
-Actual GitHub OIDC assumption and staged publication remain unverified. Recheck
-temporary identity and current IAM state before enabling publication. Normal protected main and GitHub
+Actual main-only OIDC staging and production runs succeeded; production image
+publication run is `36982288801`. Recheck identity/current IAM for future releases.
+Normal protected main and GitHub
 environment restrictions remain required; do not weaken them for a PR run.
 
 Only `release/worker-images.json` after successful completion authorizes a
@@ -222,5 +228,7 @@ writable task-local volume there while keeping the root filesystem read-only
 and UID/GID 10001. It has no host path or persistent/EFS volume. The publisher
 rejects a Batch image without that declaration and verifies private temporary
 files plus a scientific child using the same empty-volume mount; Lambda probes
-retain their bounded tmpfs. Actual Fargate permissions, storage use and execution
-performance still require live staging verification.
+retain their bounded tmpfs. Actual staging and production Fargate jobs using
+the qualified definition completed with signed callbacks and full SDK replay.
+This verifies those executed jobs; it is not a claim of sustained performance or
+a workload that computed for the full 900-second limit.
