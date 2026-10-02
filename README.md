@@ -335,21 +335,26 @@ Apache License 2.0, see [LICENSE](LICENSE).
 AWS migration tracking: [#272](https://github.com/ketqat/ketqat-sdk/issues/272).
 
 The [native Lambda worker target](worker/lambda/README.md) supports bounded jobs
-with process-enforced deadlines and request-bound callbacks. Paired native
-Lambda/Batch images from `f69a86d` are deployed to isolated AWS staging: small
-scientific jobs complete through signed callbacks and match local SDK replay.
-Production remains on GCP. Jobs above 780 seconds still require Batch, and the
-public 900-second scientific contract is unchanged.
+with process-enforced deadlines and request-bound callbacks. The production paired
+images were built from source `198ab4e`, published through actual main-only OIDC and promoted by
+Web to production Lambda live 2 / Batch definition 2. Production scientific outputs
+match full local SDK replay; a 20-qubit result also completed through the S3
+transport. GCP services/jobs/storage were removed on October 3 JST. The production
+large authenticated browser download remains a human handoff after Brave blocked
+it; job success does not establish download acceptance. Jobs above 780 seconds
+still require Batch, and the public 900-second scientific contract is unchanged.
+See the [current hosting record](https://github.com/ketqat/ketqat-web/blob/main/docs/aws-cutover-2026-10-03.md) (private Web repository; maintainer access required).
 `KETQAT_WORKER_AUTH_MODE=signed-request` uses a runtime-injected
 `KETQAT_WORKER_CALLBACK_SECRET` (at least 32 bytes) to sign 60-second callbacks
 bound to origin, method, path, attempt and body hash. The key is infrastructure
 identity, not a quantum-provider credential. Missing keys, insecure origins and
-unknown modes fail closed. `google-oidc` remains the compatibility default until
-GCP production cutover and rollback retirement. Local callers can inject an
+unknown modes fail closed. `google-oidc` remains a library compatibility default for historical callers;
+deployed AWS runtimes explicitly require `signed-request`, with no GCP runtime
+dependency. Local callers can inject an
 `IdentityTokenSource`. Provider adapters and scientific result contracts are unchanged.
-The disabled AWS workflow prepares scanned native ARM64 Lambda/Batch image
-publication through GitHub OIDC and promotes the identical staging pair into
-production. Web owns deployment of those digests and coordinated dispatch;
-coordinated OIDC release/rollback, large-result delivery and long-work acceptance
-are still pending. See the
+The main-only OIDC workflow publishes scanned native ARM64 Lambda/Batch images
+and copies the identical staging pair into production ECR. Web owns runtime
+promotion of those digests and coordinated dispatch. OIDC publication and native
+large-result delivery passed; long-work evidence and the production authenticated
+large-download handoff retain their separately documented acceptance boundaries. See the
 [worker preparation guide](worker/lambda/README.md#immutable-image-publication).
