@@ -1,10 +1,20 @@
 # AWS Lambda and Batch worker runtime
 
-The paired native targets from source `f69a86d` are deployed to isolated AWS
-staging. Production remains on GCP, and the GCP/Batch entry point remains the
-default Docker target. Migration tracking:
-[SDK #272](https://github.com/ketqat/ketqat-sdk/issues/272) and
+Current-main native targets from `198ab4e` are published by actual OIDC and
+promoted through Web to production worker Lambda live 2 / Batch definition 2.
+Signed callbacks and deterministic full SDK replay pass for both execution paths;
+the production 25,166,250-byte statevector result also matches the complete local
+replay. Its 48,236,185-byte authenticated browser bundle transfer is still handed
+to the maintainer after Brave returned `ERR_BLOCKED_BY_CLIENT`. GCP workloads and
+storage are removed. See the authoritative
+[cutover record](https://github.com/ketqat/ketqat-web/blob/main/docs/aws-cutover-2026-10-03.md).
+
+The portable default Docker entry point remains for historical compatibility;
+AWS selects the explicit `lambda` / `batch` targets and `signed-request` mode.
+Migration tracking: [SDK #272](https://github.com/ketqat/ketqat-sdk/issues/272) and
 [planning #149](https://github.com/ketqat/ketqat-planning/issues/149).
+
+## Historical staging preparation (October 1)
 
 On October 1, an authenticated browser job completed on private Lambda and a
 guarded canonical-queue fixture completed on Fargate with a declared 900-second
