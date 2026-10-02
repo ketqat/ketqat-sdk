@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+[[allowlists]]
+description = "Exact synthetic access-key shape in the credential-redaction regression test"
+condition = "AND"
+paths = ['''(^|/)python/tests/test_cancellation\.py$''']
+regexes = ['''AKIAIOSFODNN7REALKEY''']

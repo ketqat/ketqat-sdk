@@ -329,3 +329,27 @@ The SDK validates research contracts and computes hashes. It does not authentica
 ## License
 
 Apache License 2.0, see [LICENSE](LICENSE).
+
+## Hosted worker transport
+
+AWS migration tracking: [#272](https://github.com/ketqat/ketqat-sdk/issues/272).
+
+The [native Lambda worker target](worker/lambda/README.md) supports bounded jobs
+with process-enforced deadlines and request-bound callbacks. Paired native
+Lambda/Batch images from `f69a86d` are deployed to isolated AWS staging: small
+scientific jobs complete through signed callbacks and match local SDK replay.
+Production remains on GCP. Jobs above 780 seconds still require Batch, and the
+public 900-second scientific contract is unchanged.
+`KETQAT_WORKER_AUTH_MODE=signed-request` uses a runtime-injected
+`KETQAT_WORKER_CALLBACK_SECRET` (at least 32 bytes) to sign 60-second callbacks
+bound to origin, method, path, attempt and body hash. The key is infrastructure
+identity, not a quantum-provider credential. Missing keys, insecure origins and
+unknown modes fail closed. `google-oidc` remains the compatibility default until
+GCP production cutover and rollback retirement. Local callers can inject an
+`IdentityTokenSource`. Provider adapters and scientific result contracts are unchanged.
+The disabled AWS workflow prepares scanned native ARM64 Lambda/Batch image
+publication through GitHub OIDC and promotes the identical staging pair into
+production. Web owns deployment of those digests and coordinated dispatch;
+coordinated OIDC release/rollback, large-result delivery and long-work acceptance
+are still pending. See the
+[worker preparation guide](worker/lambda/README.md#immutable-image-publication).

@@ -19,6 +19,10 @@ COPY dist ./dist
 
 FROM node:22-slim AS runtime
 
+# Package managers are build tools; production executes Node directly.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
+ && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
+
 # Non-root. Cloud Run will not grant a privileged container, but running as root
 # inside one would still let an escape write anywhere it could reach.
 RUN groupadd --system --gid 10001 ketqat \
@@ -72,3 +76,43 @@ ENV KETQAT_WORKER_EGRESS=control-plane-only
 # through a hand-written parser precisely so they cannot -- and this turns that
 # from a code-review property into a runtime guarantee.
 ENTRYPOINT ["node", "--disallow-code-generation-from-strings", "/app/worker/entrypoint.mjs"]
+
+FROM builder AS lambda-deps
+WORKDIR /lambda-deps
+COPY worker/lambda/package*.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+
+# Native Lambda execution uses only opaque dispatch metadata. The parent reads
+# its exact SSM callback key; the CPU child receives no cloud credentials.
+FROM public.ecr.aws/lambda/nodejs:22@sha256:a24f2b0960e3f173d38c7cdf39dbd12df31b23fc822c0c4a033eaacfd14c5ca9 AS lambda
+# Refresh AL2023 security packages per release. The produced image stays immutable.
+ARG KETQAT_OS_REFRESH=initial
+RUN dnf upgrade -y --releasever=latest && dnf clean all
+# AWS's runtime image includes npm for building. Runtime needs only Node and
+# the Lambda bootstrap; remove the unused package manager and its dependencies.
+# The application bundles its exact SSM SDK below and never uses AWS's global
+# all-service SDK. Keep the runtime interface/bootstrap and remove that unused tree.
+RUN rm -rf /var/lang/lib/node_modules/npm /var/lang/lib/node_modules/corepack \
+ /var/runtime/node_modules/@aws-sdk \
+ && rm -f /var/lang/bin/npm /var/lang/bin/npx /var/lang/bin/corepack
+WORKDIR ${LAMBDA_TASK_ROOT}
+COPY --from=builder /build/package.json ./package.json
+COPY --from=builder /build/node_modules ./node_modules
+COPY --from=builder /build/dist ./dist
+COPY --from=lambda-deps /lambda-deps/node_modules ./worker/lambda/node_modules
+COPY worker/lambda/*.mjs worker/lambda/package.json ./worker/lambda/
+USER 10001:10001
+ENV TMPDIR=/tmp
+CMD ["worker/lambda/handler.handler"]
+
+# The Batch fallback shares the scanned runtime and isolated scientific runner.
+# It has no public listener and does not run the Lambda entrypoint/emulator.
+FROM lambda AS batch
+# Fargate's empty ephemeral volume inherits /tmp's writable image permissions.
+# Lambda supplies its own /tmp; this declaration applies only to the Batch target.
+VOLUME ["/tmp"]
+ENTRYPOINT ["/var/lang/bin/node", "--disallow-code-generation-from-strings", "/var/task/worker/lambda/batch.mjs"]
+CMD []
+
+# Existing GCP and Batch builds retain their stdin/callback entry point.
+FROM runtime AS default

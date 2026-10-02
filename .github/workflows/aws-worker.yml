@@ -1,0 +1,82 @@
+name: AWS worker images
+on:
+  workflow_run:
+    workflows: [SDK CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Publish staging artifacts or promote the deployed staging pair
+        type: choice
+        options: [staging, production]
+        default: staging
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+concurrency:
+  group: aws-worker-images-${{ inputs.environment || 'staging' }}
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: vars.AWS_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    environment: aws-${{ inputs.environment || 'staging' }}
+    env:
+      AWS_REGION: ap-northeast-1
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      ECR_PREFIX: ${{ vars.ECR_PREFIX }}
+      DEPLOYMENT_ENV: ${{ inputs.environment || 'staging' }}
+      RELEASE_ID: ${{ github.event.workflow_run.head_sha || github.sha }}
+      STAGING_BATCH_JOB_DEFINITION_ARN: ${{ vars.STAGING_BATCH_JOB_DEFINITION_ARN }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.RELEASE_ID }}
+          fetch-depth: 0
+      - name: Require native image readiness and current main
+        env:
+          READINESS: ${{ vars.AWS_WORKER_IMAGES_READY }}
+          PROMOTION_READY: ${{ vars.AWS_WORKER_PROMOTION_READY }}
+        run: |
+          set -euo pipefail
+          test "$READINESS" = true
+          test "$DEPLOYMENT_ENV" = staging || test "$DEPLOYMENT_ENV" = production
+          if [ "$DEPLOYMENT_ENV" = production ]; then test "$PROMOTION_READY" = true; fi
+          test "$(git rev-parse HEAD)" = "$RELEASE_ID"
+          test "$RELEASE_ID" = "$(git ls-remote origin refs/heads/main | cut -f1)"
+          : "${AWS_ACCOUNT_ID:?}" "${ECR_PREFIX:?}"
+      - name: Require successful SDK CI for this exact main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$RELEASE_ID&status=success&per_page=100" --jq '.workflow_runs[] | select(.name == "SDK CI" and .event == "push" and .head_branch == "main") | .id' > /tmp/worker-ci-proof
+          test -s /tmp/worker-ci-proof
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Scan source secrets
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 dir /repo --redact --no-banner
+      - name: Check production dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Check publisher failure and promotion guards
+        run: python3 -m unittest scripts/test_publish_worker_images.py -v
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          translate-env-variables: false
+          unset-current-credentials: true
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-northeast-1
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+      - name: Verify, scan and publish the immutable native worker pair
+        run: python3 scripts/publish-worker-images.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: aws-worker-${{ env.DEPLOYMENT_ENV }}-${{ env.RELEASE_ID }}
+          path: release/*.json
+          retention-days: 30

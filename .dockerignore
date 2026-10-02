@@ -1,0 +1,10 @@
+.git
+node_modules
+.env
+.env.*
+.venv
+**/__pycache__
+.worktrees
+artifacts
+release
+reports

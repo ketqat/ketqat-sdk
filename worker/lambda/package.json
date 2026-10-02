@@ -1,0 +1,6 @@
+{
+  "name": "ketqat-worker-lambda-runtime",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@aws-sdk/client-ssm": "3.1141.0" }
+}
