@@ -7,7 +7,7 @@ the production 25,166,250-byte statevector result also matches the complete loca
 replay. Its 48,236,185-byte authenticated browser bundle transfer is still handed
 to the maintainer after Brave returned `ERR_BLOCKED_BY_CLIENT`. GCP workloads and
 storage are removed. See the authoritative
-[cutover record](https://github.com/ketqat/ketqat-web/blob/main/docs/aws-cutover-2026-10-03.md).
+[cutover record](https://github.com/ketqat/ketqat-web/blob/main/docs/aws-cutover-2026-10-03.md) (private Web repository; maintainer access required).
 
 The portable default Docker entry point remains for historical compatibility;
 AWS selects the explicit `lambda` / `batch` targets and `signed-request` mode.

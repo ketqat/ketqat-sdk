@@ -343,7 +343,7 @@ transport. GCP services/jobs/storage were removed on October 3 JST. The producti
 large authenticated browser download remains a human handoff after Brave blocked
 it; job success does not establish download acceptance. Jobs above 780 seconds
 still require Batch, and the public 900-second scientific contract is unchanged.
-See the [current hosting record](https://github.com/ketqat/ketqat-web/blob/main/docs/aws-cutover-2026-10-03.md).
+See the [current hosting record](https://github.com/ketqat/ketqat-web/blob/main/docs/aws-cutover-2026-10-03.md) (private Web repository; maintainer access required).
 `KETQAT_WORKER_AUTH_MODE=signed-request` uses a runtime-injected
 `KETQAT_WORKER_CALLBACK_SECRET` (at least 32 bytes) to sign 60-second callbacks
 bound to origin, method, path, attempt and body hash. The key is infrastructure
