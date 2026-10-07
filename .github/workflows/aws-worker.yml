@@ -32,7 +32,7 @@ jobs:
       RELEASE_ID: ${{ github.event.workflow_run.head_sha || github.sha }}
       STAGING_BATCH_JOB_DEFINITION_ARN: ${{ vars.STAGING_BATCH_JOB_DEFINITION_ARN }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ env.RELEASE_ID }}
           fetch-depth: 0
@@ -55,7 +55,7 @@ jobs:
           set -euo pipefail
           gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$RELEASE_ID&status=success&per_page=100" --jq '.workflow_runs[] | select(.name == "SDK CI" and .event == "push" and .head_branch == "main") | .id' > /tmp/worker-ci-proof
           test -s /tmp/worker-ci-proof
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 22
           cache: npm
@@ -74,7 +74,7 @@ jobs:
           allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
       - name: Verify, scan and publish the immutable native worker pair
         run: python3 scripts/publish-worker-images.py
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: aws-worker-${{ env.DEPLOYMENT_ENV }}-${{ env.RELEASE_ID }}
