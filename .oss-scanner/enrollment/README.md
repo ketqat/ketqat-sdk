@@ -1,51 +1,32 @@
-# KetQat SDK — OSS Scanner enrollment preparation
+# KetQat SDK — Anthropic OSS Scanner application
 
-Prepared on 2026-10-12 (JST) from public SDK commit
-`ced92ce78848032ee95a781249a6251a249b78ee`.
+Status (2026-10-12 JST): **Prepared in the public fork; not yet submitted to Anthropic.**
 
-**Status: NOT SUBMITTED to Anthropic.** This directory is preparation material,
-not an approved or active scan. No changes to SDK runtime code are required.
+Fork branch: https://github.com/dorakingx/oss-scanner/tree/enroll-ketqat-sdk
+Upstream PR compare: https://github.com/anthropics/oss-scanner/compare/main...dorakingx:enroll-ketqat-sdk?expand=1
 
-The destination is `anthropics/oss-scanner`, adding only:
+The requested primary contact is `tomoya.hatanaka@ketqat.com`. This email
+address is PUBLIC in `projects/ketqat-sdk/project.yaml` on the fork branch.
+Confirm the mailbox can receive Anthropic's private reports before approval.
 
-```
-projects/ketqat-sdk/project.yaml
-projects/ketqat-sdk/Dockerfile
-projects/ketqat-sdk/threat_model.md
-```
+The GitHub connector can update the fork and SDK repositories but could not
+create the cross-repository PR in `anthropics/oss-scanner` (HTTP 403:
+Resource not accessible by integration). The maintainer needs to visit the
+compare link above and click **Create pull request**. The three application
+files are already committed and ready to use there.
 
-`pull-request.md` is the proposed upstream PR body; it does not belong inside
-`projects/ketqat-sdk/` in the upstream repository.
+The submission changes only `projects/ketqat-sdk/project.yaml`, `Dockerfile`
+and `threat_model.md` in the fork; it does not require merging this preparatory
+PR into KetQat SDK. Production code, credentials and private repositories are
+not modified or submitted.
 
-## Remaining gates
+## Outstanding validation and ownership
 
-1. Create a fork of https://github.com/anthropics/oss-scanner under `dorakingx`.
-   The GitHub connection used for preparation has file/branch/PR tools but no
-   fork-creation tool, and no accessible existing fork was found.
-2. Replace `primary_contact: null` with a monitored email the maintainer approves
-   for PUBLIC disclosure. No personal email has been committed by this preparation.
-   A GitHub noreply address cannot receive the reports and must not be used.
-3. Validate the final config with upstream `tools/validate.py`, then run
-   `tools/check ketqat-sdk`. The preparation environment has no Docker and no
-   external network access, so image build, dependency resolution and runtime
-   tests remain unverified. Fix any build/offline problems and update the recorded
-   validation status before submission.
-4. Open the upstream PR from the fork. The maintainer must personally review the
-   terms and follow the CLA bot's signature instructions; preparation does not
-   sign a CLA or state agreement on their behalf.
+- The YAML manifest structure and the exact three-file upstream diff were checked.
+- The official Anthropic `tools/validate.py` has not been executed locally.
+- Docker is unavailable in the preparation environment; build and offline test
+  behavior remain unverified. Run `tools/check ketqat-sdk` before merge.
+- The maintainer must review the service terms and personally complete the
+  Anthropic CLA-bot step after opening the PR if requested.
 
-The Dockerfile and threat model are colocated in the enrollment, so this SDK
-preparation PR does not have to be merged to enroll the public main branch.
-No live provider credentials, deployment, QPU calls, billing or private source
-are involved.
-
-## Official references
-
-- https://github.com/anthropics/oss-scanner/blob/main/README.md
-- https://github.com/anthropics/oss-scanner/blob/main/CONTRIBUTING.md
-- https://red.anthropic.com/oss-scanner/
-- https://red.anthropic.com/oss-scanner/terms
-
-Acceptance and scan scheduling are controlled by Anthropic. Preparing a PR is
-not acceptance and does not imply the project meets the established-project
-eligibility criteria.
+Official instructions: https://github.com/anthropics/oss-scanner/blob/main/README.md

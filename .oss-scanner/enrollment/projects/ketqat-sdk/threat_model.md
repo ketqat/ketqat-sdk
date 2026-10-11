@@ -102,11 +102,12 @@ absence of .git in a Docker context as a product vulnerability. Use the runtime
 commands above for the initial offline audit. A skipped optional test is not a
 verified pass; report missing dependencies or assets explicitly.
 
-Preparation status: the Docker image and runtime tests have NOT been executed
+Validation status: the Docker image and runtime tests have NOT been executed
 in the environment that prepared this enrollment. Dependency resolution,
-first-run caches/assets and fully offline operation must be verified with
-`tools/check ketqat-sdk` before the enrollment is submitted for review. Amend
-this paragraph only after recording actual verification results.
+first-run caches/assets and fully offline operation are unverified. Please run
+`tools/check ketqat-sdk` as a merge-readiness check and document any failure.
+The optional research/interoperability extras are not preinstalled in this image;
+tests requiring them should be marked not exercised rather than passed.
 
 ## Severity and report format
 

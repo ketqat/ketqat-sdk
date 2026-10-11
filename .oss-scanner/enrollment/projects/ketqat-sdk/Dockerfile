@@ -26,13 +26,12 @@ ENV PATH="/opt/venv/bin:${PATH}"
 
 RUN npm ci && npm run build
 
-# Install the optional runtime surfaces as well as the base runner, so that
-# an offline audit is not limited to the dependency-free contract layer.
-# "all" does not include every named extra in pyproject.toml: add the missing
-# regression, interop, IBM and Braket extras explicitly.
+# Cover local QEC and regression workflows plus provider-adapter parsing.
+# Avoid the much larger research/interoperability extras; their modules remain
+# in the source tree and can be reviewed without preinstalling every framework.
 RUN python -m pip install --upgrade pip \
     && python -m pip install --no-cache-dir \
-         -e './python[all,regression,interop,ibm,braket]' pytest build \
+         -e './python[qec,regression,ibm,braket]' pytest build \
     && python -m pip check
 
 # Fail the image build if the core execution engines are unavailable.
