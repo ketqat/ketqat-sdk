@@ -1,0 +1,6 @@
+# DRAFT: replace null with a monitored email approved for PUBLIC disclosure.
+# Do not use a GitHub noreply address. Do not submit with this field unset.
+repo: https://github.com/ketqat/ketqat-sdk#main
+primary_contact: null
+homepage: https://ketqat.com
+# Dockerfile and threat_model.md are alongside this file in the enrollment PR.
