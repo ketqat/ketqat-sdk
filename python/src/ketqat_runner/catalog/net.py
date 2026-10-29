@@ -67,7 +67,9 @@ def request_json(method: str, base_url: str, path: str, body: Any | None = None)
         try:
             parsed = json.loads(exc.read(64 * 1024) or b"{}")
             if isinstance(parsed, dict) and isinstance(parsed.get("error"), str):
-                detail = f": {parsed['error']}"
+                # Server messages are sentences; drop their final period so the
+                # "." added below does not produce "..".
+                detail = f": {parsed['error'].rstrip().rstrip('.')}"
         except (json.JSONDecodeError, OSError):
             pass  # the status code alone still produces a useful message below
         hint = {
