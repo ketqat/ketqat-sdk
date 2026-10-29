@@ -67,6 +67,11 @@ const requiredFiles = [
   "dist/client/token.d.ts",
   ...sourceExerciseFiles,
   "examples/regression/sample-project/policy.json",
+  // ketqat-web imports these through the `./catalog/*` exports; a package without them
+  // would break that import at install time.
+  "catalog/catalog.json",
+  "catalog/schema/product.schema.json",
+  "catalog/products/kq.algorithms.grover-search.json",
 ]
 
 // CITATION.cff ships so an installed copy can be cited; the repository had one and none
@@ -87,7 +92,12 @@ const isAllowedPackageFile = (path) =>
   // The prose is the point of the mitigation example -- a mitigated value is an
   // estimate under a model, and an example shipped without that sentence
   // teaches the wrong lesson. So the README ships with the manifests.
-  path === "examples/README.md"
+  path === "examples/README.md" ||
+  // The official catalog: the generated index, the product schema and one JSON file per
+  // product. Nothing else under catalog/ ships.
+  path === "catalog/catalog.json" ||
+  path === "catalog/schema/product.schema.json" ||
+  /^catalog\/products\/kq\.[a-z0-9-]+\.[a-z0-9-]+\.json$/.test(path)
 const forbiddenPath =
   /(^|\/)(?:python|tests?|test-results|coverage|\.nyc_output|\.pytest_cache|__pycache__|node_modules|tmp|temp|\.env(?:\..*)?|\.DS_Store|\.idea|\.vscode)(\/|$)|(?:\.py[co]|\.log|\.tmp|\.swp|~)$/i
 
@@ -131,7 +141,12 @@ if (oversizedFiles.length > 0) {
 // ship, and another large share is declaration expansion in `dist/contracts`
 // and `dist/engine` of exactly the kind #236 fixed in its own module; both are
 // tracked in ketqat-sdk#237 rather than fixed opportunistically here.
-const PACKAGE_SIZE_LIMIT_BYTES = 2_500_000
+//
+// Raised from 2.5 MB to 2.6 MB for ketqat-sdk#284, which ships the official catalog
+// (catalog/: the index, the product schema and one definition per product) so that
+// ketqat-web can import it. Measured: ~77 KB for five products, against a 2.46 MB
+// baseline that left 40 KB of headroom. Each further product adds roughly 10-15 KB.
+const PACKAGE_SIZE_LIMIT_BYTES = 2_600_000
 if (manifest.unpackedSize > PACKAGE_SIZE_LIMIT_BYTES) {
   failures.push(
     `Unpacked package size ${manifest.unpackedSize} exceeds the ` +

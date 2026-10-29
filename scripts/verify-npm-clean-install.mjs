@@ -139,6 +139,12 @@ try {
   }
 
   for (const [subpath, target] of Object.entries(installedPackage.exports)) {
+    if (typeof target === "string") {
+      // A data export (the catalog JSON). It has no types or source map; it must
+      // resolve to a file that parses.
+      if (!subpath.includes("*")) JSON.parse(readFileSync(join(installedRoot, target), "utf8"))
+      continue
+    }
     for (const field of ["import", "types"]) {
       if (typeof target[field] !== "string") {
         throw new Error(`Missing ${field} target for export ${subpath}`)

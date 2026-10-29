@@ -24,6 +24,14 @@ REQUIRED_EXAMPLES = {
     "examples/algorithms/grover-search.yaml",
     "examples/qec/surface-code-memory.yaml",
 }
+# The packaged catalog. `ketqat catalog ...` works offline only because these ship.
+REQUIRED_CATALOG = {
+    "catalog/data/catalog.json",
+    "catalog/data/schema/product.schema.json",
+    "catalog/data/products/kq.algorithms.grover-search.json",
+    "catalog/__init__.py",
+    "catalog/build.py",
+}
 
 
 def fail(message: str) -> None:
@@ -64,6 +72,7 @@ def verify_wheel(wheel: Path, version: str) -> None:
         }
         required.update(f"ketqat_runner/schemas/{name}" for name in REQUIRED_SCHEMAS)
         required.update(f"ketqat_runner/{name}" for name in REQUIRED_EXAMPLES)
+        required.update(f"ketqat_runner/{name}" for name in REQUIRED_CATALOG)
         missing = sorted(required - names)
         if missing:
             fail(f"{wheel.name} is missing required files: {missing}")
@@ -103,6 +112,7 @@ def verify_sdist(sdist: Path, version: str) -> None:
         }
         required.update(f"{prefix}src/ketqat_runner/schemas/{name}" for name in REQUIRED_SCHEMAS)
         required.update(f"{prefix}src/ketqat_runner/{name}" for name in REQUIRED_EXAMPLES)
+        required.update(f"{prefix}src/ketqat_runner/{name}" for name in REQUIRED_CATALOG)
         missing = sorted(required - names)
         if missing:
             fail(f"{sdist.name} is missing required files: {missing}")
