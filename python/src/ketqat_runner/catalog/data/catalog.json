@@ -11,10 +11,10 @@
       "subcategory": "search",
       "tier": "free",
       "executionKind": "simulation",
-      "implementationStatus": "implemented",
+      "implementationStatus": "verified",
       "currentVersion": "1.0.0",
       "path": "products/kq.algorithms.grover-search.json",
-      "sha256": "642a6d153860c6b975f203d2e567ea85f0bcc408958cd3ffd1da225ecbeafd3b"
+      "sha256": "681f5f178e5b20a82b12e9597b249ac601a916fa0a1a1112484c738ebacd289f"
     },
     {
       "id": "kq.algorithms.quantum-phase-estimation",
@@ -24,10 +24,10 @@
       "subcategory": "phase-estimation",
       "tier": "free",
       "executionKind": "simulation",
-      "implementationStatus": "implemented",
+      "implementationStatus": "verified",
       "currentVersion": "1.0.0",
       "path": "products/kq.algorithms.quantum-phase-estimation.json",
-      "sha256": "8bba3a198312a3e24e9f9cb9922cfef995eae448b34ee0d0666d77f949d27c07"
+      "sha256": "2b2f56a6f473b7756fa9ed2afc43e199094d82fe7b200963efd35485a25d29c0"
     },
     {
       "id": "kq.qec.surface-code-memory",
@@ -37,10 +37,10 @@
       "subcategory": "memory-experiments",
       "tier": "free",
       "executionKind": "simulation",
-      "implementationStatus": "implemented",
+      "implementationStatus": "verified",
       "currentVersion": "1.0.0",
       "path": "products/kq.qec.surface-code-memory.json",
-      "sha256": "b82760a32e57268c2f300686f152de3657686dc379d9c2ccc9be7f1e78e587e7"
+      "sha256": "f6253762c5360af48eb167b3b814bf5d3de7f4ef060c385fafa7a60e05282f1d"
     },
     {
       "id": "kq.qinfo.channel-analysis",
@@ -63,10 +63,10 @@
       "subcategory": "state-analysis",
       "tier": "free",
       "executionKind": "analysis",
-      "implementationStatus": "implemented",
+      "implementationStatus": "verified",
       "currentVersion": "1.0.0",
       "path": "products/kq.qinfo.state-measures.json",
-      "sha256": "1c062c74a7ddd39c1e921ff4490e23f334d18b2ae396734fe8d621fd51921868"
+      "sha256": "e1df6f5e7ebdd001f8e5b3fe08d5ef3c7e8e3948c1d093dc1249b73b77d86530"
     }
   ]
 }

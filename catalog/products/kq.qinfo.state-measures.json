@@ -211,7 +211,7 @@
     "verified": {
       "sdkVersion": "0.3.0",
       "python": "3.12.12",
-      "platform": "macOS-27.0.1-arm64-arm-64bit (maintainer run of python/tests/test_catalog_examples.py; not yet run by CI)",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (maintainer run) and Ubuntu 26.04 x86_64 Python 3.12.15 (GitHub Actions python-package.yml catalog job, run 40815046070: example executed verbatim in a clean virtualenv)",
       "date": "2026-10-29"
     }
   },
@@ -369,7 +369,7 @@
       "role": "KetQat maintainer: implementation, validation and catalog entry"
     }
   ],
-  "implementationStatus": "implemented",
+  "implementationStatus": "verified",
   "validation": [
     {
       "method": "bell-state",
