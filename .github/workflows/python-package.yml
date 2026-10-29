@@ -70,6 +70,9 @@ jobs:
           "$RUNNER_TEMP/base/bin/ketqat" examples list
           "$RUNNER_TEMP/base/bin/ketqat" run grover-search --output "$RUNNER_TEMP/algorithm.json"
           test -s "$RUNNER_TEMP/algorithm.json"
+          KETQAT_HOME="$RUNNER_TEMP/ketqat-home" "$RUNNER_TEMP/base/bin/ketqat" catalog search
+          KETQAT_HOME="$RUNNER_TEMP/ketqat-home" "$RUNNER_TEMP/base/bin/ketqat" catalog run quantum-phase-estimation@1.0.0 --param phase=0.25 --seed 1
+          test -n "$(ls "$RUNNER_TEMP"/ketqat-home/runs/*/record.json)"
 
       - name: Confirm QEC fails closed without its extra
         run: |
@@ -90,3 +93,34 @@ jobs:
           "$RUNNER_TEMP/qec/bin/python" -c "from importlib.metadata import version; import numpy, pymatching, stim; from ketqat_runner import __version__; assert __version__ == version('ketqat')"
           "$RUNNER_TEMP/qec/bin/ketqat" run surface-code-memory --output "$RUNNER_TEMP/qec.json"
           "$RUNNER_TEMP/qec/bin/python" -c "import json, os; data=json.load(open(os.environ['RUNNER_TEMP'] + '/qec.json')); assert data['metric_points'][0]['metadata']['backend'] == 'stim-pymatching'"
+
+  # The official catalog (catalog/). Three things a unit-test run cannot show:
+  # that the checked-in index and the packaged Python copy are current, that every
+  # product's example code runs verbatim in a clean virtualenv with only that product's
+  # extras, and that the Pro flow verifies against a signing server.
+  catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the runner with the catalog extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "python[qec,qinfo,pro]" pytest
+
+      - name: Fail if catalog.json or the packaged copy is stale
+        run: python -m ketqat_runner.catalog.build --check
+
+      - name: Catalog, product validation and Pro tests
+        run: python -m pytest python/tests/test_catalog.py python/tests/test_catalog_products.py python/tests/test_catalog_pro.py -q
+
+      - name: Run every Free example verbatim in a clean virtualenv
+        env:
+          KETQAT_RUN_SLOW_TESTS: "1"
+        run: python -m pytest -m slow python/tests/test_catalog_examples.py -v

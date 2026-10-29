@@ -159,7 +159,22 @@ try {
   ok(`report exceeds the 65,536-byte truncation boundary (${piped.length} bytes), so the check can fail`)
 
   // --- the exports map, resolved by node, not by path ------------------
-  const subpaths = Object.keys(sourcePackage.exports)
+  // Data exports (the catalog JSON) are imported with a JSON import attribute and
+  // checked separately below; they have no module bindings.
+  const subpaths = Object.keys(sourcePackage.exports).filter(
+    (subpath) => typeof sourcePackage.exports[subpath] !== "string",
+  )
+  const jsonProbe = join(consumer, "catalog-probe.mjs")
+  writeFileSync(
+    jsonProbe,
+    `import index from "ketqat-sdk/catalog/catalog.json" with { type: "json" }\n` +
+      `const first = await import("ketqat-sdk/" + "catalog/" + index.products[0].path, { with: { type: "json" } })\n` +
+      `if (first.default.id !== index.products[0].id) throw new Error("catalog product export mismatch")\n` +
+      `console.log(index.products.length)\n`,
+  )
+  const catalogCount = Number(execFileSync(process.execPath, [jsonProbe], { cwd: consumer, encoding: "utf8" }).trim())
+  if (!(catalogCount > 0)) throw new Error("ketqat-sdk/catalog/catalog.json lists no products")
+  ok(`catalog JSON exports resolve through the installed package (${catalogCount} products)`)
   const probe = join(consumer, "probe.mjs")
   writeFileSync(
     probe,

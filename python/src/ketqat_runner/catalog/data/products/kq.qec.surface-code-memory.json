@@ -1,0 +1,366 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.qec.surface-code-memory",
+  "slug": "surface-code-memory",
+  "name": "Surface-code memory experiment (Stim + PyMatching)",
+  "summary": "Estimate the logical error rate of a rotated surface-code memory with Stim sampling, PyMatching decoding and a Wilson interval.",
+  "category": "quantum-error-correction",
+  "subcategory": "memory-experiments",
+  "tier": "free",
+  "description": "Runs a rotated surface-code memory experiment locally. Stim generates the noisy syndrome-extraction circuit for the chosen distance, number of rounds and memory basis, samples detector outcomes, and PyMatching decodes them with minimum-weight perfect matching. The product reports logical failures, the logical error rate and its 95% Wilson score interval; zero observed failures is reported as an upper bound, never as a rate of zero.\n\nFor QEC students and researchers who want a correct, seeded baseline for a surface-code memory without assembling Stim and PyMatching themselves. The sampling seed is derived exactly as in the SDK's existing `surface-code-memory-mwpm` benchmark, so the same inputs reproduce the same samples.",
+  "useCases": [
+    "Measure the logical error rate at one distance and physical error rate, with a confidence interval",
+    "Compare distances below threshold to see the logical error rate fall",
+    "Produce a reproducible MWPM baseline to compare a new decoder against on identical settings"
+  ],
+  "inputs": [
+    {
+      "name": "distance",
+      "type": "integer",
+      "description": "Code distance d (odd).",
+      "default": 3,
+      "constraints": {
+        "minimum": 3,
+        "maximum": 25
+      }
+    },
+    {
+      "name": "rounds",
+      "type": "integer",
+      "description": "Syndrome-extraction rounds. null uses d rounds.",
+      "default": null,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 100
+      }
+    },
+    {
+      "name": "physical_error_rate",
+      "type": "number",
+      "description": "Depolarizing probability p applied after every Clifford gate.",
+      "default": 0.001,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 0.5
+      }
+    },
+    {
+      "name": "basis",
+      "type": "string",
+      "description": "Memory basis: x prepares and measures the logical X observable, z the logical Z observable.",
+      "default": "x",
+      "constraints": {
+        "enum": [
+          "x",
+          "z"
+        ]
+      }
+    },
+    {
+      "name": "shots",
+      "type": "integer",
+      "description": "Number of sampled experiments.",
+      "default": 10000,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 10000000
+      }
+    },
+    {
+      "name": "decoder",
+      "type": "string",
+      "description": "Decoder. Version 1.0.0 offers PyMatching (MWPM) only.",
+      "default": "pymatching",
+      "constraints": {
+        "enum": [
+          "pymatching"
+        ]
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "logical_failures",
+      "type": "integer",
+      "description": "Shots whose decoded logical observable was wrong."
+    },
+    {
+      "name": "logical_error_rate",
+      "type": "number",
+      "description": "logical_failures / shots (per memory experiment of the given rounds, not per round)."
+    },
+    {
+      "name": "confidence_interval",
+      "type": "object",
+      "description": "95% Wilson score interval: lower, upper, level, method."
+    },
+    {
+      "name": "is_upper_bound_only",
+      "type": "boolean",
+      "description": "true when no failure was observed; then only the upper bound is meaningful."
+    },
+    {
+      "name": "decoder_version",
+      "type": "string",
+      "description": "Installed PyMatching version that produced the result."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-10-29",
+      "changes": [
+        "First catalog release, wrapping the SDK's existing Stim + PyMatching surface-code memory experiment."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "qec"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "d=7 with 10^5 shots at p=0.001: ~0.3 s on a 2024 Apple-silicon laptop (measured). Time grows roughly as d^3 x shots; memory holds one byte per detector per shot, and runs needing more than 2 GiB of samples are refused."
+  },
+  "install": "pip install \"ketqat[qec] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"surface-code-memory@1.0.0\", seed=2026, distance=3, physical_error_rate=0.005, shots=2000)\nresult = record.result\ninterval = result[\"confidence_interval\"]\nprint(json.dumps({\n    \"status\": record.status,\n    \"distance\": result[\"distance\"],\n    \"rounds\": result[\"rounds\"],\n    \"decoder\": result[\"decoder\"],\n    \"observed_failures\": result[\"logical_failures\"] > 0,\n    \"interval_brackets_rate\": interval[\"lower\"] <= result[\"logical_error_rate\"] <= interval[\"upper\"],\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "distance": 3,
+      "rounds": 3,
+      "decoder": "pymatching",
+      "observed_failures": true,
+      "interval_brackets_rate": true
+    },
+    "verified": {
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (maintainer run) and Ubuntu 26.04 x86_64 Python 3.12.15 (GitHub Actions python-package.yml catalog job, run 40815046070: example executed verbatim in a clean virtualenv)",
+      "date": "2026-10-29"
+    }
+  },
+  "sampleResult": {
+    "summary": "d=5, 5 rounds, memory Z at p=0.003: 74 logical failures in 100000 shots, rate 0.00074 with 95% Wilson interval [0.00059, 0.00093].",
+    "data": {
+      "distance": 5,
+      "rounds": 5,
+      "memory_basis": "z",
+      "physical_error_rate": 0.003,
+      "shots": 100000,
+      "decoder": "pymatching",
+      "decoder_version": "2.4.0",
+      "logical_failures": 74,
+      "logical_error_rate": 0.00074,
+      "confidence_interval": {
+        "lower": 0.000589553636531904,
+        "upper": 0.0009288026246445128,
+        "level": 0.95,
+        "method": "wilson_score"
+      },
+      "is_upper_bound_only": false
+    },
+    "generatedWith": {
+      "productVersion": "1.0.0",
+      "seed": 2026,
+      "parameters": {
+        "distance": 5,
+        "rounds": null,
+        "physical_error_rate": 0.003,
+        "basis": "z",
+        "shots": 100000,
+        "decoder": "pymatching"
+      },
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
+  },
+  "science": {
+    "assumptions": [
+      "Circuit-level noise: single- and two-qubit depolarizing noise with probability p after every Clifford gate (Stim's after_clifford_depolarization). Measurement, reset and idle errors are not added.",
+      "Stabilizer simulation: only Pauli noise is representable.",
+      "The decoder sees the detector error model of the same circuit that generated the samples (matched noise model)."
+    ],
+    "scope": [
+      "Rotated surface code, memory in the X or Z basis, odd distance 3 to 25, 1 to 100 rounds.",
+      "Logical error rate per memory experiment with a 95% Wilson score interval."
+    ],
+    "limitations": [
+      "One noise model only; real devices have measurement, leakage, crosstalk and coherent errors that this does not include. A rate here is not a hardware prediction.",
+      "No threshold is estimated by a single run; sweep distances and rates and compare intervals yourself.",
+      "Rates are per experiment of the given number of rounds, not per round.",
+      "Exact counts are reproducible for the same seed with the same Stim and PyMatching versions; other versions may sample or decode differently.",
+      "Large distances with many shots take minutes; time grows with d^3 x shots, and runs needing more than 2 GiB of detector samples are refused rather than started.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "Topological quantum memory",
+      "authors": [
+        "Eric Dennis",
+        "Alexei Kitaev",
+        "Andrew Landahl",
+        "John Preskill"
+      ],
+      "year": 2002,
+      "venue": "Journal of Mathematical Physics 43, 4452",
+      "doi": "10.1063/1.1499754",
+      "url": "https://arxiv.org/abs/quant-ph/0110143"
+    },
+    {
+      "title": "Surface codes: Towards practical large-scale quantum computation",
+      "authors": [
+        "Austin G. Fowler",
+        "Matteo Mariantoni",
+        "John M. Martinis",
+        "Andrew N. Cleland"
+      ],
+      "year": 2012,
+      "venue": "Physical Review A 86, 032324",
+      "doi": "10.1103/PhysRevA.86.032324"
+    },
+    {
+      "title": "Stim: a fast stabilizer circuit simulator",
+      "authors": [
+        "Craig Gidney"
+      ],
+      "year": 2021,
+      "venue": "Quantum 5, 497",
+      "doi": "10.22331/q-2021-07-06-497"
+    },
+    {
+      "title": "PyMatching: A Python package for decoding quantum codes with minimum-weight perfect matching",
+      "authors": [
+        "Oscar Higgott"
+      ],
+      "year": 2022,
+      "venue": "ACM Transactions on Quantum Computing",
+      "url": "https://arxiv.org/abs/2105.13082"
+    },
+    {
+      "title": "Sparse Blossom: correcting a million errors per core second with minimum-weight matching",
+      "authors": [
+        "Oscar Higgott",
+        "Craig Gidney"
+      ],
+      "year": 2023,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/2303.15933"
+    },
+    {
+      "title": "Binomial confidence intervals: Probable inference, the law of succession, and statistical inference",
+      "authors": [
+        "Edwin B. Wilson"
+      ],
+      "year": 1927,
+      "venue": "Journal of the American Statistical Association 22, 209-212"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-integration-of-oss",
+    "statement": "The surface code memory and its decoding by matching follow Dennis, Kitaev, Landahl and Preskill (2002) and Fowler et al. (2012). Circuits are generated and sampled by Stim (Craig Gidney) and decoded by PyMatching (Oscar Higgott and Craig Gidney); both are used unmodified as dependencies. KetQat wrote the integration: parameter handling, seed derivation, Wilson-interval reporting, validation tests and this catalog entry. KetQat did not invent the code, the noise model or the decoder.",
+    "upstream": [
+      {
+        "name": "Stim",
+        "url": "https://github.com/quantumlib/Stim",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "PyMatching",
+        "url": "https://github.com/oscarhiggott/PyMatching",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "verified",
+  "validation": [
+    {
+      "method": "noiseless-control",
+      "description": "At p = 0 no logical failure is observed and the result is reported as an upper bound only.",
+      "test": "python/tests/test_catalog_products.py::test_surface_code_has_no_failures_without_noise"
+    },
+    {
+      "method": "distance-scaling",
+      "description": "Below threshold (memory Z, p = 0.003, 100000 shots, fixed seed) the d = 5 logical error rate is below the d = 3 rate with disjoint 95% Wilson intervals.",
+      "test": "python/tests/test_catalog_products.py::test_surface_code_logical_error_rate_falls_with_distance"
+    },
+    {
+      "method": "interval-present",
+      "description": "Every result carries a 95% Wilson score interval that brackets the point estimate.",
+      "test": "python/tests/test_catalog_products.py::test_surface_code_reports_a_wilson_interval"
+    },
+    {
+      "method": "same-implementation",
+      "description": "The product reproduces the logical failure count of the SDK's surface-code-memory-mwpm 0.1.0 manifest run at the same distance, rate, seed and shots.",
+      "test": "python/tests/test_catalog_products.py::test_surface_code_matches_the_manifest_runner"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the qec extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
+  "legacy": [
+    {
+      "type": "artifact",
+      "slug": "mwpm-surface-code-demo",
+      "relation": "same-implementation"
+    },
+    {
+      "type": "artifact",
+      "slug": "mwpm-surface-code-decoder-pymatching-official-baseline",
+      "relation": "same-implementation"
+    },
+    {
+      "type": "benchmark",
+      "slug": "surface-code-memory-mwpm",
+      "relation": "evidence"
+    },
+    {
+      "type": "benchmark",
+      "slug": "surface-code-memory-decoder-comparison",
+      "relation": "evidence"
+    },
+    {
+      "type": "family",
+      "slug": "rotated-surface-code",
+      "relation": "background"
+    },
+    {
+      "type": "dataset",
+      "slug": "surface-code-mwpm-threshold-sweep",
+      "relation": "evidence"
+    },
+    {
+      "type": "dataset",
+      "slug": "surface-code-mwpm-baseline-analysis",
+      "relation": "evidence"
+    },
+    {
+      "type": "dataset",
+      "slug": "surface-code-mwpm-decoder-comparison-timing",
+      "relation": "evidence"
+    }
+  ]
+}

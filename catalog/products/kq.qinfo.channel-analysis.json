@@ -1,0 +1,240 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.qinfo.channel-analysis",
+  "slug": "quantum-channel-analysis",
+  "name": "Quantum channel analysis",
+  "summary": "From Kraus operators: Choi matrix, CPTP check, Pauli transfer matrix, gate fidelities, unitarity and diamond distance in one report.",
+  "category": "quantum-information",
+  "subcategory": "channel-analysis",
+  "tier": "pro",
+  "description": "Characterises a quantum channel given by its Kraus operators. It builds the Choi matrix and checks complete positivity and trace preservation, computes the Pauli transfer matrix, the average gate fidelity and entanglement fidelity against a target unitary (identity by default), and the unitarity of the noise. It reports the diamond distance to the target exactly when the error channel is a Pauli channel, and lower and upper bounds otherwise. Everything is written to one JSON result and, optionally, a Markdown report.\n\nFor people characterising gates or noise models on one to three qubits who want the standard channel metrics computed consistently and reported together.\n\nThis is a KetQat Pro product: it runs locally like every catalog product, from a signed bundle installed with `ketqat pro install` under a time-limited entitlement. Its implementation is not part of the open SDK.",
+  "useCases": [
+    "Check that a noise model written as Kraus operators is a valid CPTP channel",
+    "Report average gate fidelity, entanglement fidelity and unitarity of an implemented gate against its target",
+    "Bound the worst-case (diamond-norm) error of a channel"
+  ],
+  "inputs": [
+    {
+      "name": "kraus_file",
+      "type": "path",
+      "description": "Kraus operators: .npy array of shape (k, d, d), or .json {\"kraus\": [{\"real\": ..., \"imag\": ...}, ...]}. d must be 2, 4 or 8.",
+      "constraints": {
+        "fileExtensions": [
+          ".npy",
+          ".json"
+        ]
+      }
+    },
+    {
+      "name": "target_unitary_file",
+      "type": "path",
+      "description": "Target unitary (d x d) in the same formats. null means the identity.",
+      "default": null,
+      "constraints": {
+        "fileExtensions": [
+          ".npy",
+          ".json"
+        ]
+      }
+    },
+    {
+      "name": "report_format",
+      "type": "string",
+      "description": "json returns the metrics only; markdown also returns a Markdown report in the result.",
+      "default": "json",
+      "constraints": {
+        "enum": [
+          "json",
+          "markdown"
+        ]
+      }
+    },
+    {
+      "name": "tolerance",
+      "type": "number",
+      "description": "Tolerance for the CPTP checks.",
+      "default": 1e-08,
+      "constraints": {
+        "exclusiveMinimum": 0,
+        "maximum": 0.001
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "cptp",
+      "type": "object",
+      "description": "completely_positive, trace_preserving, min_choi_eigenvalue and the trace-preservation deviation."
+    },
+    {
+      "name": "choi_matrix",
+      "type": "object",
+      "description": "The normalised Choi matrix (real and imaginary parts)."
+    },
+    {
+      "name": "pauli_transfer_matrix",
+      "type": "object",
+      "description": "The Pauli transfer matrix."
+    },
+    {
+      "name": "average_gate_fidelity",
+      "type": "number",
+      "description": "Average gate fidelity to the target unitary."
+    },
+    {
+      "name": "entanglement_fidelity",
+      "type": "number",
+      "description": "Entanglement (process) fidelity to the target unitary."
+    },
+    {
+      "name": "unitarity",
+      "type": "number",
+      "description": "Unitarity of the channel composed with the inverse target."
+    },
+    {
+      "name": "diamond_distance",
+      "type": "object",
+      "description": "Exact value for Pauli error channels; otherwise lower and upper bounds, with the method used."
+    },
+    {
+      "name": "report",
+      "type": "string",
+      "description": "Markdown report when report_format is markdown."
+    }
+  ],
+  "executionKind": "analysis",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-10-29",
+      "changes": [
+        "First catalog release."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "pro",
+        "qinfo"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "One to three qubits: well under a second on a laptop."
+  },
+  "install": "pip install \"ketqat[pro,qinfo] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\" && ketqat pro login && ketqat pro install quantum-channel-analysis@1.0.0",
+  "example": {
+    "code": "import json\nimport numpy as np\nfrom ketqat_runner import catalog\n\ngamma = 0.1\nkraus = np.array([[[1, 0], [0, np.sqrt(1 - gamma)]], [[0, np.sqrt(gamma)], [0, 0]]], dtype=complex)\nnp.save(\"amplitude_damping.npy\", kraus)\nrecord = catalog.run(\"quantum-channel-analysis@1.0.0\", kraus_file=\"amplitude_damping.npy\")\nprint(json.dumps({\"status\": record.status, \"trace_preserving\": record.result[\"cptp\"][\"trace_preserving\"]}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "trace_preserving": true
+    },
+    "verified": null
+  },
+  "sampleResult": {
+    "summary": "Not generated in the open SDK: running this product needs a Pro entitlement and bundle, which this repository's CI does not have.",
+    "data": null,
+    "generatedWith": null
+  },
+  "science": {
+    "assumptions": [
+      "The channel is given exactly by its Kraus operators on one to three qubits.",
+      "Fidelities are measured against a unitary target (identity by default)."
+    ],
+    "scope": [
+      "Channels on dimension 2, 4 or 8.",
+      "Exact diamond distance only when the error channel (target inverse composed with the channel) is a Pauli channel; bounds otherwise."
+    ],
+    "limitations": [
+      "For non-Pauli error channels only lower and upper bounds on the diamond distance are reported, not the exact value.",
+      "Input is the channel itself; estimating a channel from measurement data is not included (the open SDK's process_tomography.py covers single-qubit reconstruction).",
+      "Dense matrices: limited to three qubits.",
+      "The implementation is delivered as a Pro bundle and is not open source; its validation tests are not in this public repository."
+    ]
+  },
+  "references": [
+    {
+      "title": "Quantum Computation and Quantum Information: 10th Anniversary Edition",
+      "authors": [
+        "Michael A. Nielsen",
+        "Isaac L. Chuang"
+      ],
+      "year": 2010,
+      "venue": "Cambridge University Press",
+      "doi": "10.1017/CBO9780511976667"
+    },
+    {
+      "title": "Completely positive linear maps on complex matrices",
+      "authors": [
+        "Man-Duen Choi"
+      ],
+      "year": 1975,
+      "venue": "Linear Algebra and its Applications 10, 285-290"
+    },
+    {
+      "title": "A simple formula for the average gate fidelity of a quantum dynamical operation",
+      "authors": [
+        "Michael A. Nielsen"
+      ],
+      "year": 2002,
+      "venue": "Physics Letters A 303, 249-252",
+      "url": "https://arxiv.org/abs/quant-ph/0205035"
+    },
+    {
+      "title": "Estimating the coherence of noise",
+      "authors": [
+        "Joel Wallman",
+        "Chris Granade",
+        "Robin Harper",
+        "Steven T. Flammia"
+      ],
+      "year": 2015,
+      "venue": "New Journal of Physics 17, 113020",
+      "url": "https://arxiv.org/abs/1503.07865"
+    },
+    {
+      "title": "Semidefinite programs for completely bounded norms",
+      "authors": [
+        "John Watrous"
+      ],
+      "year": 2009,
+      "venue": "Theory of Computing 5, 217-238",
+      "url": "https://arxiv.org/abs/0901.4709"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "The Choi-Jamiolkowski representation (Choi 1975), the average gate fidelity formula (Nielsen 2002), unitarity (Wallman et al. 2015) and the diamond norm (Kitaev; computable by semidefinite programming, Watrous 2009) are established results by their authors. KetQat wrote this implementation and its report format. KetQat did not invent any of the metrics.",
+    "upstream": [
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "cryptography",
+        "url": "https://github.com/pyca/cryptography",
+        "license": "Apache-2.0 OR BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "LicenseRef-KetQat-Pro",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "experimental",
+  "validation": [],
+  "pro": {
+    "freeComparison": "The open SDK already converts between process-tomography representations (Pauli transfer matrix and Choi matrix, in process_tomography.py) and computes state measures such as fidelity and trace distance (the free quantum-state-measures product). Pro adds the integrated channel workflow: CPTP checks from Kraus operators, average gate and entanglement fidelity, unitarity, exact diamond distance for Pauli channels with bounds otherwise, and a single JSON/Markdown report.",
+    "distribution": "authenticated-bundle"
+  },
+  "legacy": []
+}

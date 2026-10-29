@@ -7,28 +7,18 @@ from pathlib import Path
 
 import yaml
 
+from .endpoints import DEFAULT_BASE_URL
 from .examples import get_example_manifest, list_example_manifests, read_example_manifest
-from .runner import run_experiment
 from .token_env import CANONICAL_TOKEN_VARIABLE as JOB_TOKEN_VARIABLE
-from .jobs import (
-    JobError,
-    cancel_job,
-    get_job,
-    job_bundle,
-    list_jobs,
-    submit_job,
-    summarize_job,
-)
-from .publish import (
-    DEFAULT_BASE_URL,
-    PublishError,
-    check_publishable,
-    describe_intent,
-    load_result,
-    publish_result,
-)
-from .summary import format_run_summary
-from .validation import KetQatValidationError
+
+# The job, publish and runner modules are imported inside the branches that use them.
+# `ketqat catalog run` must not import network code (a free catalog run never contacts a
+# server, and python/tests/test_catalog.py checks the import graph to prove it), and
+# these modules import urllib at load time.
+
+
+#: Top-level commands implemented in `catalog.cli`.
+CATALOG_COMMANDS = frozenset({"catalog", "runs", "report", "pro"})
 
 
 def main() -> int:
@@ -36,6 +26,8 @@ def main() -> int:
     subcommands = parser.add_subparsers(dest="command", required=True)
     from .regression_cli import add_parser as add_regression_parser
     add_regression_parser(subcommands)
+    from .catalog.cli import add_parsers as add_catalog_parsers
+    add_catalog_parsers(subcommands)
     run_parser = subcommands.add_parser("run", help="Run a KetQat experiment manifest locally.")
     run_parser.add_argument("manifest", help="Manifest file path or packaged example name.")
     run_parser.add_argument("--output", type=Path, required=True)
@@ -145,7 +137,21 @@ def main() -> int:
         from .regression_cli import run as run_regression
         return run_regression(args)
 
+    if args.command in CATALOG_COMMANDS:
+        from .catalog.cli import run as run_catalog_command
+        return run_catalog_command(args)
+
     if args.command == "job":
+        from .jobs import (
+            JobError,
+            cancel_job,
+            get_job,
+            job_bundle,
+            list_jobs,
+            submit_job,
+            summarize_job,
+        )
+
         try:
             if args.job_command == "submit":
                 qasm = args.qasm.read_text(encoding="utf-8")
@@ -206,6 +212,10 @@ def main() -> int:
             return 1
 
     if args.command == "run":
+        from .runner import run_experiment
+        from .summary import format_run_summary
+        from .validation import KetQatValidationError
+
         try:
             raw = _read_manifest(args.manifest)
             manifest = yaml.safe_load(raw)
@@ -229,6 +239,14 @@ def main() -> int:
         return 0
 
     if args.command == "publish":
+        from .publish import (
+            PublishError,
+            check_publishable,
+            describe_intent,
+            load_result,
+            publish_result,
+        )
+
         try:
             result = load_result(args.result)
             # Everything checkable is checked before the network is touched, so

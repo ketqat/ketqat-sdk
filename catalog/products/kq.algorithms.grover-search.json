@@ -1,0 +1,295 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.algorithms.grover-search",
+  "slug": "grover-search",
+  "name": "Grover search (statevector)",
+  "summary": "Simulate Grover's search on up to 20 qubits and get the exact success probability plus seeded measurement counts.",
+  "category": "quantum-algorithms",
+  "subcategory": "search",
+  "tier": "free",
+  "description": "Runs Grover's quantum search algorithm as a statevector simulation on your machine. You choose the register size and the marked basis states; the product prepares the uniform superposition, applies the phase oracle and the diffusion operator the requested number of times (by default the textbook optimum floor(pi/4 * sqrt(N/M))), and reads the Born-rule distribution off the final state vector.\n\nIt is for students checking the amplitude-amplification picture against a real simulation, and for researchers who want an exact, reproducible baseline (success probability from the state vector, plus seeded shot counts) to compare other implementations against.\n\nThis is not the older `grover-search` runner family in this SDK, which samples shots from the analytic success probability without simulating a circuit.",
+  "useCases": [
+    "Check the success probability of Grover search for a given number of qubits, marked states and iterations",
+    "Show over-rotation: how the success probability falls when iterating past the optimum",
+    "Produce a reproducible reference distribution to compare another simulator or SDK against"
+  ],
+  "inputs": [
+    {
+      "name": "n_qubits",
+      "type": "integer",
+      "description": "Register size n; the search space has N = 2^n states. Larger requests are refused with the memory they would need.",
+      "constraints": {
+        "minimum": 2,
+        "maximum": 20
+      }
+    },
+    {
+      "name": "marked",
+      "type": "integer[]",
+      "description": "Marked basis states as integers in [0, 2^n - 1]; at least one, all distinct, fewer than 2^n.",
+      "constraints": {
+        "minItems": 1,
+        "uniqueItems": true,
+        "itemMinimum": 0
+      }
+    },
+    {
+      "name": "iterations",
+      "type": "integer",
+      "description": "Number of Grover iterations k. null uses floor(pi/4 * sqrt(N/M)).",
+      "default": null,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 100000
+      }
+    },
+    {
+      "name": "shots",
+      "type": "integer",
+      "description": "Measurement samples drawn from the final state.",
+      "default": 1000,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 10000000
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "success_probability",
+      "type": "number",
+      "description": "Sum of |amplitude|^2 over the marked states of the simulated final state vector (exact up to floating point)."
+    },
+    {
+      "name": "analytic_success_probability",
+      "type": "number",
+      "description": "sin^2((2k+1) theta) with sin(theta) = sqrt(M/N), reported beside the simulated value as a cross-check."
+    },
+    {
+      "name": "iterations",
+      "type": "integer",
+      "description": "Iterations actually applied, and iterations_rule saying whether they were chosen by the user or by the formula."
+    },
+    {
+      "name": "counts",
+      "type": "object",
+      "description": "Seeded measurement counts, bitstring (most significant qubit first) to count; only non-zero outcomes."
+    },
+    {
+      "name": "observed_success_fraction",
+      "type": "number",
+      "description": "Fraction of shots that landed on a marked state."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-10-29",
+      "changes": [
+        "First catalog release: NumPy statevector Grover search with exact success probability and seeded sampling."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "algorithms"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "n=20 with the optimal 804 iterations: ~1.5 s and ~50 MB on a 2024 laptop; time grows as sqrt(N) iterations x N amplitudes."
+  },
+  "install": "pip install \"ketqat[algorithms] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"grover-search@1.0.0\", seed=7, n_qubits=5, marked=[3, 17], shots=1000)\nresult = record.result\nprint(json.dumps({\n    \"status\": record.status,\n    \"iterations\": result[\"iterations\"],\n    \"success_probability\": round(result[\"success_probability\"], 6),\n    \"analytic_success_probability\": round(result[\"analytic_success_probability\"], 6),\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "iterations": 3,
+      "success_probability": 0.961319,
+      "analytic_success_probability": 0.961319
+    },
+    "verified": {
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (maintainer run) and Ubuntu 26.04 x86_64 Python 3.12.15 (GitHub Actions python-package.yml catalog job, run 40815046070: example executed verbatim in a clean virtualenv)",
+      "date": "2026-10-29"
+    }
+  },
+  "sampleResult": {
+    "summary": "5 qubits, marked states 3 and 17, 3 iterations (the optimum): the simulated success probability is 0.961319, equal to the analytic value; 955 of 1000 seeded shots hit a marked state.",
+    "data": {
+      "n_qubits": 5,
+      "marked": [
+        3,
+        17
+      ],
+      "iterations": 3,
+      "iterations_rule": "floor(pi/4*sqrt(N/M))",
+      "success_probability": 0.9613189697265623,
+      "analytic_success_probability": 0.9613189697265625,
+      "shots": 1000,
+      "observed_success_count": 955,
+      "observed_success_fraction": 0.955,
+      "counts": {
+        "00000": 1,
+        "00001": 3,
+        "00010": 2,
+        "00011": 481,
+        "00100": 3,
+        "00110": 2,
+        "00111": 2,
+        "01000": 1,
+        "01001": 1,
+        "01010": 1,
+        "01100": 1,
+        "01101": 1,
+        "01110": 1,
+        "01111": 5,
+        "10000": 2,
+        "10001": 474,
+        "10010": 4,
+        "10101": 2,
+        "11000": 2,
+        "11001": 1,
+        "11010": 3,
+        "11011": 2,
+        "11100": 1,
+        "11101": 1,
+        "11110": 1,
+        "11111": 2
+      }
+    },
+    "generatedWith": {
+      "productVersion": "1.0.0",
+      "seed": 7,
+      "parameters": {
+        "n_qubits": 5,
+        "marked": [
+          3,
+          17
+        ],
+        "iterations": null,
+        "shots": 1000
+      },
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
+  },
+  "science": {
+    "assumptions": [
+      "Ideal, noiseless gates: no decoherence, gate error or readout error is modelled.",
+      "The oracle is a phase oracle that flips the sign of each marked basis state; its cost is not modelled.",
+      "The diffusion operator is applied in closed form, 2|s><s| - I, which equals H^n (2|0><0| - I) H^n; a test checks the two agree amplitude by amplitude."
+    ],
+    "scope": [
+      "2 to 20 qubits, any non-empty proper subset of marked states, any iteration count up to 100000.",
+      "Exact success probability from the state vector and seeded multinomial sampling of measurement outcomes."
+    ],
+    "limitations": [
+      "A statevector simulation: memory and time grow as 2^n, so 20 qubits is the ceiling. It says nothing about running on hardware.",
+      "No noise model; real devices will show lower success probabilities.",
+      "Gate counts and circuit depth are not reported, because the oracle is applied as an operator rather than compiled into gates.",
+      "Sampled counts are reproducible for the same seed with the same NumPy version; NumPy does not guarantee identical random streams across versions.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "A fast quantum mechanical algorithm for database search",
+      "authors": [
+        "Lov K. Grover"
+      ],
+      "year": 1996,
+      "venue": "Proceedings of the 28th Annual ACM Symposium on Theory of Computing (STOC '96)",
+      "doi": "10.1145/237814.237866",
+      "url": "https://arxiv.org/abs/quant-ph/9605043"
+    },
+    {
+      "title": "Tight bounds on quantum searching",
+      "authors": [
+        "Michel Boyer",
+        "Gilles Brassard",
+        "Peter Hoyer",
+        "Alain Tapp"
+      ],
+      "year": 1998,
+      "venue": "Fortschritte der Physik 46, 493-505",
+      "url": "https://arxiv.org/abs/quant-ph/9605034"
+    },
+    {
+      "title": "Quantum Computation and Quantum Information: 10th Anniversary Edition",
+      "authors": [
+        "Michael A. Nielsen",
+        "Isaac L. Chuang"
+      ],
+      "year": 2010,
+      "venue": "Cambridge University Press",
+      "doi": "10.1017/CBO9780511976667"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "Grover's algorithm was introduced by Lov K. Grover (1996); the multiple-marked-state analysis follows Boyer, Brassard, Hoyer and Tapp (1998). KetQat wrote this NumPy statevector implementation, its validation tests and this catalog entry. KetQat did not invent the method.",
+    "upstream": [
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "verified",
+  "validation": [
+    {
+      "method": "analytic-agreement",
+      "description": "Simulated success probability equals sin^2((2k+1) theta), sin(theta) = sqrt(M/N), to 1e-10 for every n in 2..10, several marked-set sizes M and k from 0 past the optimum.",
+      "test": "python/tests/test_catalog_products.py::test_grover_matches_the_analytic_success_probability"
+    },
+    {
+      "method": "operator-equivalence",
+      "description": "The closed-form diffusion operator equals the gate construction H^n (2|0><0| - I) H^n on random states.",
+      "test": "python/tests/test_catalog_products.py::test_grover_diffusion_equals_its_gate_construction"
+    },
+    {
+      "method": "resource-guard",
+      "description": "Requests above 20 qubits are refused with the state-vector memory they would need.",
+      "test": "python/tests/test_catalog_products.py::test_grover_refuses_large_registers_with_a_memory_estimate"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only this product's extras installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
+  "legacy": [
+    {
+      "type": "artifact",
+      "slug": "grover-search-local-demo",
+      "relation": "background"
+    },
+    {
+      "type": "benchmark",
+      "slug": "grover-search-local",
+      "relation": "evidence"
+    },
+    {
+      "type": "family",
+      "slug": "grover-search",
+      "relation": "background"
+    }
+  ]
+}

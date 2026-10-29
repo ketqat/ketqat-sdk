@@ -1,12 +1,14 @@
 {
   "name": "ketqat-sdk",
   "version": "0.3.0",
-  "description": "Qiskit regression checks, explicit comparison policies and reproducible research contracts for KetQat. Local compute with optional private team operations.",
+  "description": "Official KetQat quantum software catalog definitions, plus Qiskit regression checks and reproducible research contracts. Products run locally through the ketqat Python package.",
   "keywords": [
     "quantum-computing",
     "quantum-resource-estimation",
     "fault-tolerance",
     "quantum-error-correction",
+    "quantum-algorithms",
+    "quantum-information",
     "qec",
     "reproducibility",
     "benchmarking",
@@ -87,12 +89,16 @@
     "./providers": {
       "types": "./dist/providers/index.d.ts",
       "import": "./dist/providers/index.js"
-    }
+    },
+    "./catalog/catalog.json": "./catalog/catalog.json",
+    "./catalog/products/*": "./catalog/products/*",
+    "./catalog/schema/product.schema.json": "./catalog/schema/product.schema.json"
   },
   "files": [
     "dist",
     "schemas",
     "examples",
+    "catalog",
     "CITATION.cff"
   ],
   "sideEffects": false,
@@ -100,7 +106,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.json && node scripts/generate-schemas.mjs",
     "clean": "rm -rf dist",
     "generate:schemas": "npm run build",
-    "test": "npm run build && node tests/sdk.test.mjs && node --test tests/signed-identity.test.mjs tests/lambda-worker.test.mjs tests/worker-result-transfer.test.mjs && node --test tests/intelligence.test.mjs && node tests/zod4-incompatibility.test.mjs && node tests/mcp-conformance.test.mjs && node --test tests/dependency-advisory-floors.test.mjs && node --test tests/reproduction-path.test.mjs && node --test tests/copy-alignment.test.mjs && npm run verify:package-contents && npm run verify:dist-tracked && npm run verify:schema-sync && npm run verify:license && npm run verify:citation && npm run verify:workflows && npm run verify:outreach",
+    "test": "npm run build && node tests/sdk.test.mjs && node --test tests/signed-identity.test.mjs tests/lambda-worker.test.mjs tests/worker-result-transfer.test.mjs && node --test tests/intelligence.test.mjs && node tests/zod4-incompatibility.test.mjs && node tests/mcp-conformance.test.mjs && node --test tests/dependency-advisory-floors.test.mjs && node --test tests/reproduction-path.test.mjs && node --test tests/copy-alignment.test.mjs && npm run verify:package-contents && npm run verify:dist-tracked && npm run verify:schema-sync && npm run verify:catalog-sync && npm run verify:license && npm run verify:citation && npm run verify:workflows && npm run verify:outreach",
     "test:python": "python3.11 -m pytest python/tests",
     "verify:clean-install": "node scripts/verify-npm-clean-install.mjs",
     "verify:release-consumer": "node scripts/verify-release-consumer.mjs",
@@ -109,6 +115,7 @@
     "prepublishOnly": "npm run build",
     "verify:dist-tracked": "node scripts/verify-dist-tracked.mjs",
     "verify:schema-sync": "node scripts/verify-schema-sync.mjs",
+    "verify:catalog-sync": "node scripts/verify-catalog-sync.mjs",
     "verify:worker-image": "node scripts/verify-worker-image.mjs",
     "verify:license": "node scripts/verify-license-integrity.mjs",
     "verify:citation": "node scripts/verify-citation.mjs",

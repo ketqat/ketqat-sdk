@@ -6,6 +6,8 @@ Guidance for Claude Code working in `ketqat-sdk`. This file supplements [AGENTS.
 
 `ketqat-sdk` is the **public contract layer** for KetQat: typed scientific contracts, Zod validators, generated JSON Schemas, canonical serialization, reproducibility hashing, scientific compatibility rules, a typed REST client, public examples and demo fixtures, and a local Python runner.
 
+Since 2026-10-29 it is also where the **official KetQat catalog** is defined and run: `catalog/` holds one JSON definition per product (schema `ketqat.catalog.product/v1`) and a generated index, and the Python package runs products locally (`ketqat catalog | runs | report | pro`). That is the product headline; Qiskit regression checks remain a supported feature. Reference: [`docs/catalog.md`](docs/catalog.md).
+
 This is the only public code repository in the organization, and it is the package other people install. Two consequences follow:
 
 - **It must stay dependency-light.** Its only runtime dependency is `zod`. Qiskit, CUDA-Q, PyZX, and comparable frameworks must never enter the core dependency set. Heavy scientific dependencies belong behind Python optional extras or, later, in a separate engine package.
@@ -26,9 +28,13 @@ npm run verify:package-contents
 npm run verify:clean-install
 npm run verify:quickstart        # post-release clone-free runner flow
 
-python3.11 -m pip install -e "python[qec]" pytest
+python3.11 -m pip install -e "python[qec,qinfo,pro]" pytest
 python3.11 -m pytest python/tests
 ketqat run examples/qec/surface-code-memory.yaml --output /tmp/ketqat-qec-run.json
+
+python -m ketqat_runner.catalog.build            # regenerate catalog/catalog.json + packaged copy
+python -m ketqat_runner.catalog.build --check    # what CI runs
+KETQAT_RUN_SLOW_TESTS=1 python -m pytest -m slow python/tests/test_catalog_examples.py
 ```
 
 CI splits Node and Python jobs, installs the real QEC dependencies, validates npm package contents and Python distributions, and runs clone-free quickstart verification across supported Node and Python lines.
@@ -45,6 +51,8 @@ CI splits Node and Python jobs, installs the real QEC dependencies, validates np
 - `src/mcp/index.ts` -- read-only MCP tools; `src/mcp/execution.ts` -- the mutating ones, kept apart on purpose
 - `src/demo/` -- demo fixtures, all marked `is_demo: true`
 - `python/src/ketqat_runner/` -- CLI, runner, hashing, validation, environment capture
+- `catalog/` -- product schema, one definition per product, generated `catalog.json` (also exported by the npm package)
+- `python/src/ketqat_runner/catalog/` -- loader, parameter checks, run records, CLI, Free product adapters (`products/`), the generated packaged copy (`data/`), and Pro entitlement/bundle code (`pro/`, never imported by a Free run)
 - `fixtures/reproducibility/` -- cross-language hash parity fixtures
 - `dist/` -- **committed on purpose** so that exact GitHub source-tarball dependencies work for `ketqat-web`. Rebuild and commit it when source changes.
 
@@ -56,6 +64,15 @@ This is the repository's most load-bearing behavior. `src/reproducibility/index.
 - Changing the exclusion set, the canonical form, or number formatting changes **every future hash** and silently breaks comparison with every stored run. Treat it as a breaking contract change requiring a schema version bump and a planning ADR. The full policy, including the versioned-exclusion-set escape hatch that makes such a change safe, is [`docs/schema-versioning.md`](docs/schema-versioning.md).
 - Any change to hashing needs a parity fixture covering it in both languages. Known sharp edges already covered by fixtures: explicit `null` versus absent keys, whole-number floats, and negative zero.
 - Add TypeScript tests for schema, hashing, compatibility, client, and demo changes; add Python tests when runner behavior changes.
+
+## Catalog rules
+
+- Author definitions only in `catalog/products/`, then run the builder; the index and the packaged copy are generated and must be committed with the change. `npm run verify:catalog-sync` and `build --check` fail on drift.
+- Attribution is part of the definition: `origin.statement` says who invented the method and what KetQat did, and never implies KetQat invented it. References carry a DOI only when it is certain; otherwise an arXiv URL or nothing.
+- `implementationStatus: verified` requires CI to have executed the example verbatim in a clean virtualenv. Until then use `implemented`.
+- A product's `validation` tests compare against independent analytic values or independent computations, never against a copy of the formula under test.
+- Unknown parameters or versions are refused with a non-zero exit. There is no fallback to demo data.
+- `resultSha256` covers the result only, and results carry no timings, so the same version, parameters and seed reproduce it.
 
 ## Scientific integrity
 
@@ -82,12 +99,13 @@ The CLI's `job` commands and the MCP execution tools **enqueue; they never execu
 
 Both were *partly* true before, which is why nobody noticed: the release workflows pinned SHAs while `ci.yml` floated, so a glance at the repository suggested pinning was done.
 
-Report vulnerabilities through `SECURITY.md`. The SDK holds no secrets and opens no listener, so the real surface is untrusted-payload parsing, hash canonicalization, and validation bypass.
+Report vulnerabilities through `SECURITY.md`. The SDK holds no long-lived secrets and opens no listener, so the real surface is untrusted-payload parsing, hash canonicalization, validation bypass, and (for Pro) signature and bundle-path verification before code is written or run.
 
-- Do not commit secrets.
-- Do not execute arbitrary uploaded code.
+- Do not commit secrets. Never commit a private signing key, including test keys.
+- Do not execute arbitrary uploaded code. Pro bundles execute only after their Ed25519 signature and every file hash verify against a key embedded in the SDK.
 - Do not store provider credentials.
-- The SDK does not authenticate users and holds no secrets. Keep it that way.
+- The SDK does not authenticate users. The API token is read from the environment and never written to disk. The only credential-like file the SDK writes is the short-lived signed Pro entitlement token (`$KETQAT_HOME/pro/entitlement.token`, mode 0600). Keep it that way.
+- Free catalog runs never import entitlement or network code (`python/tests/test_catalog.py` checks the module graph). Production public keys are added by the owner only; the test key is honoured only with `KETQAT_ALLOW_TEST_ENTITLEMENT_KEYS=1`.
 
 ## Boundary
 

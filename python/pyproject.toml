@@ -1,7 +1,7 @@
 [project]
 name = "ketqat"
 version = "0.3.0"
-description = "Qiskit regression checks and reproducible research runners for KetQat. Compare local circuit changes and SDK updates against an explicit policy."
+description = "Run official KetQat quantum software catalog products locally: algorithms, error correction and quantum information. Also Qiskit regression checks and reproducible research runners."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
@@ -16,6 +16,11 @@ dependencies = [
 regression = ["qiskit>=2.0,<3"]
 qec = ["numpy>=1.26", "stim>=1.13", "pymatching>=2.2"]
 algorithms = ["numpy>=1.26"]
+# Quantum-information catalog products (state measures). NumPy only.
+qinfo = ["numpy>=1.26"]
+# KetQat Pro: Ed25519 verification of entitlement tokens and signed bundles. Free catalog
+# products never import it.
+pro = ["cryptography>=42"]
 # Qualtran is the reference implementation this project's surface-code model is
 # differentially tested against (scripts/verify-qualtran-parity.py). An extra, not a
 # core dependency: it pulls Cirq, Jupyter and a density-matrix simulator, none of
@@ -44,7 +49,7 @@ benchmarks = ["mqt.bench>=2.2", "qiskit>=1.0", "supermarq>=0.5", "cirq-core>=1.4
 # device.
 ibm = ["qiskit>=1.2", "qiskit-ibm-runtime>=0.30", "qiskit-aer>=0.15"]
 braket = ["amazon-braket-sdk>=1.80"]
-all = ["qualtran>=0.7", "mitiq>=1.0", "qdk>=1.30", "numpy>=1.26", "stim>=1.13", "pymatching>=2.2", "mqt.bench>=2.2", "qiskit>=1.0", "supermarq>=0.5", "cirq-core>=1.4", "qedcbench>=2.0", "pennylane>=0.40", "pennylane-qiskit>=0.40", "pytket>=2.0", "pyqir>=0.10"]
+all = ["cryptography>=42", "qualtran>=0.7", "mitiq>=1.0", "qdk>=1.30", "numpy>=1.26", "stim>=1.13", "pymatching>=2.2", "mqt.bench>=2.2", "qiskit>=1.0", "supermarq>=0.5", "cirq-core>=1.4", "qedcbench>=2.0", "pennylane>=0.40", "pennylane-qiskit>=0.40", "pytket>=2.0", "pyqir>=0.10"]
 
 [project.scripts]
 ketqat = "ketqat_runner.cli:main"
