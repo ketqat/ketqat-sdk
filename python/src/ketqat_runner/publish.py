@@ -47,7 +47,8 @@ from .validation import KetQatValidationError, validate_result
 #: accepted; see `token_env`. Kept under the old name because `jobs` and `cli` import it.
 TOKEN_ENVIRONMENT_VARIABLE = CANONICAL_TOKEN_VARIABLE
 
-DEFAULT_BASE_URL = "https://ketqat.com"
+# Defined in `endpoints` so argument parsers can use it without importing urllib.
+from .endpoints import DEFAULT_BASE_URL  # noqa: E402  (re-exported)
 
 #: Sent on every request, and not optional.
 #:
