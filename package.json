@@ -130,7 +130,7 @@
     "verify:release": "node scripts/verify-release-artifacts.mjs"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "@types/node": "^26.1.2",
     "typescript": "^7.0.2"
   },
