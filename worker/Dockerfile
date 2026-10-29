@@ -82,12 +82,32 @@ WORKDIR /lambda-deps
 COPY worker/lambda/package*.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 
+# The AWS base image ships its Runtime Interface Emulator (/usr/local/bin/aws-lambda-rie)
+# built with Go 1.26.9, whose standard library carries a fixable High finding
+# (CVE-2026-111943, fixed in Go 1.26.10). Deployed Lambda never executes it --
+# /lambda-entrypoint.sh only starts it when AWS_LAMBDA_RUNTIME_API is unset -- but
+# CI and the publisher drive the handler through it, so it stays and is rebuilt:
+# the public v1.37 release source, pinned by commit, with the release Makefile's
+# flags and a patched, digest-pinned toolchain. go.sum verifies every module.
+# Remove this stage once the pinned base image ships an emulator built with a
+# patched Go; the Trivy gate in ci.yml says when.
+FROM golang:1.26.10-bookworm@sha256:23ce71337b726608afb1bc00986e630a05034a87a87ea1fc2cd1ae5cf33387eb AS lambda-rie
+ARG RIE_COMMIT=c622c06822a4e5390cc71f29df37594646b10700
+ENV CGO_ENABLED=0 GOTOOLCHAIN=local GOFLAGS=-mod=readonly
+WORKDIR /src
+RUN git init -q . \
+ && git fetch -q --depth 1 https://github.com/aws/aws-lambda-runtime-interface-emulator.git "$RIE_COMMIT" \
+ && git checkout -q FETCH_HEAD \
+ && test "$(git rev-parse HEAD)" = "$RIE_COMMIT" \
+ && go build -trimpath -buildvcs=false -ldflags "-s -w" -o /out/aws-lambda-rie ./cmd/aws-lambda-rie
+
 # Native Lambda execution uses only opaque dispatch metadata. The parent reads
 # its exact SSM callback key; the CPU child receives no cloud credentials.
-FROM public.ecr.aws/lambda/nodejs:22@sha256:a24f2b0960e3f173d38c7cdf39dbd12df31b23fc822c0c4a033eaacfd14c5ca9 AS lambda
+FROM public.ecr.aws/lambda/nodejs:22@sha256:f4f30ba3a882589f91824fc850626b7a13c6649131fc3351c252459eae605d94 AS lambda
 # Refresh AL2023 security packages per release. The produced image stays immutable.
 ARG KETQAT_OS_REFRESH=initial
 RUN dnf upgrade -y --releasever=latest && dnf clean all
+COPY --from=lambda-rie /out/aws-lambda-rie /usr/local/bin/aws-lambda-rie
 # AWS's runtime image includes npm for building. Runtime needs only Node and
 # the Lambda bootstrap; remove the unused package manager and its dependencies.
 # The application bundles its exact SSM SDK below and never uses AWS's global
