@@ -5,7 +5,11 @@ import { fileURLToPath } from "node:url"
 
 /**
  * What this project says it is, in the places a stranger looks first
- * (ketqat-web#346, ketqat-planning#131).
+ * (ketqat-web#346, ketqat-planning#131; direction changed by ketqat-sdk#284).
+ *
+ * Since 2026-10-29 the headline is the official KetQat catalog run locally.
+ * Qiskit regression checks remain a supported feature and must stay findable,
+ * so the descriptions name both rather than swapping one headline for another.
  *
  * These drifted apart because they were written at different times and nothing
  * compared them. ketqat.com said "Quantum Decision Intelligence"; this README,
@@ -21,7 +25,8 @@ import { fileURLToPath } from "node:url"
  */
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url))
-const IDENTITY = /Qiskit/
+const IDENTITY = /catalog/i
+const REGRESSION = /Qiskit/
 
 function prose(path) {
   return readFileSync(`${ROOT}${path}`, "utf8").replace(/\s+/g, " ")
@@ -34,6 +39,14 @@ test("the README leads with what the product is now", () => {
   // The refusals are the distinctive claim, and stating them early is what
   // stops somebody investing an afternoon in a question we will not answer.
   assert.match(opening, /No account, QPU or upload is required/i)
+  // The attribution rule is part of what the product is.
+  assert.match(readme.slice(0, 1600), /never means KetQat invented the method/i)
+})
+
+test("the README still documents Qiskit regression checks as a supported feature", () => {
+  const readme = prose("README.md")
+  assert.match(readme, REGRESSION)
+  assert.match(readme, /regression-quickstart\.md/)
 })
 
 test("the README keeps the registry rather than erasing it", () => {
@@ -73,6 +86,8 @@ test("the npm and Python descriptions say the same thing as the site", () => {
 
   const python = pyprojectDescription()
   assert.match(python, IDENTITY, `the Python description is what a PyPI visitor reads: ${python}`)
+  assert.match(npm, REGRESSION, "regression checks are still a supported feature")
+  assert.match(python, REGRESSION, "regression checks are still a supported feature")
 })
 
 test("resource estimation appears in the npm keywords a searcher would use", () => {

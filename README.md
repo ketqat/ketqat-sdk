@@ -3,16 +3,85 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/ketqat/ketqat-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/ketqat/ketqat-sdk/actions)
 
-**Catch quantum regressions before you merge.** KetQat helps small Qiskit teams
-compare circuit changes and SDK upgrades against an explicit baseline and policy.
-Run the checks in your local environment or GitHub Actions and get a portable
-report explaining what changed, which limits were exceeded and what to check next.
+**Official KetQat quantum software, run on your own machine.** KetQat curates a
+catalog of quantum software in three areas: quantum algorithms, quantum error
+correction and quantum information. Find a product on [ketqat.com](https://ketqat.com),
+then install and run it locally with this SDK. Free products need no account and
+no payment, and send no telemetry. No account, QPU or upload is required: your
+parameters, inputs and results stay on your machine.
 
-**[Try the free Qiskit quickstart](docs/regression-quickstart.md).** No account,
-QPU or upload is required. Source code and circuit data stay on your machine.
-Private team baseline/policy/history management is the planned paid value; it is
-not sold by this CLI. The local regression slice is under review in
-[SDK #264](https://github.com/ketqat/ketqat-sdk/issues/264).
+"Officially provided by KetQat" means KetQat selected, implemented or integrated,
+validated and maintains the product. It never means KetQat invented the method.
+Every product states its origin, the open-source projects it builds on, its
+references, its license and its contributors.
+
+## The catalog
+
+| Product | Tier | What it does |
+|---|---|---|
+| `grover-search` | Free | Grover search as a NumPy statevector simulation (2-20 qubits): exact success probability and seeded counts |
+| `quantum-phase-estimation` | Free | Textbook phase estimation, simulated gate by gate: estimate, its probability and the outcome distribution |
+| `surface-code-memory` | Free | Rotated surface-code memory with Stim sampling, PyMatching decoding and a 95% Wilson interval |
+| `quantum-state-measures` | Free | Entropies, purity, fidelity, trace distance, mutual information, concurrence and negativity |
+| `quantum-channel-analysis` | Pro | Choi matrix, CPTP check, Pauli transfer matrix, gate fidelities, unitarity and diamond distance from Kraus operators |
+
+Definitions live in [`catalog/`](catalog/): one JSON file per product, validated
+against [`catalog/schema/product.schema.json`](catalog/schema/product.schema.json),
+indexed with a sha256 per file in `catalog/catalog.json`. The same files ship
+inside the Python package, so the CLI works offline, and in the npm package as
+`ketqat-sdk/catalog/catalog.json`. Full reference: [`docs/catalog.md`](docs/catalog.md).
+
+### Install and run
+
+The Python package is **not on PyPI yet**. Install it from a pinned commit of
+this repository, with the extras the product needs (`catalog show` prints them):
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install "ketqat[algorithms,qec,qinfo] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python"
+
+ketqat catalog search
+ketqat catalog show surface-code-memory
+ketqat catalog run surface-code-memory@1.0.0 --param distance=5 --param physical_error_rate=0.003 --seed 7
+ketqat runs list
+```
+
+Replace `<commit>` with a full commit SHA you have reviewed. Or from Python:
+
+```python
+from ketqat_runner import catalog
+
+record = catalog.run("grover-search@1.0.0", seed=7, n_qubits=5, marked=[3, 17], shots=1000)
+print(record.result["success_probability"], record.result_sha256)
+```
+
+Every run writes a record to `$KETQAT_HOME/runs/<run-id>/record.json` (default
+`~/.ketqat`): product, version, parameters, seed, environment, result and the
+sha256 of the result. The same version, parameters and seed reproduce the same
+`resultSha256` on the same software stack. Unknown parameters or versions are
+refused with a non-zero exit; nothing falls back to demo data.
+
+### Free and Pro
+
+- **Free** products are open source (Apache-2.0) in this repository. They never
+  contact a server and never load entitlement code.
+- **Pro** products are additional KetQat implementations, delivered as signed
+  bundles under a time-limited entitlement: `ketqat pro login`, `ketqat pro install
+  <product>`, then `ketqat catalog run` as usual, still on your machine. The
+  entitlement is checked when a run starts; an expired one stops new Pro runs and
+  never touches existing records. Bundle code on your machine can be copied or
+  modified: the entitlement gates official distribution and updates, it is not DRM.
+- **Usage reports are opt-in.** `ketqat report RUN_ID` prints the exact JSON it
+  would send (product, version, status, time, SDK version and a report ID) and
+  sends it only after you confirm. Parameters, inputs, results, file paths and
+  environment are never sent.
+
+## Also in this SDK
+
+**Qiskit regression checks** remain a supported feature: compare circuit changes
+and SDK upgrades against an explicit baseline and policy, locally or in GitHub
+Actions, with a portable report of what changed and which limits were exceeded.
+See the [Qiskit regression quickstart](docs/regression-quickstart.md).
 
 Existing Quantum Decision Intelligence resource estimates and research records
 remain available. They make no calendar forecasts or vendor recommendations.
@@ -25,8 +94,8 @@ works -- it is the evidence layer the estimates rest on rather than the headline
 
 This repository contains everything you need to participate:
 
-- **`ketqat` (Python)** -- the local runner: executes benchmark manifests against real dependencies (Stim + PyMatching for QEC) and produces results with canonical reproducibility hashes. A PyPI release is being prepared; install from source today or use the package command after publication.
-- **`ketqat-sdk` (TypeScript)** -- the contract layer: typed schemas, validators, hashing, scientific-compatibility helpers, and a REST client for [ketqat.com](https://ketqat.com). An npm release is being prepared alongside.
+- **`ketqat` (Python)** -- the catalog CLI and local runner: runs catalog products and benchmark manifests against real dependencies (Stim + PyMatching for QEC) and produces results with canonical reproducibility hashes. Not on PyPI yet; install from a pinned commit as above.
+- **`ketqat-sdk` (TypeScript)** -- the contract layer: typed schemas, validators, hashing, scientific-compatibility helpers, the catalog definitions, and a REST client for [ketqat.com](https://ketqat.com). Not on npm yet.
 
 **You can check a published result yourself**, with no account and no checkout:
 [verify a published result](docs/verify-a-published-result.md). If your hash does not
@@ -208,12 +277,12 @@ ketqat run surface-code-memory --output output/qec-run.json
 ketqat run surface-code-memory.yaml --output output/customized-qec-run.json
 ```
 
-Install from PyPI (distribution name `ketqat`, importable as `ketqat_runner`):
+The distribution is named `ketqat` and is importable as `ketqat_runner`. It is
+not on PyPI yet; install from a pinned commit:
 
 ```bash
-pip install "ketqat[qec]"
-pip install "ketqat[algorithms]"
-pip install "ketqat[all]"
+pip install "ketqat[qec] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python"
+pip install "ketqat[algorithms] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python"
 ```
 
 Normal QEC execution requires NumPy, Stim, and PyMatching. If those packages are missing, the runner exits non-zero and does not write a successful result file. There is no automatic synthetic fallback.
@@ -221,7 +290,7 @@ Normal QEC execution requires NumPy, Stim, and PyMatching. If those packages are
 The MVP runner supports small local experiments only:
 
 - QEC: rotated surface-code memory experiments using real Stim detector sampling and PyMatching decoding
-- Algorithms: Grover search on small marked-state problems using local deterministic shot simulation
+- Algorithms: Grover search on small marked-state problems using local deterministic shot simulation. This manifest path samples from the analytic success probability and does not simulate a circuit; the catalog product `grover-search` is the statevector simulation.
 
 QEC coordinate seeds are derived deterministically from the global seed, benchmark-suite version, code distance, and physical error rate. Decoder latency is reported as total batch decode latency in milliseconds, with per-shot latency and component timings in metric metadata.
 
@@ -287,8 +356,10 @@ npm run build
 npm test
 npm run verify:clean-install
 npm run verify:quickstart
-python3.11 -m pip install -e "python[qec]" pytest
+python3.11 -m pip install -e "python[qec,qinfo,pro]" pytest
 python3.11 -m pytest python/tests
+python -m ketqat_runner.catalog.build --check     # catalog.json and the packaged copy are current
+KETQAT_RUN_SLOW_TESTS=1 python -m pytest -m slow python/tests/test_catalog_examples.py
 ```
 
 Before creating a release tag, run the same credential-free guard used by the publishing workflow:
@@ -324,7 +395,7 @@ Demo data is synthetic and marked with `is_demo: true`. It must not be read as p
 
 ## Security Limitations
 
-The SDK validates research contracts and computes hashes. It does not authenticate users, store secrets, execute uploaded code, or manage provider credentials.
+The SDK validates research contracts and computes hashes. It does not authenticate users, execute uploaded code, or manage provider credentials. The API token is read from the environment and never written to disk. The only credential-like file it writes is the short-lived, signed KetQat Pro entitlement token (`$KETQAT_HOME/pro/entitlement.token`, mode 0600), and only after `ketqat pro login`. Pro bundles are verified against an Ed25519 signature and per-file sha256 before they are written or run.
 
 ## License
 

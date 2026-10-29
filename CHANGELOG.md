@@ -31,6 +31,24 @@ life.
 
 ### Added
 
+- **The official KetQat catalog, run locally**
+  ([#284](https://github.com/ketqat/ketqat-sdk/issues/284)). `catalog/` holds the product
+  schema (`ketqat.catalog.product/v1`), one definition per product and a generated index
+  with a sha256 per file; the npm package exports them (`ketqat-sdk/catalog/catalog.json`,
+  `ketqat-sdk/catalog/products/*`) and the Python package ships a byte-identical copy.
+  New commands `ketqat catalog search|show|install|run`, `ketqat runs list|show`,
+  `ketqat report` (opt-in, shows the exact six-field payload first) and
+  `ketqat pro login|status|install`; Python API `ketqat_runner.catalog.run(...)`. Runs
+  write `ketqat.run-record/v1` records under `$KETQAT_HOME/runs/`.
+  Launch products, all 1.0.0: `grover-search` (new NumPy statevector simulation; the old
+  manifest family still samples the analytic probability), `quantum-phase-estimation`
+  (wraps the existing statevector simulation), `surface-code-memory` (wraps the existing
+  Stim + PyMatching experiment), `quantum-state-measures` (new) and the Pro
+  `quantum-channel-analysis` (definition only; its implementation is delivered as a signed
+  bundle). New extras `qinfo` and `pro` (`cryptography`, for Ed25519 verification).
+  No existing schema, hash or contract semantic changes; `hashing.canonical_json` is a new
+  function and leaves every existing hash unchanged.
+
 - **Quantum Resource Intelligence: contracts, threshold engine, decision assessment and
   reproducible bundles** ([#236](https://github.com/ketqat/ketqat-sdk/issues/236)).
   A new `ketqat-sdk/intelligence` export, additive throughout: no existing schema, hash,

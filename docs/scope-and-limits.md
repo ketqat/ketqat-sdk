@@ -8,6 +8,51 @@ until someone publishes a second decoder's results it shows one entrant.
 Someone evaluating whether to trust a comparison should learn where the limits
 are here, rather than by counting rows.
 
+Since 2026-10-29 the headline of this project is the official KetQat catalog
+([`docs/catalog.md`](catalog.md)). Its limits come first; everything after that
+section applies to the research runner and registry, which are unchanged.
+
+## The catalog
+
+Five products, all at version 1.0.0. Four are Free and open source here; one is
+Pro.
+
+| Product | What it is | Defining limit |
+|---|---|---|
+| `grover-search` | NumPy statevector simulation of Grover search | 20 qubits at most; noiseless; the oracle is an operator, so no gate counts |
+| `quantum-phase-estimation` | pure-Python statevector simulation of textbook phase estimation | 16 counting qubits; only the eigenphase is simulated, not U or its eigenstate |
+| `surface-code-memory` | Stim + PyMatching rotated surface-code memory | one noise model (depolarizing after Cliffords); rate per experiment, not per round |
+| `quantum-state-measures` | entropies, fidelity, trace distance, concurrence, negativity | dimension 1024 at most; concurrence for two qubits only |
+| `quantum-channel-analysis` (Pro) | channel metrics from Kraus operators | three qubits at most; exact diamond distance only for Pauli error channels |
+
+What is and is not established, product by product:
+
+- **Validated** against independent analytic values or independent
+  computations, by tests named in each definition's `validation` list. Grover
+  matches sin^2((2k+1)theta) to 1e-10 over hundreds of (n, M, k); phase
+  estimation matches the Fejer kernel to 1e-12; fidelity agrees between two
+  decompositions to 1e-12; the surface code reproduces the manifest runner's
+  failure counts exactly and shows the logical error rate falling from d=3 to
+  d=5 with disjoint 95% intervals at one fixed configuration.
+- **Not shown:** anything about hardware. Every product is a simulation or an
+  analysis of a matrix you supply. A surface-code rate here is not a device
+  prediction.
+- **Implementation status is `implemented`, not `verified`,** for all four Free
+  products. Each example has been executed verbatim in a clean virtualenv on
+  macOS by a maintainer; the CI job that does the same has not yet run, and
+  `verified` requires it.
+- **The Pro product's implementation is not in this repository**, so its
+  validation cannot be inspected here. It is marked `experimental` until it can
+  be.
+- **Reproducibility of `resultSha256`** holds for the same product version,
+  parameters, seed *and* dependency versions. NumPy and Stim do not promise
+  identical random streams across their own releases, so sampled counts can
+  differ between dependency versions even when everything else matches.
+- **Platforms:** tested on macOS (maintainer) and targeted at Linux (CI). Windows
+  is untested.
+- **Usage counts are opt-in and self-reported.** A count on the website is the
+  number of accounts that chose to report a run, not the number of users.
+
 ## Decoders
 
 Two, and they are different in kind rather than two settings of one thing:
