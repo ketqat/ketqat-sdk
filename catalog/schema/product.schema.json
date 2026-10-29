@@ -1,0 +1,361 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ketqat.com/schemas/catalog/product.schema.json",
+  "title": "KetQat catalog product definition (ketqat.catalog.product/v1)",
+  "description": "One product in the official KetQat catalog. One file per product; every version of the product is listed inside it, newest first.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "slug",
+    "name",
+    "summary",
+    "category",
+    "subcategory",
+    "tier",
+    "description",
+    "useCases",
+    "inputs",
+    "outputs",
+    "executionKind",
+    "versions",
+    "environment",
+    "install",
+    "example",
+    "sampleResult",
+    "science",
+    "references",
+    "origin",
+    "license",
+    "contributors",
+    "implementationStatus",
+    "validation",
+    "legacy"
+  ],
+  "properties": {
+    "schema": { "const": "ketqat.catalog.product/v1" },
+    "id": {
+      "type": "string",
+      "description": "Stable product ID, kq.<area>.<name>. Never reused.",
+      "pattern": "^kq\\.[a-z0-9]+(?:-[a-z0-9]+)*\\.[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL slug, unique across the catalog.",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    },
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 140 },
+    "category": {
+      "enum": ["quantum-algorithms", "quantum-error-correction", "quantum-information"]
+    },
+    "subcategory": { "type": "string", "minLength": 1 },
+    "tier": { "enum": ["free", "pro"] },
+    "description": { "type": "string", "minLength": 1, "description": "Markdown." },
+    "useCases": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "inputs": { "type": "array", "items": { "$ref": "#/definitions/field" } },
+    "outputs": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/field" } },
+    "executionKind": { "enum": ["simulation", "analysis", "resource-estimate", "hardware"] },
+    "versions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Newest first.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version", "date", "changes", "sdkMinVersion", "extras", "status"],
+        "properties": {
+          "version": { "$ref": "#/definitions/semver" },
+          "date": { "$ref": "#/definitions/date" },
+          "changes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "sdkMinVersion": { "$ref": "#/definitions/semver" },
+          "extras": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+          },
+          "status": { "enum": ["current", "supported", "retired"] }
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["python", "os", "resources"],
+      "properties": {
+        "python": { "type": "string", "minLength": 1 },
+        "os": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "resources": { "type": "string", "minLength": 1 }
+      }
+    },
+    "install": { "type": "string", "minLength": 1 },
+    "example": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "expectedOutputSubset", "verified"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "expectedOutputSubset": {
+          "type": "object",
+          "description": "Every key here must appear, with an equal value, in the JSON object the example prints last."
+        },
+        "verified": {
+          "description": "Where and when the example was last executed verbatim in a clean virtual environment (python/tests/test_catalog_examples.py), by CI or by a maintainer. null means it has never been executed. implementationStatus verified additionally requires a CI execution.",
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["sdkVersion", "python", "platform", "date"],
+              "properties": {
+                "sdkVersion": { "$ref": "#/definitions/semver" },
+                "python": { "type": "string", "minLength": 1 },
+                "platform": { "type": "string", "minLength": 1 },
+                "date": { "$ref": "#/definitions/date" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "sampleResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "data", "generatedWith"],
+      "properties": {
+        "summary": { "type": "string", "minLength": 1 },
+        "data": { "type": ["object", "null"] },
+        "generatedWith": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["productVersion", "seed", "parameters", "sdkVersion", "python", "platform"],
+              "properties": {
+                "productVersion": { "$ref": "#/definitions/semver" },
+                "seed": { "type": ["integer", "null"] },
+                "parameters": { "type": "object" },
+                "sdkVersion": { "$ref": "#/definitions/semver" },
+                "python": { "type": "string", "minLength": 1 },
+                "platform": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "science": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assumptions", "scope", "limitations"],
+      "properties": {
+        "assumptions": { "$ref": "#/definitions/nonEmptyStrings" },
+        "scope": { "$ref": "#/definitions/nonEmptyStrings" },
+        "limitations": { "$ref": "#/definitions/nonEmptyStrings" }
+      }
+    },
+    "references": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "authors", "year"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1 },
+          "authors": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "year": { "type": "integer", "minimum": 1900, "maximum": 2100 },
+          "venue": { "type": "string", "minLength": 1 },
+          "doi": { "type": "string", "pattern": "^10\\.[0-9]{4,9}/\\S+$" },
+          "url": { "type": "string", "pattern": "^https://" }
+        }
+      }
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "statement", "upstream"],
+      "properties": {
+        "kind": {
+          "enum": ["ketqat-implementation", "ketqat-integration-of-oss", "ketqat-adaptation-of-oss"]
+        },
+        "statement": { "type": "string", "minLength": 1 },
+        "upstream": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "url", "license"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "url": { "type": "string", "pattern": "^https://" },
+              "license": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX ID of what the user receives.",
+      "pattern": "^(?:[A-Za-z0-9.+-]+|LicenseRef-[A-Za-z0-9.-]+)$"
+    },
+    "contributors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "role"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "github": { "type": "string", "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$" },
+          "role": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "implementationStatus": { "enum": ["verified", "implemented", "experimental"] },
+    "validation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["method", "description", "test"],
+        "properties": {
+          "method": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "test": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "pro": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["freeComparison", "distribution"],
+      "properties": {
+        "freeComparison": { "type": "string", "minLength": 1 },
+        "distribution": { "const": "authenticated-bundle" }
+      }
+    },
+    "legacy": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "slug", "relation"],
+        "properties": {
+          "type": { "enum": ["artifact", "benchmark", "family", "dataset"] },
+          "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "relation": { "enum": ["same-implementation", "evidence", "background"] }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "category": { "const": "quantum-algorithms" } } },
+      "then": {
+        "properties": {
+          "subcategory": {
+            "enum": ["search", "phase-estimation", "fourier-transform", "simulation", "optimization", "linear-algebra", "arithmetic"]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "category": { "const": "quantum-error-correction" } } },
+      "then": {
+        "properties": {
+          "subcategory": {
+            "enum": ["memory-experiments", "decoding", "codes", "resource-estimation"]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "category": { "const": "quantum-information" } } },
+      "then": {
+        "properties": {
+          "subcategory": {
+            "enum": ["state-analysis", "channel-analysis", "entanglement", "tomography"]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "tier": { "const": "pro" } } },
+      "then": {
+        "required": ["pro"],
+        "properties": { "license": { "pattern": "^LicenseRef-" } }
+      },
+      "else": {
+        "not": { "required": ["pro"] }
+      }
+    },
+    {
+      "if": { "properties": { "tier": { "const": "free" } } },
+      "then": { "properties": { "license": { "const": "Apache-2.0" } } }
+    },
+    {
+      "if": { "properties": { "implementationStatus": { "const": "verified" } } },
+      "then": {
+        "properties": {
+          "validation": { "minItems": 1 },
+          "example": {
+            "properties": { "verified": { "type": "object" } }
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "nonEmptyStrings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "description"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "type": {
+          "enum": ["integer", "number", "string", "boolean", "integer[]", "number[]", "string[]", "object", "object[]", "path"]
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "default": {
+          "description": "Present means the input is optional. null means optional with no value (the description says what happens then). Absent means the input is required."
+        },
+        "constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "minimum": { "type": "number" },
+            "maximum": { "type": "number" },
+            "exclusiveMinimum": { "type": "number" },
+            "enum": { "type": "array", "minItems": 1 },
+            "minItems": { "type": "integer", "minimum": 0 },
+            "maxItems": { "type": "integer", "minimum": 0 },
+            "uniqueItems": { "type": "boolean" },
+            "itemMinimum": { "type": "number" },
+            "itemMaximum": { "type": "number" },
+            "itemEnum": { "type": "array", "minItems": 1 },
+            "fileExtensions": { "type": "array", "items": { "type": "string", "pattern": "^\\.[a-z0-9]+$" } }
+          }
+        }
+      }
+    }
+  }
+}

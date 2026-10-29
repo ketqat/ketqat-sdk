@@ -1,0 +1,72 @@
+{
+  "schema": "ketqat.catalog.index/v1",
+  "productSchema": "ketqat.catalog.product/v1",
+  "productSchemaSha256": "ddfe462adc11c8c4ad538ae2f136ad76dad5be5cfd9fb58ae51a39bbcbf64c8f",
+  "products": [
+    {
+      "id": "kq.algorithms.grover-search",
+      "slug": "grover-search",
+      "name": "Grover search (statevector)",
+      "category": "quantum-algorithms",
+      "subcategory": "search",
+      "tier": "free",
+      "executionKind": "simulation",
+      "implementationStatus": "implemented",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.algorithms.grover-search.json",
+      "sha256": "642a6d153860c6b975f203d2e567ea85f0bcc408958cd3ffd1da225ecbeafd3b"
+    },
+    {
+      "id": "kq.algorithms.quantum-phase-estimation",
+      "slug": "quantum-phase-estimation",
+      "name": "Quantum phase estimation (statevector)",
+      "category": "quantum-algorithms",
+      "subcategory": "phase-estimation",
+      "tier": "free",
+      "executionKind": "simulation",
+      "implementationStatus": "implemented",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.algorithms.quantum-phase-estimation.json",
+      "sha256": "8bba3a198312a3e24e9f9cb9922cfef995eae448b34ee0d0666d77f949d27c07"
+    },
+    {
+      "id": "kq.qec.surface-code-memory",
+      "slug": "surface-code-memory",
+      "name": "Surface-code memory experiment (Stim + PyMatching)",
+      "category": "quantum-error-correction",
+      "subcategory": "memory-experiments",
+      "tier": "free",
+      "executionKind": "simulation",
+      "implementationStatus": "implemented",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.qec.surface-code-memory.json",
+      "sha256": "b82760a32e57268c2f300686f152de3657686dc379d9c2ccc9be7f1e78e587e7"
+    },
+    {
+      "id": "kq.qinfo.channel-analysis",
+      "slug": "quantum-channel-analysis",
+      "name": "Quantum channel analysis",
+      "category": "quantum-information",
+      "subcategory": "channel-analysis",
+      "tier": "pro",
+      "executionKind": "analysis",
+      "implementationStatus": "experimental",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.qinfo.channel-analysis.json",
+      "sha256": "4362710133d2689783b7192b672ea8b3b4fe50c32c6a23e2751c43cd57e45b2b"
+    },
+    {
+      "id": "kq.qinfo.state-measures",
+      "slug": "quantum-state-measures",
+      "name": "Quantum state measures",
+      "category": "quantum-information",
+      "subcategory": "state-analysis",
+      "tier": "free",
+      "executionKind": "analysis",
+      "implementationStatus": "implemented",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.qinfo.state-measures.json",
+      "sha256": "1c062c74a7ddd39c1e921ff4490e23f334d18b2ae396734fe8d621fd51921868"
+    }
+  ]
+}

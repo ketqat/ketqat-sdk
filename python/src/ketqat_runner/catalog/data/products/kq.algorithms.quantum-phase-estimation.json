@@ -1,0 +1,282 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.algorithms.quantum-phase-estimation",
+  "slug": "quantum-phase-estimation",
+  "name": "Quantum phase estimation (statevector)",
+  "summary": "Simulate textbook quantum phase estimation for a given eigenphase and read off the estimate, its probability and seeded counts.",
+  "category": "quantum-algorithms",
+  "subcategory": "phase-estimation",
+  "tier": "free",
+  "description": "Runs textbook quantum phase estimation as a statevector simulation of the gate sequence: Hadamards on the counting register, the controlled-U^(2^j) phase kickback against an eigenstate with eigenphase phi, and an inverse quantum Fourier transform. The output distribution is the Born rule applied to the final state, not a formula for what it should be.\n\nUse it to see how the number of counting qubits sets the resolution, to check that a dyadic phase is recovered with certainty, and to inspect the spread of outcomes for a phase the register cannot represent exactly. Pure Python: no optional dependencies.",
+  "useCases": [
+    "Show that a phase k/2^n is estimated exactly with probability 1",
+    "Inspect the outcome distribution for a phase between grid points",
+    "Choose the number of counting qubits needed for a target precision"
+  ],
+  "inputs": [
+    {
+      "name": "phase",
+      "type": "number",
+      "description": "Eigenphase phi in [0, 1); the eigenvalue is exp(2 pi i phi).",
+      "constraints": {
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "counting_qubits",
+      "type": "integer",
+      "description": "Size n of the counting register; the resolution is 2^-n.",
+      "default": 8,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 16
+      }
+    },
+    {
+      "name": "shots",
+      "type": "integer",
+      "description": "Measurement samples drawn from the exact distribution.",
+      "default": 1000,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 1000000
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "estimated_phase",
+      "type": "number",
+      "description": "m / 2^n for the most probable outcome m."
+    },
+    {
+      "name": "success_probability",
+      "type": "number",
+      "description": "Exact probability of that most probable outcome."
+    },
+    {
+      "name": "phase_error",
+      "type": "number",
+      "description": "Distance on the circle between the estimate and the true phase."
+    },
+    {
+      "name": "top_outcomes",
+      "type": "object[]",
+      "description": "The eight most probable outcomes with their exact probabilities."
+    },
+    {
+      "name": "counts",
+      "type": "object",
+      "description": "Seeded measurement counts by bitstring."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-10-29",
+      "changes": [
+        "First catalog release, wrapping the SDK's existing statevector phase-estimation simulation."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "16 counting qubits: under 1 s and <100 MB; 12 or fewer: well under 0.1 s. Pure Python."
+  },
+  "install": "pip install \"ketqat @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"quantum-phase-estimation@1.0.0\", seed=11, phase=0.3125, counting_qubits=4, shots=500)\nresult = record.result\nprint(json.dumps({\n    \"status\": record.status,\n    \"measured_integer\": result[\"measured_integer\"],\n    \"estimated_phase\": result[\"estimated_phase\"],\n    \"success_probability\": round(result[\"success_probability\"], 9),\n    \"counts\": result[\"counts\"],\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "measured_integer": 5,
+      "estimated_phase": 0.3125,
+      "success_probability": 1.0,
+      "counts": {
+        "0101": 500
+      }
+    },
+    "verified": {
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit (maintainer run of python/tests/test_catalog_examples.py; not yet run by CI)",
+      "date": "2026-10-29"
+    }
+  },
+  "sampleResult": {
+    "summary": "Phase 0.3 is not representable with 6 counting qubits: the most probable estimate is 0.296875 (integer 19) with probability 0.8752; the remaining probability spreads over neighbouring outcomes.",
+    "data": {
+      "true_phase": 0.3,
+      "counting_qubits": 6,
+      "estimated_phase": 0.296875,
+      "measured_integer": 19,
+      "success_probability": 0.875168316795848,
+      "phase_error": 0.003124999999999989,
+      "phase_is_representable": false,
+      "top_outcomes": [
+        {
+          "integer": 19,
+          "bitstring": "010011",
+          "phase": 0.296875,
+          "probability": 0.875168316795848
+        },
+        {
+          "integer": 20,
+          "bitstring": "010100",
+          "phase": 0.3125,
+          "probability": 0.05472438734954395
+        },
+        {
+          "integer": 18,
+          "bitstring": "010010",
+          "phase": 0.28125,
+          "probability": 0.024337585694944455
+        },
+        {
+          "integer": 21,
+          "bitstring": "010101",
+          "phase": 0.328125,
+          "probability": 0.010832360126619242
+        },
+        {
+          "integer": 17,
+          "bitstring": "010001",
+          "phase": 0.265625,
+          "probability": 0.007260745509113149
+        },
+        {
+          "integer": 22,
+          "bitstring": "010110",
+          "phase": 0.34375,
+          "probability": 0.004493223739427852
+        },
+        {
+          "integer": 16,
+          "bitstring": "010000",
+          "phase": 0.25,
+          "probability": 0.0034467718700819092
+        },
+        {
+          "integer": 23,
+          "bitstring": "010111",
+          "phase": 0.359375,
+          "probability": 0.002452523992906569
+        }
+      ],
+      "most_frequent_integer": 19
+    },
+    "generatedWith": {
+      "productVersion": "1.0.0",
+      "seed": 11,
+      "parameters": {
+        "phase": 0.3,
+        "counting_qubits": 6,
+        "shots": 1000
+      },
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
+  },
+  "science": {
+    "assumptions": [
+      "The second register is prepared in an exact eigenstate of U, so the controlled powers act only as phases on the counting register.",
+      "Ideal, noiseless gates and measurement."
+    ],
+    "scope": [
+      "Eigenphases in [0, 1) and 1 to 16 counting qubits.",
+      "Exact output distribution plus seeded sampling of measurement outcomes."
+    ],
+    "limitations": [
+      "The unitary U and its eigenstate are not simulated; only the eigenphase enters, so the cost of implementing controlled-U^(2^j) is not represented.",
+      "No noise model.",
+      "Only the eight most probable outcomes are copied into the result; the full 2^n distribution is not stored.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "Quantum measurements and the Abelian Stabilizer Problem",
+      "authors": [
+        "A. Yu. Kitaev"
+      ],
+      "year": 1995,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/quant-ph/9511026"
+    },
+    {
+      "title": "Quantum algorithms revisited",
+      "authors": [
+        "Richard Cleve",
+        "Artur Ekert",
+        "Chiara Macchiavello",
+        "Michele Mosca"
+      ],
+      "year": 1998,
+      "venue": "Proceedings of the Royal Society A 454, 339-354",
+      "doi": "10.1098/rspa.1998.0164",
+      "url": "https://arxiv.org/abs/quant-ph/9708016"
+    },
+    {
+      "title": "Quantum Computation and Quantum Information: 10th Anniversary Edition",
+      "authors": [
+        "Michael A. Nielsen",
+        "Isaac L. Chuang"
+      ],
+      "year": 2010,
+      "venue": "Cambridge University Press",
+      "doi": "10.1017/CBO9780511976667"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "Phase estimation is due to Kitaev (1995) and was given its standard circuit form by Cleve, Ekert, Macchiavello and Mosca (1998). KetQat wrote the pure-Python statevector simulation in this SDK (phase_estimation.py and fourier.py), its validation tests and this catalog entry. KetQat did not invent the method.",
+    "upstream": []
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "implemented",
+  "validation": [
+    {
+      "method": "exact-dyadic",
+      "description": "A phase k/2^n is estimated as exactly k with probability 1 for every k at n = 1..8.",
+      "test": "python/tests/test_catalog_products.py::test_phase_estimation_is_exact_for_dyadic_phases"
+    },
+    {
+      "method": "analytic-distribution",
+      "description": "For non-dyadic phases the full simulated distribution matches the analytic Fejer-kernel form P(m) = sin^2(pi 2^n d) / (4^n sin^2(pi d)), d = phi - m/2^n, to 1e-12.",
+      "test": "python/tests/test_catalog_products.py::test_phase_estimation_matches_the_fejer_kernel"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with the base install only.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
+  "legacy": [
+    {
+      "type": "benchmark",
+      "slug": "phase-estimation-textbook",
+      "relation": "evidence"
+    },
+    {
+      "type": "family",
+      "slug": "phase-estimation",
+      "relation": "background"
+    }
+  ]
+}

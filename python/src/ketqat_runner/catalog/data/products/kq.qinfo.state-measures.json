@@ -1,0 +1,416 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.qinfo.state-measures",
+  "slug": "quantum-state-measures",
+  "name": "Quantum state measures",
+  "summary": "Entropies, purity, fidelity, trace distance, mutual information, concurrence and negativity for a preset or your own state.",
+  "category": "quantum-information",
+  "subcategory": "state-analysis",
+  "tier": "free",
+  "description": "Computes standard quantum-information measures of a density matrix by exact linear algebra: von Neumann and Renyi entropies, purity, the entanglement entropy of a subsystem (via the partial trace over arbitrary subsystem dimensions), quantum mutual information, Wootters concurrence for two qubits, negativity and logarithmic negativity, and the fidelity and trace distance to a reference state.\n\nThe state is a preset (Bell, GHZ, two-qubit Werner) or your own state vector or density matrix in a .npy or .json file. Input is validated, never repaired: a matrix that is not Hermitian, not positive semidefinite or not of unit trace (within a tolerance you can set) is rejected with the violated condition.\n\nFor students checking textbook values and researchers who need trustworthy, reproducible numbers for small systems (up to dimension 1024).",
+  "useCases": [
+    "Quantify the entanglement of a two-qubit state from an experiment or simulation",
+    "Compare a noisy state with its ideal target by fidelity and trace distance",
+    "Trace the Werner-state curves of concurrence and logarithmic negativity",
+    "Compute subsystem entropies and mutual information of a multi-qubit state"
+  ],
+  "inputs": [
+    {
+      "name": "preset",
+      "type": "string",
+      "description": "A named state: bell (|Phi+>), ghz, or werner (p |Psi-><Psi-| + (1-p) I/4). Give exactly one of preset and matrix_file.",
+      "default": null,
+      "constraints": {
+        "enum": [
+          "bell",
+          "ghz",
+          "werner"
+        ]
+      }
+    },
+    {
+      "name": "matrix_file",
+      "type": "path",
+      "description": "Your state: .npy (1-D state vector or 2-D density matrix, no pickles) or .json ({\"statevector\" or \"density_matrix\": {\"real\": ..., \"imag\": ...}}). Its sha256 is recorded.",
+      "default": null,
+      "constraints": {
+        "fileExtensions": [
+          ".npy",
+          ".json"
+        ]
+      }
+    },
+    {
+      "name": "werner_p",
+      "type": "number",
+      "description": "Singlet weight p for preset=werner.",
+      "default": null,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "ghz_qubits",
+      "type": "integer",
+      "description": "Qubits in the GHZ preset. null means 3.",
+      "default": null,
+      "constraints": {
+        "minimum": 2,
+        "maximum": 10
+      }
+    },
+    {
+      "name": "dims",
+      "type": "integer[]",
+      "description": "Subsystem dimensions, Kronecker order. null treats the state as qubits (the dimension must be a power of 2).",
+      "default": null,
+      "constraints": {
+        "minItems": 1,
+        "itemMinimum": 1
+      }
+    },
+    {
+      "name": "subsystem_a",
+      "type": "integer[]",
+      "description": "Subsystem indices forming part A of the bipartition; B is the rest. null means [0].",
+      "default": null,
+      "constraints": {
+        "uniqueItems": true,
+        "itemMinimum": 0
+      }
+    },
+    {
+      "name": "measures",
+      "type": "string[]",
+      "description": "Measures to compute. null computes every applicable one and lists the rest under not_applicable; an explicitly requested measure that does not apply is an error.",
+      "default": null,
+      "constraints": {
+        "minItems": 1,
+        "uniqueItems": true,
+        "itemEnum": [
+          "von_neumann_entropy",
+          "renyi_entropy",
+          "purity",
+          "reduced_entropy",
+          "mutual_information",
+          "concurrence",
+          "negativity",
+          "log_negativity",
+          "fidelity",
+          "trace_distance"
+        ]
+      }
+    },
+    {
+      "name": "renyi_alpha",
+      "type": "number",
+      "description": "Order alpha of the Renyi entropy (alpha = 1 gives von Neumann).",
+      "default": 2,
+      "constraints": {
+        "exclusiveMinimum": 0,
+        "maximum": 1000
+      }
+    },
+    {
+      "name": "reference",
+      "type": "string",
+      "description": "Reference state for fidelity and trace distance. null means ideal for presets (the noiseless pure state; the singlet for werner) and maximally-mixed for files.",
+      "default": null,
+      "constraints": {
+        "enum": [
+          "ideal",
+          "maximally-mixed",
+          "zero"
+        ]
+      }
+    },
+    {
+      "name": "reference_file",
+      "type": "path",
+      "description": "Reference state from a file, same formats as matrix_file. Replaces reference.",
+      "default": null,
+      "constraints": {
+        "fileExtensions": [
+          ".npy",
+          ".json"
+        ]
+      }
+    },
+    {
+      "name": "tolerance",
+      "type": "number",
+      "description": "Tolerance for the Hermitian, positive-semidefinite, unit-trace and normalisation checks.",
+      "default": 1e-08,
+      "constraints": {
+        "exclusiveMinimum": 0,
+        "maximum": 0.001
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "measures",
+      "type": "object",
+      "description": "Each computed measure by name. Entropies and log-negativity in bits; fidelity is the squared Uhlmann fidelity."
+    },
+    {
+      "name": "not_applicable",
+      "type": "object",
+      "description": "Measures skipped because they do not apply to this state, with the reason."
+    },
+    {
+      "name": "dims",
+      "type": "integer[]",
+      "description": "Subsystem dimensions used."
+    },
+    {
+      "name": "state",
+      "type": "object",
+      "description": "Which state was measured: the preset and its parameters, or the input file's sha256."
+    },
+    {
+      "name": "min_eigenvalue",
+      "type": "number",
+      "description": "Smallest eigenvalue of the validated density matrix."
+    }
+  ],
+  "executionKind": "analysis",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-10-29",
+      "changes": [
+        "First catalog release: NumPy state measures with input validation."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "qinfo"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "Two-qubit presets: milliseconds. Dimension 1024: a few seconds and <300 MB, dominated by eigendecompositions."
+  },
+  "install": "pip install \"ketqat[qinfo] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"quantum-state-measures@1.0.0\", preset=\"werner\", werner_p=0.8)\nmeasures = record.result[\"measures\"]\nprint(json.dumps({\n    \"status\": record.status,\n    **{name: round(measures[name], 9) for name in (\"concurrence\", \"log_negativity\", \"fidelity\", \"purity\")},\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "concurrence": 0.7,
+      "log_negativity": 0.765534746,
+      "fidelity": 0.85,
+      "purity": 0.73
+    },
+    "verified": {
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit (maintainer run of python/tests/test_catalog_examples.py; not yet run by CI)",
+      "date": "2026-10-29"
+    }
+  },
+  "sampleResult": {
+    "summary": "Werner state with p=0.8: concurrence 0.700, logarithmic negativity 0.7655 bits, singlet fidelity 0.850, purity 0.730.",
+    "data": {
+      "state": {
+        "source": "preset",
+        "preset": "werner",
+        "werner_p": 0.8,
+        "description": "p |Psi-><Psi-| + (1-p) I/4"
+      },
+      "dims": [
+        2,
+        2
+      ],
+      "subsystem_a": [
+        0
+      ],
+      "reference": {
+        "source": "ideal",
+        "description": "the noiseless pure state of the preset"
+      },
+      "measures": {
+        "von_neumann_entropy": 0.8475846798245739,
+        "renyi_entropy": {
+          "alpha": 2,
+          "value": 0.45403163089470794
+        },
+        "purity": 0.7299999999999996,
+        "reduced_entropy": 1.0,
+        "mutual_information": 1.1524153201754261,
+        "concurrence": 0.6999999999999997,
+        "negativity": 0.34999999999999987,
+        "log_negativity": 0.7655347463629768,
+        "fidelity": 0.849999999999999,
+        "trace_distance": 0.14999999999999997
+      },
+      "not_applicable": {}
+    },
+    "generatedWith": {
+      "productVersion": "1.0.0",
+      "seed": null,
+      "parameters": {
+        "preset": "werner",
+        "matrix_file": null,
+        "werner_p": 0.8,
+        "ghz_qubits": null,
+        "dims": null,
+        "subsystem_a": null,
+        "measures": null,
+        "renyi_alpha": 2,
+        "reference": null,
+        "reference_file": null,
+        "tolerance": 1e-08
+      },
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
+  },
+  "science": {
+    "assumptions": [
+      "Finite-dimensional states given as dense matrices; subsystems are ordered as in a Kronecker product.",
+      "Logarithms are base 2. Fidelity is the squared Uhlmann-Jozsa fidelity, F = (Tr sqrt(sqrt(rho) sigma sqrt(rho)))^2.",
+      "Eigenvalues below 1e-12 are treated as zero in entropies (0 log 0 = 0)."
+    ],
+    "scope": [
+      "Any valid density matrix or normalised state vector up to dimension 1024.",
+      "Concurrence for two qubits only; negativity and logarithmic negativity for any bipartition given by subsystem_a."
+    ],
+    "limitations": [
+      "Exact dense linear algebra: memory and time grow as d^2 and d^3, so dimension 1024 (10 qubits) is the ceiling.",
+      "Concurrence is computed for two-qubit states only; no multipartite entanglement measure is provided.",
+      "Negativity detects only NPT entanglement; a zero value does not prove separability beyond 2x2 and 2x3 systems.",
+      "Input that violates validity beyond the tolerance is rejected, not projected onto the nearest valid state.",
+      "Fidelity of rank-deficient states is accurate to about 1e-8, because square roots of round-off-level eigenvalues enter the formula; full-rank states agree to round-off.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "Quantum Computation and Quantum Information: 10th Anniversary Edition",
+      "authors": [
+        "Michael A. Nielsen",
+        "Isaac L. Chuang"
+      ],
+      "year": 2010,
+      "venue": "Cambridge University Press",
+      "doi": "10.1017/CBO9780511976667"
+    },
+    {
+      "title": "Fidelity for mixed quantum states",
+      "authors": [
+        "Richard Jozsa"
+      ],
+      "year": 1994,
+      "venue": "Journal of Modern Optics 41, 2315-2323"
+    },
+    {
+      "title": "Entanglement of Formation of an Arbitrary State of Two Qubits",
+      "authors": [
+        "William K. Wootters"
+      ],
+      "year": 1998,
+      "venue": "Physical Review Letters 80, 2245",
+      "doi": "10.1103/PhysRevLett.80.2245",
+      "url": "https://arxiv.org/abs/quant-ph/9709029"
+    },
+    {
+      "title": "Computable measure of entanglement",
+      "authors": [
+        "G. Vidal",
+        "R. F. Werner"
+      ],
+      "year": 2002,
+      "venue": "Physical Review A 65, 032314",
+      "doi": "10.1103/PhysRevA.65.032314",
+      "url": "https://arxiv.org/abs/quant-ph/0102117"
+    },
+    {
+      "title": "Quantum states with Einstein-Podolsky-Rosen correlations admitting a hidden-variable model",
+      "authors": [
+        "Reinhard F. Werner"
+      ],
+      "year": 1989,
+      "venue": "Physical Review A 40, 4277",
+      "doi": "10.1103/PhysRevA.40.4277"
+    },
+    {
+      "title": "Quantum Detection and Estimation Theory",
+      "authors": [
+        "Carl W. Helstrom"
+      ],
+      "year": 1976,
+      "venue": "Academic Press"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "The measures are standard definitions from the literature: fidelity (Uhlmann; Jozsa 1994), concurrence (Wootters 1998), negativity and logarithmic negativity (Vidal and Werner 2002), the Werner family (Werner 1989) and the Helstrom bound (Helstrom 1976). KetQat wrote this NumPy implementation, its input validation, its validation tests and this catalog entry. KetQat did not invent any of the measures.",
+    "upstream": [
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "implemented",
+  "validation": [
+    {
+      "method": "bell-state",
+      "description": "Bell state: reduced entropy 1 bit, concurrence 1, logarithmic negativity 1, mutual information 2 bits.",
+      "test": "python/tests/test_catalog_products.py::test_state_measures_on_a_bell_state"
+    },
+    {
+      "method": "product-states",
+      "description": "Product states (including mixed product states with qutrit factors) have zero reduced entropy (pure case), mutual information, concurrence and negativity.",
+      "test": "python/tests/test_catalog_products.py::test_state_measures_vanish_on_product_states"
+    },
+    {
+      "method": "werner-curves",
+      "description": "Werner states over p in [0, 1]: concurrence max(0, (3p-1)/2), logarithmic negativity log2((1+3p)/2) above p = 1/3, purity (1+3p^2)/4, singlet fidelity (1+3p)/4.",
+      "test": "python/tests/test_catalog_products.py::test_state_measures_follow_the_werner_curves"
+    },
+    {
+      "method": "two-fidelity-formulas",
+      "description": "Fidelity computed from eigenvalues of sqrt(rho) sigma sqrt(rho) agrees with the singular-value form ||sqrt(rho) sqrt(sigma)||_1^2 on random mixed states, and with |<psi|phi>|^2 on pure states.",
+      "test": "python/tests/test_catalog_products.py::test_fidelity_two_independent_formulas_agree"
+    },
+    {
+      "method": "helstrom",
+      "description": "Trace distance equals 2 P_Helstrom - 1, with P_Helstrom evaluated from the optimal projective measurement.",
+      "test": "python/tests/test_catalog_products.py::test_trace_distance_matches_the_helstrom_measurement"
+    },
+    {
+      "method": "partial-trace",
+      "description": "Partial trace over arbitrary subsystem dimensions recovers each factor of a tensor product of random states.",
+      "test": "python/tests/test_catalog_products.py::test_partial_trace_recovers_tensor_factors"
+    },
+    {
+      "method": "input-validation",
+      "description": "Non-Hermitian, non-PSD, non-unit-trace, mis-dimensioned and unnormalised inputs are rejected with the violated condition.",
+      "test": "python/tests/test_catalog_products.py::test_state_measures_reject_invalid_input"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the qinfo extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
+  "legacy": []
+}
