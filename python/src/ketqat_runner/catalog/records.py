@@ -146,7 +146,7 @@ def _write_atomically(path: Path, text: str) -> None:
         try:
             os.unlink(temporary)
         except FileNotFoundError:
-            pass
+            pass  # never created, or already moved into place: nothing to clean up
         raise
 
 

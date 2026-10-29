@@ -194,7 +194,6 @@ def partial_trace(rho: Any, dims: Sequence[int], keep: Sequence[int]) -> Any:
 
 def partial_transpose(rho: Any, dims: Sequence[int], transpose: Sequence[int]) -> Any:
     """Transpose the listed subsystems' indices."""
-    np = _numpy()
     matrix = as_matrix(rho)
     dims = validate_dims(dims, matrix.shape[0])
     transpose = _validate_subsystems(transpose, len(dims), "transpose")

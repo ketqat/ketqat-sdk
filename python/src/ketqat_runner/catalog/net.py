@@ -69,7 +69,7 @@ def request_json(method: str, base_url: str, path: str, body: Any | None = None)
             if isinstance(parsed, dict) and isinstance(parsed.get("error"), str):
                 detail = f": {parsed['error']}"
         except (json.JSONDecodeError, OSError):
-            pass
+            pass  # the status code alone still produces a useful message below
         hint = {
             401: " Check KETQAT_API_TOKEN.",
             403: " The account has no active KetQat Pro subscription, or the token lacks access.",

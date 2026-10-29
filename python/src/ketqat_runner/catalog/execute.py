@@ -132,6 +132,7 @@ def run(product: str | Product, version: str | None = None, seed: int | None = N
     status = "succeeded"
     error: str | None = None
     result: Any = None
+    failure: Exception | None = None
     try:
         result = implementation.run(dict(resolved), chosen_seed)
         digest = result_sha256(result)

@@ -96,7 +96,7 @@ def store_token(token: str) -> Path:
     try:
         os.chmod(path.parent, 0o700)
     except OSError:
-        pass
+        pass  # best effort; the token file itself is created with mode 0600 below
     temporary = path.with_name(".entitlement.token.tmp")
     descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(descriptor, "w", encoding="ascii") as stream:
