@@ -190,3 +190,34 @@ def verify_reproducibility_hash(value: dict[str, Any]) -> dict[str, Any]:
         "expected": expected,
         "actual": actual if isinstance(actual, str) else None,
     }
+
+
+def canonical_json(value: Any) -> str:
+    """Canonical JSON with sorted keys and nothing excluded.
+
+    Same encoding as `canonical_research_json` -- sorted keys, no whitespace,
+    JavaScript number formatting -- but no key is dropped. Catalog run records
+    hash their `result` with this: a result is pure output, so a key named `id`
+    inside it is data, and excluding it would let two different results share a
+    digest. Adding this function changes no existing hash.
+
+    Non-finite floats are refused: JSON has no spelling for them, and writing
+    `NaN` would produce a digest over text no JSON parser accepts.
+    """
+    _reject_non_finite(value)
+    return _encode(_canonicalize(value, frozenset()))
+
+
+def _reject_non_finite(value: Any) -> None:
+    import math
+
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError(f"Canonical JSON cannot represent the non-finite number {value!r}.")
+    if isinstance(value, list):
+        for item in value:
+            _reject_non_finite(item)
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise TypeError(f"Canonical JSON object keys must be strings, got {type(key)!r}.")
+            _reject_non_finite(item)
