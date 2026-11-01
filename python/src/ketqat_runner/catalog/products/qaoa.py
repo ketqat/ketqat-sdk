@@ -10,7 +10,6 @@ chosen angles and reported beside the simulation.
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
 from ...qaoa import (
