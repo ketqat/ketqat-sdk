@@ -1,0 +1,306 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.qec.steane-code-fault-tolerance",
+  "slug": "steane-code",
+  "name": "Steane [[7,1,3]] code: fault-tolerance check",
+  "summary": "Enumerate every single-qubit Pauli error on the Steane code, verify its syndrome and correction, and show where distance 3 stops.",
+  "category": "quantum-error-correction",
+  "subcategory": "stabilizer-codes",
+  "tier": "free",
+  "description": "Checks the Steane [[7,1,3]] code exhaustively on your machine. Weight-1 Pauli errors on 7 qubits number exactly 21, so the product enumerates all of them: it builds the syndrome table from binary symplectic arithmetic (each error commutes or anticommutes with each of the six stabiliser generators) and confirms that every syndrome is non-zero and unique. Independently, it encodes |0_L> as a 128-amplitude state vector by projecting onto the stabiliser eigenspace, applies each error, measures the syndrome by projection, applies the table's correction and requires fidelity 1 with the original. It then classifies all 189 weight-2 errors: every one is detected, those whose syndrome coincides with a weight-1 error are miscorrected into a logical error, and the rest are flagged as uncorrectable -- which is what distance 3 means.\n\nYou can also apply one Pauli error of your choice to |0_L>, |1_L> or |+_L> and see the syndrome, the decoder's correction, the residual operator and the fidelity afterwards.",
+  "useCases": [
+    "Verify by complete enumeration that the Steane code corrects every single-qubit X, Y and Z error",
+    "See a weight-2 error whose syndrome collides with a weight-1 error's, and the logical error the decoder then causes",
+    "Trace what happens to a chosen error on a chosen logical state: syndrome, correction, residual, fidelity"
+  ],
+  "inputs": [
+    {
+      "name": "logical_state",
+      "type": "string",
+      "description": "Logical state the chosen error is applied to: zero (|0_L>), one (|1_L> = X_L|0_L>) or plus ((|0_L> + |1_L>)/sqrt 2).",
+      "default": "zero",
+      "constraints": {
+        "enum": [
+          "zero",
+          "one",
+          "plus"
+        ]
+      }
+    },
+    {
+      "name": "error",
+      "type": "string",
+      "description": "A 7-letter Pauli string over I, X, Y, Z to apply to the logical state, e.g. IIXIIII or XXIIIII. null applies no chosen error.",
+      "default": null
+    },
+    {
+      "name": "exhaustive",
+      "type": "boolean",
+      "description": "Run the full enumeration of weight-1 and weight-2 errors. false runs only the chosen error (which is then required).",
+      "default": true
+    }
+  ],
+  "outputs": [
+    {
+      "name": "single_qubit_errors",
+      "type": "object",
+      "description": "Count (21), distinct syndromes (21), all detected and uniquely identified, and the independent state-level count recovered with fidelity 1."
+    },
+    {
+      "name": "weight_two_errors",
+      "type": "object",
+      "description": "Count (189), how many are detected, how many have a syndrome matching a weight-1 error (and are miscorrected into a logical error), how many are flagged uncorrectable, and an example."
+    },
+    {
+      "name": "syndrome_table",
+      "type": "object",
+      "description": "The 21 syndromes (six bits, one per stabiliser generator) and the weight-1 error each identifies."
+    },
+    {
+      "name": "applied_error",
+      "type": "object",
+      "description": "For a chosen error: its syndrome by commutation and by projection, the correction applied (or that it was flagged), the residual operator and its logical action, and the fidelity after correction."
+    }
+  ],
+  "executionKind": "analysis",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-11-01",
+      "changes": [
+        "First catalog release, wrapping the SDK's existing Steane-code verification with weight-2 classification and a chosen-error trace."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "qinfo"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "About 0.1 s and under 50 MB: the state-level check multiplies 128x128 matrices for 21 errors."
+  },
+  "install": "pip install \"ketqat[qinfo] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"steane-code@1.0.0\", logical_state=\"zero\", error=\"XXIIIII\")\nresult = record.result\nsingle, two, applied = result[\"single_qubit_errors\"], result[\"weight_two_errors\"], result[\"applied_error\"]\nprint(json.dumps({\n    \"status\": record.status,\n    \"single_qubit_errors_checked\": single[\"count\"],\n    \"distinct_syndromes\": single[\"distinct_syndromes\"],\n    \"all_recovered\": single[\"all_recovered\"],\n    \"weight_two_detected\": two[\"detected\"],\n    \"weight_two_miscorrected\": two[\"miscorrected_to_a_logical_error\"],\n    \"weight_two_flagged\": two[\"flagged_uncorrectable\"],\n    \"chosen_error_corrected\": applied[\"corrected\"],\n    \"chosen_error_residual_action\": applied[\"residual_logical_action\"],\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "single_qubit_errors_checked": 21,
+      "distinct_syndromes": 21,
+      "all_recovered": true,
+      "weight_two_detected": 189,
+      "weight_two_miscorrected": 63,
+      "weight_two_flagged": 126,
+      "chosen_error_corrected": false,
+      "chosen_error_residual_action": "X"
+    },
+    "verified": {
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (maintainer run in a clean virtualenv, test_catalog_examples.py)",
+      "date": "2026-11-01"
+    }
+  },
+  "sampleResult": {
+    "summary": "All 21 weight-1 Pauli errors have distinct non-zero syndromes and all 21 are recovered at the state level with fidelity 1. All 189 weight-2 errors are detected: 63 share a syndrome with a weight-1 error and are miscorrected into a logical error (for example XXIIIII becomes XXXIIII), 126 are flagged uncorrectable.",
+    "data": {
+      "code": "Steane [[7,1,3]] CSS code",
+      "stabilizers": [
+        "IIIXXXX",
+        "IXXIIXX",
+        "XIXIXIX",
+        "IIIZZZZ",
+        "IZZIIZZ",
+        "ZIZIZIZ"
+      ],
+      "logical_operators": {
+        "X": "XXXXXXX",
+        "Z": "ZZZZZZZ"
+      },
+      "syndrome_table": {
+        "000001": "XIIIIII",
+        "000010": "IXIIIII",
+        "000011": "IIXIIII",
+        "000100": "IIIXIII",
+        "000101": "IIIIXII",
+        "000110": "IIIIIXI",
+        "000111": "IIIIIIX",
+        "001000": "ZIIIIII",
+        "001001": "YIIIIII",
+        "010000": "IZIIIII",
+        "010010": "IYIIIII",
+        "011000": "IIZIIII",
+        "011011": "IIYIIII",
+        "100000": "IIIZIII",
+        "100100": "IIIYIII",
+        "101000": "IIIIZII",
+        "101101": "IIIIYII",
+        "110000": "IIIIIZI",
+        "110110": "IIIIIYI",
+        "111000": "IIIIIIZ",
+        "111111": "IIIIIIY"
+      },
+      "single_qubit_errors": {
+        "count": 21,
+        "distinct_syndromes": 21,
+        "all_detected": true,
+        "all_uniquely_identified": true,
+        "state_level_recovered": 21,
+        "all_recovered": true,
+        "state_level_method": "128-amplitude statevector, syndrome by projection, independent of the commutation table",
+        "claim": "All 21 weight-1 Pauli errors produce distinct non-zero syndromes. Weight-1 errors are finite, so this is a complete enumeration -- a proof, not a sample."
+      },
+      "weight_two_errors": {
+        "count": 189,
+        "detected": 189,
+        "all_detected": true,
+        "syndrome_matches_a_single_qubit_error": 63,
+        "miscorrected_to_a_logical_error": 63,
+        "flagged_uncorrectable": 126,
+        "example_miscorrection": {
+          "error": "XXIIIII",
+          "decoder_applies": "IIXIIII",
+          "residual": "XXXIIII"
+        },
+        "note": "Distance 3: every weight-2 error is detected. When its syndrome coincides with a weight-1 error's the decoder applies that weight-1 correction and the residual is a weight-3 logical operator; when it matches no weight-1 error the decoder applies nothing and reports an uncorrectable error."
+      },
+      "distance_limit": {
+        "miscorrected_ordered_pairs": 126,
+        "example": {
+          "actual": "XXIIIII",
+          "decoder_applies": "IIXIIII",
+          "syndrome": "(0, 0, 0, 0, 1, 1)"
+        },
+        "claim": "Weight-2 errors exist whose syndrome matches a weight-1 error, so the decoder applies the wrong correction. This is what distance 3 means: correct one, detect two. The code does not correct two, and reporting otherwise would misdescribe it."
+      },
+      "errors_enumerated": 21,
+      "execution": "syndromes by binary symplectic arithmetic; state-level checks on a 128-amplitude state vector"
+    },
+    "generatedWith": {
+      "productVersion": "1.0.0",
+      "seed": null,
+      "parameters": {
+        "logical_state": "zero",
+        "error": null,
+        "exhaustive": true
+      },
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
+  },
+  "science": {
+    "assumptions": [
+      "Perfect syndrome extraction: stabilisers are measured by exact projection, with no measurement error and no noise during extraction.",
+      "Pauli errors only, applied once to the encoded state; the decoder is the single-qubit syndrome lookup table.",
+      "Global phases are dropped when multiplying Pauli strings, which is correct for syndromes and logical actions."
+    ],
+    "scope": [
+      "The Steane [[7,1,3]] code with its six standard generators and weight-7 logical operators; all 21 weight-1 and 189 weight-2 Pauli errors; one chosen Pauli error on |0_L>, |1_L> or |+_L>."
+    ],
+    "limitations": [
+      "Not a fault-tolerant circuit simulation: no gate faults, no noisy syndrome extraction, no repeated rounds and no logical error rate. It verifies the code's correction properties, not a threshold.",
+      "The decoder is the weight-1 lookup table. It flags weight-2 errors whose syndrome matches no weight-1 error rather than attempting a minimum-weight correction.",
+      "Weight-3 and higher errors are not enumerated.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "Error Correcting Codes in Quantum Theory",
+      "authors": [
+        "A. M. Steane"
+      ],
+      "year": 1996,
+      "venue": "Physical Review Letters 77, 793-797",
+      "doi": "10.1103/PhysRevLett.77.793"
+    },
+    {
+      "title": "Multiple-particle interference and quantum error correction",
+      "authors": [
+        "A. M. Steane"
+      ],
+      "year": 1996,
+      "venue": "Proceedings of the Royal Society A 452, 2551-2577",
+      "url": "https://arxiv.org/abs/quant-ph/9601029"
+    },
+    {
+      "title": "Good quantum error-correcting codes exist",
+      "authors": [
+        "A. R. Calderbank",
+        "Peter W. Shor"
+      ],
+      "year": 1996,
+      "venue": "Physical Review A 54, 1098-1105",
+      "doi": "10.1103/PhysRevA.54.1098",
+      "url": "https://arxiv.org/abs/quant-ph/9512032"
+    },
+    {
+      "title": "Stabilizer Codes and Quantum Error Correction",
+      "authors": [
+        "Daniel Gottesman"
+      ],
+      "year": 1997,
+      "venue": "PhD thesis, California Institute of Technology",
+      "url": "https://arxiv.org/abs/quant-ph/9705052"
+    },
+    {
+      "title": "Quantum Computation and Quantum Information: 10th Anniversary Edition",
+      "authors": [
+        "Michael A. Nielsen",
+        "Isaac L. Chuang"
+      ],
+      "year": 2010,
+      "venue": "Cambridge University Press",
+      "doi": "10.1017/CBO9780511976667"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "The [[7,1,3]] code was invented by Steane (1996) as the first CSS code built from the classical Hamming code, with the general CSS construction due to Calderbank and Shor (1996) and the stabiliser formalism to Gottesman (1997). KetQat wrote this NumPy implementation (steane.py), the syndrome and state-level checks, the weight-2 classification, the validation tests and this catalog entry. KetQat did not invent the code.",
+    "upstream": [
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "verified",
+  "validation": [
+    {
+      "method": "exhaustive-single-errors",
+      "description": "All 21 weight-1 Pauli errors have distinct non-zero syndromes, recomputed independently in the test by matrix commutation (S E = -E S) rather than string arithmetic, and the product reports all 21 recovered at the state level with fidelity 1.",
+      "test": "python/tests/test_catalog_products.py::test_steane_every_single_qubit_error_has_a_unique_syndrome_and_is_corrected"
+    },
+    {
+      "method": "distance-limit",
+      "description": "All 189 weight-2 errors are detected; exactly 63 have a syndrome matching a weight-1 error and are miscorrected, and for the example XXIIIII the product's chosen-error trace on |0_L> shows residual XXXIIII acting as logical X with fidelity 0, while Z-type residuals leave |0_L> intact and damage |+_L>.",
+      "test": "python/tests/test_catalog_products.py::test_steane_some_weight_two_error_is_miscorrected"
+    },
+    {
+      "method": "state-level-independence",
+      "description": "For every weight-1 error the syndrome measured by projection on the 128-amplitude state equals the commutation syndrome, and the logical states |0_L>, |1_L>, |+_L> are normalised, stabilised by every generator and mutually consistent (|1_L> orthogonal to |0_L>).",
+      "test": "python/tests/test_catalog_products.py::test_steane_projection_syndromes_agree_with_commutation"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the qinfo extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
+  "legacy": []
+}

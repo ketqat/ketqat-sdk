@@ -18,9 +18,20 @@ it. It never means KetQat invented the method. Every definition carries an
 |---|---|---|---|
 | `kq.algorithms.grover-search` | `grover-search` | Free | `algorithms` |
 | `kq.algorithms.quantum-phase-estimation` | `quantum-phase-estimation` | Free | none |
+| `kq.algorithms.qaoa-maxcut` | `qaoa-maxcut` | Free | `algorithms` |
+| `kq.algorithms.vqe-ground-state` | `vqe-ground-state` | Free | `algorithms` |
+| `kq.algorithms.quantum-fourier-transform` | `quantum-fourier-transform` | Free | `algorithms` |
+| `kq.algorithms.trotter-ising-dynamics` | `trotter-ising-dynamics` | Free | `algorithms` |
+| `kq.algorithms.quantum-teleportation` | `quantum-teleportation` | Free | `algorithms` |
 | `kq.qec.surface-code-memory` | `surface-code-memory` | Free | `qec` |
+| `kq.qec.steane-code-fault-tolerance` | `steane-code` | Free | `qinfo` (NumPy only) |
+| `kq.qec.repetition-code-memory` | `repetition-code` | Free | `qinfo` (NumPy only) |
 | `kq.qinfo.state-measures` | `quantum-state-measures` | Free | `qinfo` |
+| `kq.qinfo.state-tomography` | `quantum-state-tomography` | Free | `qinfo` |
 | `kq.qinfo.channel-analysis` | `quantum-channel-analysis` | Pro | `pro`, `qinfo` |
+| `kq.qec.surface-code-threshold-study` | `surface-code-threshold-study` | Pro | `pro`, `qec` |
+| `kq.qinfo.randomized-benchmarking-suite` | `randomized-benchmarking-suite` | Pro | `pro`, `qec` |
+| `kq.qinfo.quantum-volume-certification` | `quantum-volume-certification` | Pro | `pro`, `qinfo` |
 
 `ketqat catalog show <slug>` prints the full definition: inputs with types and
 defaults, the install line, the example, limitations and references.

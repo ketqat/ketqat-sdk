@@ -1,0 +1,225 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.qinfo.quantum-volume-certification",
+  "slug": "quantum-volume-certification",
+  "name": "Quantum volume certification",
+  "summary": "Quantum volume per Cross et al. 2019: finite-shot heavy outputs, the 2-sigma pass rule, per-width intervals, achieved QV and a report.",
+  "category": "quantum-information",
+  "subcategory": "benchmarking",
+  "tier": "pro",
+  "description": "Runs the quantum volume protocol of Cross, Bishop, Sheldon, Nation and Gambetta (2019) on a simulated device over a list of widths. For every width it draws the square model circuits of Haar-random SU(4) layers (the open SDK's circuits and ideal distributions), mixes each ideal output distribution toward uniform with the depolarizing rate, samples a finite number of shots per circuit and counts heavy outcomes, those above the ideal median. The certification applies the protocol's rule exactly: the mean heavy-output probability over circuits must exceed 2/3 by two binomial standard deviations, h - 2 sqrt(h(1-h)/n_c) > 2/3. Beside that rule it reports a 95% interval from the empirical spread across circuits and a bootstrap interval, the mean ideal and exact noisy heavy-output probabilities for reference, the achieved quantum volume 2^(largest passing width) with a flag saying whether every smaller tested width also passes, whether the circuit count meets the protocol's minimum of 100, and a Markdown report.\n\nFor people who want the certification rule applied as published, with its statistics visible, as a reference for a device run or for teaching.\n\nThis is a KetQat Pro product: it runs locally like every catalog product, from a signed bundle installed with `ketqat pro install` under a time-limited entitlement. Its implementation is not part of the open SDK.",
+  "useCases": [
+    "Apply the published quantum volume pass rule to simulated heavy-output counts at several widths and read off the achieved QV",
+    "See how shots, circuit count and depolarizing strength move a width from pass to fail",
+    "Check a hand-computed or device-side certification against a reference implementation of the rule"
+  ],
+  "inputs": [
+    {
+      "name": "widths",
+      "type": "integer[]",
+      "description": "Circuit widths m (and depths, since the model circuits are square), distinct.",
+      "default": [
+        2,
+        3,
+        4
+      ],
+      "constraints": {
+        "minItems": 1,
+        "maxItems": 6,
+        "itemMinimum": 2,
+        "itemMaximum": 12,
+        "uniqueItems": true
+      }
+    },
+    {
+      "name": "circuits_per_width",
+      "type": "integer",
+      "description": "Random model circuits per width; the protocol runs at least 100.",
+      "default": 100,
+      "constraints": {
+        "minimum": 2,
+        "maximum": 2000
+      }
+    },
+    {
+      "name": "shots",
+      "type": "integer",
+      "description": "Measurements sampled per circuit.",
+      "default": 500,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 100000
+      }
+    },
+    {
+      "name": "depolarizing_rate",
+      "type": "number",
+      "description": "Weight with which each circuit's ideal output distribution is mixed toward uniform (global depolarizing); 1 is a fully depolarized device.",
+      "default": 0.05,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 1
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "achieved_quantum_volume",
+      "type": "integer",
+      "description": "2^(largest tested width that passes the rule); null when no tested width passes."
+    },
+    {
+      "name": "certification",
+      "type": "object",
+      "description": "passing_widths, failing_widths, max_passing_width, all_smaller_widths_pass, tested_widths and an interpretation sentence."
+    },
+    {
+      "name": "per_width",
+      "type": "object[]",
+      "description": "Per width: the rule's heavy_output_probability, binomial sigma, two_sigma_lower_bound and passed; empirical and bootstrap 95% intervals; mean ideal and exact noisy heavy-output probabilities; per-circuit heavy counts and seeds."
+    },
+    {
+      "name": "meets_protocol_minimum_circuits",
+      "type": "boolean",
+      "description": "true when circuits_per_width is at least 100."
+    },
+    {
+      "name": "report",
+      "type": "string",
+      "description": "Markdown report with the per-width table, the achieved quantum volume and caveats."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-11-01",
+      "changes": [
+        "First catalog release."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "pro",
+        "qinfo"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "Defaults (widths 2, 3, 4; 100 circuits; 500 shots): well under a second on a 2024 Apple-silicon laptop (maintainer measurement); widths 2 to 8 at the defaults take about 0.5 s. Dense statevectors: circuits_per_width x sum(2^width) above 4000000 is refused before anything runs."
+  },
+  "install": "pip install \"ketqat[pro,qinfo] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\" && ketqat pro login && ketqat pro install quantum-volume-certification@1.0.0",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"quantum-volume-certification@1.0.0\", seed=2026, widths=[2, 3], circuits_per_width=100, shots=500, depolarizing_rate=0.05)\nresult = record.result\nprint(json.dumps({\n    \"status\": record.status,\n    \"achieved_quantum_volume\": result[\"achieved_quantum_volume\"],\n    \"all_smaller_widths_pass\": result[\"certification\"][\"all_smaller_widths_pass\"],\n    \"every_width_above_two_thirds\": all(w[\"certification\"][\"heavy_output_probability\"] > 2 / 3 for w in result[\"per_width\"]),\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "achieved_quantum_volume": 8,
+      "all_smaller_widths_pass": true,
+      "every_width_above_two_thirds": true
+    },
+    "verified": null
+  },
+  "sampleResult": {
+    "summary": "Not generated in the open SDK: running this product needs a Pro entitlement and bundle, which this repository's CI does not have. Maintainer run of the private bundle with the defaults (widths 2, 3, 4; 100 circuits; 500 shots; depolarizing rate 0.05; seed 2026): heavy-output probabilities 0.7638, 0.8373 and 0.8254 with rule lower bounds 0.6789, 0.7635 and 0.7494, all passing; achieved quantum volume 16 with every smaller width passing; mean ideal heavy-output probabilities 0.7792, 0.8546 and 0.8408 (the asymptote (1 + ln 2)/2 = 0.8466 is not reached at width 2). At depolarizing rate 0.1 on the same seed width 2 fails marginally (bound 0.6641) while 3 and 4 pass, and the result says so.",
+    "data": null,
+    "generatedWith": null
+  },
+  "science": {
+    "assumptions": [
+      "Model circuits as defined by Cross et al. (2019): width m, depth m, each layer a random permutation and Haar-random SU(4) on each pair; heavy outputs are those above the median of the ideal distribution.",
+      "Noise is a global depolarizing mix of each circuit's ideal distribution toward uniform, then finite-shot multinomial sampling; the heavy set is always defined by the ideal circuit.",
+      "The pass rule is the protocol's: mean heavy fraction over circuits minus two binomial standard deviations above 2/3."
+    ],
+    "scope": [
+      "Widths 2 to 12, any number of circuits from 2 and shots from 1.",
+      "Per-width certification with binomial, empirical and bootstrap intervals; achieved quantum volume over the tested widths."
+    ],
+    "limitations": [
+      "Global depolarizing is not a device noise model; the result is a check of the protocol and its statistics, not a hardware claim.",
+      "Quantum volume is claimed only for tested widths; untested widths are not inferred, and a non-monotone pass pattern is flagged rather than hidden.",
+      "The ideal heavy-output probability reaches (1 + ln 2)/2 only for large width; at width 2 it is about 0.78, so small widths pass with less margin.",
+      "Fewer than 100 circuits per width is below the protocol's minimum and is reported as such; the rule is still applied.",
+      "The implementation is delivered as a Pro bundle and is not open source; its validation tests live in the private repository, not here.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "Validating quantum computers using randomized model circuits",
+      "authors": [
+        "Andrew W. Cross",
+        "Lev S. Bishop",
+        "Sarah Sheldon",
+        "Paul D. Nation",
+        "Jay M. Gambetta"
+      ],
+      "year": 2019,
+      "venue": "Physical Review A 100, 032328",
+      "doi": "10.1103/PhysRevA.100.032328",
+      "url": "https://arxiv.org/abs/1811.12926"
+    },
+    {
+      "title": "Complexity-theoretic foundations of quantum supremacy experiments",
+      "authors": [
+        "Scott Aaronson",
+        "Lijie Chen"
+      ],
+      "year": 2017,
+      "venue": "32nd Computational Complexity Conference (CCC 2017)",
+      "url": "https://arxiv.org/abs/1612.05903"
+    },
+    {
+      "title": "How to generate random matrices from the classical compact groups",
+      "authors": [
+        "Francesco Mezzadri"
+      ],
+      "year": 2007,
+      "venue": "Notices of the AMS 54, 592-604",
+      "url": "https://arxiv.org/abs/math-ph/0609050"
+    },
+    {
+      "title": "Bootstrap methods: Another look at the jackknife",
+      "authors": [
+        "Bradley Efron"
+      ],
+      "year": 1979,
+      "venue": "The Annals of Statistics 7, 1-26"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "Quantum volume, its model circuits and its pass rule are due to Cross, Bishop, Sheldon, Nation and Gambetta (2019); heavy-output generation follows Aaronson and Chen (2017); Haar-random unitaries are drawn by the QR method of Mezzadri (2007). The circuits and ideal distributions come from the open SDK's quantum_volume.py, and the sampling and statistics use NumPy. KetQat wrote the certification workflow: finite-shot heavy counts, the rule and intervals, the multi-width aggregation, the report and this catalog entry. KetQat did not invent the protocol or the rule.",
+    "upstream": [
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "cryptography",
+        "url": "https://github.com/pyca/cryptography",
+        "license": "Apache-2.0 OR BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "LicenseRef-KetQat-Pro",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "implemented",
+  "validation": [],
+  "pro": {
+    "freeComparison": "The open SDK already builds quantum volume model circuits with Haar-random SU(4), computes their exact ideal and depolarized heavy-output probabilities and, at one width, applies a 2-sigma bound from the empirical spread across circuits (quantum_volume.py). Nothing of that moves behind Pro, and this product calls those functions. Pro adds the certification as one catalog run: finite-shot sampling of heavy outcomes per circuit, the protocol's binomial 2-sigma rule as published, empirical and bootstrap intervals beside it, several widths with the achieved quantum volume and a monotonicity flag, the circuit-count minimum check, and a Markdown report.",
+    "distribution": "authenticated-bundle"
+  },
+  "legacy": []
+}

@@ -1,0 +1,379 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.algorithms.vqe-ground-state",
+  "slug": "vqe-ground-state",
+  "name": "VQE ground-state energy (statevector)",
+  "summary": "Minimise the energy of a Pauli Hamiltonian with a hardware-efficient ansatz and compare with the exact ground energy.",
+  "category": "quantum-algorithms",
+  "subcategory": "variational",
+  "tier": "free",
+  "description": "Runs the variational quantum eigensolver as a statevector simulation on your machine. The Hamiltonian is the SDK's approximate two-qubit H2 testbed, a transverse-field Ising chain built from its definition, or your own list of Pauli terms. The ansatz is layers of Ry rotations on every qubit, each followed by a CNOT ladder (or no entangling gates, if you choose a product ansatz). Angles are optimised by coordinate descent from seeded random restarts, and the energy is reported against the exact ground energy from diagonalising the Hamiltonian.\n\nThe gap to the exact energy is attributed honestly: when a product ansatz faces an entangled ground state the result says the ansatz cannot represent the state, so the gap is a limit of the hypothesis class rather than of the optimiser.\n\nThe H2 coefficients are a testbed for the algorithm, not a chemistry result: the result carries a provenance block stating that they land about 6 mHa from the literature total, roughly four times chemical accuracy.",
+  "useCases": [
+    "See VQE converge to the exact ground energy of a small Hamiltonian and read the optimised angles",
+    "Show that a product ansatz cannot reach an entangled ground state, and that more iterations do not help",
+    "Run VQE on your own Pauli Hamiltonian of up to 6 qubits with a reproducible seed"
+  ],
+  "inputs": [
+    {
+      "name": "hamiltonian",
+      "type": "string",
+      "description": "h2-approximate (the SDK's 2-qubit H2/STO-3G-shaped testbed), transverse-ising (H = -J sum Z_i Z_{i+1} - h sum X_i on an open chain), or custom (give terms).",
+      "default": "h2-approximate",
+      "constraints": {
+        "enum": [
+          "h2-approximate",
+          "transverse-ising",
+          "custom"
+        ]
+      }
+    },
+    {
+      "name": "qubits",
+      "type": "integer",
+      "description": "Number of qubits. Must be 2 for h2-approximate; the chain length for transverse-ising; the Pauli string length for custom.",
+      "default": 2,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 6
+      }
+    },
+    {
+      "name": "terms",
+      "type": "object[]",
+      "description": "For hamiltonian=custom: objects {\"coefficient\": number, \"pauli\": string of I/X/Y/Z of length qubits}. null otherwise.",
+      "default": null,
+      "constraints": {
+        "minItems": 1
+      }
+    },
+    {
+      "name": "ising_coupling",
+      "type": "number",
+      "description": "J for transverse-ising. null means 1.0. Not accepted with other Hamiltonians.",
+      "default": null,
+      "constraints": {
+        "minimum": -100,
+        "maximum": 100
+      }
+    },
+    {
+      "name": "ising_field",
+      "type": "number",
+      "description": "h for transverse-ising. null means 1.0. Not accepted with other Hamiltonians.",
+      "default": null,
+      "constraints": {
+        "minimum": -100,
+        "maximum": 100
+      }
+    },
+    {
+      "name": "layers",
+      "type": "integer",
+      "description": "Ansatz layers; the parameter count is layers x qubits.",
+      "default": 2,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 4
+      }
+    },
+    {
+      "name": "entangling",
+      "type": "boolean",
+      "description": "true adds a CNOT ladder after each Ry layer; false keeps a product-state ansatz.",
+      "default": true
+    },
+    {
+      "name": "restarts",
+      "type": "integer",
+      "description": "Seeded random restarts of the coordinate descent; the best is reported.",
+      "default": 12,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 50
+      }
+    },
+    {
+      "name": "iterations",
+      "type": "integer",
+      "description": "Maximum coordinate-descent sweeps per restart (it stops early once the step falls below 1e-9). Requests estimated above 30 s are refused with the estimate.",
+      "default": 400,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 2000
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "energy",
+      "type": "number",
+      "description": "Lowest energy found, <psi(theta)|H|psi(theta)> from the state vector."
+    },
+    {
+      "name": "exact_ground_energy",
+      "type": "number",
+      "description": "E_0 from dense diagonalisation of H, the reference the energy is measured against."
+    },
+    {
+      "name": "gap",
+      "type": "number",
+      "description": "energy - exact_ground_energy, never negative for a correct implementation (variational principle)."
+    },
+    {
+      "name": "ansatz_can_represent_ground_state",
+      "type": "boolean",
+      "description": "false when a product ansatz faces an entangled ground state; then the gap is a representational limit, as explanation says."
+    },
+    {
+      "name": "parameters",
+      "type": "number[]",
+      "description": "Optimised Ry angles, layer by layer, qubit by qubit."
+    },
+    {
+      "name": "h2_provenance",
+      "type": "object",
+      "description": "For h2-approximate: the testbed's discrepancy from the literature energy and the statement that it is not a chemistry result."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-11-01",
+      "changes": [
+        "First catalog release, wrapping the SDK's existing VQE with three Hamiltonian sources and a resource ceiling."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "algorithms"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "2 qubits with the defaults (2 layers, 12 restarts, 400 sweeps): ~0.3 s; 3 qubits: ~1.5 s; 4 qubits: ~13 s on a 2024 laptop. Memory under 50 MB. Time grows as restarts x iterations x layers^2 x qubits x 2^qubits; requests estimated above 30 s are refused."
+  },
+  "install": "pip install \"ketqat[algorithms] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"vqe-ground-state@1.0.0\", seed=7, hamiltonian=\"h2-approximate\", qubits=2, layers=2)\nresult = record.result\nprint(json.dumps({\n    \"status\": record.status,\n    \"energy\": round(result[\"energy\"], 6),\n    \"exact_ground_energy\": round(result[\"exact_ground_energy\"], 6),\n    \"converged\": result[\"gap\"] < 1e-8,\n    \"variational_principle_holds\": result[\"variational_principle_holds\"],\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "energy": -1.851199,
+      "exact_ground_energy": -1.851199,
+      "converged": true,
+      "variational_principle_holds": true
+    },
+    "verified": {
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (maintainer run in a clean virtualenv, test_catalog_examples.py)",
+      "date": "2026-11-01"
+    }
+  },
+  "sampleResult": {
+    "summary": "Approximate H2 testbed, 2 layers with CNOT ladder, 12 restarts: VQE reaches -1.851199124 Ha, the exact ground energy from diagonalisation (gap 0 to 12 decimals); the provenance block records that the coefficients land 6.1 mHa from the literature total and are not a chemistry result.",
+    "data": {
+      "hamiltonian": {
+        "kind": "h2-approximate",
+        "qubits": 2,
+        "terms": [
+          {
+            "coefficient": -0.4804,
+            "pauli": "II"
+          },
+          {
+            "coefficient": 0.3435,
+            "pauli": "ZI"
+          },
+          {
+            "coefficient": -0.4347,
+            "pauli": "IZ"
+          },
+          {
+            "coefficient": 0.5716,
+            "pauli": "ZZ"
+          },
+          {
+            "coefficient": 0.091,
+            "pauli": "XX"
+          },
+          {
+            "coefficient": 0.091,
+            "pauli": "YY"
+          }
+        ]
+      },
+      "ansatz": {
+        "form": "layers of Ry(theta) on every qubit, each followed by a CNOT ladder",
+        "layers": 2,
+        "entangling": true,
+        "parameter_count": 4
+      },
+      "optimizer": {
+        "method": "coordinate descent with step halving",
+        "restarts": 12,
+        "iterations": 400
+      },
+      "energy": -1.851199124124,
+      "exact_ground_energy": -1.851199124124,
+      "gap": 0.0,
+      "variational_principle_holds": true,
+      "ground_state_entangled": true,
+      "ansatz_can_represent_ground_state": true,
+      "parameters": [
+        1.048224798212,
+        4.712388920822,
+        0.818481047682,
+        4.71238900306
+      ],
+      "explanation": "Converged to the exact ground energy.",
+      "execution": "exact statevector energies; ground energy by dense diagonalisation",
+      "h2_provenance": {
+        "validated": false,
+        "nuclear_repulsion_hartree": 0.719968994426,
+        "total_energy_hartree": -1.131230129698,
+        "literature_total_hartree": -1.1373,
+        "discrepancy_hartree": 0.006069870302,
+        "within_chemical_accuracy": false,
+        "note": "Approximate coefficients. The total lands about 6 mHa from the literature value, roughly four times chemical accuracy (0.0016 Ha). Suitable for testing the algorithm; not suitable for reporting a chemistry result. A published energy curve needs coefficients from a verified electronic-structure calculation."
+      }
+    },
+    "generatedWith": {
+      "productVersion": "1.0.0",
+      "seed": 7,
+      "parameters": {
+        "hamiltonian": "h2-approximate",
+        "qubits": 2,
+        "terms": null,
+        "ising_coupling": null,
+        "ising_field": null,
+        "layers": 2,
+        "entangling": true,
+        "restarts": 12,
+        "iterations": 400
+      },
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
+  },
+  "science": {
+    "assumptions": [
+      "Ideal, noiseless gates and exact expectation values: the energy is computed from the state vector, not estimated from shots.",
+      "Ry(theta)|0> = cos(theta/2)|0> + sin(theta/2)|1>; the CNOT ladder couples qubit i to i+1 in order.",
+      "Coordinate descent with step halving from uniform random starting angles; no gradient estimates enter the result."
+    ],
+    "scope": [
+      "Hamiltonians on 1 to 6 qubits given as Pauli strings, up to 4 ansatz layers, up to 50 restarts and 2000 sweeps each.",
+      "Energy against the exact ground energy, the variational-principle check, and the representability verdict for product ansaetze."
+    ],
+    "limitations": [
+      "The H2 coefficients are approximate (about 6 mHa from the literature total) and are not a validated molecular Hamiltonian; use them to exercise the algorithm, not to report chemistry.",
+      "A non-convex landscape: the optimiser can stop above the ground energy even when the ansatz could represent it. The result says so, and more restarts may help.",
+      "Exact statevector energies, so the sampling noise and measurement cost of a real VQE are not modelled.",
+      "Dense diagonalisation and Python-loop CNOTs cap the product at 6 qubits.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "A variational eigenvalue solver on a photonic quantum processor",
+      "authors": [
+        "Alberto Peruzzo",
+        "Jarrod McClean",
+        "Peter Shadbolt",
+        "Man-Hong Yung",
+        "Xiao-Qi Zhou",
+        "Peter J. Love",
+        "Alan Aspuru-Guzik",
+        "Jeremy L. O'Brien"
+      ],
+      "year": 2014,
+      "venue": "Nature Communications 5, 4213",
+      "doi": "10.1038/ncomms5213",
+      "url": "https://arxiv.org/abs/1304.3061"
+    },
+    {
+      "title": "The theory of variational hybrid quantum-classical algorithms",
+      "authors": [
+        "Jarrod R. McClean",
+        "Jonathan Romero",
+        "Ryan Babbush",
+        "Alan Aspuru-Guzik"
+      ],
+      "year": 2016,
+      "venue": "New Journal of Physics 18, 023023",
+      "doi": "10.1088/1367-2630/18/2/023023",
+      "url": "https://arxiv.org/abs/1509.04279"
+    },
+    {
+      "title": "Hardware-efficient variational quantum eigensolver for small molecules and quantum magnets",
+      "authors": [
+        "Abhinav Kandala",
+        "Antonio Mezzacapo",
+        "Kristan Temme",
+        "Maika Takita",
+        "Markus Brink",
+        "Jerry M. Chow",
+        "Jay M. Gambetta"
+      ],
+      "year": 2017,
+      "venue": "Nature 549, 242-246",
+      "doi": "10.1038/nature23879",
+      "url": "https://arxiv.org/abs/1704.05018"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "The variational quantum eigensolver was introduced by Peruzzo et al. (2014) and given its general hybrid framework by McClean, Romero, Babbush and Aspuru-Guzik (2016); the hardware-efficient Ry + CNOT-ladder ansatz follows Kandala et al. (2017). KetQat wrote this NumPy statevector implementation (vqe.py), its coordinate-descent optimiser, the Hamiltonian builders, the validation tests and this catalog entry. KetQat did not invent the method.",
+    "upstream": [
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "verified",
+  "validation": [
+    {
+      "method": "analytic-ground-energy",
+      "description": "The product reaches, to 1e-6, ground energies known in closed form: -sqrt(J^2 + 4h^2) for the two-qubit transverse-field Ising model, -J(n-1) for the n-qubit chain without a field and -nh without coupling, and the exact H2 testbed energy from diagonalisation.",
+      "test": "python/tests/test_catalog_products.py::test_vqe_reaches_analytic_ground_energies"
+    },
+    {
+      "method": "variational-principle",
+      "description": "On random Hermitian Hamiltonians and random custom Pauli Hamiltonians the reported energy is never below the exact ground energy (a theorem, checked as an inequality, not a tolerance), and the reported gap is non-negative.",
+      "test": "python/tests/test_catalog_products.py::test_vqe_energy_never_falls_below_the_exact_ground_energy"
+    },
+    {
+      "method": "representability",
+      "description": "A product ansatz on the entangled H2 ground state reports a gap above 1e-3 and ansatz_can_represent_ground_state=false even with more restarts and sweeps; on a product ground state it converges exactly.",
+      "test": "python/tests/test_catalog_products.py::test_vqe_product_ansatz_reports_a_representational_gap"
+    },
+    {
+      "method": "input-validation",
+      "description": "Malformed terms, a Hamiltonian/qubit mismatch, Ising parameters with the wrong Hamiltonian and requests above the time ceiling are refused before anything runs.",
+      "test": "python/tests/test_catalog_products.py::test_vqe_rejects_bad_hamiltonians_and_oversized_requests"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the algorithms extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
+  "legacy": []
+}

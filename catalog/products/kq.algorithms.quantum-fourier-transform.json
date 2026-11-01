@@ -1,0 +1,390 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.algorithms.quantum-fourier-transform",
+  "slug": "quantum-fourier-transform",
+  "name": "Quantum Fourier transform (statevector)",
+  "summary": "Apply the QFT gate sequence to a basis, uniform or random state on up to 16 qubits and compare it with the DFT definition.",
+  "category": "quantum-algorithms",
+  "subcategory": "transforms",
+  "tier": "free",
+  "description": "Applies the quantum Fourier transform, or its inverse, as the real gate sequence (Hadamards, controlled phase rotations and the final qubit reversal) to a state vector on your machine. The input is a computational basis state, the uniform superposition or a seeded random state. The output is compared with an independent reference: the DFT column written straight from its definition for a basis state, the known |0...0> result for the uniform state, and the full DFT matrix product for a random state of up to 10 qubits. The inverse transform is then applied and the round-trip error reported, and the output state is sampled with a seed.\n\nThe convention is stated and checked rather than assumed: QFT|j> = (1/sqrt N) sum_k exp(+2 pi i j k / N)|k>, little-endian, so a flipped sign or a reversed bit order would show up as a non-zero deviation. Pure Python: the algorithms extra is used only for seeded sampling.",
+  "useCases": [
+    "Check that the QFT circuit equals the discrete Fourier transform, column by column, to floating-point precision",
+    "Show that a basis state transforms to a flat magnitude distribution and the uniform state to |0...0>",
+    "Fix the sign and bit-order convention of a QFT before building phase estimation or Shor-type circuits on it"
+  ],
+  "inputs": [
+    {
+      "name": "n_qubits",
+      "type": "integer",
+      "description": "Register size n; the state has N = 2^n amplitudes.",
+      "default": 4,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 16
+      }
+    },
+    {
+      "name": "input_state",
+      "type": "string",
+      "description": "basis (|basis_index>), uniform ((1/sqrt N) sum_j |j>) or random (seeded complex Gaussian amplitudes, normalised).",
+      "default": "basis",
+      "constraints": {
+        "enum": [
+          "basis",
+          "uniform",
+          "random"
+        ]
+      }
+    },
+    {
+      "name": "basis_index",
+      "type": "integer",
+      "description": "j for input_state=basis, in [0, 2^n - 1]. Ignored otherwise.",
+      "default": 1,
+      "constraints": {
+        "minimum": 0
+      }
+    },
+    {
+      "name": "inverse",
+      "type": "boolean",
+      "description": "Apply the inverse transform (negative phases) instead of the forward one.",
+      "default": false
+    },
+    {
+      "name": "shots",
+      "type": "integer",
+      "description": "Measurement samples drawn from the output state.",
+      "default": 1000,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 100000
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "max_deviation_from_reference",
+      "type": "number",
+      "description": "Largest |amplitude difference| between the circuit output and the independent reference named in reference; null when the O(N^2) matrix reference is skipped (random input above 10 qubits)."
+    },
+    {
+      "name": "round_trip_error",
+      "type": "number",
+      "description": "Largest |amplitude difference| after applying the opposite transform to the output."
+    },
+    {
+      "name": "output_norm",
+      "type": "number",
+      "description": "Norm of the output state (1 for a unitary transform)."
+    },
+    {
+      "name": "max_magnitude_deviation_from_flat",
+      "type": "number",
+      "description": "For a basis-state input: largest deviation of |amplitude| from 1/sqrt N over the output."
+    },
+    {
+      "name": "output_amplitudes",
+      "type": "object[]",
+      "description": "[real, imaginary] pairs of the output state, listed up to 5 qubits; null above."
+    },
+    {
+      "name": "counts",
+      "type": "object",
+      "description": "Seeded measurement counts of the output, bitstring (most significant qubit first) to count; the eight most probable outcomes are listed in top_outcomes."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-11-01",
+      "changes": [
+        "First catalog release, wrapping the SDK's existing gate-level QFT with reference comparison, round trip and seeded sampling."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "algorithms"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "4 qubits: milliseconds. 16 qubits (65536 amplitudes, forward and inverse, basis-state reference): ~4 s and under 50 MB on a 2024 laptop. The matrix reference for random input costs O(N^2) and is applied only up to 10 qubits (~0.5 s)."
+  },
+  "install": "pip install \"ketqat[algorithms] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"quantum-fourier-transform@1.0.0\", seed=7, n_qubits=4, input_state=\"basis\", basis_index=1, shots=1000)\nresult = record.result\nprint(json.dumps({\n    \"status\": record.status,\n    \"dimension\": result[\"dimension\"],\n    \"matches_dft_column\": result[\"max_deviation_from_reference\"] < 1e-9,\n    \"round_trip_is_identity\": result[\"round_trip_error\"] < 1e-9,\n    \"output_is_flat\": result[\"max_magnitude_deviation_from_flat\"] < 1e-9,\n    \"output_norm\": round(result[\"output_norm\"], 9),\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "dimension": 16,
+      "matches_dft_column": true,
+      "round_trip_is_identity": true,
+      "output_is_flat": true,
+      "output_norm": 1.0
+    },
+    "verified": {
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (maintainer run in a clean virtualenv, test_catalog_examples.py)",
+      "date": "2026-11-01"
+    }
+  },
+  "sampleResult": {
+    "summary": "4 qubits, basis state |0001>: the gate-level output equals the DFT column to 12 decimals, every output magnitude is 1/4 (flat), the inverse transform returns the input exactly, and 1000 seeded shots spread over all 16 outcomes.",
+    "data": {
+      "n_qubits": 4,
+      "dimension": 16,
+      "inverse": false,
+      "convention": "QFT|j> = (1/sqrt(N)) sum_k exp(+2 pi i j k / N)|k>, little-endian (qubit 0 is the least significant bit); the inverse carries the opposite sign",
+      "input_state": {
+        "kind": "basis",
+        "description": "|1> = |0001>"
+      },
+      "output_norm": 1.0,
+      "reference": "DFT column (1/sqrt(N)) exp(+-2 pi i j k / N), written from the definition",
+      "max_deviation_from_reference": 0.0,
+      "round_trip_error": 0.0,
+      "top_outcomes": [
+        {
+          "integer": 0,
+          "bitstring": "0000",
+          "probability": 0.0625
+        },
+        {
+          "integer": 2,
+          "bitstring": "0010",
+          "probability": 0.0625
+        },
+        {
+          "integer": 4,
+          "bitstring": "0100",
+          "probability": 0.0625
+        },
+        {
+          "integer": 7,
+          "bitstring": "0111",
+          "probability": 0.0625
+        },
+        {
+          "integer": 8,
+          "bitstring": "1000",
+          "probability": 0.0625
+        },
+        {
+          "integer": 10,
+          "bitstring": "1010",
+          "probability": 0.0625
+        },
+        {
+          "integer": 12,
+          "bitstring": "1100",
+          "probability": 0.0625
+        },
+        {
+          "integer": 15,
+          "bitstring": "1111",
+          "probability": 0.0625
+        }
+      ],
+      "shots": 1000,
+      "counts": {
+        "0000": 65,
+        "0001": 59,
+        "0010": 73,
+        "0011": 60,
+        "0100": 65,
+        "0101": 57,
+        "0110": 61,
+        "0111": 62,
+        "1000": 62,
+        "1001": 64,
+        "1010": 67,
+        "1011": 52,
+        "1100": 73,
+        "1101": 59,
+        "1110": 60,
+        "1111": 61
+      },
+      "distinct_outcomes": 16,
+      "execution": "statevector simulation of the gate sequence (pure Python), seeded sampling of the output",
+      "max_magnitude_deviation_from_flat": 0.0,
+      "output_amplitudes": [
+        [
+          0.25,
+          0.0
+        ],
+        [
+          0.230969883128,
+          0.095670858091
+        ],
+        [
+          0.176776695297,
+          0.176776695297
+        ],
+        [
+          0.095670858091,
+          0.230969883128
+        ],
+        [
+          0.0,
+          0.25
+        ],
+        [
+          -0.095670858091,
+          0.230969883128
+        ],
+        [
+          -0.176776695297,
+          0.176776695297
+        ],
+        [
+          -0.230969883128,
+          0.095670858091
+        ],
+        [
+          -0.25,
+          0.0
+        ],
+        [
+          -0.230969883128,
+          -0.095670858091
+        ],
+        [
+          -0.176776695297,
+          -0.176776695297
+        ],
+        [
+          -0.095670858091,
+          -0.230969883128
+        ],
+        [
+          0.0,
+          -0.25
+        ],
+        [
+          0.095670858091,
+          -0.230969883128
+        ],
+        [
+          0.176776695297,
+          -0.176776695297
+        ],
+        [
+          0.230969883128,
+          -0.095670858091
+        ]
+      ]
+    },
+    "generatedWith": {
+      "productVersion": "1.0.0",
+      "seed": 7,
+      "parameters": {
+        "n_qubits": 4,
+        "input_state": "basis",
+        "basis_index": 1,
+        "inverse": false,
+        "shots": 1000
+      },
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
+  },
+  "science": {
+    "assumptions": [
+      "Ideal, noiseless gates: Hadamards and controlled phase rotations are applied exactly; no rotation is truncated (the exact, not the approximate, QFT).",
+      "Little-endian qubit order (qubit 0 is the least significant bit) and the +2 pi i j k / N sign for the forward transform."
+    ],
+    "scope": [
+      "1 to 16 qubits, forward or inverse transform, basis, uniform or seeded random input.",
+      "Deviation from an independent reference, round-trip error, output norm and seeded sampling of the output."
+    ],
+    "limitations": [
+      "A statevector simulation in pure Python: 16 qubits is the ceiling, and it says nothing about running on hardware.",
+      "Gate counts and depth are not reported, and the approximate QFT (dropping small rotations) is not offered.",
+      "For random input above 10 qubits the O(N^2) matrix reference is skipped; only the round-trip error and the norm are checked.",
+      "Sampled counts are reproducible for the same seed with the same NumPy version; NumPy does not guarantee identical random streams across versions.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "An approximate Fourier transform useful in quantum factoring",
+      "authors": [
+        "Don Coppersmith"
+      ],
+      "year": 1994,
+      "venue": "IBM Research Report RC 19642",
+      "url": "https://arxiv.org/abs/quant-ph/0201067"
+    },
+    {
+      "title": "Algorithms for quantum computation: discrete logarithms and factoring",
+      "authors": [
+        "Peter W. Shor"
+      ],
+      "year": 1994,
+      "venue": "Proceedings of the 35th Annual Symposium on Foundations of Computer Science, 124-134",
+      "doi": "10.1109/SFCS.1994.365700"
+    },
+    {
+      "title": "Quantum Computation and Quantum Information: 10th Anniversary Edition",
+      "authors": [
+        "Michael A. Nielsen",
+        "Isaac L. Chuang"
+      ],
+      "year": 2010,
+      "venue": "Cambridge University Press",
+      "doi": "10.1017/CBO9780511976667"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "The quantum Fourier transform circuit is due to Coppersmith (1994) and was introduced as the core of Shor's factoring algorithm (1994); the discrete Fourier transform it implements is classical. KetQat wrote this pure-Python gate-level implementation (fourier.py), the DFT reference it is checked against, the validation tests and this catalog entry. KetQat did not invent the method.",
+    "upstream": [
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "verified",
+  "validation": [
+    {
+      "method": "dft-column-agreement",
+      "description": "For every basis state on 1 to 6 qubits, forward and inverse, the circuit output equals the corresponding column of the DFT matrix written from its definition to 1e-12; the product reports the same agreement for a basis input.",
+      "test": "python/tests/test_catalog_products.py::test_qft_of_every_basis_state_equals_the_dft_column"
+    },
+    {
+      "method": "inverse-round-trip",
+      "description": "QFT followed by its inverse (and the inverse followed by the QFT) returns random states on 1 to 8 qubits to 1e-12, and the product reports a round-trip error below 1e-12 for random input.",
+      "test": "python/tests/test_catalog_products.py::test_qft_followed_by_its_inverse_is_the_identity"
+    },
+    {
+      "method": "analytic-outputs",
+      "description": "The uniform state transforms to |0...0> with every sampled shot landing there, and a basis state transforms to a flat magnitude distribution with |amplitude| = 1/sqrt N to 1e-12.",
+      "test": "python/tests/test_catalog_products.py::test_qft_of_uniform_and_basis_states_match_their_closed_forms"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the algorithms extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
+  "legacy": []
+}

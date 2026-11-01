@@ -23,8 +23,16 @@ from types import ModuleType
 FREE_IMPLEMENTATIONS: dict[str, tuple[str, frozenset[str]]] = {
     "kq.algorithms.grover-search": ("grover", frozenset({"1.0.0"})),
     "kq.algorithms.quantum-phase-estimation": ("phase_estimation", frozenset({"1.0.0"})),
+    "kq.algorithms.qaoa-maxcut": ("qaoa", frozenset({"1.0.0"})),
+    "kq.algorithms.vqe-ground-state": ("vqe", frozenset({"1.0.0"})),
+    "kq.algorithms.quantum-fourier-transform": ("fourier", frozenset({"1.0.0"})),
+    "kq.algorithms.trotter-ising-dynamics": ("trotter", frozenset({"1.0.0"})),
+    "kq.algorithms.quantum-teleportation": ("teleportation", frozenset({"1.0.0"})),
     "kq.qec.surface-code-memory": ("surface_code", frozenset({"1.0.0"})),
+    "kq.qec.steane-code-fault-tolerance": ("steane", frozenset({"1.0.0"})),
+    "kq.qec.repetition-code-memory": ("repetition_code", frozenset({"1.0.0"})),
     "kq.qinfo.state-measures": ("state_measures", frozenset({"1.0.0"})),
+    "kq.qinfo.state-tomography": ("tomography", frozenset({"1.0.0"})),
 }
 
 

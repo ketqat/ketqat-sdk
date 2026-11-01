@@ -1,0 +1,349 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.algorithms.trotter-ising-dynamics",
+  "slug": "trotter-ising-dynamics",
+  "name": "Trotterized Ising dynamics (statevector)",
+  "summary": "Evolve a transverse-field Ising chain with a first- or second-order product formula and measure the error against exact dynamics.",
+  "category": "quantum-algorithms",
+  "subcategory": "hamiltonian-simulation",
+  "tier": "free",
+  "description": "Simulates time evolution under the transverse-field Ising Hamiltonian H = -J sum Z_i Z_{i+1} - h sum X_i on your machine, two ways. The Trotter circuit (first-order Lie-Trotter or second-order Strang/Suzuki splitting) is applied gate by gate to the amplitudes of |0...0>; the exact state exp(-iHt)|0...0> is computed by diagonalising the dense Hamiltonian. The two paths share no code, so their difference is the Trotter error itself, measured rather than bounded. The product reports the fidelity between the two states, the survival probability and the average Z magnetisation on both, and optionally fits the exponent of the infidelity against the step count, which theory fixes at -2 for first order and -4 for second.\n\nFor students checking that product formulas converge at the rate the textbooks state, and for researchers who want an exact, reproducible reference for a small Hamiltonian-simulation circuit.",
+  "useCases": [
+    "Measure the Trotter error of a chosen step count and time against the exact evolution",
+    "Verify the first- and second-order convergence exponents from the fitted log-log slope",
+    "Compare Trotterized and exact observables (survival probability, magnetisation) on a small Ising chain"
+  ],
+  "inputs": [
+    {
+      "name": "qubits",
+      "type": "integer",
+      "description": "Chain length n. The dense 2^n x 2^n Hamiltonian is diagonalised, so requests above 10 qubits are refused with the memory they would need.",
+      "default": 4,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 12
+      }
+    },
+    {
+      "name": "coupling",
+      "type": "number",
+      "description": "J, the Z Z coupling.",
+      "default": 1.0,
+      "constraints": {
+        "minimum": -100,
+        "maximum": 100
+      }
+    },
+    {
+      "name": "field",
+      "type": "number",
+      "description": "h, the transverse field.",
+      "default": 1.0,
+      "constraints": {
+        "minimum": -100,
+        "maximum": 100
+      }
+    },
+    {
+      "name": "time",
+      "type": "number",
+      "description": "Evolution time t.",
+      "default": 1.0,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 100
+      }
+    },
+    {
+      "name": "steps",
+      "type": "integer",
+      "description": "Trotter steps r; each step evolves by t/r.",
+      "default": 10,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 10000
+      }
+    },
+    {
+      "name": "order",
+      "type": "integer",
+      "description": "1 for Lie-Trotter, 2 for the symmetric Strang (Suzuki) splitting.",
+      "default": 1,
+      "constraints": {
+        "enum": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "name": "periodic",
+      "type": "boolean",
+      "description": "Close the chain into a ring (adds the bond between the last and first qubit; a 2-site ring is left open).",
+      "default": false
+    },
+    {
+      "name": "fit_scaling",
+      "type": "boolean",
+      "description": "Also evolve at each of scaling_step_counts and fit the log-log slope of infidelity against steps.",
+      "default": true
+    },
+    {
+      "name": "scaling_step_counts",
+      "type": "integer[]",
+      "description": "Step counts for the scaling fit.",
+      "default": [
+        4,
+        8,
+        16,
+        32,
+        64
+      ],
+      "constraints": {
+        "minItems": 2,
+        "uniqueItems": true,
+        "itemMinimum": 1,
+        "itemMaximum": 10000
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "fidelity",
+      "type": "number",
+      "description": "|<exact|trotter>|^2 between the Trotterized and the exact state at time t; infidelity is 1 minus it."
+    },
+    {
+      "name": "state_distance",
+      "type": "number",
+      "description": "Norm of the difference between the two states, up to a global phase."
+    },
+    {
+      "name": "observables",
+      "type": "object",
+      "description": "survival_probability (|<0...0|psi(t)>|^2) and average_magnetization_z ((1/n) sum <Z_i>), each on the Trotter and the exact state."
+    },
+    {
+      "name": "scaling",
+      "type": "object",
+      "description": "When fit_scaling: step_counts, infidelities, the fitted slope, expected_slope (-2 or -4) and the intercept; null with scaling_note when the terms commute and there is no error to fit."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-11-01",
+      "changes": [
+        "First catalog release, wrapping the SDK's existing Trotter-Ising simulation with observables and a resource ceiling."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "algorithms"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "4 qubits with the scaling fit: ~0.05 s. 8 qubits: ~0.3 s. 10 qubits: ~10 s (six eigendecompositions of a 1024x1024 matrix, 16 MiB) on a 2024 laptop. 11 and 12 qubits are refused: the dense Hamiltonian would need 64-256 MiB and about 1 GB of workspace to diagonalise."
+  },
+  "install": "pip install \"ketqat[algorithms] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"trotter-ising-dynamics@1.0.0\", seed=7, qubits=4, time=1.0, steps=10, order=1)\nresult = record.result\nprint(json.dumps({\n    \"status\": record.status,\n    \"fidelity\": round(result[\"fidelity\"], 6),\n    \"survival_probability_exact\": round(result[\"observables\"][\"survival_probability\"][\"exact\"], 6),\n    \"fitted_slope\": round(result[\"scaling\"][\"slope\"], 2),\n    \"expected_slope\": result[\"scaling\"][\"expected_slope\"],\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "fidelity": 0.995078,
+      "survival_probability_exact": 0.210729,
+      "fitted_slope": -2.03,
+      "expected_slope": -2.0
+    },
+    "verified": {
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (maintainer run in a clean virtualenv, test_catalog_examples.py)",
+      "date": "2026-11-01"
+    }
+  },
+  "sampleResult": {
+    "summary": "4-qubit chain, J = h = 1, t = 1, 10 first-order steps: fidelity 0.995078 with the exact state (survival probability 0.2088 Trotter vs 0.2107 exact); the infidelity over 4..64 steps fits a slope of -2.03 against the theoretical -2.",
+    "data": {
+      "model": "H = -J sum_<i,j> Z_i Z_j - h sum_i X_i",
+      "qubits": 4,
+      "coupling": 1.0,
+      "field": 1.0,
+      "periodic": false,
+      "time": 1.0,
+      "steps": 10,
+      "order": 1,
+      "splitting": "first-order Lie-Trotter: exp(-iH_ZZ dt) exp(-iH_X dt) per step",
+      "initial_state": "|0...0> (all spins up along Z)",
+      "fidelity": 0.995078196614,
+      "infidelity": 0.004921803386,
+      "state_distance": 0.070198820305,
+      "observables": {
+        "survival_probability": {
+          "trotter": 0.208798179005,
+          "exact": 0.21072880398
+        },
+        "average_magnetization_z": {
+          "trotter": 0.132944995786,
+          "exact": 0.135077479856
+        }
+      },
+      "scaling": {
+        "step_counts": [
+          4,
+          8,
+          16,
+          32,
+          64
+        ],
+        "infidelities": [
+          0.032899952131,
+          0.007752494869,
+          0.001904256842,
+          0.000473393413,
+          0.000118112715
+        ],
+        "slope": -2.02771039075,
+        "expected_slope": -2.0,
+        "intercept": -0.625421648931,
+        "note": "Infidelity ~ steps^-2.03. Theory gives amplitude error O(t^2/steps^1), and infidelity is its square, so the expected slope is -2."
+      },
+      "scaling_note": null,
+      "reference": "exp(-iHt) by eigendecomposition, exact up to floating point",
+      "execution": "statevector simulation of the Trotter circuit; exact reference by dense eigendecomposition"
+    },
+    "generatedWith": {
+      "productVersion": "1.0.0",
+      "seed": 7,
+      "parameters": {
+        "qubits": 4,
+        "coupling": 1.0,
+        "field": 1.0,
+        "time": 1.0,
+        "steps": 10,
+        "order": 1,
+        "periodic": false,
+        "fit_scaling": true,
+        "scaling_step_counts": [
+          4,
+          8,
+          16,
+          32,
+          64
+        ]
+      },
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
+  },
+  "science": {
+    "assumptions": [
+      "Ideal, noiseless gates: exp(i J dt Z Z) and exp(i h dt X) are applied exactly to the amplitudes; only the splitting of H into its two non-commuting parts is approximate.",
+      "The initial state is |0...0> (all spins up along Z); open boundary unless periodic=true.",
+      "The exact reference is exp(-iHt) by eigendecomposition of the dense Hamiltonian, exact up to floating point."
+    ],
+    "scope": [
+      "Transverse-field Ising chains or rings of 1 to 10 qubits, any real J, h and t in the declared ranges, 1 to 10000 steps, first or second order.",
+      "Fidelity, state distance, two observables on both states, and the fitted convergence exponent."
+    ],
+    "limitations": [
+      "One Hamiltonian family only; general Pauli Hamiltonians and higher-order (Suzuki 4+) formulas are not offered.",
+      "Dense diagonalisation caps the product at 10 qubits; it says nothing about hardware cost, gate counts or noise.",
+      "The fitted slope is reliable only in the asymptotic regime: with very few steps or very long times the infidelity saturates and the slope departs from -2 or -4.",
+      "When J or h is zero the terms commute, the splitting is exact and no scaling fit is possible; the result says so instead of fitting zero.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "On the product of semi-groups of operators",
+      "authors": [
+        "H. F. Trotter"
+      ],
+      "year": 1959,
+      "venue": "Proceedings of the American Mathematical Society 10, 545-551"
+    },
+    {
+      "title": "Generalized Trotter's formula and systematic approximants of exponential operators and inner derivations with applications to many-body problems",
+      "authors": [
+        "Masuo Suzuki"
+      ],
+      "year": 1976,
+      "venue": "Communications in Mathematical Physics 51, 183-190"
+    },
+    {
+      "title": "Universal Quantum Simulators",
+      "authors": [
+        "Seth Lloyd"
+      ],
+      "year": 1996,
+      "venue": "Science 273, 1073-1078",
+      "doi": "10.1126/science.273.5278.1073"
+    },
+    {
+      "title": "Theory of Trotter Error with Commutator Scaling",
+      "authors": [
+        "Andrew M. Childs",
+        "Yuan Su",
+        "Minh C. Tran",
+        "Nathan Wiebe",
+        "Shuchen Zhu"
+      ],
+      "year": 2021,
+      "venue": "Physical Review X 11, 011020",
+      "doi": "10.1103/PhysRevX.11.011020",
+      "url": "https://arxiv.org/abs/1912.08854"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "The product formula is due to Trotter (1959) and its symmetric higher-order generalisation to Suzuki (1976); their use for simulating quantum dynamics on a quantum computer was proposed by Lloyd (1996), and the error theory is reviewed by Childs, Su, Tran, Wiebe and Zhu (2021). KetQat wrote this NumPy implementation (trotter.py), the exact eigendecomposition reference, the scaling fit, the validation tests and this catalog entry. KetQat did not invent the method.",
+    "upstream": [
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "verified",
+  "validation": [
+    {
+      "method": "convergence-exponent",
+      "description": "Through the product, the fitted log-log slope of infidelity against step count on 4 qubits is within 0.15 of -2 for first order and -4 for second order, the exponents product-formula theory predicts, and second order has lower infidelity than first at equal step count.",
+      "test": "python/tests/test_catalog_products.py::test_trotter_error_scales_with_the_expected_order"
+    },
+    {
+      "method": "analytic-dynamics",
+      "description": "Without coupling the chain is n independent spins and the survival probability is cos(ht)^(2n) in closed form; without a field |0...0> is an eigenstate and the survival probability is 1. The product's Trotter and exact values match these to 1e-12, and the fidelity between them is 1.",
+      "test": "python/tests/test_catalog_products.py::test_trotter_matches_closed_forms_when_the_terms_commute"
+    },
+    {
+      "method": "resource-guard",
+      "description": "More than 10 qubits is refused with the memory the dense Hamiltonian would need, and a step budget estimated above the time ceiling is refused with the estimate.",
+      "test": "python/tests/test_catalog_products.py::test_trotter_refuses_large_chains_with_a_memory_estimate"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the algorithms extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
+  "legacy": []
+}

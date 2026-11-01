@@ -1,7 +1,7 @@
 {
   "schema": "ketqat.catalog.index/v1",
   "productSchema": "ketqat.catalog.product/v1",
-  "productSchemaSha256": "ddfe462adc11c8c4ad538ae2f136ad76dad5be5cfd9fb58ae51a39bbcbf64c8f",
+  "productSchemaSha256": "88f142a4403ea99c47f673c624e12d136891ea412dc09ae10a0b339eef827d1b",
   "products": [
     {
       "id": "kq.algorithms.grover-search",
@@ -17,6 +17,32 @@
       "sha256": "681f5f178e5b20a82b12e9597b249ac601a916fa0a1a1112484c738ebacd289f"
     },
     {
+      "id": "kq.algorithms.qaoa-maxcut",
+      "slug": "qaoa-maxcut",
+      "name": "QAOA for MaxCut (statevector)",
+      "category": "quantum-algorithms",
+      "subcategory": "optimization",
+      "tier": "free",
+      "executionKind": "simulation",
+      "implementationStatus": "verified",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.algorithms.qaoa-maxcut.json",
+      "sha256": "54318e6a7989b04d5e83cd7234723155f13dbc3977affd275337bcae1e87ee0b"
+    },
+    {
+      "id": "kq.algorithms.quantum-fourier-transform",
+      "slug": "quantum-fourier-transform",
+      "name": "Quantum Fourier transform (statevector)",
+      "category": "quantum-algorithms",
+      "subcategory": "transforms",
+      "tier": "free",
+      "executionKind": "simulation",
+      "implementationStatus": "verified",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.algorithms.quantum-fourier-transform.json",
+      "sha256": "6ba7ef3233f2d8339a2b2bbe354c831e58b361733addab33de15d13b15d2681c"
+    },
+    {
       "id": "kq.algorithms.quantum-phase-estimation",
       "slug": "quantum-phase-estimation",
       "name": "Quantum phase estimation (statevector)",
@@ -28,6 +54,71 @@
       "currentVersion": "1.0.0",
       "path": "products/kq.algorithms.quantum-phase-estimation.json",
       "sha256": "2b2f56a6f473b7756fa9ed2afc43e199094d82fe7b200963efd35485a25d29c0"
+    },
+    {
+      "id": "kq.algorithms.quantum-teleportation",
+      "slug": "quantum-teleportation",
+      "name": "Quantum teleportation (statevector)",
+      "category": "quantum-algorithms",
+      "subcategory": "communication",
+      "tier": "free",
+      "executionKind": "simulation",
+      "implementationStatus": "verified",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.algorithms.quantum-teleportation.json",
+      "sha256": "829ca7a80edf6f3490ca440878d0573006c1f1134236657578ac2d3a6ab8796d"
+    },
+    {
+      "id": "kq.algorithms.trotter-ising-dynamics",
+      "slug": "trotter-ising-dynamics",
+      "name": "Trotterized Ising dynamics (statevector)",
+      "category": "quantum-algorithms",
+      "subcategory": "hamiltonian-simulation",
+      "tier": "free",
+      "executionKind": "simulation",
+      "implementationStatus": "verified",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.algorithms.trotter-ising-dynamics.json",
+      "sha256": "f40c2117710c36252ca61fc0d3f8dd1657d08ef6bd6ab21dff4ddc9fef144225"
+    },
+    {
+      "id": "kq.algorithms.vqe-ground-state",
+      "slug": "vqe-ground-state",
+      "name": "VQE ground-state energy (statevector)",
+      "category": "quantum-algorithms",
+      "subcategory": "variational",
+      "tier": "free",
+      "executionKind": "simulation",
+      "implementationStatus": "verified",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.algorithms.vqe-ground-state.json",
+      "sha256": "8908f0768df270a60559bbd811432e92216cffda1998fedff8a569915efdfac3"
+    },
+    {
+      "id": "kq.qec.repetition-code-memory",
+      "slug": "repetition-code",
+      "name": "Repetition code memory (bit-flip)",
+      "category": "quantum-error-correction",
+      "subcategory": "memory-experiments",
+      "tier": "free",
+      "executionKind": "simulation",
+      "implementationStatus": "verified",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.qec.repetition-code-memory.json",
+      "sha256": "6377d8aee41a9a7b8eee23b92cc326ac04f22994d265383e43c0a24526186912"
+    },
+    {
+      "id": "kq.qec.steane-code-fault-tolerance",
+      "slug": "steane-code",
+      "name": "Steane [[7,1,3]] code: fault-tolerance check",
+      "category": "quantum-error-correction",
+      "subcategory": "stabilizer-codes",
+      "tier": "free",
+      "executionKind": "analysis",
+      "implementationStatus": "verified",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.qec.steane-code-fault-tolerance.json",
+      "sha256": "4ba1c2257aaa28bbede35b6f12852a27a5b670e5cbf424be0d44cee974a4af95"
     },
     {
       "id": "kq.qec.surface-code-memory",
@@ -43,6 +134,19 @@
       "sha256": "f6253762c5360af48eb167b3b814bf5d3de7f4ef060c385fafa7a60e05282f1d"
     },
     {
+      "id": "kq.qec.surface-code-threshold-study",
+      "slug": "surface-code-threshold-study",
+      "name": "Surface-code threshold study (Stim + PyMatching)",
+      "category": "quantum-error-correction",
+      "subcategory": "threshold-studies",
+      "tier": "pro",
+      "executionKind": "simulation",
+      "implementationStatus": "implemented",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.qec.surface-code-threshold-study.json",
+      "sha256": "014f13da37be64921c35fd663040f78cbaea9aa48c0e228eb0cd8d3030161626"
+    },
+    {
       "id": "kq.qinfo.channel-analysis",
       "slug": "quantum-channel-analysis",
       "name": "Quantum channel analysis",
@@ -56,6 +160,32 @@
       "sha256": "4362710133d2689783b7192b672ea8b3b4fe50c32c6a23e2751c43cd57e45b2b"
     },
     {
+      "id": "kq.qinfo.quantum-volume-certification",
+      "slug": "quantum-volume-certification",
+      "name": "Quantum volume certification",
+      "category": "quantum-information",
+      "subcategory": "benchmarking",
+      "tier": "pro",
+      "executionKind": "simulation",
+      "implementationStatus": "implemented",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.qinfo.quantum-volume-certification.json",
+      "sha256": "a9fa82dd09fee76c302d58915e1c9decfcf4b2a35b8fbb06596bca21d0f7b60f"
+    },
+    {
+      "id": "kq.qinfo.randomized-benchmarking-suite",
+      "slug": "randomized-benchmarking-suite",
+      "name": "Randomized benchmarking suite (Clifford RB)",
+      "category": "quantum-information",
+      "subcategory": "benchmarking",
+      "tier": "pro",
+      "executionKind": "simulation",
+      "implementationStatus": "implemented",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.qinfo.randomized-benchmarking-suite.json",
+      "sha256": "097dd5622f8e07395120129c45313511bce6e2a201d00d3d665175e0c0ed6196"
+    },
+    {
       "id": "kq.qinfo.state-measures",
       "slug": "quantum-state-measures",
       "name": "Quantum state measures",
@@ -67,6 +197,19 @@
       "currentVersion": "1.0.0",
       "path": "products/kq.qinfo.state-measures.json",
       "sha256": "e1df6f5e7ebdd001f8e5b3fe08d5ef3c7e8e3948c1d093dc1249b73b77d86530"
+    },
+    {
+      "id": "kq.qinfo.state-tomography",
+      "slug": "quantum-state-tomography",
+      "name": "Quantum state tomography",
+      "category": "quantum-information",
+      "subcategory": "tomography",
+      "tier": "free",
+      "executionKind": "simulation",
+      "implementationStatus": "verified",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.qinfo.state-tomography.json",
+      "sha256": "c025d269a293c98303f83f7c5baa807004a5ebe0a3143511cf93b1c5449ac1ee"
     }
   ]
 }
