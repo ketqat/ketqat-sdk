@@ -267,7 +267,7 @@ export const AssessmentSpecSchema = z.object({
     schema_version: z.string().min(1).default(INTELLIGENCE_SCHEMA_VERSION),
     workload: WorkloadSpecSchema,
     classical_baseline: ClassicalBaselineSchema.nullable().default(null),
-    scenarios: ScenarioSpecSchema.default({}),
+    scenarios: ScenarioSpecSchema.prefault({}),
     sources: z.array(EvidenceSourceSchema).default([]),
 });
 /** Turn a document into the three inputs `buildBundle` takes. */

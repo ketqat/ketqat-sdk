@@ -5,8 +5,8 @@ const JobIdInput = z.object({
     job_id: z.string().min(1).describe("Id returned by submit_execution_job."),
 });
 const JobOutput = z.object({
-    job: z.record(z.unknown()).optional(),
-    events: z.array(z.record(z.unknown())).optional(),
+    job: z.record(z.string(), z.unknown()).optional(),
+    events: z.array(z.record(z.string(), z.unknown())).optional(),
     error: z.string().optional(),
     message: z.string().optional(),
 });
@@ -36,7 +36,7 @@ export const submitExecutionJobTool = {
     inputSchema: SubmitInput,
     outputSchema: JobOutput.extend({
         confirmation_required: z.boolean().optional(),
-        summary: z.record(z.unknown()).optional(),
+        summary: z.record(z.string(), z.unknown()).optional(),
     }),
     readOnly: false,
     requiresConfirmation: true,

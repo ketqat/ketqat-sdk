@@ -26,7 +26,7 @@ const BaseExperimentManifestSchema = z.object({
   domain: DomainSchema,
   benchmark: BenchmarkReferenceSchema,
   experiment: ExperimentDescriptionSchema,
-  source: SourceSchema.default({}),
+  source: SourceSchema.prefault({}),
   sampling: SamplingSchema,
   metrics: z.array(z.string().min(1)).min(1),
   environment: EnvironmentSchema.optional(),
@@ -129,7 +129,7 @@ export const QecExperimentManifestSchema = BaseExperimentManifestSchema.extend({
     decoder: z.object({
       name: z.string().min(1),
       version: z.string().optional(),
-      options: z.record(z.unknown()).optional(),
+      options: z.record(z.string(), z.unknown()).optional(),
     }),
     /**
      * Benchmark several decoders against one identical set of syndrome samples
@@ -149,7 +149,7 @@ export const QecExperimentManifestSchema = BaseExperimentManifestSchema.extend({
         z.object({
           name: z.string().min(1),
           version: z.string().optional(),
-          options: z.record(z.unknown()).optional(),
+          options: z.record(z.string(), z.unknown()).optional(),
         }),
       )
       .min(1)

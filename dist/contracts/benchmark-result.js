@@ -7,7 +7,7 @@ const BaseMetricPointSchema = z.object({
     runtime_seconds: z.number().nonnegative().optional(),
     memory_bytes: z.number().int().nonnegative().optional(),
     seed: z.number().int().nonnegative().optional(),
-    metadata: z.record(z.unknown()).default({}),
+    metadata: z.record(z.string(), z.unknown()).default({}),
 });
 export const QecMetricPointSchema = BaseMetricPointSchema.extend({
     code_distance: z.number().int().positive().optional(),
@@ -43,9 +43,9 @@ const BaseBenchmarkResultSchema = z.object({
     sdk_version: z.string().optional(),
     commit_sha: z.string().optional(),
     source_repository_url: z.string().url().optional(),
-    configuration: z.record(z.unknown()).default({}),
-    environment: EnvironmentSchema.default({ packages: {}, hardware: {} }),
-    summary_metrics: z.record(z.unknown()).default({}),
+    configuration: z.record(z.string(), z.unknown()).default({}),
+    environment: EnvironmentSchema.prefault({ packages: {}, hardware: {} }),
+    summary_metrics: z.record(z.string(), z.unknown()).default({}),
     reproducibility_hash: z.string().min(1),
     /**
      * Which hashing rules produced `reproducibility_hash`.

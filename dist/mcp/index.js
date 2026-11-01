@@ -100,8 +100,8 @@ export const simulateCircuitTool = {
     inputSchema: SimulateInput,
     outputSchema: z.object({
         qubit_count: z.number(),
-        counts: z.record(z.number()).optional(),
-        probabilities: z.record(z.number()).optional(),
+        counts: z.record(z.string(), z.number()).optional(),
+        probabilities: z.record(z.string(), z.number()).optional(),
         statevector: z.object({ real: z.array(z.number()), imaginary: z.array(z.number()) }).optional(),
         shots: z.number(),
         seed: z.number().nullable(),
@@ -137,9 +137,9 @@ export const estimateResourcesTool = {
     inputSchema: z.object({ qasm: z.string().min(1), hardware_profile: z.unknown().optional() }),
     outputSchema: z.object({
         schema_version: z.string(),
-        nisq: z.record(z.unknown()),
-        fault_tolerant: z.record(z.unknown()),
-        assumptions: z.record(z.unknown()),
+        nisq: z.record(z.string(), z.unknown()),
+        fault_tolerant: z.record(z.string(), z.unknown()),
+        assumptions: z.record(z.string(), z.unknown()),
     }),
     readOnly: true,
     handler: (input) => {
@@ -187,8 +187,8 @@ export const optimizeWithZxTool = {
     inputSchema: CircuitInput,
     outputSchema: z.object({
         qasm3: z.string(),
-        before: z.record(z.number()),
-        after: z.record(z.number()),
+        before: z.record(z.string(), z.number()),
+        after: z.record(z.string(), z.number()),
         rewrites: z.array(z.object({ rewrite: z.string(), count: z.number(), detail: z.string() })),
         equivalence: EquivalenceOutput,
     }),

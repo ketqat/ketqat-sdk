@@ -19,169 +19,45 @@ import { z } from "zod";
  * "1,200 s".
  */
 export declare const SolutionQualitySchema: z.ZodObject<{
-    /** What is being measured: "approximation ratio", "residual", "rank correlation". */
     metric: z.ZodString;
     value: z.ZodNumber;
     unit: z.ZodOptional<z.ZodString>;
     lower_is_better: z.ZodBoolean;
-}, "strip", z.ZodTypeAny, {
-    metric: string;
-    value: number;
-    unit?: string | undefined;
-    lower_is_better: boolean;
-}, {
-    metric: string;
-    value: number;
-    unit?: string | undefined;
-    lower_is_better: boolean;
-}>;
+}, z.core.$strip>;
 export type SolutionQuality = z.infer<typeof SolutionQualitySchema>;
 export declare const MonetaryAmountSchema: z.ZodObject<{
     amount: z.ZodNumber;
-    /** ISO 4217. Held separately so two baselines in different currencies are not silently compared. */
     currency: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    amount: number;
-    currency: string;
-}, {
-    amount: number;
-    currency: string;
-}>;
+}, z.core.$strip>;
 export type MonetaryAmount = z.infer<typeof MonetaryAmountSchema>;
-export declare const ClassicalBaselineSchema: z.ZodEffects<z.ZodObject<{
+export declare const ClassicalBaselineSchema: z.ZodObject<{
     schema_version: z.ZodString;
-    /**
-     * How this baseline was obtained. `UNKNOWN` is representable so a user can
-     * record that they do not know, which is different from not answering.
-     */
-    evidence: z.ZodEnum<["MEASURED", "USER_PROVIDED", "DERIVED", "MODELLED", "UNKNOWN"]>;
-    /** Seconds. Named without a `_seconds` suffix because the unit lives in the field docs, and because
-     * `runtime_seconds` is an excluded key in the reproducibility canonicalizer -- a baseline runtime is
-     * an *input* to the comparison and must change the hash when it changes. */
+    evidence: z.ZodEnum<{
+        DERIVED: "DERIVED";
+        MEASURED: "MEASURED";
+        MODELLED: "MODELLED";
+        UNKNOWN: "UNKNOWN";
+        USER_PROVIDED: "USER_PROVIDED";
+    }>;
     runtime: z.ZodNullable<z.ZodNumber>;
     monetary_cost: z.ZodNullable<z.ZodObject<{
         amount: z.ZodNumber;
-        /** ISO 4217. Held separately so two baselines in different currencies are not silently compared. */
         currency: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        amount: number;
-        currency: string;
-    }, {
-        amount: number;
-        currency: string;
-    }>>;
-    /** "AWS c7i.48xlarge, 192 vCPU" or "in-house cluster, 40 nodes". */
+    }, z.core.$strip>>;
     compute_environment: z.ZodString;
     hardware_description: z.ZodString;
     solution_quality: z.ZodNullable<z.ZodObject<{
-        /** What is being measured: "approximation ratio", "residual", "rank correlation". */
         metric: z.ZodString;
         value: z.ZodNumber;
         unit: z.ZodOptional<z.ZodString>;
         lower_is_better: z.ZodBoolean;
-    }, "strip", z.ZodTypeAny, {
-        metric: string;
-        value: number;
-        unit?: string | undefined;
-        lower_is_better: boolean;
-    }, {
-        metric: string;
-        value: number;
-        unit?: string | undefined;
-        lower_is_better: boolean;
-    }>>;
-    /** What size of problem this baseline is for. A runtime without one is not comparable to anything. */
+    }, z.core.$strip>>;
     workload_size: z.ZodString;
-    /** ISO date. Not excluded from the hash: when a baseline was measured is part of what it claims. */
     measured_on: z.ZodNullable<z.ZodString>;
     evidence_url: z.ZodNullable<z.ZodString>;
     evidence_note: z.ZodNullable<z.ZodString>;
-    limitations: z.ZodArray<z.ZodString, "many">;
-}, "strip", z.ZodTypeAny, {
-    schema_version: string;
-    evidence: "DERIVED" | "MEASURED" | "MODELLED" | "UNKNOWN" | "USER_PROVIDED";
-    runtime: number | null;
-    monetary_cost: {
-        amount: number;
-        currency: string;
-    } | null;
-    compute_environment: string;
-    hardware_description: string;
-    solution_quality: {
-        metric: string;
-        value: number;
-        unit?: string | undefined;
-        lower_is_better: boolean;
-    } | null;
-    workload_size: string;
-    measured_on: string | null;
-    evidence_url: string | null;
-    evidence_note: string | null;
-    limitations: string[];
-}, {
-    schema_version: string;
-    evidence: "DERIVED" | "MEASURED" | "MODELLED" | "UNKNOWN" | "USER_PROVIDED";
-    runtime: number | null;
-    monetary_cost: {
-        amount: number;
-        currency: string;
-    } | null;
-    compute_environment: string;
-    hardware_description: string;
-    solution_quality: {
-        metric: string;
-        value: number;
-        unit?: string | undefined;
-        lower_is_better: boolean;
-    } | null;
-    workload_size: string;
-    measured_on: string | null;
-    evidence_url: string | null;
-    evidence_note: string | null;
-    limitations: string[];
-}>, {
-    schema_version: string;
-    evidence: "DERIVED" | "MEASURED" | "MODELLED" | "UNKNOWN" | "USER_PROVIDED";
-    runtime: number | null;
-    monetary_cost: {
-        amount: number;
-        currency: string;
-    } | null;
-    compute_environment: string;
-    hardware_description: string;
-    solution_quality: {
-        metric: string;
-        value: number;
-        unit?: string | undefined;
-        lower_is_better: boolean;
-    } | null;
-    workload_size: string;
-    measured_on: string | null;
-    evidence_url: string | null;
-    evidence_note: string | null;
-    limitations: string[];
-}, {
-    schema_version: string;
-    evidence: "DERIVED" | "MEASURED" | "MODELLED" | "UNKNOWN" | "USER_PROVIDED";
-    runtime: number | null;
-    monetary_cost: {
-        amount: number;
-        currency: string;
-    } | null;
-    compute_environment: string;
-    hardware_description: string;
-    solution_quality: {
-        metric: string;
-        value: number;
-        unit?: string | undefined;
-        lower_is_better: boolean;
-    } | null;
-    workload_size: string;
-    measured_on: string | null;
-    evidence_url: string | null;
-    evidence_note: string | null;
-    limitations: string[];
-}>;
+    limitations: z.ZodArray<z.ZodString>;
+}, z.core.$strip>;
 export type ClassicalBaseline = z.infer<typeof ClassicalBaselineSchema>;
 /** Whether a runtime comparison is supportable. */
 export declare function supportsRuntimeComparison(baseline: ClassicalBaseline | null): boolean;

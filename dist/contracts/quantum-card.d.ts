@@ -14,423 +14,131 @@ import { z } from "zod";
  * 2. Cards are versioned with their artifact and are never edited retroactively
  *    to change a claim. A corrected claim produces a new version.
  */
-export declare const QubitRangeSchema: z.ZodEffects<z.ZodObject<{
+export declare const QubitRangeSchema: z.ZodObject<{
     minimum: z.ZodNumber;
     maximum: z.ZodOptional<z.ZodNumber>;
-}, "strip", z.ZodTypeAny, {
-    minimum: number;
-    maximum?: number | undefined;
-}, {
-    minimum: number;
-    maximum?: number | undefined;
-}>, {
-    minimum: number;
-    maximum?: number | undefined;
-}, {
-    minimum: number;
-    maximum?: number | undefined;
-}>;
+}, z.core.$strip>;
 export type QubitRange = z.infer<typeof QubitRangeSchema>;
 export declare const CardAssumptionsSchema: z.ZodObject<{
-    resource: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-    noise: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-    hardware: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-    other: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-}, "strip", z.ZodTypeAny, {
-    resource: string[];
-    noise: string[];
-    hardware: string[];
-    other: string[];
-}, {
-    resource?: string[] | undefined;
-    noise?: string[] | undefined;
-    hardware?: string[] | undefined;
-    other?: string[] | undefined;
-}>;
+    resource: z.ZodDefault<z.ZodArray<z.ZodString>>;
+    noise: z.ZodDefault<z.ZodArray<z.ZodString>>;
+    hardware: z.ZodDefault<z.ZodArray<z.ZodString>>;
+    other: z.ZodDefault<z.ZodArray<z.ZodString>>;
+}, z.core.$strip>;
 export type CardAssumptions = z.infer<typeof CardAssumptionsSchema>;
 export declare const CardProvenanceSchema: z.ZodObject<{
     source_repository_url: z.ZodOptional<z.ZodString>;
-    /** Immutable commit. A branch name is not provenance. */
     commit_sha: z.ZodOptional<z.ZodString>;
     license: z.ZodString;
-    authors: z.ZodArray<z.ZodString, "many">;
-    contributors: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    authors: z.ZodArray<z.ZodString>;
+    contributors: z.ZodDefault<z.ZodArray<z.ZodString>>;
     citation: z.ZodOptional<z.ZodObject<{
         title: z.ZodString;
-        authors: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+        authors: z.ZodDefault<z.ZodArray<z.ZodString>>;
         year: z.ZodOptional<z.ZodNumber>;
         doi: z.ZodOptional<z.ZodString>;
         url: z.ZodOptional<z.ZodString>;
         bibtex: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        title: string;
-        authors: string[];
-        year?: number | undefined;
-        doi?: string | undefined;
-        url?: string | undefined;
-        bibtex?: string | undefined;
-    }, {
-        title: string;
-        authors?: string[] | undefined;
-        year?: number | undefined;
-        doi?: string | undefined;
-        url?: string | undefined;
-        bibtex?: string | undefined;
-    }>>;
-    reference_papers: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-}, "strip", z.ZodTypeAny, {
-    source_repository_url?: string | undefined;
-    commit_sha?: string | undefined;
-    license: string;
-    authors: string[];
-    contributors: string[];
-    citation?: {
-        title: string;
-        authors: string[];
-        year?: number | undefined;
-        doi?: string | undefined;
-        url?: string | undefined;
-        bibtex?: string | undefined;
-    } | undefined;
-    reference_papers: string[];
-}, {
-    source_repository_url?: string | undefined;
-    commit_sha?: string | undefined;
-    license: string;
-    authors: string[];
-    contributors?: string[] | undefined;
-    citation?: {
-        title: string;
-        authors?: string[] | undefined;
-        year?: number | undefined;
-        doi?: string | undefined;
-        url?: string | undefined;
-        bibtex?: string | undefined;
-    } | undefined;
-    reference_papers?: string[] | undefined;
-}>;
+    }, z.core.$strip>>;
+    reference_papers: z.ZodDefault<z.ZodArray<z.ZodString>>;
+}, z.core.$strip>;
 export type CardProvenance = z.infer<typeof CardProvenanceSchema>;
 export declare const CardInterfaceSchema: z.ZodObject<{
-    supported_frameworks: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-    supported_input_formats: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-    supported_output_formats: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-}, "strip", z.ZodTypeAny, {
-    supported_frameworks: string[];
-    supported_input_formats: string[];
-    supported_output_formats: string[];
-}, {
-    supported_frameworks?: string[] | undefined;
-    supported_input_formats?: string[] | undefined;
-    supported_output_formats?: string[] | undefined;
-}>;
+    supported_frameworks: z.ZodDefault<z.ZodArray<z.ZodString>>;
+    supported_input_formats: z.ZodDefault<z.ZodArray<z.ZodString>>;
+    supported_output_formats: z.ZodDefault<z.ZodArray<z.ZodString>>;
+}, z.core.$strip>;
 export type CardInterface = z.infer<typeof CardInterfaceSchema>;
 export declare const CardApplicabilitySchema: z.ZodObject<{
-    qubit_range: z.ZodOptional<z.ZodEffects<z.ZodObject<{
+    qubit_range: z.ZodOptional<z.ZodObject<{
         minimum: z.ZodNumber;
         maximum: z.ZodOptional<z.ZodNumber>;
-    }, "strip", z.ZodTypeAny, {
-        minimum: number;
-        maximum?: number | undefined;
-    }, {
-        minimum: number;
-        maximum?: number | undefined;
-    }>, {
-        minimum: number;
-        maximum?: number | undefined;
-    }, {
-        minimum: number;
-        maximum?: number | undefined;
-    }>>;
-    gate_set: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-    classical_requirements: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-}, "strip", z.ZodTypeAny, {
-    qubit_range?: {
-        minimum: number;
-        maximum?: number | undefined;
-    } | undefined;
-    gate_set: string[];
-    classical_requirements: string[];
-}, {
-    qubit_range?: {
-        minimum: number;
-        maximum?: number | undefined;
-    } | undefined;
-    gate_set?: string[] | undefined;
-    classical_requirements?: string[] | undefined;
-}>;
+    }, z.core.$strip>>;
+    gate_set: z.ZodDefault<z.ZodArray<z.ZodString>>;
+    classical_requirements: z.ZodDefault<z.ZodArray<z.ZodString>>;
+}, z.core.$strip>;
 export type CardApplicability = z.infer<typeof CardApplicabilitySchema>;
 export declare const CardExampleSchema: z.ZodObject<{
     description: z.ZodString;
     command: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    description: string;
-    command: string;
-}, {
-    description: string;
-    command: string;
-}>;
+}, z.core.$strip>;
 export type CardExample = z.infer<typeof CardExampleSchema>;
 export declare const QuantumCardSchema: z.ZodObject<{
     schema_version: z.ZodString;
     name: z.ZodString;
     slug: z.ZodString;
     version: z.ZodString;
-    artifact_type: z.ZodEnum<["ALGORITHM", "CIRCUIT", "QEC_CODE", "DECODER", "NOISE_MODEL", "HARDWARE_PROFILE", "BENCHMARK_SUITE", "DATASET", "MITIGATION_PIPELINE", "RESOURCE_MODEL", "COMPILER_OR_TRANSPILER", "EXPERIMENT_TEMPLATE"]>;
+    artifact_type: z.ZodEnum<{
+        ALGORITHM: "ALGORITHM";
+        BENCHMARK_SUITE: "BENCHMARK_SUITE";
+        CIRCUIT: "CIRCUIT";
+        COMPILER_OR_TRANSPILER: "COMPILER_OR_TRANSPILER";
+        DATASET: "DATASET";
+        DECODER: "DECODER";
+        EXPERIMENT_TEMPLATE: "EXPERIMENT_TEMPLATE";
+        HARDWARE_PROFILE: "HARDWARE_PROFILE";
+        MITIGATION_PIPELINE: "MITIGATION_PIPELINE";
+        NOISE_MODEL: "NOISE_MODEL";
+        QEC_CODE: "QEC_CODE";
+        RESOURCE_MODEL: "RESOURCE_MODEL";
+    }>;
     description: z.ZodString;
     problem_definition: z.ZodString;
     category: z.ZodOptional<z.ZodString>;
     provenance: z.ZodObject<{
         source_repository_url: z.ZodOptional<z.ZodString>;
-        /** Immutable commit. A branch name is not provenance. */
         commit_sha: z.ZodOptional<z.ZodString>;
         license: z.ZodString;
-        authors: z.ZodArray<z.ZodString, "many">;
-        contributors: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+        authors: z.ZodArray<z.ZodString>;
+        contributors: z.ZodDefault<z.ZodArray<z.ZodString>>;
         citation: z.ZodOptional<z.ZodObject<{
             title: z.ZodString;
-            authors: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+            authors: z.ZodDefault<z.ZodArray<z.ZodString>>;
             year: z.ZodOptional<z.ZodNumber>;
             doi: z.ZodOptional<z.ZodString>;
             url: z.ZodOptional<z.ZodString>;
             bibtex: z.ZodOptional<z.ZodString>;
-        }, "strip", z.ZodTypeAny, {
-            title: string;
-            authors: string[];
-            year?: number | undefined;
-            doi?: string | undefined;
-            url?: string | undefined;
-            bibtex?: string | undefined;
-        }, {
-            title: string;
-            authors?: string[] | undefined;
-            year?: number | undefined;
-            doi?: string | undefined;
-            url?: string | undefined;
-            bibtex?: string | undefined;
-        }>>;
-        reference_papers: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-    }, "strip", z.ZodTypeAny, {
-        source_repository_url?: string | undefined;
-        commit_sha?: string | undefined;
-        license: string;
-        authors: string[];
-        contributors: string[];
-        citation?: {
-            title: string;
-            authors: string[];
-            year?: number | undefined;
-            doi?: string | undefined;
-            url?: string | undefined;
-            bibtex?: string | undefined;
-        } | undefined;
-        reference_papers: string[];
-    }, {
-        source_repository_url?: string | undefined;
-        commit_sha?: string | undefined;
-        license: string;
-        authors: string[];
-        contributors?: string[] | undefined;
-        citation?: {
-            title: string;
-            authors?: string[] | undefined;
-            year?: number | undefined;
-            doi?: string | undefined;
-            url?: string | undefined;
-            bibtex?: string | undefined;
-        } | undefined;
-        reference_papers?: string[] | undefined;
-    }>;
-    interface: z.ZodDefault<z.ZodObject<{
-        supported_frameworks: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-        supported_input_formats: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-        supported_output_formats: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-    }, "strip", z.ZodTypeAny, {
-        supported_frameworks: string[];
-        supported_input_formats: string[];
-        supported_output_formats: string[];
-    }, {
-        supported_frameworks?: string[] | undefined;
-        supported_input_formats?: string[] | undefined;
-        supported_output_formats?: string[] | undefined;
-    }>>;
-    applicability: z.ZodDefault<z.ZodObject<{
-        qubit_range: z.ZodOptional<z.ZodEffects<z.ZodObject<{
+        }, z.core.$strip>>;
+        reference_papers: z.ZodDefault<z.ZodArray<z.ZodString>>;
+    }, z.core.$strip>;
+    interface: z.ZodPrefault<z.ZodObject<{
+        supported_frameworks: z.ZodDefault<z.ZodArray<z.ZodString>>;
+        supported_input_formats: z.ZodDefault<z.ZodArray<z.ZodString>>;
+        supported_output_formats: z.ZodDefault<z.ZodArray<z.ZodString>>;
+    }, z.core.$strip>>;
+    applicability: z.ZodPrefault<z.ZodObject<{
+        qubit_range: z.ZodOptional<z.ZodObject<{
             minimum: z.ZodNumber;
             maximum: z.ZodOptional<z.ZodNumber>;
-        }, "strip", z.ZodTypeAny, {
-            minimum: number;
-            maximum?: number | undefined;
-        }, {
-            minimum: number;
-            maximum?: number | undefined;
-        }>, {
-            minimum: number;
-            maximum?: number | undefined;
-        }, {
-            minimum: number;
-            maximum?: number | undefined;
-        }>>;
-        gate_set: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-        classical_requirements: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-    }, "strip", z.ZodTypeAny, {
-        qubit_range?: {
-            minimum: number;
-            maximum?: number | undefined;
-        } | undefined;
-        gate_set: string[];
-        classical_requirements: string[];
-    }, {
-        qubit_range?: {
-            minimum: number;
-            maximum?: number | undefined;
-        } | undefined;
-        gate_set?: string[] | undefined;
-        classical_requirements?: string[] | undefined;
-    }>>;
+        }, z.core.$strip>>;
+        gate_set: z.ZodDefault<z.ZodArray<z.ZodString>>;
+        classical_requirements: z.ZodDefault<z.ZodArray<z.ZodString>>;
+    }, z.core.$strip>>;
     assumptions: z.ZodObject<{
-        resource: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-        noise: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-        hardware: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-        other: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-    }, "strip", z.ZodTypeAny, {
-        resource: string[];
-        noise: string[];
-        hardware: string[];
-        other: string[];
-    }, {
-        resource?: string[] | undefined;
-        noise?: string[] | undefined;
-        hardware?: string[] | undefined;
-        other?: string[] | undefined;
-    }>;
-    /**
-     * Required and non-empty. Use `["None identified"]` to answer explicitly
-     * rather than leaving the field out.
-     */
-    known_limitations: z.ZodArray<z.ZodString, "many">;
-    verification_status: z.ZodDefault<z.ZodEnum<["UNVERIFIED", "SCHEMA_VALIDATED", "HASH_VERIFIED", "SOURCE_VERIFIED", "ENVIRONMENT_RECORDED", "REPRODUCED", "INDEPENDENTLY_REPRODUCED", "REVIEWED"]>>;
-    security_notes: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+        resource: z.ZodDefault<z.ZodArray<z.ZodString>>;
+        noise: z.ZodDefault<z.ZodArray<z.ZodString>>;
+        hardware: z.ZodDefault<z.ZodArray<z.ZodString>>;
+        other: z.ZodDefault<z.ZodArray<z.ZodString>>;
+    }, z.core.$strip>;
+    known_limitations: z.ZodArray<z.ZodString>;
+    verification_status: z.ZodDefault<z.ZodEnum<{
+        ENVIRONMENT_RECORDED: "ENVIRONMENT_RECORDED";
+        HASH_VERIFIED: "HASH_VERIFIED";
+        INDEPENDENTLY_REPRODUCED: "INDEPENDENTLY_REPRODUCED";
+        REPRODUCED: "REPRODUCED";
+        REVIEWED: "REVIEWED";
+        SCHEMA_VALIDATED: "SCHEMA_VALIDATED";
+        SOURCE_VERIFIED: "SOURCE_VERIFIED";
+        UNVERIFIED: "UNVERIFIED";
+    }>>;
+    security_notes: z.ZodDefault<z.ZodArray<z.ZodString>>;
     example_commands: z.ZodDefault<z.ZodArray<z.ZodObject<{
         description: z.ZodString;
         command: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        description: string;
-        command: string;
-    }, {
-        description: string;
-        command: string;
-    }>, "many">>;
-    benchmark_compatibility: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    }, z.core.$strip>>>;
+    benchmark_compatibility: z.ZodDefault<z.ZodArray<z.ZodString>>;
     created_at: z.ZodOptional<z.ZodString>;
     updated_at: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    schema_version: string;
-    name: string;
-    slug: string;
-    version: string;
-    artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
-    description: string;
-    problem_definition: string;
-    category?: string | undefined;
-    provenance: {
-        source_repository_url?: string | undefined;
-        commit_sha?: string | undefined;
-        license: string;
-        authors: string[];
-        contributors: string[];
-        citation?: {
-            title: string;
-            authors: string[];
-            year?: number | undefined;
-            doi?: string | undefined;
-            url?: string | undefined;
-            bibtex?: string | undefined;
-        } | undefined;
-        reference_papers: string[];
-    };
-    interface: {
-        supported_frameworks: string[];
-        supported_input_formats: string[];
-        supported_output_formats: string[];
-    };
-    applicability: {
-        qubit_range?: {
-            minimum: number;
-            maximum?: number | undefined;
-        } | undefined;
-        gate_set: string[];
-        classical_requirements: string[];
-    };
-    assumptions: {
-        resource: string[];
-        noise: string[];
-        hardware: string[];
-        other: string[];
-    };
-    known_limitations: string[];
-    verification_status: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED";
-    security_notes: string[];
-    example_commands: {
-        description: string;
-        command: string;
-    }[];
-    benchmark_compatibility: string[];
-    created_at?: string | undefined;
-    updated_at?: string | undefined;
-}, {
-    schema_version: string;
-    name: string;
-    slug: string;
-    version: string;
-    artifact_type: "ALGORITHM" | "BENCHMARK_SUITE" | "CIRCUIT" | "COMPILER_OR_TRANSPILER" | "DATASET" | "DECODER" | "EXPERIMENT_TEMPLATE" | "HARDWARE_PROFILE" | "MITIGATION_PIPELINE" | "NOISE_MODEL" | "QEC_CODE" | "RESOURCE_MODEL";
-    description: string;
-    problem_definition: string;
-    category?: string | undefined;
-    provenance: {
-        source_repository_url?: string | undefined;
-        commit_sha?: string | undefined;
-        license: string;
-        authors: string[];
-        contributors?: string[] | undefined;
-        citation?: {
-            title: string;
-            authors?: string[] | undefined;
-            year?: number | undefined;
-            doi?: string | undefined;
-            url?: string | undefined;
-            bibtex?: string | undefined;
-        } | undefined;
-        reference_papers?: string[] | undefined;
-    };
-    interface?: {
-        supported_frameworks?: string[] | undefined;
-        supported_input_formats?: string[] | undefined;
-        supported_output_formats?: string[] | undefined;
-    } | undefined;
-    applicability?: {
-        qubit_range?: {
-            minimum: number;
-            maximum?: number | undefined;
-        } | undefined;
-        gate_set?: string[] | undefined;
-        classical_requirements?: string[] | undefined;
-    } | undefined;
-    assumptions: {
-        resource?: string[] | undefined;
-        noise?: string[] | undefined;
-        hardware?: string[] | undefined;
-        other?: string[] | undefined;
-    };
-    known_limitations: string[];
-    verification_status?: "ENVIRONMENT_RECORDED" | "HASH_VERIFIED" | "INDEPENDENTLY_REPRODUCED" | "REPRODUCED" | "REVIEWED" | "SCHEMA_VALIDATED" | "SOURCE_VERIFIED" | "UNVERIFIED" | undefined;
-    security_notes?: string[] | undefined;
-    example_commands?: {
-        description: string;
-        command: string;
-    }[] | undefined;
-    benchmark_compatibility?: string[] | undefined;
-    created_at?: string | undefined;
-    updated_at?: string | undefined;
-}>;
+}, z.core.$strip>;
 export type QuantumCard = z.infer<typeof QuantumCardSchema>;
 //# sourceMappingURL=quantum-card.d.ts.map

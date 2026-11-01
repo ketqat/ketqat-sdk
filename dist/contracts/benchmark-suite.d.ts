@@ -6,21 +6,7 @@ export declare const QecBenchmarkDefinitionSchema: z.ZodObject<{
     syndrome_definition: z.ZodString;
     sampling_assumptions: z.ZodString;
     logical_failure_definition: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    code_family: string;
-    noise_model: string;
-    decoder_interface_version: string;
-    syndrome_definition: string;
-    sampling_assumptions: string;
-    logical_failure_definition: string;
-}, {
-    code_family: string;
-    noise_model: string;
-    decoder_interface_version: string;
-    syndrome_definition: string;
-    sampling_assumptions: string;
-    logical_failure_definition: string;
-}>;
+}, z.core.$strip>;
 export type QecBenchmarkDefinition = z.infer<typeof QecBenchmarkDefinitionSchema>;
 export declare const AlgorithmBenchmarkDefinitionSchema: z.ZodObject<{
     algorithm_family: z.ZodString;
@@ -30,23 +16,7 @@ export declare const AlgorithmBenchmarkDefinitionSchema: z.ZodObject<{
     reference_solution_definition: z.ZodString;
     measurement_definition: z.ZodString;
     success_criterion: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    algorithm_family: string;
-    problem_type: string;
-    problem_instance_definition: string;
-    simulation_method: string;
-    reference_solution_definition: string;
-    measurement_definition: string;
-    success_criterion: string;
-}, {
-    algorithm_family: string;
-    problem_type: string;
-    problem_instance_definition: string;
-    simulation_method: string;
-    reference_solution_definition: string;
-    measurement_definition: string;
-    success_criterion: string;
-}>;
+}, z.core.$strip>;
 export type AlgorithmBenchmarkDefinition = z.infer<typeof AlgorithmBenchmarkDefinitionSchema>;
 export declare const QecBenchmarkSuiteSchema: z.ZodObject<{
     id: z.ZodString;
@@ -61,25 +31,17 @@ export declare const QecBenchmarkSuiteSchema: z.ZodObject<{
         description: z.ZodString;
         unit: z.ZodOptional<z.ZodString>;
         lower_is_better: z.ZodOptional<z.ZodBoolean>;
-    }, "strip", z.ZodTypeAny, {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }, {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }>, "many">;
+    }, z.core.$strip>>;
     default_configuration: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     repository_url: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodBoolean;
     owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
+    visibility: z.ZodOptional<z.ZodEnum<{
+        PRIVATE: "PRIVATE";
+        PUBLIC: "PUBLIC";
+    }>>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
-} & {
     domain: z.ZodLiteral<"QEC">;
     definition: z.ZodObject<{
         code_family: z.ZodString;
@@ -88,82 +50,8 @@ export declare const QecBenchmarkSuiteSchema: z.ZodObject<{
         syndrome_definition: z.ZodString;
         sampling_assumptions: z.ZodString;
         logical_failure_definition: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        code_family: string;
-        noise_model: string;
-        decoder_interface_version: string;
-        syndrome_definition: string;
-        sampling_assumptions: string;
-        logical_failure_definition: string;
-    }, {
-        code_family: string;
-        noise_model: string;
-        decoder_interface_version: string;
-        syndrome_definition: string;
-        sampling_assumptions: string;
-        logical_failure_definition: string;
-    }>;
-}, "strip", z.ZodTypeAny, {
-    id: string;
-    slug: string;
-    name: string;
-    description: string;
-    version: string;
-    schema_version: string;
-    experiment_type: string;
-    metric_definitions: {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }[];
-    default_configuration: Record<string, unknown>;
-    repository_url?: string | undefined;
-    is_demo: boolean;
-    owner_username?: string | null | undefined;
-    visibility?: "PRIVATE" | "PUBLIC" | undefined;
-    created_at: string;
-    updated_at: string;
-    domain: "QEC";
-    definition: {
-        code_family: string;
-        noise_model: string;
-        decoder_interface_version: string;
-        syndrome_definition: string;
-        sampling_assumptions: string;
-        logical_failure_definition: string;
-    };
-}, {
-    id: string;
-    slug: string;
-    name: string;
-    description: string;
-    version: string;
-    schema_version: string;
-    experiment_type: string;
-    metric_definitions: {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }[];
-    default_configuration?: Record<string, unknown> | undefined;
-    repository_url?: string | undefined;
-    is_demo: boolean;
-    owner_username?: string | null | undefined;
-    visibility?: "PRIVATE" | "PUBLIC" | undefined;
-    created_at: string;
-    updated_at: string;
-    domain: "QEC";
-    definition: {
-        code_family: string;
-        noise_model: string;
-        decoder_interface_version: string;
-        syndrome_definition: string;
-        sampling_assumptions: string;
-        logical_failure_definition: string;
-    };
-}>;
+    }, z.core.$strip>;
+}, z.core.$strip>;
 export type QecBenchmarkSuite = z.infer<typeof QecBenchmarkSuiteSchema>;
 export declare const AlgorithmBenchmarkSuiteSchema: z.ZodObject<{
     id: z.ZodString;
@@ -178,25 +66,17 @@ export declare const AlgorithmBenchmarkSuiteSchema: z.ZodObject<{
         description: z.ZodString;
         unit: z.ZodOptional<z.ZodString>;
         lower_is_better: z.ZodOptional<z.ZodBoolean>;
-    }, "strip", z.ZodTypeAny, {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }, {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }>, "many">;
+    }, z.core.$strip>>;
     default_configuration: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     repository_url: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodBoolean;
     owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
+    visibility: z.ZodOptional<z.ZodEnum<{
+        PRIVATE: "PRIVATE";
+        PUBLIC: "PUBLIC";
+    }>>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
-} & {
     domain: z.ZodLiteral<"ALGORITHM">;
     definition: z.ZodObject<{
         algorithm_family: z.ZodString;
@@ -206,88 +86,10 @@ export declare const AlgorithmBenchmarkSuiteSchema: z.ZodObject<{
         reference_solution_definition: z.ZodString;
         measurement_definition: z.ZodString;
         success_criterion: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        algorithm_family: string;
-        problem_type: string;
-        problem_instance_definition: string;
-        simulation_method: string;
-        reference_solution_definition: string;
-        measurement_definition: string;
-        success_criterion: string;
-    }, {
-        algorithm_family: string;
-        problem_type: string;
-        problem_instance_definition: string;
-        simulation_method: string;
-        reference_solution_definition: string;
-        measurement_definition: string;
-        success_criterion: string;
-    }>;
-}, "strip", z.ZodTypeAny, {
-    id: string;
-    slug: string;
-    name: string;
-    description: string;
-    version: string;
-    schema_version: string;
-    experiment_type: string;
-    metric_definitions: {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }[];
-    default_configuration: Record<string, unknown>;
-    repository_url?: string | undefined;
-    is_demo: boolean;
-    owner_username?: string | null | undefined;
-    visibility?: "PRIVATE" | "PUBLIC" | undefined;
-    created_at: string;
-    updated_at: string;
-    domain: "ALGORITHM";
-    definition: {
-        algorithm_family: string;
-        problem_type: string;
-        problem_instance_definition: string;
-        simulation_method: string;
-        reference_solution_definition: string;
-        measurement_definition: string;
-        success_criterion: string;
-    };
-}, {
-    id: string;
-    slug: string;
-    name: string;
-    description: string;
-    version: string;
-    schema_version: string;
-    experiment_type: string;
-    metric_definitions: {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }[];
-    default_configuration?: Record<string, unknown> | undefined;
-    repository_url?: string | undefined;
-    is_demo: boolean;
-    owner_username?: string | null | undefined;
-    visibility?: "PRIVATE" | "PUBLIC" | undefined;
-    created_at: string;
-    updated_at: string;
-    domain: "ALGORITHM";
-    definition: {
-        algorithm_family: string;
-        problem_type: string;
-        problem_instance_definition: string;
-        simulation_method: string;
-        reference_solution_definition: string;
-        measurement_definition: string;
-        success_criterion: string;
-    };
-}>;
+    }, z.core.$strip>;
+}, z.core.$strip>;
 export type AlgorithmBenchmarkSuite = z.infer<typeof AlgorithmBenchmarkSuiteSchema>;
-export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.ZodObject<{
+export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     id: z.ZodString;
     slug: z.ZodString;
     name: z.ZodString;
@@ -300,25 +102,17 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
         description: z.ZodString;
         unit: z.ZodOptional<z.ZodString>;
         lower_is_better: z.ZodOptional<z.ZodBoolean>;
-    }, "strip", z.ZodTypeAny, {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }, {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }>, "many">;
+    }, z.core.$strip>>;
     default_configuration: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     repository_url: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodBoolean;
     owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
+    visibility: z.ZodOptional<z.ZodEnum<{
+        PRIVATE: "PRIVATE";
+        PUBLIC: "PUBLIC";
+    }>>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
-} & {
     domain: z.ZodLiteral<"QEC">;
     definition: z.ZodObject<{
         code_family: z.ZodString;
@@ -327,82 +121,8 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
         syndrome_definition: z.ZodString;
         sampling_assumptions: z.ZodString;
         logical_failure_definition: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        code_family: string;
-        noise_model: string;
-        decoder_interface_version: string;
-        syndrome_definition: string;
-        sampling_assumptions: string;
-        logical_failure_definition: string;
-    }, {
-        code_family: string;
-        noise_model: string;
-        decoder_interface_version: string;
-        syndrome_definition: string;
-        sampling_assumptions: string;
-        logical_failure_definition: string;
-    }>;
-}, "strip", z.ZodTypeAny, {
-    id: string;
-    slug: string;
-    name: string;
-    description: string;
-    version: string;
-    schema_version: string;
-    experiment_type: string;
-    metric_definitions: {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }[];
-    default_configuration: Record<string, unknown>;
-    repository_url?: string | undefined;
-    is_demo: boolean;
-    owner_username?: string | null | undefined;
-    visibility?: "PRIVATE" | "PUBLIC" | undefined;
-    created_at: string;
-    updated_at: string;
-    domain: "QEC";
-    definition: {
-        code_family: string;
-        noise_model: string;
-        decoder_interface_version: string;
-        syndrome_definition: string;
-        sampling_assumptions: string;
-        logical_failure_definition: string;
-    };
-}, {
-    id: string;
-    slug: string;
-    name: string;
-    description: string;
-    version: string;
-    schema_version: string;
-    experiment_type: string;
-    metric_definitions: {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }[];
-    default_configuration?: Record<string, unknown> | undefined;
-    repository_url?: string | undefined;
-    is_demo: boolean;
-    owner_username?: string | null | undefined;
-    visibility?: "PRIVATE" | "PUBLIC" | undefined;
-    created_at: string;
-    updated_at: string;
-    domain: "QEC";
-    definition: {
-        code_family: string;
-        noise_model: string;
-        decoder_interface_version: string;
-        syndrome_definition: string;
-        sampling_assumptions: string;
-        logical_failure_definition: string;
-    };
-}>, z.ZodObject<{
+    }, z.core.$strip>;
+}, z.core.$strip>, z.ZodObject<{
     id: z.ZodString;
     slug: z.ZodString;
     name: z.ZodString;
@@ -415,25 +135,17 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
         description: z.ZodString;
         unit: z.ZodOptional<z.ZodString>;
         lower_is_better: z.ZodOptional<z.ZodBoolean>;
-    }, "strip", z.ZodTypeAny, {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }, {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }>, "many">;
+    }, z.core.$strip>>;
     default_configuration: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     repository_url: z.ZodOptional<z.ZodString>;
     is_demo: z.ZodBoolean;
     owner_username: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    visibility: z.ZodOptional<z.ZodEnum<["PUBLIC", "PRIVATE"]>>;
+    visibility: z.ZodOptional<z.ZodEnum<{
+        PRIVATE: "PRIVATE";
+        PUBLIC: "PUBLIC";
+    }>>;
     created_at: z.ZodString;
     updated_at: z.ZodString;
-} & {
     domain: z.ZodLiteral<"ALGORITHM">;
     definition: z.ZodObject<{
         algorithm_family: z.ZodString;
@@ -443,85 +155,7 @@ export declare const BenchmarkSuiteSchema: z.ZodDiscriminatedUnion<"domain", [z.
         reference_solution_definition: z.ZodString;
         measurement_definition: z.ZodString;
         success_criterion: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        algorithm_family: string;
-        problem_type: string;
-        problem_instance_definition: string;
-        simulation_method: string;
-        reference_solution_definition: string;
-        measurement_definition: string;
-        success_criterion: string;
-    }, {
-        algorithm_family: string;
-        problem_type: string;
-        problem_instance_definition: string;
-        simulation_method: string;
-        reference_solution_definition: string;
-        measurement_definition: string;
-        success_criterion: string;
-    }>;
-}, "strip", z.ZodTypeAny, {
-    id: string;
-    slug: string;
-    name: string;
-    description: string;
-    version: string;
-    schema_version: string;
-    experiment_type: string;
-    metric_definitions: {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }[];
-    default_configuration: Record<string, unknown>;
-    repository_url?: string | undefined;
-    is_demo: boolean;
-    owner_username?: string | null | undefined;
-    visibility?: "PRIVATE" | "PUBLIC" | undefined;
-    created_at: string;
-    updated_at: string;
-    domain: "ALGORITHM";
-    definition: {
-        algorithm_family: string;
-        problem_type: string;
-        problem_instance_definition: string;
-        simulation_method: string;
-        reference_solution_definition: string;
-        measurement_definition: string;
-        success_criterion: string;
-    };
-}, {
-    id: string;
-    slug: string;
-    name: string;
-    description: string;
-    version: string;
-    schema_version: string;
-    experiment_type: string;
-    metric_definitions: {
-        name: string;
-        description: string;
-        unit?: string | undefined;
-        lower_is_better?: boolean | undefined;
-    }[];
-    default_configuration?: Record<string, unknown> | undefined;
-    repository_url?: string | undefined;
-    is_demo: boolean;
-    owner_username?: string | null | undefined;
-    visibility?: "PRIVATE" | "PUBLIC" | undefined;
-    created_at: string;
-    updated_at: string;
-    domain: "ALGORITHM";
-    definition: {
-        algorithm_family: string;
-        problem_type: string;
-        problem_instance_definition: string;
-        simulation_method: string;
-        reference_solution_definition: string;
-        measurement_definition: string;
-        success_criterion: string;
-    };
-}>]>;
+    }, z.core.$strip>;
+}, z.core.$strip>], "domain">;
 export type BenchmarkSuite = z.infer<typeof BenchmarkSuiteSchema>;
 //# sourceMappingURL=benchmark-suite.d.ts.map

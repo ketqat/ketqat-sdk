@@ -23,7 +23,14 @@ import { z } from "zod";
  * all three, and the uncertainty they carry is reported as model sensitivity on
  * every scenario rather than baked into one of them.
  */
-export declare const HardwareArchitectureSchema: z.ZodEnum<["SUPERCONDUCTING", "TRAPPED_ION", "NEUTRAL_ATOM", "PHOTONIC", "SPIN", "GENERIC_REFERENCE"]>;
+export declare const HardwareArchitectureSchema: z.ZodEnum<{
+    GENERIC_REFERENCE: "GENERIC_REFERENCE";
+    NEUTRAL_ATOM: "NEUTRAL_ATOM";
+    PHOTONIC: "PHOTONIC";
+    SPIN: "SPIN";
+    SUPERCONDUCTING: "SUPERCONDUCTING";
+    TRAPPED_ION: "TRAPPED_ION";
+}>;
 export type HardwareArchitecture = z.infer<typeof HardwareArchitectureSchema>;
 /**
  * What kind of statement a hardware snapshot is.
@@ -33,206 +40,107 @@ export type HardwareArchitecture = z.infer<typeof HardwareArchitectureSchema>;
  * distinction is a required enum rather than a note, so a query for "what do
  * devices do today" cannot accidentally return a projection.
  */
-export declare const HardwareBasisSchema: z.ZodEnum<["OBSERVATION", "ROADMAP", "USER_ASSUMPTION"]>;
+export declare const HardwareBasisSchema: z.ZodEnum<{
+    OBSERVATION: "OBSERVATION";
+    ROADMAP: "ROADMAP";
+    USER_ASSUMPTION: "USER_ASSUMPTION";
+}>;
 export type HardwareBasis = z.infer<typeof HardwareBasisSchema>;
-export declare const ConfidenceSchema: z.ZodEnum<["HIGH", "MEDIUM", "LOW"]>;
+export declare const ConfidenceSchema: z.ZodEnum<{
+    HIGH: "HIGH";
+    LOW: "LOW";
+    MEDIUM: "MEDIUM";
+}>;
 export type Confidence = z.infer<typeof ConfidenceSchema>;
-export declare const HardwareModelSnapshotSchema: z.ZodEffects<z.ZodObject<{
+export declare const HardwareModelSnapshotSchema: z.ZodObject<{
     schema_version: z.ZodString;
-    /** Provider name, or a generic architecture name when this is a convention. */
     name: z.ZodString;
-    architecture: z.ZodEnum<["SUPERCONDUCTING", "TRAPPED_ION", "NEUTRAL_ATOM", "PHOTONIC", "SPIN", "GENERIC_REFERENCE"]>;
-    basis: z.ZodEnum<["OBSERVATION", "ROADMAP", "USER_ASSUMPTION"]>;
-    /** Two-qubit physical error rate under circuit-level depolarizing noise. */
+    architecture: z.ZodEnum<{
+        GENERIC_REFERENCE: "GENERIC_REFERENCE";
+        NEUTRAL_ATOM: "NEUTRAL_ATOM";
+        PHOTONIC: "PHOTONIC";
+        SPIN: "SPIN";
+        SUPERCONDUCTING: "SUPERCONDUCTING";
+        TRAPPED_ION: "TRAPPED_ION";
+    }>;
+    basis: z.ZodEnum<{
+        OBSERVATION: "OBSERVATION";
+        ROADMAP: "ROADMAP";
+        USER_ASSUMPTION: "USER_ASSUMPTION";
+    }>;
     physical_error_rate: z.ZodNumber;
-    /** Surface-code cycle time in nanoseconds. */
     cycle_time_ns: z.ZodNumber;
-    /** Physical qubits the device has, or null when unstated. Never guessed. */
     physical_qubit_capacity: z.ZodNullable<z.ZodNumber>;
-    /** Operations this snapshot characterizes, so an uncharacterized gate is visible. */
-    operations: z.ZodArray<z.ZodString, "many">;
+    operations: z.ZodArray<z.ZodString>;
     source: z.ZodString;
     source_url: z.ZodNullable<z.ZodString>;
-    /** ISO date the source was published. */
     source_published_on: z.ZodNullable<z.ZodString>;
-    /** ISO date the source was read. Distinct from publication: a page can change. */
     retrieved_on: z.ZodNullable<z.ZodString>;
-    confidence: z.ZodEnum<["HIGH", "MEDIUM", "LOW"]>;
-    limitations: z.ZodArray<z.ZodString, "many">;
+    confidence: z.ZodEnum<{
+        HIGH: "HIGH";
+        LOW: "LOW";
+        MEDIUM: "MEDIUM";
+    }>;
+    limitations: z.ZodArray<z.ZodString>;
     snapshot_version: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    schema_version: string;
-    name: string;
-    architecture: "GENERIC_REFERENCE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SUPERCONDUCTING" | "TRAPPED_ION";
-    basis: "OBSERVATION" | "ROADMAP" | "USER_ASSUMPTION";
-    physical_error_rate: number;
-    cycle_time_ns: number;
-    physical_qubit_capacity: number | null;
-    operations: string[];
-    source: string;
-    source_url: string | null;
-    source_published_on: string | null;
-    retrieved_on: string | null;
-    confidence: "HIGH" | "LOW" | "MEDIUM";
-    limitations: string[];
-    snapshot_version: string;
-}, {
-    schema_version: string;
-    name: string;
-    architecture: "GENERIC_REFERENCE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SUPERCONDUCTING" | "TRAPPED_ION";
-    basis: "OBSERVATION" | "ROADMAP" | "USER_ASSUMPTION";
-    physical_error_rate: number;
-    cycle_time_ns: number;
-    physical_qubit_capacity: number | null;
-    operations: string[];
-    source: string;
-    source_url: string | null;
-    source_published_on: string | null;
-    retrieved_on: string | null;
-    confidence: "HIGH" | "LOW" | "MEDIUM";
-    limitations: string[];
-    snapshot_version: string;
-}>, {
-    schema_version: string;
-    name: string;
-    architecture: "GENERIC_REFERENCE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SUPERCONDUCTING" | "TRAPPED_ION";
-    basis: "OBSERVATION" | "ROADMAP" | "USER_ASSUMPTION";
-    physical_error_rate: number;
-    cycle_time_ns: number;
-    physical_qubit_capacity: number | null;
-    operations: string[];
-    source: string;
-    source_url: string | null;
-    source_published_on: string | null;
-    retrieved_on: string | null;
-    confidence: "HIGH" | "LOW" | "MEDIUM";
-    limitations: string[];
-    snapshot_version: string;
-}, {
-    schema_version: string;
-    name: string;
-    architecture: "GENERIC_REFERENCE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SUPERCONDUCTING" | "TRAPPED_ION";
-    basis: "OBSERVATION" | "ROADMAP" | "USER_ASSUMPTION";
-    physical_error_rate: number;
-    cycle_time_ns: number;
-    physical_qubit_capacity: number | null;
-    operations: string[];
-    source: string;
-    source_url: string | null;
-    source_published_on: string | null;
-    retrieved_on: string | null;
-    confidence: "HIGH" | "LOW" | "MEDIUM";
-    limitations: string[];
-    snapshot_version: string;
-}>;
+}, z.core.$strip>;
 export type HardwareModelSnapshot = z.infer<typeof HardwareModelSnapshotSchema>;
-export declare const QecSchemeSchema: z.ZodEnum<["SURFACE_CODE_ROTATED"]>;
+export declare const QecSchemeSchema: z.ZodEnum<{
+    SURFACE_CODE_ROTATED: "SURFACE_CODE_ROTATED";
+}>;
 export type QecScheme = z.infer<typeof QecSchemeSchema>;
 export declare const QecModelSnapshotSchema: z.ZodObject<{
     schema_version: z.ZodString;
-    scheme: z.ZodEnum<["SURFACE_CODE_ROTATED"]>;
-    /** Threshold below which adding distance helps. A property of code and decoder. */
+    scheme: z.ZodEnum<{
+        SURFACE_CODE_ROTATED: "SURFACE_CODE_ROTATED";
+    }>;
     threshold: z.ZodNumber;
-    /** Fitted prefactor A in p_L = A (p/p_th)^((d+1)/2). Not derived; named below. */
     prefactor: z.ZodNumber;
     prefactor_model: z.ZodString;
-    /** Physical qubits per logical patch, as a multiple of d^2. */
     qubits_per_logical_d_squared: z.ZodNumber;
-    /** Surface-code rounds per logical cycle. `d` for the standard construction. */
-    rounds_per_logical_cycle: z.ZodEnum<["DISTANCE"]>;
+    rounds_per_logical_cycle: z.ZodEnum<{
+        DISTANCE: "DISTANCE";
+    }>;
     source: z.ZodString;
-    limitations: z.ZodArray<z.ZodString, "many">;
-}, "strip", z.ZodTypeAny, {
-    schema_version: string;
-    scheme: "SURFACE_CODE_ROTATED";
-    threshold: number;
-    prefactor: number;
-    prefactor_model: string;
-    qubits_per_logical_d_squared: number;
-    rounds_per_logical_cycle: "DISTANCE";
-    source: string;
-    limitations: string[];
-}, {
-    schema_version: string;
-    scheme: "SURFACE_CODE_ROTATED";
-    threshold: number;
-    prefactor: number;
-    prefactor_model: string;
-    qubits_per_logical_d_squared: number;
-    rounds_per_logical_cycle: "DISTANCE";
-    source: string;
-    limitations: string[];
-}>;
+    limitations: z.ZodArray<z.ZodString>;
+}, z.core.$strip>;
 export type QecModelSnapshot = z.infer<typeof QecModelSnapshotSchema>;
-export declare const LayoutModelSchema: z.ZodEnum<["BARE_REGISTER", "LATTICE_SURGERY_2D"]>;
-export type LayoutModel = z.infer<typeof LayoutModelSchema>;
-export declare const FactoryProtocolSchema: z.ZodEnum<["FIFTEEN_TO_ONE", "NONE"]>;
-export type FactoryProtocol = z.infer<typeof FactoryProtocolSchema>;
-export declare const FactoryAssumptionsSchema: z.ZodEffects<z.ZodObject<{
-    protocol: z.ZodEnum<["FIFTEEN_TO_ONE", "NONE"]>;
-    /** Error of raw magic states before distillation. */
-    raw_state_error: z.ZodNumber;
-    /** Error each distilled state must reach. */
-    target_state_error: z.ZodNumber;
-    /** Code distance inside the factory. Null means "use the algorithm distance". */
-    factory_distance: z.ZodNullable<z.ZodNumber>;
-    /** Factories running in parallel. Sets throughput, and multiplies footprint. */
-    parallel_factories: z.ZodNumber;
-    /**
-     * Surface-code rounds one distillation round occupies.
-     *
-     * Needed to turn a level count into a throughput. A space estimate alone
-     * cannot answer "can the factory keep up", which is frequently the binding
-     * constraint.
-     */
-    rounds_per_distillation: z.ZodNumber;
-}, "strip", z.ZodTypeAny, {
-    protocol: "FIFTEEN_TO_ONE" | "NONE";
-    raw_state_error: number;
-    target_state_error: number;
-    factory_distance: number | null;
-    parallel_factories: number;
-    rounds_per_distillation: number;
-}, {
-    protocol: "FIFTEEN_TO_ONE" | "NONE";
-    raw_state_error: number;
-    target_state_error: number;
-    factory_distance: number | null;
-    parallel_factories: number;
-    rounds_per_distillation: number;
-}>, {
-    protocol: "FIFTEEN_TO_ONE" | "NONE";
-    raw_state_error: number;
-    target_state_error: number;
-    factory_distance: number | null;
-    parallel_factories: number;
-    rounds_per_distillation: number;
-}, {
-    protocol: "FIFTEEN_TO_ONE" | "NONE";
-    raw_state_error: number;
-    target_state_error: number;
-    factory_distance: number | null;
-    parallel_factories: number;
-    rounds_per_distillation: number;
+export declare const LayoutModelSchema: z.ZodEnum<{
+    BARE_REGISTER: "BARE_REGISTER";
+    LATTICE_SURGERY_2D: "LATTICE_SURGERY_2D";
 }>;
+export type LayoutModel = z.infer<typeof LayoutModelSchema>;
+export declare const FactoryProtocolSchema: z.ZodEnum<{
+    FIFTEEN_TO_ONE: "FIFTEEN_TO_ONE";
+    NONE: "NONE";
+}>;
+export type FactoryProtocol = z.infer<typeof FactoryProtocolSchema>;
+export declare const FactoryAssumptionsSchema: z.ZodObject<{
+    protocol: z.ZodEnum<{
+        FIFTEEN_TO_ONE: "FIFTEEN_TO_ONE";
+        NONE: "NONE";
+    }>;
+    raw_state_error: z.ZodNumber;
+    target_state_error: z.ZodNumber;
+    factory_distance: z.ZodNullable<z.ZodNumber>;
+    parallel_factories: z.ZodNumber;
+    rounds_per_distillation: z.ZodNumber;
+}, z.core.$strip>;
 export type FactoryAssumptions = z.infer<typeof FactoryAssumptionsSchema>;
 export declare const DecompositionSchema: z.ZodObject<{
-    /** T gates one Toffoli costs. 4 in the standard decomposition. */
     toffoli_t_cost: z.ZodNumber;
-    /** How unsupported gates are handled. Refusing is the honest default. */
-    unsupported_gate_policy: z.ZodEnum<["REFUSE", "REPORT_AS_UNDERESTIMATE"]>;
+    unsupported_gate_policy: z.ZodEnum<{
+        REFUSE: "REFUSE";
+        REPORT_AS_UNDERESTIMATE: "REPORT_AS_UNDERESTIMATE";
+    }>;
     source: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    toffoli_t_cost: number;
-    unsupported_gate_policy: "REFUSE" | "REPORT_AS_UNDERESTIMATE";
-    source: string;
-}, {
-    toffoli_t_cost: number;
-    unsupported_gate_policy: "REFUSE" | "REPORT_AS_UNDERESTIMATE";
-    source: string;
-}>;
+}, z.core.$strip>;
 export type Decomposition = z.infer<typeof DecompositionSchema>;
-export declare const EconomicBasisSchema: z.ZodEnum<["USER_PROVIDED", "PUBLISHED_QUOTE", "MODELLED"]>;
+export declare const EconomicBasisSchema: z.ZodEnum<{
+    MODELLED: "MODELLED";
+    PUBLISHED_QUOTE: "PUBLISHED_QUOTE";
+    USER_PROVIDED: "USER_PROVIDED";
+}>;
 export type EconomicBasis = z.infer<typeof EconomicBasisSchema>;
 /**
  * What a quantum machine is assumed to cost.
@@ -243,558 +151,129 @@ export type EconomicBasis = z.infer<typeof EconomicBasisSchema>;
  * presented as a finding. With no economic model the economic thresholds are
  * refused by name.
  */
-export declare const EconomicModelSchema: z.ZodEffects<z.ZodObject<{
+export declare const EconomicModelSchema: z.ZodObject<{
     schema_version: z.ZodString;
     currency: z.ZodString;
-    basis: z.ZodEnum<["USER_PROVIDED", "PUBLISHED_QUOTE", "MODELLED"]>;
+    basis: z.ZodEnum<{
+        MODELLED: "MODELLED";
+        PUBLISHED_QUOTE: "PUBLISHED_QUOTE";
+        USER_PROVIDED: "USER_PROVIDED";
+    }>;
     machine_cost_per_second: z.ZodNullable<z.ZodNumber>;
     physical_qubit_cost_per_second: z.ZodNullable<z.ZodNumber>;
     source: z.ZodString;
-    limitations: z.ZodArray<z.ZodString, "many">;
-}, "strip", z.ZodTypeAny, {
-    schema_version: string;
-    currency: string;
-    basis: "MODELLED" | "PUBLISHED_QUOTE" | "USER_PROVIDED";
-    machine_cost_per_second: number | null;
-    physical_qubit_cost_per_second: number | null;
-    source: string;
-    limitations: string[];
-}, {
-    schema_version: string;
-    currency: string;
-    basis: "MODELLED" | "PUBLISHED_QUOTE" | "USER_PROVIDED";
-    machine_cost_per_second: number | null;
-    physical_qubit_cost_per_second: number | null;
-    source: string;
-    limitations: string[];
-}>, {
-    schema_version: string;
-    currency: string;
-    basis: "MODELLED" | "PUBLISHED_QUOTE" | "USER_PROVIDED";
-    machine_cost_per_second: number | null;
-    physical_qubit_cost_per_second: number | null;
-    source: string;
-    limitations: string[];
-}, {
-    schema_version: string;
-    currency: string;
-    basis: "MODELLED" | "PUBLISHED_QUOTE" | "USER_PROVIDED";
-    machine_cost_per_second: number | null;
-    physical_qubit_cost_per_second: number | null;
-    source: string;
-    limitations: string[];
-}>;
+    limitations: z.ZodArray<z.ZodString>;
+}, z.core.$strip>;
 export type EconomicModel = z.infer<typeof EconomicModelSchema>;
-export declare const ScenarioPresetSchema: z.ZodEnum<["CONSERVATIVE", "BASE", "OPTIMISTIC", "CUSTOM"]>;
+export declare const ScenarioPresetSchema: z.ZodEnum<{
+    BASE: "BASE";
+    CONSERVATIVE: "CONSERVATIVE";
+    CUSTOM: "CUSTOM";
+    OPTIMISTIC: "OPTIMISTIC";
+}>;
 export type ScenarioPreset = z.infer<typeof ScenarioPresetSchema>;
-export declare const ResourceScenarioSchema: z.ZodEffects<z.ZodObject<{
+export declare const ResourceScenarioSchema: z.ZodObject<{
     schema_version: z.ZodString;
     name: z.ZodString;
-    preset: z.ZodEnum<["CONSERVATIVE", "BASE", "OPTIMISTIC", "CUSTOM"]>;
-    /** Starts at 1. A change produces revision n+1; it never rewrites revision n. */
+    preset: z.ZodEnum<{
+        BASE: "BASE";
+        CONSERVATIVE: "CONSERVATIVE";
+        CUSTOM: "CUSTOM";
+        OPTIMISTIC: "OPTIMISTIC";
+    }>;
     revision: z.ZodNumber;
-    /** Hash of the revision this one replaces, or null for the first. */
     supersedes: z.ZodNullable<z.ZodString>;
-    /** Why these assumptions. A scenario without a stated rationale is an unlabelled knob. */
     rationale: z.ZodString;
-    hardware: z.ZodEffects<z.ZodObject<{
+    hardware: z.ZodObject<{
         schema_version: z.ZodString;
-        /** Provider name, or a generic architecture name when this is a convention. */
         name: z.ZodString;
-        architecture: z.ZodEnum<["SUPERCONDUCTING", "TRAPPED_ION", "NEUTRAL_ATOM", "PHOTONIC", "SPIN", "GENERIC_REFERENCE"]>;
-        basis: z.ZodEnum<["OBSERVATION", "ROADMAP", "USER_ASSUMPTION"]>;
-        /** Two-qubit physical error rate under circuit-level depolarizing noise. */
+        architecture: z.ZodEnum<{
+            GENERIC_REFERENCE: "GENERIC_REFERENCE";
+            NEUTRAL_ATOM: "NEUTRAL_ATOM";
+            PHOTONIC: "PHOTONIC";
+            SPIN: "SPIN";
+            SUPERCONDUCTING: "SUPERCONDUCTING";
+            TRAPPED_ION: "TRAPPED_ION";
+        }>;
+        basis: z.ZodEnum<{
+            OBSERVATION: "OBSERVATION";
+            ROADMAP: "ROADMAP";
+            USER_ASSUMPTION: "USER_ASSUMPTION";
+        }>;
         physical_error_rate: z.ZodNumber;
-        /** Surface-code cycle time in nanoseconds. */
         cycle_time_ns: z.ZodNumber;
-        /** Physical qubits the device has, or null when unstated. Never guessed. */
         physical_qubit_capacity: z.ZodNullable<z.ZodNumber>;
-        /** Operations this snapshot characterizes, so an uncharacterized gate is visible. */
-        operations: z.ZodArray<z.ZodString, "many">;
+        operations: z.ZodArray<z.ZodString>;
         source: z.ZodString;
         source_url: z.ZodNullable<z.ZodString>;
-        /** ISO date the source was published. */
         source_published_on: z.ZodNullable<z.ZodString>;
-        /** ISO date the source was read. Distinct from publication: a page can change. */
         retrieved_on: z.ZodNullable<z.ZodString>;
-        confidence: z.ZodEnum<["HIGH", "MEDIUM", "LOW"]>;
-        limitations: z.ZodArray<z.ZodString, "many">;
+        confidence: z.ZodEnum<{
+            HIGH: "HIGH";
+            LOW: "LOW";
+            MEDIUM: "MEDIUM";
+        }>;
+        limitations: z.ZodArray<z.ZodString>;
         snapshot_version: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        schema_version: string;
-        name: string;
-        architecture: "GENERIC_REFERENCE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SUPERCONDUCTING" | "TRAPPED_ION";
-        basis: "OBSERVATION" | "ROADMAP" | "USER_ASSUMPTION";
-        physical_error_rate: number;
-        cycle_time_ns: number;
-        physical_qubit_capacity: number | null;
-        operations: string[];
-        source: string;
-        source_url: string | null;
-        source_published_on: string | null;
-        retrieved_on: string | null;
-        confidence: "HIGH" | "LOW" | "MEDIUM";
-        limitations: string[];
-        snapshot_version: string;
-    }, {
-        schema_version: string;
-        name: string;
-        architecture: "GENERIC_REFERENCE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SUPERCONDUCTING" | "TRAPPED_ION";
-        basis: "OBSERVATION" | "ROADMAP" | "USER_ASSUMPTION";
-        physical_error_rate: number;
-        cycle_time_ns: number;
-        physical_qubit_capacity: number | null;
-        operations: string[];
-        source: string;
-        source_url: string | null;
-        source_published_on: string | null;
-        retrieved_on: string | null;
-        confidence: "HIGH" | "LOW" | "MEDIUM";
-        limitations: string[];
-        snapshot_version: string;
-    }>, {
-        schema_version: string;
-        name: string;
-        architecture: "GENERIC_REFERENCE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SUPERCONDUCTING" | "TRAPPED_ION";
-        basis: "OBSERVATION" | "ROADMAP" | "USER_ASSUMPTION";
-        physical_error_rate: number;
-        cycle_time_ns: number;
-        physical_qubit_capacity: number | null;
-        operations: string[];
-        source: string;
-        source_url: string | null;
-        source_published_on: string | null;
-        retrieved_on: string | null;
-        confidence: "HIGH" | "LOW" | "MEDIUM";
-        limitations: string[];
-        snapshot_version: string;
-    }, {
-        schema_version: string;
-        name: string;
-        architecture: "GENERIC_REFERENCE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SUPERCONDUCTING" | "TRAPPED_ION";
-        basis: "OBSERVATION" | "ROADMAP" | "USER_ASSUMPTION";
-        physical_error_rate: number;
-        cycle_time_ns: number;
-        physical_qubit_capacity: number | null;
-        operations: string[];
-        source: string;
-        source_url: string | null;
-        source_published_on: string | null;
-        retrieved_on: string | null;
-        confidence: "HIGH" | "LOW" | "MEDIUM";
-        limitations: string[];
-        snapshot_version: string;
-    }>;
+    }, z.core.$strip>;
     qec: z.ZodObject<{
         schema_version: z.ZodString;
-        scheme: z.ZodEnum<["SURFACE_CODE_ROTATED"]>;
-        /** Threshold below which adding distance helps. A property of code and decoder. */
+        scheme: z.ZodEnum<{
+            SURFACE_CODE_ROTATED: "SURFACE_CODE_ROTATED";
+        }>;
         threshold: z.ZodNumber;
-        /** Fitted prefactor A in p_L = A (p/p_th)^((d+1)/2). Not derived; named below. */
         prefactor: z.ZodNumber;
         prefactor_model: z.ZodString;
-        /** Physical qubits per logical patch, as a multiple of d^2. */
         qubits_per_logical_d_squared: z.ZodNumber;
-        /** Surface-code rounds per logical cycle. `d` for the standard construction. */
-        rounds_per_logical_cycle: z.ZodEnum<["DISTANCE"]>;
+        rounds_per_logical_cycle: z.ZodEnum<{
+            DISTANCE: "DISTANCE";
+        }>;
         source: z.ZodString;
-        limitations: z.ZodArray<z.ZodString, "many">;
-    }, "strip", z.ZodTypeAny, {
-        schema_version: string;
-        scheme: "SURFACE_CODE_ROTATED";
-        threshold: number;
-        prefactor: number;
-        prefactor_model: string;
-        qubits_per_logical_d_squared: number;
-        rounds_per_logical_cycle: "DISTANCE";
-        source: string;
-        limitations: string[];
-    }, {
-        schema_version: string;
-        scheme: "SURFACE_CODE_ROTATED";
-        threshold: number;
-        prefactor: number;
-        prefactor_model: string;
-        qubits_per_logical_d_squared: number;
-        rounds_per_logical_cycle: "DISTANCE";
-        source: string;
-        limitations: string[];
+        limitations: z.ZodArray<z.ZodString>;
+    }, z.core.$strip>;
+    layout_model: z.ZodEnum<{
+        BARE_REGISTER: "BARE_REGISTER";
+        LATTICE_SURGERY_2D: "LATTICE_SURGERY_2D";
     }>;
-    layout_model: z.ZodEnum<["BARE_REGISTER", "LATTICE_SURGERY_2D"]>;
-    factory: z.ZodEffects<z.ZodObject<{
-        protocol: z.ZodEnum<["FIFTEEN_TO_ONE", "NONE"]>;
-        /** Error of raw magic states before distillation. */
+    factory: z.ZodObject<{
+        protocol: z.ZodEnum<{
+            FIFTEEN_TO_ONE: "FIFTEEN_TO_ONE";
+            NONE: "NONE";
+        }>;
         raw_state_error: z.ZodNumber;
-        /** Error each distilled state must reach. */
         target_state_error: z.ZodNumber;
-        /** Code distance inside the factory. Null means "use the algorithm distance". */
         factory_distance: z.ZodNullable<z.ZodNumber>;
-        /** Factories running in parallel. Sets throughput, and multiplies footprint. */
         parallel_factories: z.ZodNumber;
-        /**
-         * Surface-code rounds one distillation round occupies.
-         *
-         * Needed to turn a level count into a throughput. A space estimate alone
-         * cannot answer "can the factory keep up", which is frequently the binding
-         * constraint.
-         */
         rounds_per_distillation: z.ZodNumber;
-    }, "strip", z.ZodTypeAny, {
-        protocol: "FIFTEEN_TO_ONE" | "NONE";
-        raw_state_error: number;
-        target_state_error: number;
-        factory_distance: number | null;
-        parallel_factories: number;
-        rounds_per_distillation: number;
-    }, {
-        protocol: "FIFTEEN_TO_ONE" | "NONE";
-        raw_state_error: number;
-        target_state_error: number;
-        factory_distance: number | null;
-        parallel_factories: number;
-        rounds_per_distillation: number;
-    }>, {
-        protocol: "FIFTEEN_TO_ONE" | "NONE";
-        raw_state_error: number;
-        target_state_error: number;
-        factory_distance: number | null;
-        parallel_factories: number;
-        rounds_per_distillation: number;
-    }, {
-        protocol: "FIFTEEN_TO_ONE" | "NONE";
-        raw_state_error: number;
-        target_state_error: number;
-        factory_distance: number | null;
-        parallel_factories: number;
-        rounds_per_distillation: number;
-    }>;
+    }, z.core.$strip>;
     decomposition: z.ZodObject<{
-        /** T gates one Toffoli costs. 4 in the standard decomposition. */
         toffoli_t_cost: z.ZodNumber;
-        /** How unsupported gates are handled. Refusing is the honest default. */
-        unsupported_gate_policy: z.ZodEnum<["REFUSE", "REPORT_AS_UNDERESTIMATE"]>;
+        unsupported_gate_policy: z.ZodEnum<{
+            REFUSE: "REFUSE";
+            REPORT_AS_UNDERESTIMATE: "REPORT_AS_UNDERESTIMATE";
+        }>;
         source: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        toffoli_t_cost: number;
-        unsupported_gate_policy: "REFUSE" | "REPORT_AS_UNDERESTIMATE";
-        source: string;
-    }, {
-        toffoli_t_cost: number;
-        unsupported_gate_policy: "REFUSE" | "REPORT_AS_UNDERESTIMATE";
-        source: string;
-    }>;
-    /** Total probability of any logical error across the whole computation. */
+    }, z.core.$strip>;
     error_budget: z.ZodNumber;
-    /** Seconds the computation must finish within, or null when unconstrained. */
     runtime_target: z.ZodNullable<z.ZodNumber>;
-    economics: z.ZodNullable<z.ZodEffects<z.ZodObject<{
+    economics: z.ZodNullable<z.ZodObject<{
         schema_version: z.ZodString;
         currency: z.ZodString;
-        basis: z.ZodEnum<["USER_PROVIDED", "PUBLISHED_QUOTE", "MODELLED"]>;
+        basis: z.ZodEnum<{
+            MODELLED: "MODELLED";
+            PUBLISHED_QUOTE: "PUBLISHED_QUOTE";
+            USER_PROVIDED: "USER_PROVIDED";
+        }>;
         machine_cost_per_second: z.ZodNullable<z.ZodNumber>;
         physical_qubit_cost_per_second: z.ZodNullable<z.ZodNumber>;
         source: z.ZodString;
-        limitations: z.ZodArray<z.ZodString, "many">;
-    }, "strip", z.ZodTypeAny, {
-        schema_version: string;
-        currency: string;
-        basis: "MODELLED" | "PUBLISHED_QUOTE" | "USER_PROVIDED";
-        machine_cost_per_second: number | null;
-        physical_qubit_cost_per_second: number | null;
-        source: string;
-        limitations: string[];
-    }, {
-        schema_version: string;
-        currency: string;
-        basis: "MODELLED" | "PUBLISHED_QUOTE" | "USER_PROVIDED";
-        machine_cost_per_second: number | null;
-        physical_qubit_cost_per_second: number | null;
-        source: string;
-        limitations: string[];
-    }>, {
-        schema_version: string;
-        currency: string;
-        basis: "MODELLED" | "PUBLISHED_QUOTE" | "USER_PROVIDED";
-        machine_cost_per_second: number | null;
-        physical_qubit_cost_per_second: number | null;
-        source: string;
-        limitations: string[];
-    }, {
-        schema_version: string;
-        currency: string;
-        basis: "MODELLED" | "PUBLISHED_QUOTE" | "USER_PROVIDED";
-        machine_cost_per_second: number | null;
-        physical_qubit_cost_per_second: number | null;
-        source: string;
-        limitations: string[];
-    }>>;
+        limitations: z.ZodArray<z.ZodString>;
+    }, z.core.$strip>>;
     estimator: z.ZodObject<{
         name: z.ZodString;
         version: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        name: string;
-        version: string;
-    }, {
-        name: string;
-        version: string;
-    }>;
-}, "strip", z.ZodTypeAny, {
-    schema_version: string;
-    name: string;
-    preset: "BASE" | "CONSERVATIVE" | "CUSTOM" | "OPTIMISTIC";
-    revision: number;
-    supersedes: string | null;
-    rationale: string;
-    hardware: {
-        schema_version: string;
-        name: string;
-        architecture: "GENERIC_REFERENCE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SUPERCONDUCTING" | "TRAPPED_ION";
-        basis: "OBSERVATION" | "ROADMAP" | "USER_ASSUMPTION";
-        physical_error_rate: number;
-        cycle_time_ns: number;
-        physical_qubit_capacity: number | null;
-        operations: string[];
-        source: string;
-        source_url: string | null;
-        source_published_on: string | null;
-        retrieved_on: string | null;
-        confidence: "HIGH" | "LOW" | "MEDIUM";
-        limitations: string[];
-        snapshot_version: string;
-    };
-    qec: {
-        schema_version: string;
-        scheme: "SURFACE_CODE_ROTATED";
-        threshold: number;
-        prefactor: number;
-        prefactor_model: string;
-        qubits_per_logical_d_squared: number;
-        rounds_per_logical_cycle: "DISTANCE";
-        source: string;
-        limitations: string[];
-    };
-    layout_model: "BARE_REGISTER" | "LATTICE_SURGERY_2D";
-    factory: {
-        protocol: "FIFTEEN_TO_ONE" | "NONE";
-        raw_state_error: number;
-        target_state_error: number;
-        factory_distance: number | null;
-        parallel_factories: number;
-        rounds_per_distillation: number;
-    };
-    decomposition: {
-        toffoli_t_cost: number;
-        unsupported_gate_policy: "REFUSE" | "REPORT_AS_UNDERESTIMATE";
-        source: string;
-    };
-    error_budget: number;
-    runtime_target: number | null;
-    economics: {
-        schema_version: string;
-        currency: string;
-        basis: "MODELLED" | "PUBLISHED_QUOTE" | "USER_PROVIDED";
-        machine_cost_per_second: number | null;
-        physical_qubit_cost_per_second: number | null;
-        source: string;
-        limitations: string[];
-    } | null;
-    estimator: {
-        name: string;
-        version: string;
-    };
-}, {
-    schema_version: string;
-    name: string;
-    preset: "BASE" | "CONSERVATIVE" | "CUSTOM" | "OPTIMISTIC";
-    revision: number;
-    supersedes: string | null;
-    rationale: string;
-    hardware: {
-        schema_version: string;
-        name: string;
-        architecture: "GENERIC_REFERENCE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SUPERCONDUCTING" | "TRAPPED_ION";
-        basis: "OBSERVATION" | "ROADMAP" | "USER_ASSUMPTION";
-        physical_error_rate: number;
-        cycle_time_ns: number;
-        physical_qubit_capacity: number | null;
-        operations: string[];
-        source: string;
-        source_url: string | null;
-        source_published_on: string | null;
-        retrieved_on: string | null;
-        confidence: "HIGH" | "LOW" | "MEDIUM";
-        limitations: string[];
-        snapshot_version: string;
-    };
-    qec: {
-        schema_version: string;
-        scheme: "SURFACE_CODE_ROTATED";
-        threshold: number;
-        prefactor: number;
-        prefactor_model: string;
-        qubits_per_logical_d_squared: number;
-        rounds_per_logical_cycle: "DISTANCE";
-        source: string;
-        limitations: string[];
-    };
-    layout_model: "BARE_REGISTER" | "LATTICE_SURGERY_2D";
-    factory: {
-        protocol: "FIFTEEN_TO_ONE" | "NONE";
-        raw_state_error: number;
-        target_state_error: number;
-        factory_distance: number | null;
-        parallel_factories: number;
-        rounds_per_distillation: number;
-    };
-    decomposition: {
-        toffoli_t_cost: number;
-        unsupported_gate_policy: "REFUSE" | "REPORT_AS_UNDERESTIMATE";
-        source: string;
-    };
-    error_budget: number;
-    runtime_target: number | null;
-    economics: {
-        schema_version: string;
-        currency: string;
-        basis: "MODELLED" | "PUBLISHED_QUOTE" | "USER_PROVIDED";
-        machine_cost_per_second: number | null;
-        physical_qubit_cost_per_second: number | null;
-        source: string;
-        limitations: string[];
-    } | null;
-    estimator: {
-        name: string;
-        version: string;
-    };
-}>, {
-    schema_version: string;
-    name: string;
-    preset: "BASE" | "CONSERVATIVE" | "CUSTOM" | "OPTIMISTIC";
-    revision: number;
-    supersedes: string | null;
-    rationale: string;
-    hardware: {
-        schema_version: string;
-        name: string;
-        architecture: "GENERIC_REFERENCE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SUPERCONDUCTING" | "TRAPPED_ION";
-        basis: "OBSERVATION" | "ROADMAP" | "USER_ASSUMPTION";
-        physical_error_rate: number;
-        cycle_time_ns: number;
-        physical_qubit_capacity: number | null;
-        operations: string[];
-        source: string;
-        source_url: string | null;
-        source_published_on: string | null;
-        retrieved_on: string | null;
-        confidence: "HIGH" | "LOW" | "MEDIUM";
-        limitations: string[];
-        snapshot_version: string;
-    };
-    qec: {
-        schema_version: string;
-        scheme: "SURFACE_CODE_ROTATED";
-        threshold: number;
-        prefactor: number;
-        prefactor_model: string;
-        qubits_per_logical_d_squared: number;
-        rounds_per_logical_cycle: "DISTANCE";
-        source: string;
-        limitations: string[];
-    };
-    layout_model: "BARE_REGISTER" | "LATTICE_SURGERY_2D";
-    factory: {
-        protocol: "FIFTEEN_TO_ONE" | "NONE";
-        raw_state_error: number;
-        target_state_error: number;
-        factory_distance: number | null;
-        parallel_factories: number;
-        rounds_per_distillation: number;
-    };
-    decomposition: {
-        toffoli_t_cost: number;
-        unsupported_gate_policy: "REFUSE" | "REPORT_AS_UNDERESTIMATE";
-        source: string;
-    };
-    error_budget: number;
-    runtime_target: number | null;
-    economics: {
-        schema_version: string;
-        currency: string;
-        basis: "MODELLED" | "PUBLISHED_QUOTE" | "USER_PROVIDED";
-        machine_cost_per_second: number | null;
-        physical_qubit_cost_per_second: number | null;
-        source: string;
-        limitations: string[];
-    } | null;
-    estimator: {
-        name: string;
-        version: string;
-    };
-}, {
-    schema_version: string;
-    name: string;
-    preset: "BASE" | "CONSERVATIVE" | "CUSTOM" | "OPTIMISTIC";
-    revision: number;
-    supersedes: string | null;
-    rationale: string;
-    hardware: {
-        schema_version: string;
-        name: string;
-        architecture: "GENERIC_REFERENCE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SPIN" | "SUPERCONDUCTING" | "TRAPPED_ION";
-        basis: "OBSERVATION" | "ROADMAP" | "USER_ASSUMPTION";
-        physical_error_rate: number;
-        cycle_time_ns: number;
-        physical_qubit_capacity: number | null;
-        operations: string[];
-        source: string;
-        source_url: string | null;
-        source_published_on: string | null;
-        retrieved_on: string | null;
-        confidence: "HIGH" | "LOW" | "MEDIUM";
-        limitations: string[];
-        snapshot_version: string;
-    };
-    qec: {
-        schema_version: string;
-        scheme: "SURFACE_CODE_ROTATED";
-        threshold: number;
-        prefactor: number;
-        prefactor_model: string;
-        qubits_per_logical_d_squared: number;
-        rounds_per_logical_cycle: "DISTANCE";
-        source: string;
-        limitations: string[];
-    };
-    layout_model: "BARE_REGISTER" | "LATTICE_SURGERY_2D";
-    factory: {
-        protocol: "FIFTEEN_TO_ONE" | "NONE";
-        raw_state_error: number;
-        target_state_error: number;
-        factory_distance: number | null;
-        parallel_factories: number;
-        rounds_per_distillation: number;
-    };
-    decomposition: {
-        toffoli_t_cost: number;
-        unsupported_gate_policy: "REFUSE" | "REPORT_AS_UNDERESTIMATE";
-        source: string;
-    };
-    error_budget: number;
-    runtime_target: number | null;
-    economics: {
-        schema_version: string;
-        currency: string;
-        basis: "MODELLED" | "PUBLISHED_QUOTE" | "USER_PROVIDED";
-        machine_cost_per_second: number | null;
-        physical_qubit_cost_per_second: number | null;
-        source: string;
-        limitations: string[];
-    } | null;
-    estimator: {
-        name: string;
-        version: string;
-    };
-}>;
+    }, z.core.$strip>;
+}, z.core.$strip>;
 export type ResourceScenario = z.infer<typeof ResourceScenarioSchema>;
 export declare const INTELLIGENCE_ESTIMATOR = "ketqat-resource-intelligence";
 export declare const INTELLIGENCE_ESTIMATOR_VERSION = "0.1.0";

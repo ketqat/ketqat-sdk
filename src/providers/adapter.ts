@@ -84,7 +84,7 @@ export const ProviderSubmissionSchema = z.object({
   shots: z.number().int().positive(),
   /** HARDWARE only when the provider actually executed on a device. */
   execution_class: z.enum(["HARDWARE", "SIMULATION"]),
-  counts: z.record(z.number().int().nonnegative()).optional(),
+  counts: z.record(z.string(), z.number().int().nonnegative()).optional(),
   /** Snapshot the circuit was compiled against, so the result is interpretable. */
   hardware_snapshot_id: z.string().min(1).optional(),
   loss_report: z.array(z.custom<LossReportEntry>()).default([]),

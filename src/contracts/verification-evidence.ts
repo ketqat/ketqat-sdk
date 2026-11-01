@@ -47,12 +47,12 @@ export const VerificationEvidenceSchema = z
     summary: z.string().min(1),
     evidence_url: z.string().url().optional(),
     reproducibility_hash: z.string().min(1).optional(),
-    source: VerificationEvidenceSourceSchema.default({}),
+    source: VerificationEvidenceSourceSchema.prefault({}),
     environment: EnvironmentSchema.optional(),
     is_demo_evidence: z.boolean().default(false),
     checked_at: IsoDateTimeSchema,
     reviewer: z.string().min(1).optional(),
-    metadata: z.record(z.unknown()).default({}),
+    metadata: z.record(z.string(), z.unknown()).default({}),
   })
   .superRefine((evidence, ctx) => {
     if (evidence.status === "REPRODUCED") {

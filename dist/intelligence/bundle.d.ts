@@ -28,33 +28,18 @@ import { type DecisionAssessment } from "./decision.js";
  * hash, in this process, in a week, and in Python.
  */
 export declare const EvidenceSourceSchema: z.ZodObject<{
-    /** What this source supports: "classical baseline", "hardware parameters". */
     supports: z.ZodString;
     title: z.ZodString;
     url: z.ZodNullable<z.ZodString>;
-    /** ISO date the source was published. */
     published_on: z.ZodNullable<z.ZodString>;
-    /** ISO date the source was read. A page can change after publication. */
     retrieved_on: z.ZodNullable<z.ZodString>;
-    confidence: z.ZodEnum<["HIGH", "MEDIUM", "LOW"]>;
-    limitations: z.ZodArray<z.ZodString, "many">;
-}, "strip", z.ZodTypeAny, {
-    supports: string;
-    title: string;
-    url: string | null;
-    published_on: string | null;
-    retrieved_on: string | null;
-    confidence: "HIGH" | "LOW" | "MEDIUM";
-    limitations: string[];
-}, {
-    supports: string;
-    title: string;
-    url: string | null;
-    published_on: string | null;
-    retrieved_on: string | null;
-    confidence: "HIGH" | "LOW" | "MEDIUM";
-    limitations: string[];
-}>;
+    confidence: z.ZodEnum<{
+        HIGH: "HIGH";
+        LOW: "LOW";
+        MEDIUM: "MEDIUM";
+    }>;
+    limitations: z.ZodArray<z.ZodString>;
+}, z.core.$strip>;
 export type EvidenceSource = z.infer<typeof EvidenceSourceSchema>;
 export declare const ScenarioComparisonRowSchema: z.ZodObject<{
     scenario_name: z.ZodString;
@@ -67,50 +52,16 @@ export declare const ScenarioComparisonRowSchema: z.ZodObject<{
     code_distance: z.ZodNullable<z.ZodNumber>;
     factory_share: z.ZodNullable<z.ZodNumber>;
     achieved_logical_error: z.ZodNullable<z.ZodNumber>;
-    /** Slowest cycle meeting whichever target applies, in ns. */
     required_cycle_time_ns: z.ZodNullable<z.ZodNumber>;
     required_factory_throughput: z.ZodNullable<z.ZodNumber>;
     economic_status: z.ZodString;
     evidence_confidence: z.ZodString;
     decision_status: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    scenario_name: string;
-    scenario_preset: string;
-    scenario_revision: number;
-    feasible: boolean;
-    logical_qubits: number | null;
-    total_physical_qubits: number | null;
-    runtime: number | null;
-    code_distance: number | null;
-    factory_share: number | null;
-    achieved_logical_error: number | null;
-    required_cycle_time_ns: number | null;
-    required_factory_throughput: number | null;
-    economic_status: string;
-    evidence_confidence: string;
-    decision_status: string;
-}, {
-    scenario_name: string;
-    scenario_preset: string;
-    scenario_revision: number;
-    feasible: boolean;
-    logical_qubits: number | null;
-    total_physical_qubits: number | null;
-    runtime: number | null;
-    code_distance: number | null;
-    factory_share: number | null;
-    achieved_logical_error: number | null;
-    required_cycle_time_ns: number | null;
-    required_factory_throughput: number | null;
-    economic_status: string;
-    evidence_confidence: string;
-    decision_status: string;
-}>;
+}, z.core.$strip>;
 export type ScenarioComparisonRow = z.infer<typeof ScenarioComparisonRowSchema>;
 export declare const ScenarioComparisonSchema: z.ZodObject<{
     comparable: z.ZodBoolean;
-    /** Why the scenarios may not be placed in one table, when they may not. */
-    incomparability_reasons: z.ZodArray<z.ZodString, "many">;
+    incomparability_reasons: z.ZodArray<z.ZodString>;
     rows: z.ZodArray<z.ZodObject<{
         scenario_name: z.ZodString;
         scenario_preset: z.ZodString;
@@ -122,96 +73,14 @@ export declare const ScenarioComparisonSchema: z.ZodObject<{
         code_distance: z.ZodNullable<z.ZodNumber>;
         factory_share: z.ZodNullable<z.ZodNumber>;
         achieved_logical_error: z.ZodNullable<z.ZodNumber>;
-        /** Slowest cycle meeting whichever target applies, in ns. */
         required_cycle_time_ns: z.ZodNullable<z.ZodNumber>;
         required_factory_throughput: z.ZodNullable<z.ZodNumber>;
         economic_status: z.ZodString;
         evidence_confidence: z.ZodString;
         decision_status: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        scenario_name: string;
-        scenario_preset: string;
-        scenario_revision: number;
-        feasible: boolean;
-        logical_qubits: number | null;
-        total_physical_qubits: number | null;
-        runtime: number | null;
-        code_distance: number | null;
-        factory_share: number | null;
-        achieved_logical_error: number | null;
-        required_cycle_time_ns: number | null;
-        required_factory_throughput: number | null;
-        economic_status: string;
-        evidence_confidence: string;
-        decision_status: string;
-    }, {
-        scenario_name: string;
-        scenario_preset: string;
-        scenario_revision: number;
-        feasible: boolean;
-        logical_qubits: number | null;
-        total_physical_qubits: number | null;
-        runtime: number | null;
-        code_distance: number | null;
-        factory_share: number | null;
-        achieved_logical_error: number | null;
-        required_cycle_time_ns: number | null;
-        required_factory_throughput: number | null;
-        economic_status: string;
-        evidence_confidence: string;
-        decision_status: string;
-    }>, "many">;
-    /**
-     * Why there is no summary row.
-     *
-     * A mean of a conservative and an optimistic estimate is a number no model
-     * predicts, presented with the authority of both. The absence of an aggregate
-     * is the design; this string says so where a reader would look for one.
-     */
+    }, z.core.$strip>>;
     aggregation_policy: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    comparable: boolean;
-    incomparability_reasons: string[];
-    rows: {
-        scenario_name: string;
-        scenario_preset: string;
-        scenario_revision: number;
-        feasible: boolean;
-        logical_qubits: number | null;
-        total_physical_qubits: number | null;
-        runtime: number | null;
-        code_distance: number | null;
-        factory_share: number | null;
-        achieved_logical_error: number | null;
-        required_cycle_time_ns: number | null;
-        required_factory_throughput: number | null;
-        economic_status: string;
-        evidence_confidence: string;
-        decision_status: string;
-    }[];
-    aggregation_policy: string;
-}, {
-    comparable: boolean;
-    incomparability_reasons: string[];
-    rows: {
-        scenario_name: string;
-        scenario_preset: string;
-        scenario_revision: number;
-        feasible: boolean;
-        logical_qubits: number | null;
-        total_physical_qubits: number | null;
-        runtime: number | null;
-        code_distance: number | null;
-        factory_share: number | null;
-        achieved_logical_error: number | null;
-        required_cycle_time_ns: number | null;
-        required_factory_throughput: number | null;
-        economic_status: string;
-        evidence_confidence: string;
-        decision_status: string;
-    }[];
-    aggregation_policy: string;
-}>;
+}, z.core.$strip>;
 export type ScenarioComparison = z.infer<typeof ScenarioComparisonSchema>;
 /**
  * Declared by hand so the emitted declaration references the component types by
@@ -269,25 +138,8 @@ export declare const VerificationSchema: z.ZodObject<{
     estimates_match: z.ZodBoolean;
     expected_hash: z.ZodString;
     actual_hash: z.ZodString;
-    /** Every discrepancy found, named. Empty when `valid`. */
-    problems: z.ZodArray<z.ZodString, "many">;
-}, "strip", z.ZodTypeAny, {
-    valid: boolean;
-    hash_matches: boolean;
-    decision_matches: boolean;
-    estimates_match: boolean;
-    expected_hash: string;
-    actual_hash: string;
-    problems: string[];
-}, {
-    valid: boolean;
-    hash_matches: boolean;
-    decision_matches: boolean;
-    estimates_match: boolean;
-    expected_hash: string;
-    actual_hash: string;
-    problems: string[];
-}>;
+    problems: z.ZodArray<z.ZodString>;
+}, z.core.$strip>;
 export type Verification = z.infer<typeof VerificationSchema>;
 /**
  * Recompute a bundle from its own inputs and compare.

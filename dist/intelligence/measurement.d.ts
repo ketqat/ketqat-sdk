@@ -31,7 +31,13 @@ import { z } from "zod";
  * plausible default. The refinement below makes the two agree, so a null value
  * carrying a confident evidence class cannot be constructed at all.
  */
-export declare const EvidenceClassSchema: z.ZodEnum<["MEASURED", "USER_PROVIDED", "DERIVED", "MODELLED", "UNKNOWN"]>;
+export declare const EvidenceClassSchema: z.ZodEnum<{
+    DERIVED: "DERIVED";
+    MEASURED: "MEASURED";
+    MODELLED: "MODELLED";
+    UNKNOWN: "UNKNOWN";
+    USER_PROVIDED: "USER_PROVIDED";
+}>;
 export type EvidenceClass = z.infer<typeof EvidenceClassSchema>;
 /**
  * What kind of statement the value makes.
@@ -40,9 +46,17 @@ export type EvidenceClass = z.infer<typeof EvidenceClassSchema>;
  * must never display identically. Carrying the distinction in the data rather
  * than in a caption is what makes that enforceable.
  */
-export declare const BoundKindSchema: z.ZodEnum<["POINT", "UPPER_BOUND", "LOWER_BOUND"]>;
+export declare const BoundKindSchema: z.ZodEnum<{
+    LOWER_BOUND: "LOWER_BOUND";
+    POINT: "POINT";
+    UPPER_BOUND: "UPPER_BOUND";
+}>;
 export type BoundKind = z.infer<typeof BoundKindSchema>;
-export declare const UncertaintyKindSchema: z.ZodEnum<["SENSITIVITY_RANGE", "MODEL_SPREAD", "NOT_CHARACTERIZED"]>;
+export declare const UncertaintyKindSchema: z.ZodEnum<{
+    MODEL_SPREAD: "MODEL_SPREAD";
+    NOT_CHARACTERIZED: "NOT_CHARACTERIZED";
+    SENSITIVITY_RANGE: "SENSITIVITY_RANGE";
+}>;
 export type UncertaintyKind = z.infer<typeof UncertaintyKindSchema>;
 /**
  * Named explicitly rather than inferred, and the schemas below are annotated
@@ -68,7 +82,7 @@ export type UncertaintyKind = z.infer<typeof UncertaintyKindSchema>;
  * full enum and rejects `MEASURED` at validation time -- and because every
  * caller here parses untrusted data anyway.
  */
-export type Contract<T> = z.ZodType<T, z.ZodTypeDef, unknown>;
+export type Contract<T> = z.ZodType<T, unknown>;
 export interface Uncertainty {
     kind: UncertaintyKind;
     low: number | null;

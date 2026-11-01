@@ -20,7 +20,10 @@ import type { NoiseModel } from "./noise.js";
  */
 export declare const MITIGATION_ADAPTER = "ketqat-mitigation";
 export declare const MITIGATION_ADAPTER_VERSION = "0.1.0";
-export declare const MitigationMethodSchema: z.ZodEnum<["zero_noise_extrapolation", "readout_error_mitigation"]>;
+export declare const MitigationMethodSchema: z.ZodEnum<{
+    readout_error_mitigation: "readout_error_mitigation";
+    zero_noise_extrapolation: "zero_noise_extrapolation";
+}>;
 export type MitigationMethod = z.infer<typeof MitigationMethodSchema>;
 export interface MitigationResult {
     method: MitigationMethod;

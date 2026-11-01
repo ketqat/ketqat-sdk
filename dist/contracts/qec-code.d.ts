@@ -17,58 +17,77 @@ import { z } from "zod";
  *   matching never reports SIMULATED or DEMONSTRATED -- only a recorded run can
  *   raise the level that far.
  */
-export declare const QecCodeFamilySchema: z.ZodEnum<["STABILIZER", "CSS", "SUBSYSTEM", "TOPOLOGICAL", "SURFACE", "TORIC", "COLOR", "QUANTUM_LDPC", "HYPERGRAPH_PRODUCT", "BIVARIATE_BICYCLE", "CONCATENATED", "BOSONIC", "GKP", "CAT", "QUDIT", "ERASURE_TOLERANT", "APPROXIMATE", "FLOQUET"]>;
+export declare const QecCodeFamilySchema: z.ZodEnum<{
+    APPROXIMATE: "APPROXIMATE";
+    BIVARIATE_BICYCLE: "BIVARIATE_BICYCLE";
+    BOSONIC: "BOSONIC";
+    CAT: "CAT";
+    COLOR: "COLOR";
+    CONCATENATED: "CONCATENATED";
+    CSS: "CSS";
+    ERASURE_TOLERANT: "ERASURE_TOLERANT";
+    FLOQUET: "FLOQUET";
+    GKP: "GKP";
+    HYPERGRAPH_PRODUCT: "HYPERGRAPH_PRODUCT";
+    QUANTUM_LDPC: "QUANTUM_LDPC";
+    QUDIT: "QUDIT";
+    STABILIZER: "STABILIZER";
+    SUBSYSTEM: "SUBSYSTEM";
+    SURFACE: "SURFACE";
+    TOPOLOGICAL: "TOPOLOGICAL";
+    TORIC: "TORIC";
+}>;
 export type QecCodeFamily = z.infer<typeof QecCodeFamilySchema>;
 /**
  * How well a code and a device match. Ordered weakest to strongest, with the
  * negative and the unknown cases kept distinct: "we do not know" and "this does
  * not work" are different statements.
  */
-export declare const SuitabilityLevelSchema: z.ZodEnum<["UNKNOWN", "INCOMPATIBLE_UNDER_ASSUMPTIONS", "REQUIRES_NONLOCAL_CONNECTIVITY", "REQUIRES_FAST_FEEDFORWARD", "REQUIRES_LOSS_DETECTION", "THEORETICALLY_SUITABLE", "SIMULATED", "DEMONSTRATED", "COMPATIBLE"]>;
+export declare const SuitabilityLevelSchema: z.ZodEnum<{
+    COMPATIBLE: "COMPATIBLE";
+    DEMONSTRATED: "DEMONSTRATED";
+    INCOMPATIBLE_UNDER_ASSUMPTIONS: "INCOMPATIBLE_UNDER_ASSUMPTIONS";
+    REQUIRES_FAST_FEEDFORWARD: "REQUIRES_FAST_FEEDFORWARD";
+    REQUIRES_LOSS_DETECTION: "REQUIRES_LOSS_DETECTION";
+    REQUIRES_NONLOCAL_CONNECTIVITY: "REQUIRES_NONLOCAL_CONNECTIVITY";
+    SIMULATED: "SIMULATED";
+    THEORETICALLY_SUITABLE: "THEORETICALLY_SUITABLE";
+    UNKNOWN: "UNKNOWN";
+}>;
 export type SuitabilityLevel = z.infer<typeof SuitabilityLevelSchema>;
 export declare const QecCodeSchema: z.ZodObject<{
     slug: z.ZodString;
     name: z.ZodString;
-    families: z.ZodArray<z.ZodEnum<["STABILIZER", "CSS", "SUBSYSTEM", "TOPOLOGICAL", "SURFACE", "TORIC", "COLOR", "QUANTUM_LDPC", "HYPERGRAPH_PRODUCT", "BIVARIATE_BICYCLE", "CONCATENATED", "BOSONIC", "GKP", "CAT", "QUDIT", "ERASURE_TOLERANT", "APPROXIMATE", "FLOQUET"]>, "many">;
+    families: z.ZodArray<z.ZodEnum<{
+        APPROXIMATE: "APPROXIMATE";
+        BIVARIATE_BICYCLE: "BIVARIATE_BICYCLE";
+        BOSONIC: "BOSONIC";
+        CAT: "CAT";
+        COLOR: "COLOR";
+        CONCATENATED: "CONCATENATED";
+        CSS: "CSS";
+        ERASURE_TOLERANT: "ERASURE_TOLERANT";
+        FLOQUET: "FLOQUET";
+        GKP: "GKP";
+        HYPERGRAPH_PRODUCT: "HYPERGRAPH_PRODUCT";
+        QUANTUM_LDPC: "QUANTUM_LDPC";
+        QUDIT: "QUDIT";
+        STABILIZER: "STABILIZER";
+        SUBSYSTEM: "SUBSYSTEM";
+        SURFACE: "SURFACE";
+        TOPOLOGICAL: "TOPOLOGICAL";
+        TORIC: "TORIC";
+    }>>;
     description: z.ZodString;
-    /** Whether syndrome extraction needs measurement partway through a circuit. */
     requires_mid_circuit_measurement: z.ZodDefault<z.ZodBoolean>;
     requires_feed_forward: z.ZodDefault<z.ZodBoolean>;
     requires_nonlocal_connectivity: z.ZodDefault<z.ZodBoolean>;
     requires_loss_detection: z.ZodDefault<z.ZodBoolean>;
-    supported_distances: z.ZodDefault<z.ZodArray<z.ZodNumber, "many">>;
-    /** Stim circuit generator, when this code is directly runnable. */
+    supported_distances: z.ZodDefault<z.ZodArray<z.ZodNumber>>;
     stim_generator: z.ZodDefault<z.ZodNullable<z.ZodString>>;
-    /** External references as pointers, never copied content. */
-    references: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-    notes: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-}, "strip", z.ZodTypeAny, {
-    slug: string;
-    name: string;
-    families: ("APPROXIMATE" | "BIVARIATE_BICYCLE" | "BOSONIC" | "CAT" | "COLOR" | "CONCATENATED" | "CSS" | "ERASURE_TOLERANT" | "FLOQUET" | "GKP" | "HYPERGRAPH_PRODUCT" | "QUANTUM_LDPC" | "QUDIT" | "STABILIZER" | "SUBSYSTEM" | "SURFACE" | "TOPOLOGICAL" | "TORIC")[];
-    description: string;
-    requires_mid_circuit_measurement: boolean;
-    requires_feed_forward: boolean;
-    requires_nonlocal_connectivity: boolean;
-    requires_loss_detection: boolean;
-    supported_distances: number[];
-    stim_generator: string | null;
-    references: string[];
-    notes: string[];
-}, {
-    slug: string;
-    name: string;
-    families: ("APPROXIMATE" | "BIVARIATE_BICYCLE" | "BOSONIC" | "CAT" | "COLOR" | "CONCATENATED" | "CSS" | "ERASURE_TOLERANT" | "FLOQUET" | "GKP" | "HYPERGRAPH_PRODUCT" | "QUANTUM_LDPC" | "QUDIT" | "STABILIZER" | "SUBSYSTEM" | "SURFACE" | "TOPOLOGICAL" | "TORIC")[];
-    description: string;
-    requires_mid_circuit_measurement?: boolean | undefined;
-    requires_feed_forward?: boolean | undefined;
-    requires_nonlocal_connectivity?: boolean | undefined;
-    requires_loss_detection?: boolean | undefined;
-    supported_distances?: number[] | undefined;
-    stim_generator?: string | null | undefined;
-    references?: string[] | undefined;
-    notes?: string[] | undefined;
-}>;
+    references: z.ZodDefault<z.ZodArray<z.ZodString>>;
+    notes: z.ZodDefault<z.ZodArray<z.ZodString>>;
+}, z.core.$strip>;
 export type QecCode = z.infer<typeof QecCodeSchema>;
 export declare const QEC_CODE_CATALOG: QecCode[];
 export declare function getQecCode(slug: string): QecCode | undefined;

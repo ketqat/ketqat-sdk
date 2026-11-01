@@ -12,27 +12,26 @@ import { z } from "zod";
  * availability, queue depth, pricing, and anything that would make this a
  * hardware-access catalog rather than a device model.
  */
-export declare const QubitModalitySchema: z.ZodEnum<["SUPERCONDUCTING", "TRAPPED_ION", "NEUTRAL_ATOM", "PHOTONIC", "SPIN", "SEMICONDUCTOR", "BOSONIC_CAVITY", "CONTINUOUS_VARIABLE", "TOPOLOGICAL_CANDIDATE", "SIMULATED"]>;
+export declare const QubitModalitySchema: z.ZodEnum<{
+    BOSONIC_CAVITY: "BOSONIC_CAVITY";
+    CONTINUOUS_VARIABLE: "CONTINUOUS_VARIABLE";
+    NEUTRAL_ATOM: "NEUTRAL_ATOM";
+    PHOTONIC: "PHOTONIC";
+    SEMICONDUCTOR: "SEMICONDUCTOR";
+    SIMULATED: "SIMULATED";
+    SPIN: "SPIN";
+    SUPERCONDUCTING: "SUPERCONDUCTING";
+    TOPOLOGICAL_CANDIDATE: "TOPOLOGICAL_CANDIDATE";
+    TRAPPED_ION: "TRAPPED_ION";
+}>;
 export type QubitModality = z.infer<typeof QubitModalitySchema>;
 /** An undirected physical connection between two qubits. */
 export declare const CouplingSchema: z.ZodObject<{
     control: z.ZodNumber;
     target: z.ZodNumber;
-    /** Two-qubit gate error on this edge, when characterized. */
     error_rate: z.ZodOptional<z.ZodNumber>;
-    /** Gate duration in nanoseconds, when characterized. */
     duration_ns: z.ZodOptional<z.ZodNumber>;
-}, "strip", z.ZodTypeAny, {
-    control: number;
-    target: number;
-    error_rate?: number | undefined;
-    duration_ns?: number | undefined;
-}, {
-    control: number;
-    target: number;
-    error_rate?: number | undefined;
-    duration_ns?: number | undefined;
-}>;
+}, z.core.$strip>;
 export type Coupling = z.infer<typeof CouplingSchema>;
 export declare const QubitPropertiesSchema: z.ZodObject<{
     index: z.ZodNumber;
@@ -40,23 +39,8 @@ export declare const QubitPropertiesSchema: z.ZodObject<{
     t2_us: z.ZodOptional<z.ZodNumber>;
     readout_error: z.ZodOptional<z.ZodNumber>;
     single_qubit_error: z.ZodOptional<z.ZodNumber>;
-    /** Excluded from routing when false, e.g. a qubit taken out of service. */
     operational: z.ZodDefault<z.ZodBoolean>;
-}, "strip", z.ZodTypeAny, {
-    index: number;
-    t1_us?: number | undefined;
-    t2_us?: number | undefined;
-    readout_error?: number | undefined;
-    single_qubit_error?: number | undefined;
-    operational: boolean;
-}, {
-    index: number;
-    t1_us?: number | undefined;
-    t2_us?: number | undefined;
-    readout_error?: number | undefined;
-    single_qubit_error?: number | undefined;
-    operational?: boolean | undefined;
-}>;
+}, z.core.$strip>;
 export type QubitProperties = z.infer<typeof QubitPropertiesSchema>;
 /**
  * Capabilities that decide which QEC codes a device can actually run.
@@ -67,7 +51,6 @@ export type QubitProperties = z.infer<typeof QubitPropertiesSchema>;
 export declare const DeviceCapabilitiesSchema: z.ZodObject<{
     mid_circuit_measurement: z.ZodDefault<z.ZodBoolean>;
     feed_forward: z.ZodDefault<z.ZodBoolean>;
-    /** Feed-forward latency budget in nanoseconds, when characterized. */
     feed_forward_latency_ns: z.ZodOptional<z.ZodNumber>;
     reset: z.ZodDefault<z.ZodBoolean>;
     leakage_detection: z.ZodDefault<z.ZodBoolean>;
@@ -75,88 +58,46 @@ export declare const DeviceCapabilitiesSchema: z.ZodObject<{
     erasure_conversion: z.ZodDefault<z.ZodBoolean>;
     all_to_all_connectivity: z.ZodDefault<z.ZodBoolean>;
     dynamic_connectivity: z.ZodDefault<z.ZodBoolean>;
-    /** Whether the device applies a biased noise channel, e.g. dominant dephasing. */
     noise_bias: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    mid_circuit_measurement: boolean;
-    feed_forward: boolean;
-    feed_forward_latency_ns?: number | undefined;
-    reset: boolean;
-    leakage_detection: boolean;
-    loss_detection: boolean;
-    erasure_conversion: boolean;
-    all_to_all_connectivity: boolean;
-    dynamic_connectivity: boolean;
-    noise_bias?: string | undefined;
-}, {
-    mid_circuit_measurement?: boolean | undefined;
-    feed_forward?: boolean | undefined;
-    feed_forward_latency_ns?: number | undefined;
-    reset?: boolean | undefined;
-    leakage_detection?: boolean | undefined;
-    loss_detection?: boolean | undefined;
-    erasure_conversion?: boolean | undefined;
-    all_to_all_connectivity?: boolean | undefined;
-    dynamic_connectivity?: boolean | undefined;
-    noise_bias?: string | undefined;
-}>;
+}, z.core.$strip>;
 export type DeviceCapabilities = z.infer<typeof DeviceCapabilitiesSchema>;
 export declare const HardwareProfileSchema: z.ZodObject<{
     schema_version: z.ZodString;
-    /** Provider namespace, e.g. "ibm", "ionq", or "simulator". */
     provider: z.ZodString;
     backend: z.ZodString;
-    /** Identifies this observation. Two snapshots of one device differ here. */
     snapshot_id: z.ZodString;
-    modality: z.ZodEnum<["SUPERCONDUCTING", "TRAPPED_ION", "NEUTRAL_ATOM", "PHOTONIC", "SPIN", "SEMICONDUCTOR", "BOSONIC_CAVITY", "CONTINUOUS_VARIABLE", "TOPOLOGICAL_CANDIDATE", "SIMULATED"]>;
+    modality: z.ZodEnum<{
+        BOSONIC_CAVITY: "BOSONIC_CAVITY";
+        CONTINUOUS_VARIABLE: "CONTINUOUS_VARIABLE";
+        NEUTRAL_ATOM: "NEUTRAL_ATOM";
+        PHOTONIC: "PHOTONIC";
+        SEMICONDUCTOR: "SEMICONDUCTOR";
+        SIMULATED: "SIMULATED";
+        SPIN: "SPIN";
+        SUPERCONDUCTING: "SUPERCONDUCTING";
+        TOPOLOGICAL_CANDIDATE: "TOPOLOGICAL_CANDIDATE";
+        TRAPPED_ION: "TRAPPED_ION";
+    }>;
     qubit_count: z.ZodNumber;
-    native_gates: z.ZodArray<z.ZodString, "many">;
+    native_gates: z.ZodArray<z.ZodString>;
     basis_two_qubit_gate: z.ZodString;
     couplings: z.ZodDefault<z.ZodArray<z.ZodObject<{
         control: z.ZodNumber;
         target: z.ZodNumber;
-        /** Two-qubit gate error on this edge, when characterized. */
         error_rate: z.ZodOptional<z.ZodNumber>;
-        /** Gate duration in nanoseconds, when characterized. */
         duration_ns: z.ZodOptional<z.ZodNumber>;
-    }, "strip", z.ZodTypeAny, {
-        control: number;
-        target: number;
-        error_rate?: number | undefined;
-        duration_ns?: number | undefined;
-    }, {
-        control: number;
-        target: number;
-        error_rate?: number | undefined;
-        duration_ns?: number | undefined;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     qubits: z.ZodDefault<z.ZodArray<z.ZodObject<{
         index: z.ZodNumber;
         t1_us: z.ZodOptional<z.ZodNumber>;
         t2_us: z.ZodOptional<z.ZodNumber>;
         readout_error: z.ZodOptional<z.ZodNumber>;
         single_qubit_error: z.ZodOptional<z.ZodNumber>;
-        /** Excluded from routing when false, e.g. a qubit taken out of service. */
         operational: z.ZodDefault<z.ZodBoolean>;
-    }, "strip", z.ZodTypeAny, {
-        index: number;
-        t1_us?: number | undefined;
-        t2_us?: number | undefined;
-        readout_error?: number | undefined;
-        single_qubit_error?: number | undefined;
-        operational: boolean;
-    }, {
-        index: number;
-        t1_us?: number | undefined;
-        t2_us?: number | undefined;
-        readout_error?: number | undefined;
-        single_qubit_error?: number | undefined;
-        operational?: boolean | undefined;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     capabilities: z.ZodObject<{
         mid_circuit_measurement: z.ZodDefault<z.ZodBoolean>;
         feed_forward: z.ZodDefault<z.ZodBoolean>;
-        /** Feed-forward latency budget in nanoseconds, when characterized. */
         feed_forward_latency_ns: z.ZodOptional<z.ZodNumber>;
         reset: z.ZodDefault<z.ZodBoolean>;
         leakage_detection: z.ZodDefault<z.ZodBoolean>;
@@ -164,119 +105,13 @@ export declare const HardwareProfileSchema: z.ZodObject<{
         erasure_conversion: z.ZodDefault<z.ZodBoolean>;
         all_to_all_connectivity: z.ZodDefault<z.ZodBoolean>;
         dynamic_connectivity: z.ZodDefault<z.ZodBoolean>;
-        /** Whether the device applies a biased noise channel, e.g. dominant dephasing. */
         noise_bias: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        mid_circuit_measurement: boolean;
-        feed_forward: boolean;
-        feed_forward_latency_ns?: number | undefined;
-        reset: boolean;
-        leakage_detection: boolean;
-        loss_detection: boolean;
-        erasure_conversion: boolean;
-        all_to_all_connectivity: boolean;
-        dynamic_connectivity: boolean;
-        noise_bias?: string | undefined;
-    }, {
-        mid_circuit_measurement?: boolean | undefined;
-        feed_forward?: boolean | undefined;
-        feed_forward_latency_ns?: number | undefined;
-        reset?: boolean | undefined;
-        leakage_detection?: boolean | undefined;
-        loss_detection?: boolean | undefined;
-        erasure_conversion?: boolean | undefined;
-        all_to_all_connectivity?: boolean | undefined;
-        dynamic_connectivity?: boolean | undefined;
-        noise_bias?: string | undefined;
-    }>;
-    /**
-     * When the device was characterized. Distinct from `retrieved_at`:
-     * calibration can be hours old at the moment it is read.
-     */
+    }, z.core.$strip>;
     calibration_timestamp: z.ZodOptional<z.ZodString>;
     retrieved_at: z.ZodString;
-    /** Where this snapshot came from, so a reader can re-derive it. */
     source: z.ZodString;
     notes: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    schema_version: string;
-    provider: string;
-    backend: string;
-    snapshot_id: string;
-    modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
-    qubit_count: number;
-    native_gates: string[];
-    basis_two_qubit_gate: string;
-    couplings: {
-        control: number;
-        target: number;
-        error_rate?: number | undefined;
-        duration_ns?: number | undefined;
-    }[];
-    qubits: {
-        index: number;
-        t1_us?: number | undefined;
-        t2_us?: number | undefined;
-        readout_error?: number | undefined;
-        single_qubit_error?: number | undefined;
-        operational: boolean;
-    }[];
-    capabilities: {
-        mid_circuit_measurement: boolean;
-        feed_forward: boolean;
-        feed_forward_latency_ns?: number | undefined;
-        reset: boolean;
-        leakage_detection: boolean;
-        loss_detection: boolean;
-        erasure_conversion: boolean;
-        all_to_all_connectivity: boolean;
-        dynamic_connectivity: boolean;
-        noise_bias?: string | undefined;
-    };
-    calibration_timestamp?: string | undefined;
-    retrieved_at: string;
-    source: string;
-    notes?: string | undefined;
-}, {
-    schema_version: string;
-    provider: string;
-    backend: string;
-    snapshot_id: string;
-    modality: "BOSONIC_CAVITY" | "CONTINUOUS_VARIABLE" | "NEUTRAL_ATOM" | "PHOTONIC" | "SEMICONDUCTOR" | "SIMULATED" | "SPIN" | "SUPERCONDUCTING" | "TOPOLOGICAL_CANDIDATE" | "TRAPPED_ION";
-    qubit_count: number;
-    native_gates: string[];
-    basis_two_qubit_gate: string;
-    couplings?: {
-        control: number;
-        target: number;
-        error_rate?: number | undefined;
-        duration_ns?: number | undefined;
-    }[] | undefined;
-    qubits?: {
-        index: number;
-        t1_us?: number | undefined;
-        t2_us?: number | undefined;
-        readout_error?: number | undefined;
-        single_qubit_error?: number | undefined;
-        operational?: boolean | undefined;
-    }[] | undefined;
-    capabilities: {
-        mid_circuit_measurement?: boolean | undefined;
-        feed_forward?: boolean | undefined;
-        feed_forward_latency_ns?: number | undefined;
-        reset?: boolean | undefined;
-        leakage_detection?: boolean | undefined;
-        loss_detection?: boolean | undefined;
-        erasure_conversion?: boolean | undefined;
-        all_to_all_connectivity?: boolean | undefined;
-        dynamic_connectivity?: boolean | undefined;
-        noise_bias?: string | undefined;
-    };
-    calibration_timestamp?: string | undefined;
-    retrieved_at: string;
-    source: string;
-    notes?: string | undefined;
-}>;
+}, z.core.$strip>;
 export type HardwareProfile = z.infer<typeof HardwareProfileSchema>;
 /** Adjacency list over operational qubits, both directions per coupling. */
 export declare function couplingAdjacency(profile: HardwareProfile): Map<number, Set<number>>;

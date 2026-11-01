@@ -113,12 +113,14 @@ test("infinite and NaN values are refused", () => {
       quantity({
         value: Number.POSITIVE_INFINITY, unit: "s", evidence: "MODELLED", source: "s", model: "m", modelVersion: "1",
       }),
-    /must be finite/,
+    // zod 4 refuses Infinity in the number type itself; the finiteness
+    // refinement remains as the second line for any future number type.
+    /must be finite|received Infinity/,
   )
   // NaN is refused by the number type itself, before the finiteness refinement.
   assert.throws(
     () => quantity({ value: Number.NaN, unit: "s", evidence: "MODELLED", source: "s", model: "m", modelVersion: "1" }),
-    /received nan/,
+    /received nan/i,
   )
 })
 

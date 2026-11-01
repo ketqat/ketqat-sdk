@@ -92,7 +92,7 @@ export type UncertaintyKind = z.infer<typeof UncertaintyKindSchema>
  * full enum and rejects `MEASURED` at validation time -- and because every
  * caller here parses untrusted data anyway.
  */
-export type Contract<T> = z.ZodType<T, z.ZodTypeDef, unknown>
+export type Contract<T> = z.ZodType<T, unknown>
 
 export interface Uncertainty {
   kind: UncertaintyKind

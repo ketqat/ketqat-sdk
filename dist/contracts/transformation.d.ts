@@ -9,7 +9,17 @@ import { type LossReportEntry } from "./common.js";
  * unreproducible is that the circuit that ran is not the circuit the author
  * wrote and nobody recorded the difference.
  */
-export declare const TransformationKindSchema: z.ZodEnum<["IMPORT", "EXPORT", "CONVERSION", "TRANSPILATION", "OPTIMIZATION", "ZX_REWRITE", "MITIGATION", "LAYOUT", "ROUTING"]>;
+export declare const TransformationKindSchema: z.ZodEnum<{
+    CONVERSION: "CONVERSION";
+    EXPORT: "EXPORT";
+    IMPORT: "IMPORT";
+    LAYOUT: "LAYOUT";
+    MITIGATION: "MITIGATION";
+    OPTIMIZATION: "OPTIMIZATION";
+    ROUTING: "ROUTING";
+    TRANSPILATION: "TRANSPILATION";
+    ZX_REWRITE: "ZX_REWRITE";
+}>;
 export type TransformationKind = z.infer<typeof TransformationKindSchema>;
 /**
  * Evidence for an equivalence claim.
@@ -19,294 +29,125 @@ export type TransformationKind = z.infer<typeof TransformationKindSchema>;
  * statement. `INCONCLUSIVE` requires a reason, so that a check which simply
  * timed out is distinguishable from one that was never attempted.
  */
-export declare const EquivalenceEvidenceSchema: z.ZodEffects<z.ZodObject<{
-    level: z.ZodEnum<["NOT_CHECKED", "NUMERICALLY_CHECKED", "SYMBOLICALLY_REDUCED", "PROVED_BY_SUPPORTED_REWRITE", "FAILED", "INCONCLUSIVE"]>;
+export declare const EquivalenceEvidenceSchema: z.ZodObject<{
+    level: z.ZodEnum<{
+        FAILED: "FAILED";
+        INCONCLUSIVE: "INCONCLUSIVE";
+        NOT_CHECKED: "NOT_CHECKED";
+        NUMERICALLY_CHECKED: "NUMERICALLY_CHECKED";
+        PROVED_BY_SUPPORTED_REWRITE: "PROVED_BY_SUPPORTED_REWRITE";
+        SYMBOLICALLY_REDUCED: "SYMBOLICALLY_REDUCED";
+    }>;
     method: z.ZodOptional<z.ZodString>;
     tolerance: z.ZodOptional<z.ZodNumber>;
     global_phase_ignored: z.ZodOptional<z.ZodBoolean>;
     qubit_count: z.ZodOptional<z.ZodNumber>;
-    /** Required for FAILED: what distinguishes the two programs. */
     counterexample: z.ZodOptional<z.ZodString>;
-    /** Required for INCONCLUSIVE: why the check did not decide. */
     reason: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-    method?: string | undefined;
-    tolerance?: number | undefined;
-    global_phase_ignored?: boolean | undefined;
-    qubit_count?: number | undefined;
-    counterexample?: string | undefined;
-    reason?: string | undefined;
-}, {
-    level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-    method?: string | undefined;
-    tolerance?: number | undefined;
-    global_phase_ignored?: boolean | undefined;
-    qubit_count?: number | undefined;
-    counterexample?: string | undefined;
-    reason?: string | undefined;
-}>, {
-    level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-    method?: string | undefined;
-    tolerance?: number | undefined;
-    global_phase_ignored?: boolean | undefined;
-    qubit_count?: number | undefined;
-    counterexample?: string | undefined;
-    reason?: string | undefined;
-}, {
-    level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-    method?: string | undefined;
-    tolerance?: number | undefined;
-    global_phase_ignored?: boolean | undefined;
-    qubit_count?: number | undefined;
-    counterexample?: string | undefined;
-    reason?: string | undefined;
-}>;
+}, z.core.$strip>;
 export type EquivalenceEvidence = z.infer<typeof EquivalenceEvidenceSchema>;
 export declare const CircuitTransformationSchema: z.ZodObject<{
-    kind: z.ZodEnum<["IMPORT", "EXPORT", "CONVERSION", "TRANSPILATION", "OPTIMIZATION", "ZX_REWRITE", "MITIGATION", "LAYOUT", "ROUTING"]>;
-    /** Adapter that performed the transformation, e.g. "openqasm3", "qiskit-transpiler". */
+    kind: z.ZodEnum<{
+        CONVERSION: "CONVERSION";
+        EXPORT: "EXPORT";
+        IMPORT: "IMPORT";
+        LAYOUT: "LAYOUT";
+        MITIGATION: "MITIGATION";
+        OPTIMIZATION: "OPTIMIZATION";
+        ROUTING: "ROUTING";
+        TRANSPILATION: "TRANSPILATION";
+        ZX_REWRITE: "ZX_REWRITE";
+    }>;
     adapter: z.ZodString;
     adapter_version: z.ZodString;
-    /** Version of the underlying library, when it differs from the adapter's own version. */
     library_version: z.ZodOptional<z.ZodString>;
     options: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     input_circuit_hash: z.ZodOptional<z.ZodString>;
     output_circuit_hash: z.ZodOptional<z.ZodString>;
     loss_report: z.ZodDefault<z.ZodArray<z.ZodObject<{
         feature: z.ZodString;
-        severity: z.ZodEnum<["semantic", "structural", "cosmetic"]>;
-        action: z.ZodEnum<["rejected", "dropped", "approximated"]>;
+        severity: z.ZodEnum<{
+            cosmetic: "cosmetic";
+            semantic: "semantic";
+            structural: "structural";
+        }>;
+        action: z.ZodEnum<{
+            approximated: "approximated";
+            dropped: "dropped";
+            rejected: "rejected";
+        }>;
         detail: z.ZodString;
         location: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        feature: string;
-        severity: "cosmetic" | "semantic" | "structural";
-        action: "approximated" | "dropped" | "rejected";
-        detail: string;
-        location?: string | undefined;
-    }, {
-        feature: string;
-        severity: "cosmetic" | "semantic" | "structural";
-        action: "approximated" | "dropped" | "rejected";
-        detail: string;
-        location?: string | undefined;
-    }>, "many">>;
-    equivalence: z.ZodOptional<z.ZodEffects<z.ZodObject<{
-        level: z.ZodEnum<["NOT_CHECKED", "NUMERICALLY_CHECKED", "SYMBOLICALLY_REDUCED", "PROVED_BY_SUPPORTED_REWRITE", "FAILED", "INCONCLUSIVE"]>;
+    }, z.core.$strip>>>;
+    equivalence: z.ZodOptional<z.ZodObject<{
+        level: z.ZodEnum<{
+            FAILED: "FAILED";
+            INCONCLUSIVE: "INCONCLUSIVE";
+            NOT_CHECKED: "NOT_CHECKED";
+            NUMERICALLY_CHECKED: "NUMERICALLY_CHECKED";
+            PROVED_BY_SUPPORTED_REWRITE: "PROVED_BY_SUPPORTED_REWRITE";
+            SYMBOLICALLY_REDUCED: "SYMBOLICALLY_REDUCED";
+        }>;
         method: z.ZodOptional<z.ZodString>;
         tolerance: z.ZodOptional<z.ZodNumber>;
         global_phase_ignored: z.ZodOptional<z.ZodBoolean>;
         qubit_count: z.ZodOptional<z.ZodNumber>;
-        /** Required for FAILED: what distinguishes the two programs. */
         counterexample: z.ZodOptional<z.ZodString>;
-        /** Required for INCONCLUSIVE: why the check did not decide. */
         reason: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-        method?: string | undefined;
-        tolerance?: number | undefined;
-        global_phase_ignored?: boolean | undefined;
-        qubit_count?: number | undefined;
-        counterexample?: string | undefined;
-        reason?: string | undefined;
-    }, {
-        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-        method?: string | undefined;
-        tolerance?: number | undefined;
-        global_phase_ignored?: boolean | undefined;
-        qubit_count?: number | undefined;
-        counterexample?: string | undefined;
-        reason?: string | undefined;
-    }>, {
-        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-        method?: string | undefined;
-        tolerance?: number | undefined;
-        global_phase_ignored?: boolean | undefined;
-        qubit_count?: number | undefined;
-        counterexample?: string | undefined;
-        reason?: string | undefined;
-    }, {
-        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-        method?: string | undefined;
-        tolerance?: number | undefined;
-        global_phase_ignored?: boolean | undefined;
-        qubit_count?: number | undefined;
-        counterexample?: string | undefined;
-        reason?: string | undefined;
-    }>>;
-}, "strip", z.ZodTypeAny, {
-    kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
-    adapter: string;
-    adapter_version: string;
-    library_version?: string | undefined;
-    options: Record<string, unknown>;
-    input_circuit_hash?: string | undefined;
-    output_circuit_hash?: string | undefined;
-    loss_report: {
-        feature: string;
-        severity: "cosmetic" | "semantic" | "structural";
-        action: "approximated" | "dropped" | "rejected";
-        detail: string;
-        location?: string | undefined;
-    }[];
-    equivalence?: {
-        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-        method?: string | undefined;
-        tolerance?: number | undefined;
-        global_phase_ignored?: boolean | undefined;
-        qubit_count?: number | undefined;
-        counterexample?: string | undefined;
-        reason?: string | undefined;
-    } | undefined;
-}, {
-    kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
-    adapter: string;
-    adapter_version: string;
-    library_version?: string | undefined;
-    options?: Record<string, unknown> | undefined;
-    input_circuit_hash?: string | undefined;
-    output_circuit_hash?: string | undefined;
-    loss_report?: {
-        feature: string;
-        severity: "cosmetic" | "semantic" | "structural";
-        action: "approximated" | "dropped" | "rejected";
-        detail: string;
-        location?: string | undefined;
-    }[] | undefined;
-    equivalence?: {
-        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-        method?: string | undefined;
-        tolerance?: number | undefined;
-        global_phase_ignored?: boolean | undefined;
-        qubit_count?: number | undefined;
-        counterexample?: string | undefined;
-        reason?: string | undefined;
-    } | undefined;
-}>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
 export type CircuitTransformation = z.infer<typeof CircuitTransformationSchema>;
 /** An ordered chain of transformations, oldest first. */
 export declare const TransformationChainSchema: z.ZodArray<z.ZodObject<{
-    kind: z.ZodEnum<["IMPORT", "EXPORT", "CONVERSION", "TRANSPILATION", "OPTIMIZATION", "ZX_REWRITE", "MITIGATION", "LAYOUT", "ROUTING"]>;
-    /** Adapter that performed the transformation, e.g. "openqasm3", "qiskit-transpiler". */
+    kind: z.ZodEnum<{
+        CONVERSION: "CONVERSION";
+        EXPORT: "EXPORT";
+        IMPORT: "IMPORT";
+        LAYOUT: "LAYOUT";
+        MITIGATION: "MITIGATION";
+        OPTIMIZATION: "OPTIMIZATION";
+        ROUTING: "ROUTING";
+        TRANSPILATION: "TRANSPILATION";
+        ZX_REWRITE: "ZX_REWRITE";
+    }>;
     adapter: z.ZodString;
     adapter_version: z.ZodString;
-    /** Version of the underlying library, when it differs from the adapter's own version. */
     library_version: z.ZodOptional<z.ZodString>;
     options: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     input_circuit_hash: z.ZodOptional<z.ZodString>;
     output_circuit_hash: z.ZodOptional<z.ZodString>;
     loss_report: z.ZodDefault<z.ZodArray<z.ZodObject<{
         feature: z.ZodString;
-        severity: z.ZodEnum<["semantic", "structural", "cosmetic"]>;
-        action: z.ZodEnum<["rejected", "dropped", "approximated"]>;
+        severity: z.ZodEnum<{
+            cosmetic: "cosmetic";
+            semantic: "semantic";
+            structural: "structural";
+        }>;
+        action: z.ZodEnum<{
+            approximated: "approximated";
+            dropped: "dropped";
+            rejected: "rejected";
+        }>;
         detail: z.ZodString;
         location: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        feature: string;
-        severity: "cosmetic" | "semantic" | "structural";
-        action: "approximated" | "dropped" | "rejected";
-        detail: string;
-        location?: string | undefined;
-    }, {
-        feature: string;
-        severity: "cosmetic" | "semantic" | "structural";
-        action: "approximated" | "dropped" | "rejected";
-        detail: string;
-        location?: string | undefined;
-    }>, "many">>;
-    equivalence: z.ZodOptional<z.ZodEffects<z.ZodObject<{
-        level: z.ZodEnum<["NOT_CHECKED", "NUMERICALLY_CHECKED", "SYMBOLICALLY_REDUCED", "PROVED_BY_SUPPORTED_REWRITE", "FAILED", "INCONCLUSIVE"]>;
+    }, z.core.$strip>>>;
+    equivalence: z.ZodOptional<z.ZodObject<{
+        level: z.ZodEnum<{
+            FAILED: "FAILED";
+            INCONCLUSIVE: "INCONCLUSIVE";
+            NOT_CHECKED: "NOT_CHECKED";
+            NUMERICALLY_CHECKED: "NUMERICALLY_CHECKED";
+            PROVED_BY_SUPPORTED_REWRITE: "PROVED_BY_SUPPORTED_REWRITE";
+            SYMBOLICALLY_REDUCED: "SYMBOLICALLY_REDUCED";
+        }>;
         method: z.ZodOptional<z.ZodString>;
         tolerance: z.ZodOptional<z.ZodNumber>;
         global_phase_ignored: z.ZodOptional<z.ZodBoolean>;
         qubit_count: z.ZodOptional<z.ZodNumber>;
-        /** Required for FAILED: what distinguishes the two programs. */
         counterexample: z.ZodOptional<z.ZodString>;
-        /** Required for INCONCLUSIVE: why the check did not decide. */
         reason: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-        method?: string | undefined;
-        tolerance?: number | undefined;
-        global_phase_ignored?: boolean | undefined;
-        qubit_count?: number | undefined;
-        counterexample?: string | undefined;
-        reason?: string | undefined;
-    }, {
-        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-        method?: string | undefined;
-        tolerance?: number | undefined;
-        global_phase_ignored?: boolean | undefined;
-        qubit_count?: number | undefined;
-        counterexample?: string | undefined;
-        reason?: string | undefined;
-    }>, {
-        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-        method?: string | undefined;
-        tolerance?: number | undefined;
-        global_phase_ignored?: boolean | undefined;
-        qubit_count?: number | undefined;
-        counterexample?: string | undefined;
-        reason?: string | undefined;
-    }, {
-        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-        method?: string | undefined;
-        tolerance?: number | undefined;
-        global_phase_ignored?: boolean | undefined;
-        qubit_count?: number | undefined;
-        counterexample?: string | undefined;
-        reason?: string | undefined;
-    }>>;
-}, "strip", z.ZodTypeAny, {
-    kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
-    adapter: string;
-    adapter_version: string;
-    library_version?: string | undefined;
-    options: Record<string, unknown>;
-    input_circuit_hash?: string | undefined;
-    output_circuit_hash?: string | undefined;
-    loss_report: {
-        feature: string;
-        severity: "cosmetic" | "semantic" | "structural";
-        action: "approximated" | "dropped" | "rejected";
-        detail: string;
-        location?: string | undefined;
-    }[];
-    equivalence?: {
-        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-        method?: string | undefined;
-        tolerance?: number | undefined;
-        global_phase_ignored?: boolean | undefined;
-        qubit_count?: number | undefined;
-        counterexample?: string | undefined;
-        reason?: string | undefined;
-    } | undefined;
-}, {
-    kind: "CONVERSION" | "EXPORT" | "IMPORT" | "LAYOUT" | "MITIGATION" | "OPTIMIZATION" | "ROUTING" | "TRANSPILATION" | "ZX_REWRITE";
-    adapter: string;
-    adapter_version: string;
-    library_version?: string | undefined;
-    options?: Record<string, unknown> | undefined;
-    input_circuit_hash?: string | undefined;
-    output_circuit_hash?: string | undefined;
-    loss_report?: {
-        feature: string;
-        severity: "cosmetic" | "semantic" | "structural";
-        action: "approximated" | "dropped" | "rejected";
-        detail: string;
-        location?: string | undefined;
-    }[] | undefined;
-    equivalence?: {
-        level: "FAILED" | "INCONCLUSIVE" | "NOT_CHECKED" | "NUMERICALLY_CHECKED" | "PROVED_BY_SUPPORTED_REWRITE" | "SYMBOLICALLY_REDUCED";
-        method?: string | undefined;
-        tolerance?: number | undefined;
-        global_phase_ignored?: boolean | undefined;
-        qubit_count?: number | undefined;
-        counterexample?: string | undefined;
-        reason?: string | undefined;
-    } | undefined;
-}>, "many">;
+    }, z.core.$strip>>;
+}, z.core.$strip>>;
 export type TransformationChain = z.infer<typeof TransformationChainSchema>;
 export declare function hasSemanticLoss(entries: LossReportEntry[]): boolean;
 /**
