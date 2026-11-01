@@ -260,7 +260,7 @@
       "then": {
         "properties": {
           "subcategory": {
-            "enum": ["search", "phase-estimation", "fourier-transform", "simulation", "optimization", "linear-algebra", "arithmetic"]
+            "enum": ["search", "phase-estimation", "fourier-transform", "transforms", "simulation", "hamiltonian-simulation", "optimization", "variational", "communication", "linear-algebra", "arithmetic"]
           }
         }
       }
@@ -270,7 +270,7 @@
       "then": {
         "properties": {
           "subcategory": {
-            "enum": ["memory-experiments", "decoding", "codes", "resource-estimation"]
+            "enum": ["memory-experiments", "decoding", "codes", "stabilizer-codes", "resource-estimation"]
           }
         }
       }

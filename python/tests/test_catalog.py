@@ -23,9 +23,26 @@ PRODUCT_FILES = sorted((CATALOG_DIR / "products").glob("*.json"))
 EXPECTED_PRODUCTS = {
     "kq.algorithms.grover-search": ("grover-search", "free"),
     "kq.algorithms.quantum-phase-estimation": ("quantum-phase-estimation", "free"),
+    "kq.algorithms.qaoa-maxcut": ("qaoa-maxcut", "free"),
+    "kq.algorithms.vqe-ground-state": ("vqe-ground-state", "free"),
+    "kq.algorithms.quantum-fourier-transform": ("quantum-fourier-transform", "free"),
+    "kq.algorithms.trotter-ising-dynamics": ("trotter-ising-dynamics", "free"),
+    "kq.algorithms.quantum-teleportation": ("quantum-teleportation", "free"),
     "kq.qec.surface-code-memory": ("surface-code-memory", "free"),
+    "kq.qec.steane-code-fault-tolerance": ("steane-code", "free"),
+    "kq.qec.repetition-code-memory": ("repetition-code", "free"),
     "kq.qinfo.state-measures": ("quantum-state-measures", "free"),
+    "kq.qinfo.state-tomography": ("quantum-state-tomography", "free"),
     "kq.qinfo.channel-analysis": ("quantum-channel-analysis", "pro"),
+}
+#: The five launch products are dated 2026-10-29; the eight Free products added next are 2026-11-01.
+LAUNCH_DATE = "2026-10-29"
+LAUNCH_PRODUCT_IDS = {
+    "kq.algorithms.grover-search",
+    "kq.algorithms.quantum-phase-estimation",
+    "kq.qec.surface-code-memory",
+    "kq.qinfo.state-measures",
+    "kq.qinfo.channel-analysis",
 }
 
 
@@ -47,12 +64,13 @@ def test_every_product_file_validates_against_the_schema(path: Path) -> None:
     assert path.stem == definition["id"]
 
 
-def test_the_catalog_holds_exactly_the_five_launch_products() -> None:
+def test_the_catalog_holds_exactly_the_expected_products() -> None:
     found = {p.id: (p.slug, p.tier) for p in load_catalog().products}
     assert found == EXPECTED_PRODUCTS
     for product in load_catalog().products:
         assert product.current_version["version"] == "1.0.0"
-        assert product.current_version["date"] == "2026-10-29"
+        expected_date = LAUNCH_DATE if product.id in LAUNCH_PRODUCT_IDS else "2026-11-01"
+        assert product.current_version["date"] == expected_date, product.id
 
 
 def test_the_generated_catalog_and_packaged_copy_are_current() -> None:
@@ -145,7 +163,13 @@ def test_search_and_lookup() -> None:
     assert {p.slug for p in catalog.search(category="quantum-algorithms")} == {
         "grover-search",
         "quantum-phase-estimation",
+        "qaoa-maxcut",
+        "vqe-ground-state",
+        "quantum-fourier-transform",
+        "trotter-ising-dynamics",
+        "quantum-teleportation",
     }
+    assert {p.slug for p in catalog.search("teleport")} == {"quantum-teleportation"}
     assert catalog.get_product("kq.qec.surface-code-memory").slug == "surface-code-memory"
     with pytest.raises(catalog.ProductNotFoundError):
         catalog.get_product("shor")
@@ -312,12 +336,20 @@ FORBIDDEN_AFTER_FREE_RUN = (
         'catalog.run("grover-search", seed=1, n_qubits=3, marked=[1], shots=5)',
         'catalog.run("quantum-state-measures", preset="bell")',
         'catalog.run("surface-code-memory", seed=1, distance=3, physical_error_rate=0.001, shots=50)',
+        'catalog.run("qaoa-maxcut", seed=1, n_vertices=4, grid=6, shots=20)',
+        'catalog.run("vqe-ground-state", seed=1, restarts=2, iterations=20)',
+        'catalog.run("quantum-fourier-transform", seed=1, n_qubits=3, shots=20)',
+        'catalog.run("trotter-ising-dynamics", seed=1, qubits=3, fit_scaling=False)',
+        'catalog.run("quantum-teleportation", seed=1, shots=20)',
+        'catalog.run("steane-code", error="IIXIIII", exhaustive=False)',
+        'catalog.run("repetition-code", seed=1, shots=100)',
+        'catalog.run("quantum-state-tomography", seed=1, shots=20)',
     ],
 )
 def test_free_runs_import_no_entitlement_or_network_code(call: str, tmp_path) -> None:
     if "surface-code" in call:
         pytest.importorskip("stim")
-    if "grover" in call or "state-measures" in call or "surface" in call:
+    if "quantum-phase-estimation" not in call:
         pytest.importorskip("numpy")
     script = (
         "import json, sys\n"

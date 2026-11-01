@@ -1,0 +1,309 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.algorithms.quantum-teleportation",
+  "slug": "quantum-teleportation",
+  "name": "Quantum teleportation (statevector)",
+  "summary": "Teleport a chosen or random qubit state through a Bell pair and verify unit fidelity on every measurement outcome.",
+  "category": "quantum-algorithms",
+  "subcategory": "communication",
+  "tier": "free",
+  "description": "Runs the teleportation protocol of Bennett, Brassard, Crepeau, Jozsa, Peres and Wootters as an exact three-qubit statevector simulation on your machine. Alice holds the message qubit and one half of a Bell pair |Phi+>, Bob the other half. Alice applies CNOT and Hadamard and measures both qubits; Bob applies X and/or Z according to her two bits. The product projects out all four measurement outcomes analytically and reports, for each, its exact probability (1/4 regardless of the input), the correction Bob applies, the fidelity of his qubit with the input after the correction, and the fidelity he would have had without it. Shots then sample which outcome occurred, with a seed.\n\nThe input state is a point on the Bloch sphere you choose (theta, phi) or a Haar-random pure state drawn from the seed. Because every branch is computed exactly, the statement that the fidelity is 1 covers all four outcomes, not only the ones a sampler visited.",
+  "useCases": [
+    "Show that teleportation reproduces an arbitrary qubit state with fidelity 1 on every measurement outcome",
+    "See why Bob's classical-bit-conditioned corrections are necessary: without them the average fidelity is 1/2",
+    "Check that the two measurement bits carry no information about the state (each outcome has probability exactly 1/4)"
+  ],
+  "inputs": [
+    {
+      "name": "theta",
+      "type": "number",
+      "description": "Polar angle of the input state cos(theta/2)|0> + exp(i phi) sin(theta/2)|1>, in [0, pi]. null together with phi means a Haar-random state drawn from the seed.",
+      "default": null,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 3.141592653589793
+      }
+    },
+    {
+      "name": "phi",
+      "type": "number",
+      "description": "Azimuthal angle in [0, 2 pi]. Give both theta and phi, or neither.",
+      "default": null,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 6.283185307179586
+      }
+    },
+    {
+      "name": "shots",
+      "type": "integer",
+      "description": "Number of sampled runs of the protocol; only which outcome occurred is sampled.",
+      "default": 1000,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 1000000
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "branches",
+      "type": "object[]",
+      "description": "For each outcome m0 m1: its exact probability, Bob's correction, the fidelity with the input after correction and without it."
+    },
+    {
+      "name": "min_fidelity",
+      "type": "number",
+      "description": "Smallest fidelity over the four outcomes after correction (1 for a correct protocol)."
+    },
+    {
+      "name": "average_fidelity_without_correction",
+      "type": "number",
+      "description": "Probability-weighted fidelity if Bob applied nothing (1/2 for any pure input)."
+    },
+    {
+      "name": "input_state",
+      "type": "object",
+      "description": "The teleported state: source, theta, phi, Bloch vector and amplitudes."
+    },
+    {
+      "name": "counts",
+      "type": "object",
+      "description": "Seeded counts of the four outcomes, with observed_frequencies beside the expected 0.25."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-11-01",
+      "changes": [
+        "First catalog release: NumPy three-qubit statevector teleportation with exact per-outcome fidelities and seeded outcome sampling."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "algorithms"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "Milliseconds and a few MB for any input: the state has eight amplitudes and the sampling is one multinomial draw."
+  },
+  "install": "pip install \"ketqat[algorithms] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"quantum-teleportation@1.0.0\", seed=7, theta=1.0, phi=0.5, shots=1000)\nresult = record.result\nprint(json.dumps({\n    \"status\": record.status,\n    \"min_fidelity\": round(result[\"min_fidelity\"], 9),\n    \"average_fidelity_without_correction\": round(result[\"average_fidelity_without_correction\"], 9),\n    \"outcome_probabilities\": [round(branch[\"probability\"], 9) for branch in result[\"branches\"]],\n    \"total_counts\": sum(result[\"counts\"].values()),\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "min_fidelity": 1.0,
+      "average_fidelity_without_correction": 0.5,
+      "outcome_probabilities": [
+        0.25,
+        0.25,
+        0.25,
+        0.25
+      ],
+      "total_counts": 1000
+    },
+    "verified": {
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (maintainer run in a clean virtualenv, test_catalog_examples.py)",
+      "date": "2026-11-01"
+    }
+  },
+  "sampleResult": {
+    "summary": "Seeded random input state (theta 2.574, phi 0.319): every one of the four outcomes has probability 0.25 and fidelity 1 after Bob's correction; without the correction the fidelities are 1, 0.261, 0.711 and 0.028, averaging exactly 0.5. Seeded counts 252/246/260/242 over 1000 shots.",
+    "data": {
+      "protocol": "Alice: CNOT(message -> her Bell half), H(message), measure both; Bob: X if Alice's bit is 1, then Z if the message bit is 1",
+      "bell_pair": "|Phi+> = (|00> + |11>)/sqrt(2)",
+      "qubit_order": "qubit 0 message, qubit 1 Alice's half, qubit 2 Bob's half (little-endian)",
+      "input_state": {
+        "source": "random (Haar-distributed pure state drawn from the seed)",
+        "theta": 2.573690971434,
+        "phi": 0.319163492968,
+        "bloch_vector": [
+          0.510701184013,
+          0.168766972556,
+          -0.843031440471
+        ],
+        "amplitudes": [
+          [
+            0.280150459155,
+            0.0
+          ],
+          [
+            0.911476614305,
+            0.301207738629
+          ]
+        ]
+      },
+      "outcome_labels": "m0 m1: m0 is the message qubit's bit after the Hadamard (controls Z), m1 is Alice's half of the pair (controls X)",
+      "branches": [
+        {
+          "outcome": "00",
+          "probability": 0.25,
+          "correction": "none",
+          "fidelity": 1.0,
+          "fidelity_without_correction": 1.0
+        },
+        {
+          "outcome": "01",
+          "probability": 0.25,
+          "correction": "X",
+          "fidelity": 1.0,
+          "fidelity_without_correction": 0.260815699353
+        },
+        {
+          "outcome": "10",
+          "probability": 0.25,
+          "correction": "Z",
+          "fidelity": 1.0,
+          "fidelity_without_correction": 0.710702009622
+        },
+        {
+          "outcome": "11",
+          "probability": 0.25,
+          "correction": "X then Z",
+          "fidelity": 1.0,
+          "fidelity_without_correction": 0.028482291026
+        }
+      ],
+      "min_fidelity": 1.0,
+      "max_fidelity": 1.0,
+      "average_fidelity_without_correction": 0.5,
+      "expected_outcome_probability": 0.25,
+      "shots": 1000,
+      "counts": {
+        "00": 252,
+        "01": 246,
+        "10": 260,
+        "11": 242
+      },
+      "observed_frequencies": {
+        "00": 0.252,
+        "01": 0.246,
+        "10": 0.26,
+        "11": 0.242
+      },
+      "execution": "exact three-qubit statevector simulation; shots sample only which measurement outcome occurred"
+    },
+    "generatedWith": {
+      "productVersion": "1.0.0",
+      "seed": 7,
+      "parameters": {
+        "theta": null,
+        "phi": null,
+        "shots": 1000
+      },
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
+  },
+  "science": {
+    "assumptions": [
+      "Ideal, noiseless gates, a perfect Bell pair |Phi+> = (|00> + |11>)/sqrt 2, and projective measurements with the standard Born rule.",
+      "Pure single-qubit input states; mixed inputs are not accepted.",
+      "Qubit order is little-endian: qubit 0 is the message, qubit 1 Alice's half of the pair, qubit 2 Bob's; the outcome label m0 m1 lists the message bit (after the Hadamard, controlling Z) then Alice's half (controlling X)."
+    ],
+    "scope": [
+      "Any pure qubit state given by Bloch angles or drawn Haar-randomly from the seed.",
+      "Exact probabilities and fidelities for all four outcomes, plus seeded sampling of which outcome occurred."
+    ],
+    "limitations": [
+      "No noise, no imperfect Bell pair and no classical-channel delay are modelled, so the unit fidelity is the ideal protocol's, not a device's.",
+      "Only the protocol's state transfer is simulated; the physical resources (entanglement distribution, two classical bits) are described, not costed.",
+      "Sampled counts are reproducible for the same seed with the same NumPy version; NumPy does not guarantee identical random streams across versions.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "Teleporting an unknown quantum state via dual classical and Einstein-Podolsky-Rosen channels",
+      "authors": [
+        "Charles H. Bennett",
+        "Gilles Brassard",
+        "Claude Crepeau",
+        "Richard Jozsa",
+        "Asher Peres",
+        "William K. Wootters"
+      ],
+      "year": 1993,
+      "venue": "Physical Review Letters 70, 1895-1899",
+      "doi": "10.1103/PhysRevLett.70.1895"
+    },
+    {
+      "title": "Experimental quantum teleportation",
+      "authors": [
+        "Dik Bouwmeester",
+        "Jian-Wei Pan",
+        "Klaus Mattle",
+        "Manfred Eibl",
+        "Harald Weinfurter",
+        "Anton Zeilinger"
+      ],
+      "year": 1997,
+      "venue": "Nature 390, 575-579",
+      "doi": "10.1038/37539"
+    },
+    {
+      "title": "Quantum Computation and Quantum Information: 10th Anniversary Edition",
+      "authors": [
+        "Michael A. Nielsen",
+        "Isaac L. Chuang"
+      ],
+      "year": 2010,
+      "venue": "Cambridge University Press",
+      "doi": "10.1017/CBO9780511976667"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "Quantum teleportation was invented by Bennett, Brassard, Crepeau, Jozsa, Peres and Wootters (1993) and first demonstrated experimentally by Bouwmeester et al. (1997). KetQat wrote this NumPy statevector implementation (teleportation.py), its exact per-branch analysis, the validation tests and this catalog entry. KetQat did not invent the method.",
+    "upstream": [
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "verified",
+  "validation": [
+    {
+      "method": "unit-fidelity",
+      "description": "For 200 Haar-random states and the six axis states, every one of the four outcomes has fidelity 1 with the input to 1e-12 after correction, and probability 1/4 to 1e-12; the product reports the same for seeded and chosen inputs.",
+      "test": "python/tests/test_catalog_products.py::test_teleportation_fidelity_is_one_for_every_outcome"
+    },
+    {
+      "method": "correction-necessity",
+      "description": "Without Bob's corrections the probability-weighted fidelity equals (1 + x^2 + y^2 + z^2)/4 = 1/2 for every pure input, and for |0> the outcomes that call for X give fidelity exactly 0 -- analytic values the simulation is compared against.",
+      "test": "python/tests/test_catalog_products.py::test_teleportation_without_corrections_averages_one_half"
+    },
+    {
+      "method": "outcome-statistics",
+      "description": "With 4000 seeded shots each of the four outcome counts lies within five binomial standard deviations of 1000, and the counts sum to the shot total.",
+      "test": "python/tests/test_catalog_products.py::test_teleportation_outcomes_are_uniform_within_five_sigma"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the algorithms extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
+  "legacy": []
+}

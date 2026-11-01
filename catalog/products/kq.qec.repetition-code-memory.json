@@ -1,0 +1,262 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.qec.repetition-code-memory",
+  "slug": "repetition-code",
+  "name": "Repetition code memory (bit-flip)",
+  "summary": "Monte Carlo logical error rate of the n-qubit bit-flip repetition code under i.i.d. bit flips, beside the exact binomial value.",
+  "category": "quantum-error-correction",
+  "subcategory": "memory-experiments",
+  "tier": "free",
+  "description": "Runs a memory experiment of the bit-flip repetition code on your machine. Each of the n data qubits flips independently with probability p; the Z_i Z_{i+1} syndrome is extracted (perfectly) and decoded by minimum weight, which for this code is majority vote; the logical qubit fails when the correction differs from the error, that is when more than n/2 qubits flipped. The product samples this with a seed and reports the logical error rate with a 95% Wilson score interval.\n\nWhat makes this product useful as a reference is that the answer is known exactly: P_L = sum over k > n/2 of C(n, k) p^k (1-p)^(n-k). The exact value is reported beside the Monte Carlo estimate, together with whether it lies inside the interval, so you can see a sampling experiment and its closed form on the same output.\n\nFor students meeting error correction for the first time, and as a sanity baseline for anyone building a Monte Carlo pipeline for larger codes.",
+  "useCases": [
+    "Watch the logical error rate fall with n below the pseudo-threshold p = 1/2 and rise above it",
+    "Check a Monte Carlo pipeline (sampling, decoding, confidence intervals) against an exact closed form",
+    "Produce a seeded, reproducible memory-experiment record with a Wilson interval for a chosen (n, p, shots)"
+  ],
+  "inputs": [
+    {
+      "name": "n",
+      "type": "integer",
+      "description": "Number of data qubits (the code distance). Odd, so that majority vote is defined.",
+      "default": 3,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 101
+      }
+    },
+    {
+      "name": "physical_error_rate",
+      "type": "number",
+      "description": "Bit-flip probability p applied independently to each qubit.",
+      "default": 0.1,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "shots",
+      "type": "integer",
+      "description": "Number of sampled experiments. n x shots above 10^9 is refused with the time estimate.",
+      "default": 10000,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 100000000
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "logical_failures",
+      "type": "integer",
+      "description": "Shots whose decoded correction left the logical qubit flipped."
+    },
+    {
+      "name": "logical_error_rate",
+      "type": "number",
+      "description": "logical_failures / shots."
+    },
+    {
+      "name": "confidence_interval",
+      "type": "object",
+      "description": "95% Wilson score interval: lower, upper, level, method."
+    },
+    {
+      "name": "exact_logical_error_rate",
+      "type": "number",
+      "description": "sum_{k > n/2} C(n, k) p^k (1-p)^(n-k), the closed form the estimate is compared with."
+    },
+    {
+      "name": "exact_within_interval",
+      "type": "boolean",
+      "description": "Whether the exact value lies inside the Wilson interval."
+    },
+    {
+      "name": "is_upper_bound_only",
+      "type": "boolean",
+      "description": "true when no failure was observed; then only the upper bound is meaningful."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-11-01",
+      "changes": [
+        "First catalog release: NumPy Monte Carlo of the bit-flip repetition code with syndrome decoding, Wilson interval and exact binomial reference."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "qinfo"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "n=3 with 10^4 shots: milliseconds. 10^8 sampled qubit flips (for example n=11 with 10^7 shots): ~1.5 s and under 100 MB on a 2024 laptop; shots are processed in fixed chunks so memory stays bounded. n x shots above 10^9 (~15 s) is refused."
+  },
+  "install": "pip install \"ketqat[qinfo] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"repetition-code@1.0.0\", seed=7, n=5, physical_error_rate=0.1, shots=20000)\nresult = record.result\ninterval = result[\"confidence_interval\"]\nprint(json.dumps({\n    \"status\": record.status,\n    \"n\": result[\"n\"],\n    \"exact_logical_error_rate\": round(result[\"exact_logical_error_rate\"], 9),\n    \"exact_within_interval\": result[\"exact_within_interval\"],\n    \"interval_brackets_rate\": interval[\"lower\"] <= result[\"logical_error_rate\"] <= interval[\"upper\"],\n    \"below_pseudothreshold\": result[\"below_pseudothreshold\"],\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "n": 5,
+      "exact_logical_error_rate": 0.00856,
+      "exact_within_interval": true,
+      "interval_brackets_rate": true,
+      "below_pseudothreshold": true
+    },
+    "verified": {
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (maintainer run in a clean virtualenv, test_catalog_examples.py)",
+      "date": "2026-11-01"
+    }
+  },
+  "sampleResult": {
+    "summary": "n = 3 at p = 0.1 with 10000 shots: 252 logical failures, rate 0.0252 with 95% Wilson interval [0.0223, 0.0285], which contains the exact value 3p^2 - 2p^3 = 0.028; below the pseudo-threshold, since 0.028 < 0.1.",
+    "data": {
+      "code": "bit-flip repetition code",
+      "n": 3,
+      "distance": 3,
+      "physical_error_rate": 0.1,
+      "noise_model": "independent bit flip with probability p on each data qubit, one round, perfect syndrome measurement",
+      "decoder": "majority vote (minimum-weight correction from the Z_i Z_{i+1} syndrome)",
+      "shots": 10000,
+      "logical_failures": 252,
+      "logical_error_rate": 0.0252,
+      "confidence_interval": {
+        "lower": 0.02230561215682308,
+        "upper": 0.02845903269597141,
+        "level": 0.95,
+        "method": "wilson_score"
+      },
+      "is_upper_bound_only": false,
+      "exact_logical_error_rate": 0.028000000000000008,
+      "exact_formula": "sum_{k > n/2} C(n, k) p^k (1 - p)^(n - k)",
+      "exact_within_interval": true,
+      "below_pseudothreshold": true,
+      "execution": "seeded NumPy Monte Carlo of per-qubit bit flips, syndrome extraction and majority-vote decoding"
+    },
+    "generatedWith": {
+      "productVersion": "1.0.0",
+      "seed": 7,
+      "parameters": {
+        "n": 3,
+        "physical_error_rate": 0.1,
+        "shots": 10000
+      },
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
+  },
+  "science": {
+    "assumptions": [
+      "Independent, identically distributed bit flips (X errors) with probability p on each data qubit, applied once.",
+      "Perfect syndrome measurement and a single round: no measurement errors, no idling errors and no repeated extraction.",
+      "Minimum-weight decoding from the Z_i Z_{i+1} syndrome, which equals majority vote for this code; the decoder is cross-checked against a direct majority vote on every chunk."
+    ],
+    "scope": [
+      "Odd n from 1 to 101 and any p in [0, 1]; up to 10^9 sampled qubit flips per run.",
+      "Logical error rate per experiment with a 95% Wilson score interval and the exact binomial value."
+    ],
+    "limitations": [
+      "A bit-flip code protects against X errors only; phase flips are not modelled and the code would not correct them.",
+      "No circuit-level noise, no measurement errors and no multi-round memory: the rate is per single round with perfect syndromes, which is why it has a closed form.",
+      "Zero observed failures is reported as an upper bound, not as a rate of zero; at small p and small shot counts the interval is wide.",
+      "Sampled counts are reproducible for the same seed with the same NumPy version; NumPy does not guarantee identical random streams across versions.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "Error detecting and error correcting codes",
+      "authors": [
+        "R. W. Hamming"
+      ],
+      "year": 1950,
+      "venue": "The Bell System Technical Journal 29, 147-160"
+    },
+    {
+      "title": "Scheme for reducing decoherence in quantum computer memory",
+      "authors": [
+        "Peter W. Shor"
+      ],
+      "year": 1995,
+      "venue": "Physical Review A 52, R2493-R2496",
+      "doi": "10.1103/PhysRevA.52.R2493"
+    },
+    {
+      "title": "Quantum Computation and Quantum Information: 10th Anniversary Edition",
+      "authors": [
+        "Michael A. Nielsen",
+        "Isaac L. Chuang"
+      ],
+      "year": 2010,
+      "venue": "Cambridge University Press",
+      "doi": "10.1017/CBO9780511976667"
+    },
+    {
+      "title": "Binomial confidence intervals: Probable inference, the law of succession, and statistical inference",
+      "authors": [
+        "Edwin B. Wilson"
+      ],
+      "year": 1927,
+      "venue": "Journal of the American Statistical Association 22, 209-212"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "The majority-vote repetition code is classical coding theory going back to Hamming (1950); its quantum bit-flip form is the textbook three-qubit code treated by Nielsen and Chuang, and Shor (1995) used it as a building block of the first quantum error-correcting code. The Wilson score interval is due to Wilson (1927). KetQat wrote this NumPy Monte Carlo implementation (repetition_code.py), its syndrome decoder, the exact reference, the validation tests and this catalog entry. KetQat did not invent the code.",
+    "upstream": [
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "verified",
+  "validation": [
+    {
+      "method": "analytic-agreement",
+      "description": "For (n, p) in {(1, 0.1), (3, 0.1), (5, 0.1), (7, 0.2), (9, 0.05), (3, 0.3)} with 20000 seeded shots, the Wilson interval around the Monte Carlo rate contains the exact binomial tail, recomputed in the test with math.comb; for n = 1 the exact rate is p itself.",
+      "test": "python/tests/test_catalog_products.py::test_repetition_code_interval_contains_the_exact_binomial_rate"
+    },
+    {
+      "method": "boundary-cases",
+      "description": "p = 0 gives zero failures, exact rate 0 and an upper-bound-only report; p = 1 flips every qubit, so every shot fails and both rates are exactly 1; p = 1/2 gives exact rate 1/2 for every odd n.",
+      "test": "python/tests/test_catalog_products.py::test_repetition_code_boundary_cases"
+    },
+    {
+      "method": "decoder-independence",
+      "description": "The syndrome-based decoder's failure count equals a direct majority vote on the same sampled flips, and both equal the count of shots with more than n/2 flips, on random flip tables.",
+      "test": "python/tests/test_catalog_products.py::test_repetition_code_syndrome_decoder_equals_majority_vote"
+    },
+    {
+      "method": "resource-guard",
+      "description": "Even n is refused, and n x shots above 10^9 is refused with the time estimate before anything runs.",
+      "test": "python/tests/test_catalog_products.py::test_repetition_code_refuses_even_n_and_oversized_runs"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the qinfo extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
+  "legacy": []
+}

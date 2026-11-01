@@ -1,0 +1,375 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.qinfo.state-tomography",
+  "slug": "quantum-state-tomography",
+  "name": "Quantum state tomography",
+  "summary": "Reconstruct a known pure state of up to 4 qubits from sampled Pauli measurements by linear inversion, with physicality and fidelity.",
+  "category": "quantum-information",
+  "subcategory": "tomography",
+  "tier": "free",
+  "description": "Simulates state tomography on your machine. A known pure target state -- a point on the Bloch sphere, |0>, |1>, |+>, |->, |+i>, a Bell state, a GHZ state or a seeded random state -- is measured in every Pauli basis: for each of the 4^n Pauli strings the +1/-1 outcome counts are sampled from the exact Born probabilities with the shots you choose, or taken exactly when exact=true. The density matrix is reconstructed by linear inversion, rho = sum <P> P / 2^n, and reported with its eigenvalues, purity, trace, the fidelity with the target and the largest error in any estimated expectation value.\n\nPhysicality is reported, never repaired. From finite statistics linear inversion routinely returns a matrix with a negative eigenvalue -- most often near a pure state, where shot noise pushes the Bloch vector past the unit sphere -- and the product returns that matrix unprojected, with the eigenvalue, so you can see how far outside the state space the data landed. The exact (infinite-shot) reconstruction is reported beside it as the reference.",
+  "useCases": [
+    "See how the reconstruction error and the standard errors of a Bloch vector shrink as shots grow",
+    "Show why linear inversion from few shots yields unphysical density matrices near pure states",
+    "Produce a seeded, reproducible tomography dataset and reconstruction for a Bell or GHZ state to test an estimator against"
+  ],
+  "inputs": [
+    {
+      "name": "preset",
+      "type": "string",
+      "description": "Target state: bloch (cos(theta/2)|0> + e^{i phi} sin(theta/2)|1>), zero, one, plus, minus, i-plus (one qubit); bell (|Phi+>); ghz or random (qubits sets the size).",
+      "default": "bloch",
+      "constraints": {
+        "enum": [
+          "bloch",
+          "zero",
+          "one",
+          "plus",
+          "minus",
+          "i-plus",
+          "bell",
+          "ghz",
+          "random"
+        ]
+      }
+    },
+    {
+      "name": "theta",
+      "type": "number",
+      "description": "Polar angle for preset=bloch, in [0, pi]. Ignored by the other presets.",
+      "default": 1.0,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 3.141592653589793
+      }
+    },
+    {
+      "name": "phi",
+      "type": "number",
+      "description": "Azimuthal angle for preset=bloch, in [0, 2 pi]. Ignored by the other presets.",
+      "default": 0.5,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 6.283185307179586
+      }
+    },
+    {
+      "name": "qubits",
+      "type": "integer",
+      "description": "Register size for preset=ghz (null means 3) and preset=random (null means 2); at most 4 (256 Pauli settings). Not accepted with the one- and two-qubit presets.",
+      "default": null,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 4
+      }
+    },
+    {
+      "name": "shots",
+      "type": "integer",
+      "description": "Measurements per Pauli setting. Ignored when exact=true.",
+      "default": 1000,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 1000000
+      }
+    },
+    {
+      "name": "exact",
+      "type": "boolean",
+      "description": "true uses the exact expectation values (the infinite-shot limit) instead of sampling.",
+      "default": false
+    }
+  ],
+  "outputs": [
+    {
+      "name": "expectations",
+      "type": "object[]",
+      "description": "For each Pauli string: the estimate, its binomial standard error and the exact value."
+    },
+    {
+      "name": "bloch_vector",
+      "type": "object",
+      "description": "One qubit only: x, y, z with standard errors, beside target_bloch_vector and the Bloch length."
+    },
+    {
+      "name": "density_matrix_real",
+      "type": "object[]",
+      "description": "Real part of the reconstructed density matrix (density_matrix_imaginary holds the imaginary part), with eigenvalues, purity and trace."
+    },
+    {
+      "name": "physical",
+      "type": "boolean",
+      "description": "Whether every eigenvalue is non-negative (within 1e-9); physicality_note says why not and that nothing was projected."
+    },
+    {
+      "name": "fidelity_with_target",
+      "type": "number",
+      "description": "<psi|rho|psi> for the pure target (for one qubit, (1 + r . t)/2)."
+    },
+    {
+      "name": "max_expectation_error",
+      "type": "number",
+      "description": "Largest |estimate - exact| over all Pauli strings; reconstruction_error is the largest matrix-entry error."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-11-01",
+      "changes": [
+        "First catalog release, wrapping the SDK's existing single-qubit linear-inversion tomography and the multi-qubit Pauli reconstruction with seeded measurement sampling."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "qinfo"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "One or two qubits: milliseconds. Four qubits (256 Pauli settings, 16x16 matrices): under 0.1 s and a few MB."
+  },
+  "install": "pip install \"ketqat[qinfo] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"quantum-state-tomography@1.0.0\", seed=7, preset=\"bell\", exact=True)\nresult = record.result\nprint(json.dumps({\n    \"status\": record.status,\n    \"qubits\": result[\"qubits\"],\n    \"pauli_settings\": result[\"pauli_settings\"],\n    \"fidelity_with_target\": round(result[\"fidelity_with_target\"], 9),\n    \"purity\": round(result[\"purity\"], 9),\n    \"physical\": result[\"physical\"],\n    \"reconstruction_error\": round(result[\"reconstruction_error\"], 9),\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "qubits": 2,
+      "pauli_settings": 16,
+      "fidelity_with_target": 1.0,
+      "purity": 1.0,
+      "physical": true,
+      "reconstruction_error": 0.0
+    },
+    "verified": {
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (maintainer run in a clean virtualenv, test_catalog_examples.py)",
+      "date": "2026-11-01"
+    }
+  },
+  "sampleResult": {
+    "summary": "One qubit at theta = 1, phi = 0.5 with 1000 shots per Pauli setting: Bloch estimate (0.732, 0.428, 0.582) against the target (0.738, 0.403, 0.540), standard errors about 0.02-0.03. The estimate has length 1.028, so the reconstruction has a negative eigenvalue (-0.0142) and is reported as unphysical and unprojected; the linear-inversion fidelity formula then gives 1.014, above 1 for the same reason.",
+    "data": {
+      "target": {
+        "preset": "bloch",
+        "qubits": 1,
+        "description": "cos(theta/2)|0> + exp(i phi) sin(theta/2)|1>",
+        "theta": 1.0,
+        "phi": 0.5
+      },
+      "qubits": 1,
+      "shots_per_setting": 1000,
+      "measurement": "each Pauli string measured as a +1/-1 observable; outcome counts sampled from the exact Born probabilities",
+      "estimator": "linear inversion: rho = sum_P <P> P / 2^n",
+      "pauli_settings": 4,
+      "expectations": [
+        {
+          "pauli": "I",
+          "estimate": 1.0,
+          "standard_error": 0.0,
+          "exact": 1.0
+        },
+        {
+          "pauli": "X",
+          "estimate": 0.732,
+          "standard_error": 0.021544744139,
+          "exact": 0.738460262604
+        },
+        {
+          "pauli": "Y",
+          "estimate": 0.428,
+          "standard_error": 0.028579993002,
+          "exact": 0.403422680111
+        },
+        {
+          "pauli": "Z",
+          "estimate": 0.582,
+          "standard_error": 0.025715287282,
+          "exact": 0.540302305868
+        }
+      ],
+      "max_expectation_error": 0.041697694132,
+      "bloch_vector": {
+        "x": 0.732,
+        "y": 0.428,
+        "z": 0.582,
+        "x_standard_error": 0.021544744139,
+        "y_standard_error": 0.028579993002,
+        "z_standard_error": 0.025715287282
+      },
+      "target_bloch_vector": [
+        0.738460262604,
+        0.403422680111,
+        0.540302305868
+      ],
+      "bloch_length": 1.028460986134,
+      "eigenvalues": [
+        -0.014230493067,
+        1.014230493067
+      ],
+      "purity": 1.028866,
+      "physical": false,
+      "physicality_note": "The reconstructed Bloch vector has length 1.028461, which exceeds 1, so the smaller eigenvalue is -0.014230 and the matrix is not a density matrix. Linear inversion does this routinely near a pure state, where shot noise pushes the estimate past the state space. It is a statement about the estimator and the shot count, not about the device -- take more shots, or use a maximum-likelihood estimator that is constrained to physical states. The raw estimate is returned unchanged rather than projected, so the size of the excursion stays visible.",
+      "trace": 1.0,
+      "density_matrix_real": [
+        [
+          0.791,
+          0.366
+        ],
+        [
+          0.366,
+          0.209
+        ]
+      ],
+      "density_matrix_imaginary": [
+        [
+          0.0,
+          -0.214
+        ],
+        [
+          0.214,
+          0.0
+        ]
+      ],
+      "fidelity_with_target": 1.013836880665,
+      "reconstruction_error": 0.020848847066,
+      "exact_reconstruction": {
+        "reconstruction_error": 0.0,
+        "purity": 1.0,
+        "physical": true,
+        "note": "linear inversion from exact expectation values (multi_qubit_state_tomography)"
+      },
+      "execution": "exact Born probabilities from the target state vector; seeded binomial sampling; dense linear algebra"
+    },
+    "generatedWith": {
+      "productVersion": "1.0.0",
+      "seed": 7,
+      "parameters": {
+        "preset": "bloch",
+        "theta": 1.0,
+        "phi": 0.5,
+        "qubits": null,
+        "shots": 1000,
+        "exact": false
+      },
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
+  },
+  "science": {
+    "assumptions": [
+      "The target is a pure state prepared perfectly; measurement outcomes follow the exact Born probabilities with no readout error.",
+      "Each Pauli string is measured as a +1/-1 observable with the same number of shots; the identity string is not measured (its expectation is 1).",
+      "Linear inversion with no constraint to the state space; standard errors are the binomial ones for a +1/-1 valued mean."
+    ],
+    "scope": [
+      "Pure target states on 1 to 4 qubits; sampled or exact expectation values; reconstruction, physicality verdict and fidelity with the target."
+    ],
+    "limitations": [
+      "Linear inversion only: no maximum-likelihood or Bayesian estimator is provided, so unphysical reconstructions are reported rather than avoided.",
+      "The number of Pauli settings grows as 4^n, so 4 qubits is the ceiling and the product is not a scalable tomography tool.",
+      "Fidelity is computed against the known target; for a real experiment the target is not known and this number would not be available.",
+      "Mixed target states and readout noise are not modelled.",
+      "Sampled counts are reproducible for the same seed with the same NumPy version; NumPy does not guarantee identical random streams across versions.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "Determination of quasiprobability distributions in terms of probability distributions for the rotated quadrature phase",
+      "authors": [
+        "K. Vogel",
+        "H. Risken"
+      ],
+      "year": 1989,
+      "venue": "Physical Review A 40, 2847-2849",
+      "doi": "10.1103/PhysRevA.40.2847"
+    },
+    {
+      "title": "Measurement of qubits",
+      "authors": [
+        "Daniel F. V. James",
+        "Paul G. Kwiat",
+        "William J. Munro",
+        "Andrew G. White"
+      ],
+      "year": 2001,
+      "venue": "Physical Review A 64, 052312",
+      "doi": "10.1103/PhysRevA.64.052312",
+      "url": "https://arxiv.org/abs/quant-ph/0103121"
+    },
+    {
+      "title": "Efficient Method for Computing the Maximum-Likelihood Quantum State from Measurements with Additive Gaussian Noise",
+      "authors": [
+        "John A. Smolin",
+        "Jay M. Gambetta",
+        "Graeme Smith"
+      ],
+      "year": 2012,
+      "venue": "Physical Review Letters 108, 070502",
+      "doi": "10.1103/PhysRevLett.108.070502",
+      "url": "https://arxiv.org/abs/1106.5458"
+    },
+    {
+      "title": "Quantum Computation and Quantum Information: 10th Anniversary Edition",
+      "authors": [
+        "Michael A. Nielsen",
+        "Isaac L. Chuang"
+      ],
+      "year": 2010,
+      "venue": "Cambridge University Press",
+      "doi": "10.1017/CBO9780511976667"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "Quantum state tomography originates with Vogel and Risken (1989); the linear-inversion reconstruction from Pauli expectation values used here is the textbook treatment of Nielsen and Chuang, and the qubit measurement analysis follows James, Kwiat, Munro and White (2001), with the unphysicality of linear inversion discussed by Smolin, Gambetta and Smith (2012). KetQat wrote this NumPy implementation (tomography.py, process_tomography.py and this product's sampling), the validation tests and this catalog entry. KetQat did not invent the method.",
+    "upstream": [
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "verified",
+  "validation": [
+    {
+      "method": "exact-recovery",
+      "description": "From exact expectation values (exact=true) every preset is recovered: the one-qubit Bloch vector equals (sin theta cos phi, sin theta sin phi, cos theta) to 1e-12, the Bell and GHZ density matrices equal |psi><psi| entry by entry to 1e-12, and fidelity, purity and trace are 1.",
+      "test": "python/tests/test_catalog_products.py::test_state_tomography_from_exact_expectations_recovers_the_state"
+    },
+    {
+      "method": "statistical-consistency",
+      "description": "With sampled shots every estimated expectation lies within five binomial standard deviations sqrt((1 - <P>^2)/shots) of its exact value, the reported standard errors equal that formula at the estimate, and the largest expectation error shrinks from 100 to 100000 shots.",
+      "test": "python/tests/test_catalog_products.py::test_state_tomography_estimates_are_consistent_with_binomial_statistics"
+    },
+    {
+      "method": "unphysical-reported",
+      "description": "A seed is found for which the few-shot reconstruction of a pure state has a negative eigenvalue; the product reports physical=false with the eigenvalue and returns the raw matrix (trace 1, Bloch length above 1) rather than a projected one, and single-qubit fidelity equals (1 + r . t)/2.",
+      "test": "python/tests/test_catalog_products.py::test_state_tomography_reports_unphysical_reconstructions_unprojected"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the qinfo extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
+  "legacy": []
+}

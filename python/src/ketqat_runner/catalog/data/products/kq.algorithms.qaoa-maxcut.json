@@ -1,0 +1,383 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.algorithms.qaoa-maxcut",
+  "slug": "qaoa-maxcut",
+  "name": "QAOA for MaxCut (statevector)",
+  "summary": "Run QAOA on a small graph with an exhaustive angle grid and compare the expected cut with the exact MaxCut optimum.",
+  "category": "quantum-algorithms",
+  "subcategory": "optimization",
+  "tier": "free",
+  "description": "Runs the Quantum Approximate Optimization Algorithm for MaxCut as a statevector simulation on your machine. The graph is a ring, a path, a complete graph or your own edge list; the product prepares the uniform superposition, applies the cost and mixer layers as operators for one or two layers, searches the angles on an exhaustive grid, and reports the best expected cut against the exact optimum found by enumerating every assignment. The final state is sampled with a seed so you also get an observed cut distribution.\n\nOn a triangle-free regular graph at one layer, the Farhi-Goldstone-Gutmann closed form for the expected cut is evaluated at the chosen angles and reported beside the simulation, so the two can be compared directly.\n\nThe optimiser is a grid rather than a gradient method on purpose: a grid is exhaustive at its resolution, so the reported expectation is a lower bound on what QAOA can reach at that depth, not where a local optimiser happened to stop.",
+  "useCases": [
+    "Check the approximation ratio of one- or two-layer QAOA against the true MaxCut optimum of a small graph",
+    "Compare a simulated expected cut with the Farhi-Goldstone-Gutmann p=1 closed form on a ring",
+    "Produce a reproducible QAOA baseline (angles, expectation, sampled cuts) to compare another implementation against"
+  ],
+  "inputs": [
+    {
+      "name": "graph",
+      "type": "string",
+      "description": "ring (cycle on n vertices), path, complete, or custom (give edges).",
+      "default": "ring",
+      "constraints": {
+        "enum": [
+          "ring",
+          "path",
+          "complete",
+          "custom"
+        ]
+      }
+    },
+    {
+      "name": "n_vertices",
+      "type": "integer",
+      "description": "Number of vertices n, one qubit each; the state vector has 2^n amplitudes.",
+      "default": 6,
+      "constraints": {
+        "minimum": 2,
+        "maximum": 12
+      }
+    },
+    {
+      "name": "edges",
+      "type": "string[]",
+      "description": "For graph=custom: edges as 'u-v' strings with vertices in 0..n-1, no self-loops, no repeats. null otherwise.",
+      "default": null,
+      "constraints": {
+        "minItems": 1,
+        "uniqueItems": true
+      }
+    },
+    {
+      "name": "layers",
+      "type": "integer",
+      "description": "QAOA depth p: 1 or 2. Each layer adds one beta and one gamma to the grid search.",
+      "default": 1,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 2
+      }
+    },
+    {
+      "name": "grid",
+      "type": "integer",
+      "description": "Grid points per angle: beta in [0, pi) and gamma in [0, 2 pi), so grid^(2p) expectation evaluations. Requests estimated above ~24 s are refused with the estimate.",
+      "default": 24,
+      "constraints": {
+        "minimum": 4,
+        "maximum": 64
+      }
+    },
+    {
+      "name": "shots",
+      "type": "integer",
+      "description": "Measurement samples drawn from the optimised QAOA state.",
+      "default": 1000,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 1000000
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "best_expectation",
+      "type": "number",
+      "description": "Largest expected cut <C> found on the grid, from the simulated state."
+    },
+    {
+      "name": "max_cut",
+      "type": "integer",
+      "description": "Exact MaxCut value from enumerating all 2^n assignments, with the optimal assignments listed."
+    },
+    {
+      "name": "approximation_ratio",
+      "type": "number",
+      "description": "best_expectation / max_cut."
+    },
+    {
+      "name": "best_beta",
+      "type": "number[]",
+      "description": "Mixer angles of the best grid point (one per layer); best_gamma holds the cost angles."
+    },
+    {
+      "name": "analytic_p1_expectation",
+      "type": "number",
+      "description": "Farhi-Goldstone-Gutmann closed form at the chosen angles when layers=1 and the graph is triangle-free and regular; null otherwise."
+    },
+    {
+      "name": "probability_of_optimal_cut",
+      "type": "number",
+      "description": "Exact probability that measuring the optimised state yields an optimal assignment."
+    },
+    {
+      "name": "counts",
+      "type": "object",
+      "description": "Seeded measurement counts by assignment string (vertex 0 is the rightmost character), with the sampled mean cut and the best sampled cut."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-11-01",
+      "changes": [
+        "First catalog release, wrapping the SDK's existing QAOA MaxCut simulation with graph presets, seeded sampling and the p=1 closed-form cross-check."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "algorithms"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "Ring of 6 at one layer with the default 24x24 grid: ~0.1 s; 10 vertices: ~3 s; 12 vertices: ~12 s. Two layers with a 12-point grid on 6 vertices: ~6 s. Pure-Python amplitudes, under 50 MB. Requests estimated above ~24 s are refused."
+  },
+  "install": "pip install \"ketqat[algorithms] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"qaoa-maxcut@1.0.0\", seed=7, graph=\"ring\", n_vertices=6, layers=1, shots=1000)\nresult = record.result\nprint(json.dumps({\n    \"status\": record.status,\n    \"max_cut\": result[\"max_cut\"],\n    \"best_expectation\": round(result[\"best_expectation\"], 9),\n    \"approximation_ratio\": round(result[\"approximation_ratio\"], 9),\n    \"analytic_p1_expectation\": round(result[\"analytic_p1_expectation\"], 9),\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "max_cut": 6,
+      "best_expectation": 4.5,
+      "approximation_ratio": 0.75,
+      "analytic_p1_expectation": 4.5
+    },
+    "verified": {
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (maintainer run in a clean virtualenv, test_catalog_examples.py)",
+      "date": "2026-11-01"
+    }
+  },
+  "sampleResult": {
+    "summary": "Ring of 6 vertices, one layer, 24x24 grid: best expected cut 4.5 of the exact maximum 6 (ratio 0.75, the known p=1 ceiling), equal to the Farhi-Goldstone-Gutmann closed form at the chosen angles; an optimal assignment has probability 0.285 and 276 of 1000 seeded shots hit one.",
+    "data": {
+      "graph": {
+        "kind": "ring",
+        "n_vertices": 6,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            5,
+            0
+          ]
+        ],
+        "regular_degree": 2,
+        "triangle_free": true
+      },
+      "layers": 1,
+      "grid": 24,
+      "best_beta": [
+        2.748893571891
+      ],
+      "best_gamma": [
+        2.356194490192
+      ],
+      "best_expectation": 4.5,
+      "max_cut": 6,
+      "optimal_assignments": [
+        "010101",
+        "101010"
+      ],
+      "approximation_ratio": 0.75,
+      "random_guess_expectation": 3.0,
+      "beats_random_guessing": true,
+      "probability_of_optimal_cut": 0.28515625,
+      "analytic_p1_applies": true,
+      "analytic_p1_expectation": 4.5,
+      "analytic_p1_note": "Farhi-Goldstone-Gutmann p=1 closed form |E| (1/2 + 1/2 sin(4 beta) sin(gamma) cos(gamma)^(d-1)) evaluated at the chosen angles; it holds for triangle-free d-regular graphs.",
+      "shots": 1000,
+      "counts": {
+        "000010": 2,
+        "000100": 4,
+        "000101": 4,
+        "000111": 5,
+        "001001": 36,
+        "001010": 6,
+        "001011": 36,
+        "001101": 26,
+        "001110": 5,
+        "010000": 2,
+        "010001": 12,
+        "010010": 36,
+        "010011": 38,
+        "010100": 11,
+        "010101": 138,
+        "010110": 33,
+        "010111": 6,
+        "011001": 30,
+        "011010": 35,
+        "011011": 30,
+        "011100": 1,
+        "011101": 6,
+        "100010": 12,
+        "100011": 2,
+        "100100": 31,
+        "100101": 35,
+        "100110": 32,
+        "101000": 6,
+        "101001": 38,
+        "101010": 138,
+        "101011": 7,
+        "101100": 43,
+        "101101": 21,
+        "101110": 9,
+        "101111": 3,
+        "110001": 1,
+        "110010": 31,
+        "110100": 36,
+        "110101": 9,
+        "110110": 31,
+        "111010": 8,
+        "111011": 2,
+        "111101": 2,
+        "111110": 1
+      },
+      "bit_order": "vertex 0 is the rightmost character of each assignment string",
+      "sampled_cut_mean": 4.492,
+      "best_sampled_cut": 6,
+      "observed_optimal_fraction": 0.276,
+      "note": "Ratio is against the exact optimum from enumerating all 64 assignments, not a bound. Angles come from an exhaustive 24x24 grid per layer; a finer grid can only improve the expectation, so this is a lower bound on QAOA's best.",
+      "execution": "statevector simulation of the QAOA layers; angles from an exhaustive grid; optimum by enumeration"
+    },
+    "generatedWith": {
+      "productVersion": "1.0.0",
+      "seed": 7,
+      "parameters": {
+        "graph": "ring",
+        "n_vertices": 6,
+        "edges": null,
+        "layers": 1,
+        "grid": 24,
+        "shots": 1000
+      },
+      "sdkVersion": "0.3.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
+  },
+  "science": {
+    "assumptions": [
+      "Ideal, noiseless gates: the cost layer exp(-i gamma C) and the mixer exp(-i beta sum X) are applied as exact operators on amplitudes.",
+      "Unweighted MaxCut: every edge counts 1 when cut.",
+      "Angles are restricted to a uniform grid; the reported expectation is the best grid point, a lower bound on QAOA's best at that depth."
+    ],
+    "scope": [
+      "Graphs on 2 to 12 vertices, one or two QAOA layers, grids of 4 to 64 points per angle.",
+      "Exact expected cut, exact optimum by enumeration, exact probability of an optimal assignment, and seeded sampling of the final state.",
+      "The p=1 closed form is evaluated only where it holds (triangle-free regular graphs); elsewhere it is reported as not applicable."
+    ],
+    "limitations": [
+      "Grid search costs grid^(2p) state preparations and is exhaustive only for p <= 2; deeper circuits are not offered.",
+      "No noise model, no gate decomposition and no circuit depth: the layers are applied as operators, so this says nothing about hardware cost.",
+      "The approximation ratio is for the specific small instance; it is not a guarantee for larger graphs of the same family.",
+      "Sampled counts are reproducible for the same seed with the same NumPy version; NumPy does not guarantee identical random streams across versions.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "A Quantum Approximate Optimization Algorithm",
+      "authors": [
+        "Edward Farhi",
+        "Jeffrey Goldstone",
+        "Sam Gutmann"
+      ],
+      "year": 2014,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/1411.4028"
+    },
+    {
+      "title": "Reducibility among combinatorial problems",
+      "authors": [
+        "Richard M. Karp"
+      ],
+      "year": 1972,
+      "venue": "Complexity of Computer Computations, Plenum Press, 85-103"
+    },
+    {
+      "title": "Quantum Computation and Quantum Information: 10th Anniversary Edition",
+      "authors": [
+        "Michael A. Nielsen",
+        "Isaac L. Chuang"
+      ],
+      "year": 2010,
+      "venue": "Cambridge University Press",
+      "doi": "10.1017/CBO9780511976667"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-implementation",
+    "statement": "The Quantum Approximate Optimization Algorithm and the p=1 closed form for triangle-free regular graphs are due to Farhi, Goldstone and Gutmann (2014); MaxCut is the classical NP-hard problem of Karp (1972). KetQat wrote this pure-Python statevector implementation (qaoa.py), the grid search, the brute-force reference, the seeded sampling, the validation tests and this catalog entry. KetQat did not invent the method.",
+    "upstream": [
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "verified",
+  "validation": [
+    {
+      "method": "analytic-agreement",
+      "description": "On rings of 4, 6 and 8 vertices and on the 2-vertex edge, the simulated p=1 expectation equals the Farhi-Goldstone-Gutmann closed form |E|(1/2 + 1/2 sin(4 beta) sin(gamma) cos(gamma)^(d-1)) to 1e-12 at 16 angle pairs, and the product's grid optimum reaches the known ceiling of 3/4 of the ring's edges.",
+      "test": "python/tests/test_catalog_products.py::test_qaoa_p1_expectation_matches_the_farhi_closed_form"
+    },
+    {
+      "method": "exact-optimum-bound",
+      "description": "The expected cut, the analytic value and every sampled cut never exceed the enumerated optimum; the optimum itself equals |E| on even rings (bipartite), 2 on a triangle and floor(n/2) ceil(n/2) on complete graphs.",
+      "test": "python/tests/test_catalog_products.py::test_qaoa_cuts_never_exceed_the_brute_force_maximum"
+    },
+    {
+      "method": "sampling-consistency",
+      "description": "The fraction of sampled assignments that are optimal lies within five binomial standard deviations of the exact probability of an optimal cut read off the state vector, and the sampled mean cut within five standard deviations of the exact expectation.",
+      "test": "python/tests/test_catalog_products.py::test_qaoa_samples_follow_the_state_vector"
+    },
+    {
+      "method": "resource-guard",
+      "description": "Requests whose grid search is estimated above the time ceiling, graphs with self-loops or repeated edges, and more than 12 vertices are refused before anything runs.",
+      "test": "python/tests/test_catalog_products.py::test_qaoa_refuses_oversized_searches_and_bad_graphs"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the algorithms extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
+  "legacy": []
+}
