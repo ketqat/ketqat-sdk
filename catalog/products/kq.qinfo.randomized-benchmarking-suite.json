@@ -1,0 +1,350 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.qinfo.randomized-benchmarking-suite",
+  "slug": "randomized-benchmarking-suite",
+  "name": "Randomized benchmarking suite (Clifford RB)",
+  "summary": "Standard, interleaved and simultaneous Clifford RB in one run: error per Clifford, gate error with Magesan bounds, bootstrap CIs, report.",
+  "category": "quantum-information",
+  "subcategory": "benchmarking",
+  "tier": "pro",
+  "description": "Runs Clifford randomized benchmarking on one or two simulated qubits, exactly with Stim, as one workflow: standard RB always, interleaved RB when a gate is named, and simultaneous RB (two independent single-qubit sequences driven together, each compared with the same sequence run alone) when a crosstalk rate is given. Every sequence's survival is kept, the decay S(m) = A lambda^m + 1/d is fitted by weighted nonlinear least squares in survival space with the asymptote fixed, and a non-parametric bootstrap over sequences gives 95% intervals for the decay parameter, the error per Clifford, the interleaved gate error and the addressability error. The interleaved gate may carry its own depolarizing rate, so a gate better or worse than the Cliffords around it can be resolved; its error is reported with the systematic bound of Magesan et al. (2012). Because the noise is a known depolarizing model, the analytic expectation of every quantity is reported beside the fit, and the open SDK's linearized fit is shown for comparison. Everything is written to one JSON result and a Markdown report.\n\nFor people who want the three RB protocols run consistently on one seed with uncertainties they can quote, as a reference for their own analysis code or for teaching.\n\nThis is a KetQat Pro product: it runs locally like every catalog product, from a signed bundle installed with `ketqat pro install` under a time-limited entitlement. Its implementation is not part of the open SDK.",
+  "useCases": [
+    "Report an error per Clifford with a bootstrap confidence interval and compare it with the analytic value of the noise model",
+    "Isolate one gate's error by interleaved RB, with the Magesan systematic bound, including a gate noisier or cleaner than the Cliffords",
+    "Measure addressability (crosstalk) by simultaneous RB with per-qubit intervals"
+  ],
+  "inputs": [
+    {
+      "name": "qubits",
+      "type": "integer",
+      "description": "Qubits benchmarked by the standard and interleaved protocols (the Clifford group is enumerated for 1 or 2).",
+      "default": 1,
+      "constraints": {
+        "enum": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "name": "sequence_lengths",
+      "type": "integer[]",
+      "description": "Numbers of random Cliffords per sequence (distinct, at least three).",
+      "default": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ],
+      "constraints": {
+        "minItems": 3,
+        "maxItems": 12,
+        "itemMinimum": 1,
+        "itemMaximum": 512,
+        "uniqueItems": true
+      }
+    },
+    {
+      "name": "sequences_per_length",
+      "type": "integer",
+      "description": "Independent random sequences at every length; the bootstrap resamples these.",
+      "default": 20,
+      "constraints": {
+        "minimum": 2,
+        "maximum": 200
+      }
+    },
+    {
+      "name": "depolarizing_rate",
+      "type": "number",
+      "description": "Probability of DEPOLARIZE1 (one qubit) or DEPOLARIZE2 (two qubits) after every Clifford.",
+      "default": 0.005,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 0.5
+      }
+    },
+    {
+      "name": "shots",
+      "type": "integer",
+      "description": "Measurements per sequence.",
+      "default": 200,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 10000
+      }
+    },
+    {
+      "name": "interleaved_gate",
+      "type": "string",
+      "description": "Gate for interleaved RB, applied to every qubit after each random Clifford; cx (control 0, target 1) needs qubits = 2. null skips interleaved RB.",
+      "default": null,
+      "constraints": {
+        "enum": [
+          "i",
+          "x",
+          "y",
+          "z",
+          "h",
+          "s",
+          "cx"
+        ]
+      }
+    },
+    {
+      "name": "interleaved_gate_depolarizing_rate",
+      "type": "number",
+      "description": "Depolarizing probability after the interleaved gate. null uses depolarizing_rate (gate-independent noise).",
+      "default": null,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 0.5
+      }
+    },
+    {
+      "name": "simultaneous_crosstalk_rate",
+      "type": "number",
+      "description": "Probability of a correlated DEPOLARIZE2 on the two qubits per step of simultaneous single-qubit RB. null skips simultaneous RB; 0 runs it without crosstalk.",
+      "default": null,
+      "constraints": {
+        "minimum": 0,
+        "maximum": 0.5
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "decay_parameter",
+      "type": "number",
+      "description": "Fitted lambda of standard RB (null when the fit is inconclusive)."
+    },
+    {
+      "name": "error_per_clifford",
+      "type": "number",
+      "description": "r = (d-1)/d (1 - lambda) of standard RB (null when the fit is inconclusive)."
+    },
+    {
+      "name": "standard",
+      "type": "object",
+      "description": "Per-length survival points, the nonlinear fit, bootstrap intervals, the open SDK's linearized fit and the analytic expectation."
+    },
+    {
+      "name": "interleaved",
+      "type": "object",
+      "description": "null unless requested: points, fit, gate_error with the Magesan systematic bound, gate_error_bootstrap and the analytic expectation."
+    },
+    {
+      "name": "simultaneous",
+      "type": "object",
+      "description": "null unless requested: per qubit the isolated and simultaneous fits, addressability error with a bootstrap interval, the mean and the analytic expectation."
+    },
+    {
+      "name": "report",
+      "type": "string",
+      "description": "Markdown report of every protocol run, with caveats."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-11-01",
+      "changes": [
+        "First catalog release."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "pro",
+        "qec"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "Defaults (one qubit, seven lengths to 64, 20 sequences, 200 shots, standard RB only): about 1.5 s on a 2024 Apple-silicon laptop (maintainer measurement). Adding interleaved and simultaneous RB at the defaults takes about 30 s, dominated by circuit construction; two qubits add a 0.3 s Clifford enumeration. sum(sequence_lengths) x sequences_per_length above 500000 is refused before anything runs."
+  },
+  "install": "pip install \"ketqat[pro,qec] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\" && ketqat pro login && ketqat pro install randomized-benchmarking-suite@1.0.0",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"randomized-benchmarking-suite@1.0.0\", seed=2026, qubits=1, depolarizing_rate=0.005)\nresult = record.result\ninterval = result[\"standard\"][\"bootstrap\"][\"error_per_clifford\"]\nprint(json.dumps({\n    \"status\": record.status,\n    \"qubits\": result[\"qubits\"],\n    \"fit_conclusive\": not result[\"standard\"][\"fit\"][\"inconclusive\"],\n    \"interval_brackets_estimate\": interval[\"lower\"] <= result[\"error_per_clifford\"] <= interval[\"upper\"],\n    \"within_ten_percent_of_analytic\": abs(result[\"error_per_clifford\"] - 2 * 0.005 / 3) < 0.1 * (2 * 0.005 / 3),\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "qubits": 1,
+      "fit_conclusive": true,
+      "interval_brackets_estimate": true,
+      "within_ten_percent_of_analytic": true
+    },
+    "verified": null
+  },
+  "sampleResult": {
+    "summary": "Not generated in the open SDK: running this product needs a Pro entitlement and bundle, which this repository's CI does not have. Maintainer run of the private bundle (one qubit, p = 0.005, lengths 1 to 64, 20 sequences, 200 shots, seed 2026, Stim 1.16.0): decay parameter 0.99321, error per Clifford 0.003397 with 95% bootstrap interval [0.003221, 0.003579] against the analytic 2p/3 = 0.003333 (0.65 bootstrap sigma away); the open SDK's linearized fit gave 0.003331. With interleaved x at its own rate 0.01 and simultaneous RB at crosstalk 0.01 on the same seed: gate error 0.00703 [0.00644, 0.00749] with systematic bound 0.0104 against the analytic 0.00667, and addressability error 0.005296 against the analytic 0.005298.",
+    "data": null,
+    "generatedWith": null
+  },
+  "science": {
+    "assumptions": [
+      "Uniformly random Cliffords from the enumerated 1- or 2-qubit Clifford group, inverted exactly from the composed tableau; survival is every qubit measured 0.",
+      "Gate-independent depolarizing noise after every Clifford (and, in interleaved RB, after the interleaved gate at its own rate); simultaneous RB adds a correlated two-qubit depolarizing channel per step as the crosstalk.",
+      "The decay model S(m) = A lambda^m + 1/d with the asymptote fixed at the fully depolarized value."
+    ],
+    "scope": [
+      "Standard RB on 1 or 2 qubits; interleaved RB with i, x, y, z, h, s (and cx on two qubits); simultaneous RB of two single-qubit sequences.",
+      "Decay parameter, error per Clifford, interleaved gate error with the Magesan bound, addressability error, each with a 95% bootstrap interval over sequences, and the analytic value for the simulated noise model."
+    ],
+    "limitations": [
+      "A simulated depolarizing device: the analytic expectations hold for this noise model only and are not hardware predictions.",
+      "Bootstrap intervals are statistical; they exclude error from the single-exponential model being wrong, which dominates when gate errors are not gate-independent.",
+      "With gate-independent noise and the same rate for the interleaved gate, every gate reports the same error by construction; the separate gate rate is what makes interleaved RB diagnostic here.",
+      "Interleaved RB's systematic bound can be comparable to the estimate; the report then says the gate error is bounded, not resolved.",
+      "Sequence lengths above the depolarized floor are needed for a fit; a run whose survivals all sit at 1/d is reported as inconclusive.",
+      "The implementation is delivered as a Pro bundle and is not open source; its validation tests live in the private repository, not here.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "Randomized benchmarking of quantum gates",
+      "authors": [
+        "Emanuel Knill",
+        "Dietrich Leibfried",
+        "Rolf Reichle",
+        "Joe Britton",
+        "R. Brad Blakestad",
+        "John D. Jost",
+        "Chris Langer",
+        "Roee Ozeri",
+        "Signe Seidelin",
+        "David J. Wineland"
+      ],
+      "year": 2008,
+      "venue": "Physical Review A 77, 012307",
+      "doi": "10.1103/PhysRevA.77.012307",
+      "url": "https://arxiv.org/abs/0707.0963"
+    },
+    {
+      "title": "Scalable and robust randomized benchmarking of quantum processes",
+      "authors": [
+        "Easwar Magesan",
+        "Jay M. Gambetta",
+        "Joseph Emerson"
+      ],
+      "year": 2011,
+      "venue": "Physical Review Letters 106, 180504",
+      "doi": "10.1103/PhysRevLett.106.180504",
+      "url": "https://arxiv.org/abs/1009.3639"
+    },
+    {
+      "title": "Characterizing quantum gates via randomized benchmarking",
+      "authors": [
+        "Easwar Magesan",
+        "Jay M. Gambetta",
+        "Joseph Emerson"
+      ],
+      "year": 2012,
+      "venue": "Physical Review A 85, 042311",
+      "doi": "10.1103/PhysRevA.85.042311",
+      "url": "https://arxiv.org/abs/1109.6887"
+    },
+    {
+      "title": "Efficient measurement of quantum gate error by interleaved randomized benchmarking",
+      "authors": [
+        "Easwar Magesan",
+        "Jay M. Gambetta",
+        "Blake R. Johnson",
+        "Colm A. Ryan",
+        "Jerry M. Chow",
+        "Seth T. Merkel",
+        "Marcus P. da Silva",
+        "George A. Keefe",
+        "Mary B. Rothwell",
+        "Thomas A. Ohki",
+        "Mark B. Ketchen",
+        "Matthias Steffen"
+      ],
+      "year": 2012,
+      "venue": "Physical Review Letters 109, 080505",
+      "doi": "10.1103/PhysRevLett.109.080505",
+      "url": "https://arxiv.org/abs/1203.4550"
+    },
+    {
+      "title": "Characterization of addressability by simultaneous randomized benchmarking",
+      "authors": [
+        "Jay M. Gambetta",
+        "Antonio D. Corcoles",
+        "Seth T. Merkel",
+        "Blake R. Johnson",
+        "John A. Smolin",
+        "Jerry M. Chow",
+        "Colm A. Ryan",
+        "Chad Rigetti",
+        "Stefano Poletto",
+        "Thomas A. Ohki",
+        "Mark B. Ketchen",
+        "Matthias Steffen"
+      ],
+      "year": 2012,
+      "venue": "Physical Review Letters 109, 240504",
+      "url": "https://arxiv.org/abs/1204.6308"
+    },
+    {
+      "title": "Stim: a fast stabilizer circuit simulator",
+      "authors": [
+        "Craig Gidney"
+      ],
+      "year": 2021,
+      "venue": "Quantum 5, 497",
+      "doi": "10.22331/q-2021-07-06-497"
+    },
+    {
+      "title": "Bootstrap methods: Another look at the jackknife",
+      "authors": [
+        "Bradley Efron"
+      ],
+      "year": 1979,
+      "venue": "The Annals of Statistics 7, 1-26"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-integration-of-oss",
+    "statement": "Randomized benchmarking is due to Knill et al. (2008) and, in the Clifford-group form with its fidelity decay model, to Magesan, Gambetta and Emerson (2011, 2012); interleaved RB and its systematic bound to Magesan et al. (2012); simultaneous RB and addressability to Gambetta et al. (2012). Circuits are simulated exactly by Stim (Craig Gidney) through the open SDK's Clifford enumeration and sequence builders, and the statistics use NumPy. KetQat wrote the suite workflow: per-sequence collection, the nonlinear fit, the bootstrap, the separate gate rate, the analytic comparison, the report and this catalog entry. KetQat did not invent any of the protocols or bounds.",
+    "upstream": [
+      {
+        "name": "Stim",
+        "url": "https://github.com/quantumlib/Stim",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "cryptography",
+        "url": "https://github.com/pyca/cryptography",
+        "license": "Apache-2.0 OR BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "LicenseRef-KetQat-Pro",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "implemented",
+  "validation": [],
+  "pro": {
+    "freeComparison": "The open SDK already enumerates the 1- and 2-qubit Clifford groups, builds and samples standard, interleaved and simultaneous RB sequences with Stim, fits the decay by a weighted linearized least squares with a propagated standard error, computes the interleaved gate error with the Magesan systematic bound and the addressability error, and runs standard RB from a manifest (randomized_benchmarking.py, runner.py). Nothing of that moves behind Pro, and this product calls those functions. Pro adds the suite as one catalog run: all three protocols on one seed with every sequence's survival kept, a weighted nonlinear fit in survival space that also handles the noiseless case, bootstrap intervals over sequences for every reported quantity, a separate noise rate for the interleaved gate, cx as an interleaved gate, analytic expectations beside every estimate, and a Markdown report.",
+    "distribution": "authenticated-bundle"
+  },
+  "legacy": []
+}

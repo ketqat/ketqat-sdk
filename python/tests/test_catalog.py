@@ -34,6 +34,9 @@ EXPECTED_PRODUCTS = {
     "kq.qinfo.state-measures": ("quantum-state-measures", "free"),
     "kq.qinfo.state-tomography": ("quantum-state-tomography", "free"),
     "kq.qinfo.channel-analysis": ("quantum-channel-analysis", "pro"),
+    "kq.qec.surface-code-threshold-study": ("surface-code-threshold-study", "pro"),
+    "kq.qinfo.randomized-benchmarking-suite": ("randomized-benchmarking-suite", "pro"),
+    "kq.qinfo.quantum-volume-certification": ("quantum-volume-certification", "pro"),
 }
 #: The five launch products are dated 2026-10-29; the eight Free products added next are 2026-11-01.
 LAUNCH_DATE = "2026-10-29"
@@ -159,7 +162,9 @@ def test_every_product_states_its_origin_references_and_license() -> None:
 
 def test_search_and_lookup() -> None:
     assert [p.slug for p in catalog.search("entropy")] == ["quantum-state-measures"]
-    assert {p.slug for p in catalog.search(tier="pro")} == {"quantum-channel-analysis"}
+    assert {p.slug for p in catalog.search(tier="pro")} == {
+        "quantum-channel-analysis", "surface-code-threshold-study", "randomized-benchmarking-suite", "quantum-volume-certification",
+    }
     assert {p.slug for p in catalog.search(category="quantum-algorithms")} == {
         "grover-search",
         "quantum-phase-estimation",

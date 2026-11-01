@@ -1,0 +1,312 @@
+{
+  "schema": "ketqat.catalog.product/v1",
+  "id": "kq.qec.surface-code-threshold-study",
+  "slug": "surface-code-threshold-study",
+  "name": "Surface-code threshold study (Stim + PyMatching)",
+  "summary": "Distance x error-rate sweep with Stim + PyMatching: Wilson points, suppression factors, bootstrapped threshold crossing, report.",
+  "category": "quantum-error-correction",
+  "subcategory": "threshold-studies",
+  "tier": "pro",
+  "description": "Runs a rotated surface-code memory experiment over a grid of code distances and physical error rates, sampling with Stim and decoding with PyMatching exactly as the free surface-code-memory product does (same circuits, same seed derivation), and turns the grid into a threshold study. Every point carries its logical error rate with a 95% Wilson interval. Between successive distances it reports the suppression factor Lambda = p_L(d) / p_L(d+2) with a delta-method interval. The threshold is estimated from the crossing of neighbouring-distance curves, interpolated in log-log space, with a parametric bootstrap over the per-point failure counts giving a confidence interval and the spread between distance pairs showing finite-size drift. A finite-size scaling collapse (log p_L = A + B x + C x^2, x = (p - p_th) d^(1/nu)) gives a second threshold estimate with a reduced chi-square as the collapse quality. Everything is written to one JSON result and a Markdown report.\n\nFor QEC students and researchers who want a reproducible threshold sweep with honest uncertainties rather than a single number, without assembling the sweep, the statistics and the report themselves.\n\nThis is a KetQat Pro product: it runs locally like every catalog product, from a signed bundle installed with `ketqat pro install` under a time-limited entitlement. Its implementation is not part of the open SDK.",
+  "useCases": [
+    "Estimate the MWPM threshold of the rotated surface code under depolarizing circuit noise, with a bootstrap interval",
+    "Quantify the suppression factor between distances at a fixed physical error rate, with an interval",
+    "Check whether a sweep collapses onto one finite-size scaling curve before quoting a threshold"
+  ],
+  "inputs": [
+    {
+      "name": "distances",
+      "type": "integer[]",
+      "description": "Code distances (odd, at least two).",
+      "default": [
+        3,
+        5,
+        7
+      ],
+      "constraints": {
+        "minItems": 2,
+        "maxItems": 5,
+        "itemMinimum": 3,
+        "itemMaximum": 15,
+        "uniqueItems": true
+      }
+    },
+    {
+      "name": "physical_error_rates",
+      "type": "number[]",
+      "description": "Depolarizing probabilities p applied after every Clifford gate; the grid should bracket the crossing.",
+      "default": [
+        0.003,
+        0.005,
+        0.007,
+        0.009,
+        0.011,
+        0.013
+      ],
+      "constraints": {
+        "minItems": 2,
+        "maxItems": 12,
+        "itemMinimum": 0,
+        "itemMaximum": 0.5,
+        "uniqueItems": true
+      }
+    },
+    {
+      "name": "shots_per_point",
+      "type": "integer",
+      "description": "Sampled experiments at every (distance, rate) point.",
+      "default": 5000,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 1000000
+      }
+    },
+    {
+      "name": "rounds",
+      "type": "integer",
+      "description": "Syndrome-extraction rounds for every distance. null uses d rounds at distance d.",
+      "default": null,
+      "constraints": {
+        "minimum": 1,
+        "maximum": 50
+      }
+    },
+    {
+      "name": "decoder",
+      "type": "string",
+      "description": "Decoder. Version 1.0.0 offers minimum-weight perfect matching (PyMatching) only.",
+      "default": "mwpm",
+      "constraints": {
+        "enum": [
+          "mwpm"
+        ]
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "points",
+      "type": "object[]",
+      "description": "One entry per (distance, physical_error_rate): rounds, shots, logical_failures, logical_error_rate, 95% Wilson confidence_interval, is_upper_bound_only, coordinate_seed."
+    },
+    {
+      "name": "suppression_factors",
+      "type": "object[]",
+      "description": "Lambda = p_L(d) / p_L(d') between successive distances at every rate, with a delta-method 95% interval; null when the higher distance saw no failure."
+    },
+    {
+      "name": "threshold_estimate",
+      "type": "object",
+      "description": "value (mean of neighbouring-pair crossings) with a parametric bootstrap interval, every pair's crossing and interval, the pair spread, the method, or inconclusive with a reason."
+    },
+    {
+      "name": "finite_size_collapse",
+      "type": "object",
+      "description": "Best (p_th, nu) of the scaling ansatz with the reduced chi-square as collapse quality, or available: false with a reason."
+    },
+    {
+      "name": "decoder_version",
+      "type": "string",
+      "description": "Installed PyMatching version that produced the result."
+    },
+    {
+      "name": "report",
+      "type": "string",
+      "description": "Markdown report with the point table, suppression table, threshold estimate, collapse and caveats."
+    }
+  ],
+  "executionKind": "simulation",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "date": "2026-11-01",
+      "changes": [
+        "First catalog release."
+      ],
+      "sdkMinVersion": "0.3.0",
+      "extras": [
+        "pro",
+        "qec"
+      ],
+      "status": "current"
+    }
+  ],
+  "environment": {
+    "python": ">=3.10",
+    "os": [
+      "linux",
+      "macos"
+    ],
+    "resources": "Defaults (d = 3, 5, 7; six rates; 5000 shots per point; 200 bootstrap resamples): about 3 s on a 2024 Apple-silicon laptop (maintainer measurement). Time grows roughly as d^3 x shots per point; one point needing more than 2 GiB of detector samples, or a sweep needing more than 4 GiB in total, is refused before anything runs."
+  },
+  "install": "pip install \"ketqat[pro,qec] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\" && ketqat pro login && ketqat pro install surface-code-threshold-study@1.0.0",
+  "example": {
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"surface-code-threshold-study@1.0.0\", seed=1, distances=[3, 5],\n                     physical_error_rates=[0.004, 0.008, 0.016, 0.03], shots_per_point=3000)\nresult = record.result\nestimate = result[\"threshold_estimate\"]\nprint(json.dumps({\n    \"status\": record.status,\n    \"distances\": result[\"distances\"],\n    \"points\": len(result[\"points\"]),\n    \"threshold_found\": not estimate[\"inconclusive\"],\n    \"interval_brackets_estimate\": estimate[\"bootstrap\"][\"lower\"] <= estimate[\"value\"] <= estimate[\"bootstrap\"][\"upper\"],\n}))\n",
+    "expectedOutputSubset": {
+      "status": "succeeded",
+      "distances": [
+        3,
+        5
+      ],
+      "points": 8,
+      "threshold_found": true,
+      "interval_brackets_estimate": true
+    },
+    "verified": null
+  },
+  "sampleResult": {
+    "summary": "Not generated in the open SDK: running this product needs a Pro entitlement and bundle, which this repository's CI does not have. Maintainer run of the private bundle with the defaults (d = 3, 5, 7; p = 0.003 to 0.013; 5000 shots per point; seed 2026; Stim 1.16.0, PyMatching 2.4.0): threshold estimate p_th = 0.00815 with 95% bootstrap interval [0.00677, 0.00882]; neighbouring-pair crossings 0.00658 (d 3 vs 5) and 0.00972 (d 5 vs 7), pair spread 0.0031; suppression factor at p = 0.005 of 2.05 [1.19, 3.55] for d 3 -> 5 and 1.90 [0.88, 4.08] for d 5 -> 7; finite-size collapse at p_th = 0.00775, nu = 1.0 with reduced chi-square 1.43 over 18 points.",
+    "data": null,
+    "generatedWith": null
+  },
+  "science": {
+    "assumptions": [
+      "Circuit-level noise: single- and two-qubit depolarizing noise with probability p after every Clifford gate (Stim's after_clifford_depolarization). Measurement, reset and idle errors are not added.",
+      "Stabilizer simulation: only Pauli noise is representable.",
+      "The decoder sees the detector error model of the same circuit that generated the samples (matched noise model).",
+      "The crossing estimator interpolates each distance's curve linearly in (log p, log p_L) between sampled rates; the bootstrap redraws every failure count from Binomial(shots, observed rate)."
+    ],
+    "scope": [
+      "Rotated surface code, memory in the Z basis, odd distances 3 to 15, 1 to 50 rounds (default d rounds).",
+      "Logical error rate per point with a 95% Wilson interval; suppression factors between successive distances; threshold from neighbouring-pair crossings with a bootstrap interval; finite-size collapse quality."
+    ],
+    "limitations": [
+      "One noise model only; a threshold here is not a hardware prediction.",
+      "Rates are per memory experiment of the given rounds, not per round; with rounds = d the per-experiment rate of a larger distance includes more rounds.",
+      "The bootstrap interval carries shot noise only. Finite-size effects are visible as the spread between distance pairs and are not folded into the interval; three distances constrain the scaling exponent nu weakly.",
+      "Points with fewer than 5 failures at either distance are excluded from the crossing search; points with none are excluded from the collapse fit and reported as upper bounds.",
+      "Exact counts are reproducible for the same seed with the same Stim and PyMatching versions; other versions may sample or decode differently.",
+      "The implementation is delivered as a Pro bundle and is not open source; its validation tests live in the private repository, not here.",
+      "Tested on macOS and Linux only; Windows is untested."
+    ]
+  },
+  "references": [
+    {
+      "title": "Topological quantum memory",
+      "authors": [
+        "Eric Dennis",
+        "Alexei Kitaev",
+        "Andrew Landahl",
+        "John Preskill"
+      ],
+      "year": 2002,
+      "venue": "Journal of Mathematical Physics 43, 4452",
+      "doi": "10.1063/1.1499754",
+      "url": "https://arxiv.org/abs/quant-ph/0110143"
+    },
+    {
+      "title": "Surface codes: Towards practical large-scale quantum computation",
+      "authors": [
+        "Austin G. Fowler",
+        "Matteo Mariantoni",
+        "John M. Martinis",
+        "Andrew N. Cleland"
+      ],
+      "year": 2012,
+      "venue": "Physical Review A 86, 032324",
+      "doi": "10.1103/PhysRevA.86.032324"
+    },
+    {
+      "title": "Confinement-Higgs transition in a disordered gauge theory and the accuracy threshold for quantum memory",
+      "authors": [
+        "Chenyang Wang",
+        "Jim Harrington",
+        "John Preskill"
+      ],
+      "year": 2003,
+      "venue": "Annals of Physics 303, 31-58",
+      "url": "https://arxiv.org/abs/quant-ph/0207088"
+    },
+    {
+      "title": "Stim: a fast stabilizer circuit simulator",
+      "authors": [
+        "Craig Gidney"
+      ],
+      "year": 2021,
+      "venue": "Quantum 5, 497",
+      "doi": "10.22331/q-2021-07-06-497"
+    },
+    {
+      "title": "PyMatching: A Python package for decoding quantum codes with minimum-weight perfect matching",
+      "authors": [
+        "Oscar Higgott"
+      ],
+      "year": 2022,
+      "venue": "ACM Transactions on Quantum Computing",
+      "url": "https://arxiv.org/abs/2105.13082"
+    },
+    {
+      "title": "Sparse Blossom: correcting a million errors per core second with minimum-weight matching",
+      "authors": [
+        "Oscar Higgott",
+        "Craig Gidney"
+      ],
+      "year": 2023,
+      "venue": "arXiv preprint",
+      "url": "https://arxiv.org/abs/2303.15933"
+    },
+    {
+      "title": "Binomial confidence intervals: Probable inference, the law of succession, and statistical inference",
+      "authors": [
+        "Edwin B. Wilson"
+      ],
+      "year": 1927,
+      "venue": "Journal of the American Statistical Association 22, 209-212"
+    },
+    {
+      "title": "Bootstrap methods: Another look at the jackknife",
+      "authors": [
+        "Bradley Efron"
+      ],
+      "year": 1979,
+      "venue": "The Annals of Statistics 7, 1-26"
+    }
+  ],
+  "origin": {
+    "kind": "ketqat-integration-of-oss",
+    "statement": "The surface code memory, its threshold and its decoding by matching follow Dennis, Kitaev, Landahl and Preskill (2002) and Fowler et al. (2012); the finite-size scaling ansatz follows Wang, Harrington and Preskill (2003). Circuits are generated and sampled by Stim (Craig Gidney) and decoded by PyMatching (Oscar Higgott and Craig Gidney), both used unmodified through the open SDK's sampler, and the statistics use NumPy. KetQat wrote the study workflow: the sweep orchestration, the suppression and crossing estimators with their bootstrap, the collapse fit, the report and this catalog entry. KetQat did not invent the code, the noise model, the decoder or the threshold method.",
+    "upstream": [
+      {
+        "name": "Stim",
+        "url": "https://github.com/quantumlib/Stim",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "PyMatching",
+        "url": "https://github.com/oscarhiggott/PyMatching",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "NumPy",
+        "url": "https://github.com/numpy/numpy",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "cryptography",
+        "url": "https://github.com/pyca/cryptography",
+        "license": "Apache-2.0 OR BSD-3-Clause"
+      }
+    ]
+  },
+  "license": "LicenseRef-KetQat-Pro",
+  "contributors": [
+    {
+      "name": "dorakingx",
+      "github": "dorakingx",
+      "role": "KetQat maintainer: implementation, validation and catalog entry"
+    }
+  ],
+  "implementationStatus": "implemented",
+  "validation": [],
+  "pro": {
+    "freeComparison": "The open SDK already samples and decodes a rotated surface-code memory at one distance and rate with a Wilson interval (the free surface-code-memory product), computes a suppression factor between two rates (qec_statistics.suppression_factor) and, for manifest sweeps, estimates a threshold as the median of pairwise curve crossings with the spread between pairs as its only uncertainty (threshold.py). Nothing of that moves behind Pro. Pro adds the study as one catalog run: the whole distance x rate sweep with the same open sampler, suppression factors with intervals at every rate, a neighbouring-pair crossing estimator in log-log space with a parametric bootstrap interval over per-point failure counts, a finite-size scaling collapse with its quality number, and a Markdown report.",
+    "distribution": "authenticated-bundle"
+  },
+  "legacy": [
+    {
+      "type": "dataset",
+      "slug": "surface-code-mwpm-threshold-sweep",
+      "relation": "background"
+    }
+  ]
+}

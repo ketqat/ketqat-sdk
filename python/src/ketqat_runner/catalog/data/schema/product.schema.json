@@ -270,7 +270,7 @@
       "then": {
         "properties": {
           "subcategory": {
-            "enum": ["memory-experiments", "decoding", "codes", "stabilizer-codes", "resource-estimation"]
+            "enum": ["memory-experiments", "decoding", "codes", "stabilizer-codes", "resource-estimation", "threshold-studies"]
           }
         }
       }
@@ -280,7 +280,7 @@
       "then": {
         "properties": {
           "subcategory": {
-            "enum": ["state-analysis", "channel-analysis", "entanglement", "tomography"]
+            "enum": ["state-analysis", "channel-analysis", "entanglement", "tomography", "benchmarking"]
           }
         }
       }

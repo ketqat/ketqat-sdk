@@ -29,6 +29,9 @@ it. It never means KetQat invented the method. Every definition carries an
 | `kq.qinfo.state-measures` | `quantum-state-measures` | Free | `qinfo` |
 | `kq.qinfo.state-tomography` | `quantum-state-tomography` | Free | `qinfo` |
 | `kq.qinfo.channel-analysis` | `quantum-channel-analysis` | Pro | `pro`, `qinfo` |
+| `kq.qec.surface-code-threshold-study` | `surface-code-threshold-study` | Pro | `pro`, `qec` |
+| `kq.qinfo.randomized-benchmarking-suite` | `randomized-benchmarking-suite` | Pro | `pro`, `qec` |
+| `kq.qinfo.quantum-volume-certification` | `quantum-volume-certification` | Pro | `pro`, `qinfo` |
 
 `ketqat catalog show <slug>` prints the full definition: inputs with types and
 defaults, the install line, the example, limitations and references.

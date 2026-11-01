@@ -1,7 +1,7 @@
 {
   "schema": "ketqat.catalog.index/v1",
   "productSchema": "ketqat.catalog.product/v1",
-  "productSchemaSha256": "d182700d6dc070b7e30b8a65ad1785a9f78b72dcdf3b87f44e1082b99025f7ec",
+  "productSchemaSha256": "88f142a4403ea99c47f673c624e12d136891ea412dc09ae10a0b339eef827d1b",
   "products": [
     {
       "id": "kq.algorithms.grover-search",
@@ -134,6 +134,19 @@
       "sha256": "f6253762c5360af48eb167b3b814bf5d3de7f4ef060c385fafa7a60e05282f1d"
     },
     {
+      "id": "kq.qec.surface-code-threshold-study",
+      "slug": "surface-code-threshold-study",
+      "name": "Surface-code threshold study (Stim + PyMatching)",
+      "category": "quantum-error-correction",
+      "subcategory": "threshold-studies",
+      "tier": "pro",
+      "executionKind": "simulation",
+      "implementationStatus": "implemented",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.qec.surface-code-threshold-study.json",
+      "sha256": "014f13da37be64921c35fd663040f78cbaea9aa48c0e228eb0cd8d3030161626"
+    },
+    {
       "id": "kq.qinfo.channel-analysis",
       "slug": "quantum-channel-analysis",
       "name": "Quantum channel analysis",
@@ -145,6 +158,32 @@
       "currentVersion": "1.0.0",
       "path": "products/kq.qinfo.channel-analysis.json",
       "sha256": "4362710133d2689783b7192b672ea8b3b4fe50c32c6a23e2751c43cd57e45b2b"
+    },
+    {
+      "id": "kq.qinfo.quantum-volume-certification",
+      "slug": "quantum-volume-certification",
+      "name": "Quantum volume certification",
+      "category": "quantum-information",
+      "subcategory": "benchmarking",
+      "tier": "pro",
+      "executionKind": "simulation",
+      "implementationStatus": "implemented",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.qinfo.quantum-volume-certification.json",
+      "sha256": "a9fa82dd09fee76c302d58915e1c9decfcf4b2a35b8fbb06596bca21d0f7b60f"
+    },
+    {
+      "id": "kq.qinfo.randomized-benchmarking-suite",
+      "slug": "randomized-benchmarking-suite",
+      "name": "Randomized benchmarking suite (Clifford RB)",
+      "category": "quantum-information",
+      "subcategory": "benchmarking",
+      "tier": "pro",
+      "executionKind": "simulation",
+      "implementationStatus": "implemented",
+      "currentVersion": "1.0.0",
+      "path": "products/kq.qinfo.randomized-benchmarking-suite.json",
+      "sha256": "097dd5622f8e07395120129c45313511bce6e2a201d00d3d665175e0c0ed6196"
     },
     {
       "id": "kq.qinfo.state-measures",
