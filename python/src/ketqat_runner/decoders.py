@@ -48,7 +48,8 @@ class DecoderAdapter(Protocol):
     name: str
     version: str
 
-    def decode(self, circuit: Any, detector_samples: Any) -> DecodeOutcome: ...
+    def decode(self, circuit: Any, detector_samples: Any) -> DecodeOutcome:
+        """Decode detector samples for one circuit."""
 
 
 def _require_dependencies() -> tuple[Any, Any]:

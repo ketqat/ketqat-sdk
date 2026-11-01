@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from .decoders import DecoderError, resolve_decoder
+from .decoders import resolve_decoder
 from .environment import capture_environment
 from .hashing import CURRENT_HASH_VERSION, HASH_VERSION_KEY, calculate_reproducibility_hash
 from .qec_statistics import (

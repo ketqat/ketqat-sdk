@@ -28,6 +28,10 @@ if (Object.values(versions).some((version) => !version) || new Set(Object.values
 }
 
 const version = rootPackage.version
+// The version is interpolated into registry URLs; accept only a SemVer string.
+if (typeof version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
+  throw new Error(`package.json version is not a SemVer release version: ${JSON.stringify(version)}`)
+}
 const registries = [
   ["npm", `https://registry.npmjs.org/${rootPackage.name}/${encodeURIComponent(version)}`],
   ["PyPI", `https://pypi.org/pypi/ketqat/${encodeURIComponent(version)}/json`],

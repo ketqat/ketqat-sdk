@@ -36,3 +36,12 @@ updates:
       interval: weekly
     commit-message:
       prefix: "chore(python)"
+
+  # The worker image's base is pinned by digest (OpenSSF Scorecard
+  # Pinned-Dependencies); this keeps the digest current instead of frozen.
+  - package-ecosystem: docker
+    directory: /worker
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(docker)"

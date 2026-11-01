@@ -63,7 +63,6 @@ import {
   virtualDistillation,
   depolarize,
   densityFromAmplitudes,
-  VirtualDistillationError,
   PHYSICAL_QUBIT_REGISTER,
   cliffordDataRegression,
   exactExpectation,
