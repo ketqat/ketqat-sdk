@@ -1,0 +1,7 @@
+# CI and release tooling, installed with --require-hashes (OpenSSF Scorecard
+# Pinned-Dependencies). Regenerate with the uv command recorded in
+# requirements-ci-tools.txt after editing this list.
+pip
+build
+twine
+pytest

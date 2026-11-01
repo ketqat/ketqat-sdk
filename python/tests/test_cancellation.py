@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from ketqat_runner.providers.cancellation import (
-    CancellationOutcome,
     cancel_refused_adapter_unavailable,
     cancel_refused_missing_credentials,
     classify_vendor_state,

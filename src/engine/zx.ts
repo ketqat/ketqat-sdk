@@ -190,7 +190,6 @@ function record(pass: RewritePass, rewrite: ZxRewrite, detail: string): void {
 /** One sweep. Returns true when anything changed, so the caller can iterate. */
 function sweep(pass: RewritePass): boolean {
   const operations = pass.circuit.operations
-  let changed = false
 
   for (let index = 0; index < operations.length; index += 1) {
     const current = operations[index] as Operation
@@ -343,12 +342,11 @@ function sweep(pass: RewritePass): boolean {
         operations[index] = { ...current, parameters: [total] }
         record(pass, "phase_fusion", `Fused two adjacent ${current.name} rotations.`)
       }
-      changed = true
       return true
     }
   }
 
-  return changed
+  return false
 }
 
 /** Index of the next operation touching any of `qubits`, or null. */

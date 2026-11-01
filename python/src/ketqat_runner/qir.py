@@ -138,7 +138,7 @@ def circuit_to_qir(circuit: dict[str, Any], *, name: str = "ketqat") -> dict[str
     Takes the circuit as a dict -- the shape `parseQasm3` produces -- so no second
     parser is needed on this side.
     """
-    pyqir = _require()
+    _require()
     from pyqir import BasicQisBuilder, SimpleModule
 
     operations = circuit.get("operations") or []
@@ -249,7 +249,7 @@ def verify_round_trip(result: dict[str, Any]) -> dict[str, Any]:
     module's idea of what it wrote -- the same reason the MCP transport is tested
     with the official client.
     """
-    pyqir = _require()
+    _require()
     from pyqir import Context, Module
 
     try:

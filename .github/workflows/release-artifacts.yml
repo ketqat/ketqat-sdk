@@ -39,7 +39,7 @@ jobs:
       - name: Install build tooling
         run: |
           npm ci
-          python -m pip install --quiet build
+          python -m pip install --require-hashes -r requirements-ci-tools.txt --quiet
 
       # Builds each artifact twice and fails if the two do not hash identically. An
       # artifact nobody can rebuild is one nobody can check.

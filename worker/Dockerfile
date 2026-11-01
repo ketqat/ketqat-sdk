@@ -8,7 +8,7 @@
 # Deliberately absent at runtime: no package manager, no shell tooling, no build
 # toolchain, no credentials. There is little here for an escape to use.
 
-FROM node:22-slim AS builder
+FROM node:22-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da AS builder
 WORKDIR /build
 COPY package.json package-lock.json ./
 # npm ci against the lockfile: a job container must never resolve a floating
@@ -17,7 +17,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts
 COPY dist ./dist
 
-FROM node:22-slim AS runtime
+FROM node:22-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da AS runtime
 
 # Package managers are build tools; production executes Node directly.
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \

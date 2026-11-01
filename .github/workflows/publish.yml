@@ -95,7 +95,7 @@ jobs:
 
       - name: Build distribution
         run: |
-          python -m pip install --upgrade pip build
+          python -m pip install --require-hashes -r requirements-ci-tools.txt
           python -m build python
           python scripts/verify-python-distributions.py python/dist
 
