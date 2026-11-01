@@ -21,66 +21,22 @@ import type { HardwareProfile } from "../hardware/profile.js";
  *   carry over.
  */
 export declare const ProviderCredentialSchema: z.ZodObject<{
-    /** Opaque token. Held in memory for one submission and never returned. */
     token: z.ZodString;
-    /** Optional provider-specific scoping, e.g. an instance or project. */
     scope: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    token: string;
-    scope?: string | undefined;
-}, {
-    token: string;
-    scope?: string | undefined;
-}>;
+}, z.core.$strip>;
 export type ProviderCredential = z.infer<typeof ProviderCredentialSchema>;
 export declare const SubmissionEstimateSchema: z.ZodObject<{
     provider: z.ZodString;
     backend: z.ZodString;
     shots: z.ZodNumber;
-    /**
-     * Estimated cost as the provider reports it, or null when unknown. Null is
-     * shown as "unknown", never as zero: displaying an unknown cost as free is
-     * how a user gets a surprise invoice.
-     */
     estimated_cost: z.ZodNullable<z.ZodObject<{
         amount: z.ZodNumber;
         currency: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        amount: number;
-        currency: string;
-    }, {
-        amount: number;
-        currency: string;
-    }>>;
-    /** Remaining quota as the provider reports it, or null when unknown. */
+    }, z.core.$strip>>;
     remaining_quota: z.ZodNullable<z.ZodNumber>;
-    /** What the user must confirm, in words. */
     confirmation_prompt: z.ZodString;
-    /** Anything the user should know before spending, e.g. a queue warning. */
-    warnings: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
-}, "strip", z.ZodTypeAny, {
-    provider: string;
-    backend: string;
-    shots: number;
-    estimated_cost: {
-        amount: number;
-        currency: string;
-    } | null;
-    remaining_quota: number | null;
-    confirmation_prompt: string;
-    warnings: string[];
-}, {
-    provider: string;
-    backend: string;
-    shots: number;
-    estimated_cost: {
-        amount: number;
-        currency: string;
-    } | null;
-    remaining_quota: number | null;
-    confirmation_prompt: string;
-    warnings?: string[] | undefined;
-}>;
+    warnings: z.ZodDefault<z.ZodArray<z.ZodString>>;
+}, z.core.$strip>;
 export type SubmissionEstimate = z.infer<typeof SubmissionEstimateSchema>;
 export declare const NOT_RUN_REASONS: readonly ["credentials_unavailable", "confirmation_declined", "provider_unsupported_feature", "quota_exhausted"];
 export type NotRunReason = (typeof NOT_RUN_REASONS)[number];
@@ -92,91 +48,50 @@ export type NotRunReason = (typeof NOT_RUN_REASONS)[number];
  */
 export declare const NotRunRecordSchema: z.ZodObject<{
     status: z.ZodLiteral<"NOT_RUN">;
-    reason: z.ZodEnum<["credentials_unavailable", "confirmation_declined", "provider_unsupported_feature", "quota_exhausted"]>;
+    reason: z.ZodEnum<{
+        confirmation_declined: "confirmation_declined";
+        credentials_unavailable: "credentials_unavailable";
+        provider_unsupported_feature: "provider_unsupported_feature";
+        quota_exhausted: "quota_exhausted";
+    }>;
     provider: z.ZodString;
     backend: z.ZodString;
     detail: z.ZodString;
     recorded_at: z.ZodString;
-    /** Always absent. Present in the schema to state that it is never populated. */
     counts: z.ZodOptional<z.ZodUndefined>;
-}, "strip", z.ZodTypeAny, {
-    status: "NOT_RUN";
-    reason: "confirmation_declined" | "credentials_unavailable" | "provider_unsupported_feature" | "quota_exhausted";
-    provider: string;
-    backend: string;
-    detail: string;
-    recorded_at: string;
-    counts?: undefined;
-}, {
-    status: "NOT_RUN";
-    reason: "confirmation_declined" | "credentials_unavailable" | "provider_unsupported_feature" | "quota_exhausted";
-    provider: string;
-    backend: string;
-    detail: string;
-    recorded_at: string;
-    counts?: undefined;
-}>;
+}, z.core.$strip>;
 export type NotRunRecord = z.infer<typeof NotRunRecordSchema>;
 export declare const ProviderSubmissionSchema: z.ZodObject<{
-    status: z.ZodEnum<["SUBMITTED", "COMPLETED", "FAILED"]>;
+    status: z.ZodEnum<{
+        COMPLETED: "COMPLETED";
+        FAILED: "FAILED";
+        SUBMITTED: "SUBMITTED";
+    }>;
     provider: z.ZodString;
     backend: z.ZodString;
     provider_job_id: z.ZodString;
     shots: z.ZodNumber;
-    /** HARDWARE only when the provider actually executed on a device. */
-    execution_class: z.ZodEnum<["HARDWARE", "SIMULATION"]>;
+    execution_class: z.ZodEnum<{
+        HARDWARE: "HARDWARE";
+        SIMULATION: "SIMULATION";
+    }>;
     counts: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodNumber>>;
-    /** Snapshot the circuit was compiled against, so the result is interpretable. */
     hardware_snapshot_id: z.ZodOptional<z.ZodString>;
-    loss_report: z.ZodDefault<z.ZodArray<z.ZodType<{
+    loss_report: z.ZodDefault<z.ZodArray<z.ZodCustom<{
         feature: string;
         severity: "cosmetic" | "semantic" | "structural";
         action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
-    }, z.ZodTypeDef, {
+    }, {
         feature: string;
         severity: "cosmetic" | "semantic" | "structural";
         action: "approximated" | "dropped" | "rejected";
         detail: string;
         location?: string | undefined;
-    }>, "many">>;
+    }>>>;
     submitted_at: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    status: "COMPLETED" | "FAILED" | "SUBMITTED";
-    provider: string;
-    backend: string;
-    provider_job_id: string;
-    shots: number;
-    execution_class: "HARDWARE" | "SIMULATION";
-    counts?: Record<string, number> | undefined;
-    hardware_snapshot_id?: string | undefined;
-    loss_report: {
-        feature: string;
-        severity: "cosmetic" | "semantic" | "structural";
-        action: "approximated" | "dropped" | "rejected";
-        detail: string;
-        location?: string | undefined;
-    }[];
-    submitted_at: string;
-}, {
-    status: "COMPLETED" | "FAILED" | "SUBMITTED";
-    provider: string;
-    backend: string;
-    provider_job_id: string;
-    shots: number;
-    execution_class: "HARDWARE" | "SIMULATION";
-    counts?: Record<string, number> | undefined;
-    hardware_snapshot_id?: string | undefined;
-    loss_report?: {
-        feature: string;
-        severity: "cosmetic" | "semantic" | "structural";
-        action: "approximated" | "dropped" | "rejected";
-        detail: string;
-        location?: string | undefined;
-    }[] | undefined;
-    submitted_at: string;
-}>;
+}, z.core.$strip>;
 export type ProviderSubmission = z.infer<typeof ProviderSubmissionSchema>;
 export interface ProviderAdapter {
     readonly provider: string;

@@ -16,4 +16,6 @@ export { DecisionAssessmentSchema } from "../intelligence/decision.js";
 export { ResourceIntelligenceBundleSchema, EvidenceSourceSchema, } from "../intelligence/bundle.js";
 export { QuantitySchema } from "../intelligence/measurement.js";
 export { RegressionPolicySchema, RegressionSummarySchema } from "../contracts/regression.js";
+export { contractJsonSchema } from "../json-schema.js";
+export type { ContractJsonSchemaOptions } from "../json-schema.js";
 //# sourceMappingURL=index.d.ts.map

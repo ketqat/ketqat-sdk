@@ -44,37 +44,13 @@ export declare const SURFACE_CODE_THRESHOLD = 0.01;
  */
 export declare const SURFACE_CODE_PREFACTOR = 0.03;
 export declare const FaultTolerantAssumptionsSchema: z.ZodObject<{
-    /** Physical two-qubit gate error rate. */
     physical_error_rate: z.ZodNumber;
-    /** Total probability of any logical error across the whole computation. */
     error_budget: z.ZodNumber;
-    /** Surface-code cycle time in nanoseconds. */
     cycle_time_ns: z.ZodNumber;
     threshold: z.ZodNumber;
     prefactor: z.ZodNumber;
-    /**
-     * Physical qubits per logical qubit at distance d, as a multiple of d^2.
-     *
-     * 2 is the rotated surface code including its measurement qubits. Routing
-     * space and magic-state factories are counted separately rather than folded
-     * into this number, so a reader can see which part of the footprint is which.
-     */
     qubits_per_logical_d_squared: z.ZodNumber;
-}, "strip", z.ZodTypeAny, {
-    physical_error_rate: number;
-    error_budget: number;
-    cycle_time_ns: number;
-    threshold: number;
-    prefactor: number;
-    qubits_per_logical_d_squared: number;
-}, {
-    physical_error_rate: number;
-    error_budget: number;
-    cycle_time_ns: number;
-    threshold: number;
-    prefactor: number;
-    qubits_per_logical_d_squared: number;
-}>;
+}, z.core.$strip>;
 export type FaultTolerantAssumptions = z.infer<typeof FaultTolerantAssumptionsSchema>;
 export declare const DEFAULT_FT_ASSUMPTIONS: FaultTolerantAssumptions;
 export interface FaultTolerantInput {

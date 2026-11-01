@@ -16,4 +16,7 @@ export { DecisionAssessmentSchema } from "../intelligence/decision.js";
 export { ResourceIntelligenceBundleSchema, EvidenceSourceSchema, } from "../intelligence/bundle.js";
 export { QuantitySchema } from "../intelligence/measurement.js";
 export { RegressionPolicySchema, RegressionSummarySchema } from "../contracts/regression.js";
+// The generator behind schemas/*.schema.json, so consumers (the web app's
+// OpenAPI document) emit the same draft-07 dialect rather than a second one.
+export { contractJsonSchema } from "../json-schema.js";
 //# sourceMappingURL=index.js.map

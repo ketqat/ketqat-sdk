@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs"
  *
  * Both arrive under `@modelcontextprotocol/sdk`, a devDependency used by the
  * MCP conformance test. Neither reaches a consumer: the runtime dependency set
- * is `zod` and `zod-to-json-schema`, and `files` ships no `node_modules`.
+ * is `zod` alone, and `files` ships no `node_modules`.
  *
  * ## Why the override states the advisory floor, not the version we validated
  *
@@ -84,7 +84,7 @@ test("these overrides stay out of the shipped dependency set", () => {
   }
   assert.deepEqual(
     runtime.sort(),
-    ["zod", "zod-to-json-schema"],
-    "The runtime dependency set changed. This repository ships zod and zod-to-json-schema only.",
+    ["zod"],
+    "The runtime dependency set changed. This repository ships zod only.",
   )
 })

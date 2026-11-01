@@ -71,7 +71,7 @@ export const NormalizedResourceEstimateSchema = z.object({
    * Kept alongside the normalized fields because normalization is lossy and
    * discarding the original destroys the evidence that makes it checkable.
    */
-  raw: z.record(z.unknown()).optional(),
+  raw: z.record(z.string(), z.unknown()).optional(),
 })
 export type NormalizedResourceEstimate = z.infer<typeof NormalizedResourceEstimateSchema>
 

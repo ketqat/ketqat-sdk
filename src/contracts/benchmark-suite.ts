@@ -11,7 +11,7 @@ const BaseBenchmarkSuiteSchema = z.object({
   schema_version: z.string().min(1),
   experiment_type: z.string().min(1),
   metric_definitions: z.array(MetricDefinitionSchema).min(1),
-  default_configuration: z.record(z.unknown()).default({}),
+  default_configuration: z.record(z.string(), z.unknown()).default({}),
   repository_url: UrlSchema.optional(),
   is_demo: z.boolean(),
   owner_username: z.string().min(1).nullable().optional(),

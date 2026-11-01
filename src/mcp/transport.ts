@@ -1,4 +1,4 @@
-import { zodToJsonSchema } from "zod-to-json-schema"
+import { inlineJsonSchema } from "../json-schema.js"
 import { MCP_TOOLS, callTool, type McpToolError } from "./index.js"
 import { SDK_VERSION } from "../version.js"
 
@@ -76,7 +76,7 @@ export function toolManifest(): Array<{
     name: tool.name,
     title: tool.title,
     description: tool.description,
-    inputSchema: zodToJsonSchema(tool.inputSchema, { target: "jsonSchema7" }),
+    inputSchema: inlineJsonSchema(tool.inputSchema),
     // Advertised so a client can decide what to allow without calling it first.
     annotations: { readOnlyHint: tool.readOnly },
   }))

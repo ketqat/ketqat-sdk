@@ -82,7 +82,7 @@ export const CircuitTransformationSchema = z.object({
   adapter_version: z.string().min(1),
   /** Version of the underlying library, when it differs from the adapter's own version. */
   library_version: z.string().min(1).optional(),
-  options: z.record(z.unknown()).default({}),
+  options: z.record(z.string(), z.unknown()).default({}),
   input_circuit_hash: z.string().min(1).optional(),
   output_circuit_hash: z.string().min(1).optional(),
   loss_report: z.array(LossReportEntrySchema).default([]),

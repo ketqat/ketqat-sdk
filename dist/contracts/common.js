@@ -145,7 +145,7 @@ export const EnvironmentSchema = z.object({
     architecture: z.string().optional(),
     python_version: z.string().optional(),
     node_version: z.string().optional(),
-    packages: z.record(z.string()).default({}),
-    hardware: z.record(z.unknown()).default({}),
+    packages: z.record(z.string(), z.string()).default({}),
+    hardware: z.record(z.string(), z.unknown()).default({}),
 });
 //# sourceMappingURL=common.js.map

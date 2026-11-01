@@ -6,12 +6,12 @@ import { VerificationEvidenceSchema } from "./verification-evidence.js"
 export const ReproducibilityBundleSchema = z
   .object({
     bundle_version: z.string().min(1),
-    experiment_manifest: z.record(z.unknown()).default({}),
+    experiment_manifest: z.record(z.string(), z.unknown()).default({}),
     benchmark_result: BenchmarkResultSchema,
-    benchmark_suite_definition: z.record(z.unknown()).nullable(),
+    benchmark_suite_definition: z.record(z.string(), z.unknown()).nullable(),
     verification_evidence: z.array(VerificationEvidenceSchema).default([]),
     artifact_metadata: z.object({ slug: z.string().min(1) }).nullable().default(null),
-    environment: EnvironmentSchema.default({ packages: {}, hardware: {} }),
+    environment: EnvironmentSchema.prefault({ packages: {}, hardware: {} }),
     source_repository: z.string().min(1),
     commit_sha: z.string().min(1),
     reproducibility_hash: z.string().min(1),

@@ -78,7 +78,7 @@ export const ExecutionJobSchema = z.object({
     idempotency_key: z.string().min(1),
     submitted_by: z.string().min(1),
     parameters: JobParametersSchema,
-    limits: JobLimitsSchema.default({
+    limits: JobLimitsSchema.prefault({
         timeout_seconds: 120,
         max_qubits: 20,
         max_shots: 100000,
@@ -92,7 +92,7 @@ export const JobResultSchema = z.object({
     status: JobStatusSchema,
     operation: JobOperationSchema,
     /** Present on success. Shape depends on the operation. */
-    output: z.record(z.unknown()).optional(),
+    output: z.record(z.string(), z.unknown()).optional(),
     /** Present on failure, and never a raw stack trace. */
     error: z.string().min(1).optional(),
     started_at: z.string().min(1),

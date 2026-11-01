@@ -89,12 +89,12 @@ export const QuantumCardSchema = z.object({
   category: z.string().min(1).optional(),
 
   provenance: CardProvenanceSchema,
-  interface: CardInterfaceSchema.default({
+  interface: CardInterfaceSchema.prefault({
     supported_frameworks: [],
     supported_input_formats: [],
     supported_output_formats: [],
   }),
-  applicability: CardApplicabilitySchema.default({
+  applicability: CardApplicabilitySchema.prefault({
     gate_set: [],
     classical_requirements: [],
   }),

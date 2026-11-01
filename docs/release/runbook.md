@@ -113,7 +113,7 @@ not recorded is a verification nobody can check.
   being reachable or honest.
 
   Step 4 is **not** offline, and the earlier draft of this document said it was. Installing the
-  tarball resolves `zod` and `zod-to-json-schema` from the public npm registry, because a consumer
+  tarball resolves `zod` from the public npm registry, because a consumer
   install that stubbed its real dependencies would not be the thing under test. What still does not
   happen anywhere in this runbook: a request to a KetQat service, an authenticated request, or a
   write to any registry.

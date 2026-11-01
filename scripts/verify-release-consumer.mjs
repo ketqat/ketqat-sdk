@@ -29,7 +29,7 @@
  * Nothing here publishes, and nothing reads a credential.
  *
  * It is **not** offline. Installing the tarball resolves the package's real
- * dependencies -- `zod` and `zod-to-json-schema` -- from the public npm
+ * dependency -- `zod` -- from the public npm
  * registry, because a consumer install that stubbed them would not be the
  * thing being verified. It also makes one **unauthenticated, read-only**
  * request to the public reference-bundle endpoint, because #247 asks for the

@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { zodToJsonSchema } from "zod-to-json-schema"
+import { contractJsonSchema } from "../dist/json-schema.js"
 import {
   RegressionPolicySchema,
   RegressionSummarySchema,
@@ -103,11 +103,12 @@ writeFileSync(resolve(pythonSchemaDir, "qec-code-catalog.json"), catalogJson)
  * environment unvalidated; the comment above records the fix but no check
  * was added, so nothing would have caught a recurrence.
  *
- * It recurs. Building with zod 4 emits `{}` for all eleven definitions --
- * `zod-to-json-schema` does not understand zod 4's internals -- and the
- * full test suite passes, because `verify-schema-sync` compares the
- * TypeScript copy against the Python copy and both are equally empty.
- * Two copies of the same nothing agree perfectly.
+ * It recurred when zod 4 was first tried: `zod-to-json-schema` did not
+ * understand zod 4's internals and emitted `{}` for every definition, and the
+ * full test suite passed, because `verify-schema-sync` compares the
+ * TypeScript copy against the Python copy and both were equally empty.
+ * Two copies of the same nothing agree perfectly. The generator is now zod's
+ * own (src/json-schema.ts), and this check stays.
  *
  * So the generator checks its own output, at the point where the
  * information to judge it still exists.
@@ -120,7 +121,7 @@ function assertSchemaIsNotVacuous(filename, jsonSchema, zodSchema) {
   if (!definition || Object.keys(definition).length === 0) {
     throw new Error(
       `${filename}: the generated schema is empty, so it would accept any document. ` +
-        "This usually means zod-to-json-schema does not understand the installed zod version.",
+        "This usually means the JSON Schema generator does not understand the installed zod version.",
     )
   }
 
@@ -208,14 +209,12 @@ const REFERENCED_SCHEMAS = new Set([
 ])
 
 for (const [filename, schema] of Object.entries(schemas)) {
-  const jsonSchema = zodToJsonSchema(schema, {
+  // Older contracts fully inline repeated sub-schemas; an earlier "seen"
+  // strategy collapsed repeats to {}, which left fields like the bundle-level
+  // environment unvalidated. No contract is recursive, so inlining is safe.
+  const jsonSchema = contractJsonSchema(schema, {
     name: filename.replace(".schema.json", ""),
-    target: "jsonSchema7",
-    ...(REFERENCED_SCHEMAS.has(filename) ? { $refStrategy: "root" } : {}),
-    // "none" fully inlines repeated sub-schemas; "seen" collapsed repeats to {},
-    // which left fields like the bundle-level environment unvalidated by JSON
-    // Schema consumers. No contract is recursive, so full inlining is safe.
-    ...(REFERENCED_SCHEMAS.has(filename) ? {} : { $refStrategy: "none" }),
+    references: REFERENCED_SCHEMAS.has(filename),
   })
   assertSchemaIsNotVacuous(filename, jsonSchema, schema)
   const serialized = `${JSON.stringify(jsonSchema, null, 2)}\n`
