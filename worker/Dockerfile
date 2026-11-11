@@ -91,7 +91,7 @@ RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 # flags and a patched, digest-pinned toolchain. go.sum verifies every module.
 # Remove this stage once the pinned base image ships an emulator built with a
 # patched Go; the Trivy gate in ci.yml says when.
-FROM golang:1.26.10-bookworm@sha256:23ce71337b726608afb1bc00986e630a05034a87a87ea1fc2cd1ae5cf33387eb AS lambda-rie
+FROM golang:1.27.0-bookworm@sha256:ded31c68586d2e49e760acc2e65a884b23d032e9bbbed0ae0c55abd3fcaf4452 AS lambda-rie
 ARG RIE_COMMIT=c622c06822a4e5390cc71f29df37594646b10700
 ENV CGO_ENABLED=0 GOTOOLCHAIN=local GOFLAGS=-mod=readonly
 WORKDIR /src
