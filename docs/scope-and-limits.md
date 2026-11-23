@@ -14,8 +14,9 @@ section applies to the research runner and registry, which are unchanged.
 
 ## The catalog
 
-Five products, all at version 1.0.0. Four are Free and open source here; one is
-Pro.
+Sixteen products, all free and open source (Apache-2.0) here since SDK 0.4.0;
+[`docs/catalog.md`](catalog.md) lists them all. This section was written for the
+five launch products and still covers only those.
 
 | Product | What it is | Defining limit |
 |---|---|---|
@@ -23,7 +24,7 @@ Pro.
 | `quantum-phase-estimation` | pure-Python statevector simulation of textbook phase estimation | 16 counting qubits; only the eigenphase is simulated, not U or its eigenstate |
 | `surface-code-memory` | Stim + PyMatching rotated surface-code memory | one noise model (depolarizing after Cliffords); rate per experiment, not per round |
 | `quantum-state-measures` | entropies, fidelity, trace distance, concurrence, negativity | dimension 1024 at most; concurrence for two qubits only |
-| `quantum-channel-analysis` (Pro) | channel metrics from Kraus operators | three qubits at most; exact diamond distance only for Pauli error channels |
+| `quantum-channel-analysis` | channel metrics from Kraus operators | three qubits at most; exact diamond distance only for Pauli error channels |
 
 What is and is not established, product by product:
 
@@ -41,9 +42,11 @@ What is and is not established, product by product:
   products. Each example has been executed verbatim in a clean virtualenv on
   macOS by a maintainer; the CI job that does the same has not yet run, and
   `verified` requires it.
-- **The Pro product's implementation is not in this repository**, so its
-  validation cannot be inspected here. It is marked `experimental` until it can
-  be.
+- **Every product's implementation is in this repository** (since 0.4.0; four
+  products were proprietary KetQat Pro bundles before), so every validation
+  test can be inspected and run here. Those four are `implemented`: their
+  examples have been executed verbatim in a clean virtualenv on macOS, not yet
+  by CI.
 - **Reproducibility of `resultSha256`** holds for the same product version,
   parameters, seed *and* dependency versions. NumPy and Stim do not promise
   identical random streams across their own releases, so sampled counts can
