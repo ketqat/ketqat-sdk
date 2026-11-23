@@ -1,6 +1,6 @@
 [project]
 name = "ketqat"
-version = "0.3.0"
+version = "0.4.0"
 description = "Run official KetQat quantum software catalog products locally: algorithms, error correction and quantum information. Also Qiskit regression checks and reproducible research runners."
 readme = "README.md"
 license = "Apache-2.0"

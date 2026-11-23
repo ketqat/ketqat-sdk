@@ -1,6 +1,6 @@
 {
   "name": "ketqat-sdk",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Official KetQat quantum software catalog definitions, plus Qiskit regression checks and reproducible research contracts. Products run locally through the ketqat Python package.",
   "keywords": [
     "quantum-computing",

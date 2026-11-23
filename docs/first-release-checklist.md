@@ -5,7 +5,9 @@ This checklist is the authorization boundary for the first public `ketqat-sdk` n
 ## Verified snapshot (2026-08-15 UTC)
 
 These read-only checks were re-run against SDK `main` at `da8c5d0bb37c`, at version
-**0.3.0**. Every claim in the
+**0.3.0**. (The version files have since moved to 0.4.0, still unpublished; see
+[`docs/release/versioning.md`](release/versioning.md). Re-run the version rows for 0.4.0
+before relying on them.) Every claim in the
 2026-07-13 snapshot below still holds; this supersedes it rather than replacing it, so a
 reader can see that the state has been re-checked rather than assumed to have persisted.
 
@@ -189,15 +191,15 @@ Do not execute these commands while any earlier checkbox is open.
 
 - [ ] Pull the reviewed `main` commit and confirm a clean worktree.
 - [ ] Confirm `package.json`, `python/pyproject.toml`, `ketqat_runner.__version__`, and runner `SDK_VERSION` all equal the intended version.
-- [ ] Recheck the exact version endpoints `https://registry.npmjs.org/ketqat-sdk/0.3.0` and `https://pypi.org/pypi/ketqat/0.3.0/json`; both must return 404, while any package/project-level 200 response must match the authenticated ownership decision.
-- [ ] Run `scripts/release-preflight.sh v0.3.0` and retain the non-sensitive output plus commit SHA.
+- [ ] Recheck the exact version endpoints `https://registry.npmjs.org/ketqat-sdk/0.4.0` and `https://pypi.org/pypi/ketqat/0.4.0/json`; both must return 404, while any package/project-level 200 response must match the authenticated ownership decision.
+- [ ] Run `scripts/release-preflight.sh v0.4.0` and retain the non-sensitive output plus commit SHA.
 - [ ] Review `npm pack --dry-run --json --ignore-scripts`, wheel/sdist verification, and all current CI checks.
 - [ ] Confirm release notes state scientific limitations and do not claim registry success before readback.
 - [ ] Have the release operator create a signed, immutable tag from the reviewed commit and push only that tag:
 
 ```bash
-git tag -s v0.3.0 -m "KetQat SDK 0.3.0"
-git push origin v0.3.0
+git tag -s v0.4.0 -m "KetQat SDK 0.4.0"
+git push origin v0.4.0
 ```
 
 - [ ] Open the resulting **Publish release** workflow. Approve `npm-release` and `pypi-release` only after confirming preflight passed for the expected tag/SHA.
