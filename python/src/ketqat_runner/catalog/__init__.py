@@ -7,8 +7,9 @@
     record.result["success_probability"]
 
 Product definitions ship inside this package (`data/`), so everything here
-works offline. Free products never import entitlement or network code; Pro
-products are handled by `catalog.pro`, imported only when a Pro product runs.
+works offline. Every product is free and open source and runs from this
+package; a run never imports network code, contacts a server or needs an
+account.
 """
 
 from __future__ import annotations

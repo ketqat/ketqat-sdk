@@ -74,7 +74,7 @@ def request_json(method: str, base_url: str, path: str, body: Any | None = None)
             pass  # the status code alone still produces a useful message below
         hint = {
             401: " Check KETQAT_API_TOKEN.",
-            403: " The account has no active KetQat Pro subscription, or the token lacks access.",
+            403: " The token lacks access to this endpoint.",
             404: " Not found.",
         }.get(exc.code, "")
         raise ApiError(f"{method} {path} returned HTTP {exc.code}{detail}.{hint}", exc.code) from None

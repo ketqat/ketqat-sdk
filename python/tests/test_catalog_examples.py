@@ -1,6 +1,6 @@
-"""Run every Free product's `example.code` verbatim in a clean virtualenv.
+"""Run every product's `example.code` verbatim in a clean virtualenv.
 
-For each Free product this creates a fresh virtual environment, installs the
+For each product this creates a fresh virtual environment, installs the
 package from this checkout with exactly that product's extras (and nothing
 else), runs the example code unchanged with `KETQAT_HOME` pointed at a temporary
 directory, and checks that the JSON object the example prints last contains

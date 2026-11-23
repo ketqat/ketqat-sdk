@@ -9,8 +9,9 @@ place product definitions are authored; this tool
 1. validates every `catalog/products/<id>.json` against
    `catalog/schema/product.schema.json`, plus the rules a JSON Schema cannot
    express (file name equals ID, unique slugs, versions newest first, a
-   current version, validation tests that exist, an implementation for every
-   runnable Free version, defaults that satisfy their own constraints);
+   current version, validation tests that exist, tier free (every product is
+   free and open source since SDK 0.4.0), an implementation in this SDK for
+   every runnable version, defaults that satisfy their own constraints);
 2. normalises each product file's formatting (2-space JSON, trailing newline),
    so its sha256 is stable;
 3. writes `catalog/catalog.json`: products sorted by ID with the sha256 of
@@ -98,12 +99,15 @@ def _validate_product(root: Path, path: Path, definition: dict[str, Any], schema
         elif test_name and f"def {test_name}(" not in test_file.read_text(encoding="utf-8"):
             problems.append(f"{path.name}: validation test {check['test']} does not exist")
 
-    if definition["tier"] == "free":
-        for entry in definition["versions"]:
-            if entry["status"] != "retired" and entry["version"] not in implemented_versions(definition["id"]):
-                problems.append(
-                    f"{path.name}: version {entry['version']} is runnable but this SDK has no implementation"
-                )
+    # The schema keeps tier "pro" so that historical definitions still validate; a
+    # current definition may not use it. Every product is free and open source.
+    if definition["tier"] != "free":
+        problems.append(f"{path.name}: tier must be free; every catalog product is free and open source")
+    for entry in definition["versions"]:
+        if entry["status"] != "retired" and entry["version"] not in implemented_versions(definition["id"]):
+            problems.append(
+                f"{path.name}: version {entry['version']} is runnable but this SDK has no implementation"
+            )
 
     for field in definition["inputs"]:
         if "default" in field and field["default"] is not None:

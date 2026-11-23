@@ -6,8 +6,8 @@
   "summary": "Distance x error-rate sweep with Stim + PyMatching: Wilson points, suppression factors, bootstrapped threshold crossing, report.",
   "category": "quantum-error-correction",
   "subcategory": "threshold-studies",
-  "tier": "pro",
-  "description": "Runs a rotated surface-code memory experiment over a grid of code distances and physical error rates, sampling with Stim and decoding with PyMatching exactly as the free surface-code-memory product does (same circuits, same seed derivation), and turns the grid into a threshold study. Every point carries its logical error rate with a 95% Wilson interval. Between successive distances it reports the suppression factor Lambda = p_L(d) / p_L(d+2) with a delta-method interval. The threshold is estimated from the crossing of neighbouring-distance curves, interpolated in log-log space, with a parametric bootstrap over the per-point failure counts giving a confidence interval and the spread between distance pairs showing finite-size drift. A finite-size scaling collapse (log p_L = A + B x + C x^2, x = (p - p_th) d^(1/nu)) gives a second threshold estimate with a reduced chi-square as the collapse quality. Everything is written to one JSON result and a Markdown report.\n\nFor QEC students and researchers who want a reproducible threshold sweep with honest uncertainties rather than a single number, without assembling the sweep, the statistics and the report themselves.\n\nThis is a KetQat Pro product: it runs locally like every catalog product, from a signed bundle installed with `ketqat pro install` under a time-limited entitlement. Its implementation is not part of the open SDK.",
+  "tier": "free",
+  "description": "Runs a rotated surface-code memory experiment over a grid of code distances and physical error rates, sampling with Stim and decoding with PyMatching exactly as the free surface-code-memory product does (same circuits, same seed derivation), and turns the grid into a threshold study. Every point carries its logical error rate with a 95% Wilson interval. Between successive distances it reports the suppression factor Lambda = p_L(d) / p_L(d+2) with a delta-method interval. The threshold is estimated from the crossing of neighbouring-distance curves, interpolated in log-log space, with a parametric bootstrap over the per-point failure counts giving a confidence interval and the spread between distance pairs showing finite-size drift. A finite-size scaling collapse (log p_L = A + B x + C x^2, x = (p - p_th) d^(1/nu)) gives a second threshold estimate with a reduced chi-square as the collapse quality. Everything is written to one JSON result and a Markdown report.\n\nFor QEC students and researchers who want a reproducible threshold sweep with honest uncertainties rather than a single number, without assembling the sweep, the statistics and the report themselves.\n\nFree and open source (Apache-2.0); it needs the qec extra (NumPy, Stim, PyMatching) only.",
   "useCases": [
     "Estimate the MWPM threshold of the rotated surface code under depolarizing circuit noise, with a bootstrap interval",
     "Quantify the suppression factor between distances at a fixed physical error rate, with an interval",
@@ -74,7 +74,7 @@
     {
       "name": "decoder",
       "type": "string",
-      "description": "Decoder. Version 1.0.0 offers minimum-weight perfect matching (PyMatching) only.",
+      "description": "Decoder. Versions 1.0.0 and 1.1.0 offer minimum-weight perfect matching (PyMatching) only.",
       "default": "mwpm",
       "constraints": {
         "enum": [
@@ -118,6 +118,19 @@
   "executionKind": "simulation",
   "versions": [
     {
+      "version": "1.1.0",
+      "date": "2026-11-23",
+      "changes": [
+        "Released as free and open source under Apache-2.0 in SDK 0.4.0. Until then 1.0.0 was distributed separately as proprietary code; it now ships in this package, and no account, login, entitlement or network access is needed.",
+        "Implementation identical to 1.0.0: the same parameters and seed reproduce 1.0.0's resultSha256 (python/tests/test_catalog_version_compat.py checks hashes recorded from the 1.0.0 code as distributed)."
+      ],
+      "sdkMinVersion": "0.4.0",
+      "extras": [
+        "qec"
+      ],
+      "status": "current"
+    },
+    {
       "version": "1.0.0",
       "date": "2026-11-01",
       "changes": [
@@ -128,7 +141,7 @@
         "pro",
         "qec"
       ],
-      "status": "current"
+      "status": "supported"
     }
   ],
   "environment": {
@@ -139,9 +152,9 @@
     ],
     "resources": "Defaults (d = 3, 5, 7; six rates; 5000 shots per point; 200 bootstrap resamples): about 3 s on a 2024 Apple-silicon laptop (maintainer measurement). Time grows roughly as d^3 x shots per point; one point needing more than 2 GiB of detector samples, or a sweep needing more than 4 GiB in total, is refused before anything runs."
   },
-  "install": "pip install \"ketqat[pro,qec] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\" && ketqat pro login && ketqat pro install surface-code-threshold-study@1.0.0",
+  "install": "pip install \"ketqat[qec] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
   "example": {
-    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"surface-code-threshold-study@1.0.0\", seed=1, distances=[3, 5],\n                     physical_error_rates=[0.004, 0.008, 0.016, 0.03], shots_per_point=3000)\nresult = record.result\nestimate = result[\"threshold_estimate\"]\nprint(json.dumps({\n    \"status\": record.status,\n    \"distances\": result[\"distances\"],\n    \"points\": len(result[\"points\"]),\n    \"threshold_found\": not estimate[\"inconclusive\"],\n    \"interval_brackets_estimate\": estimate[\"bootstrap\"][\"lower\"] <= estimate[\"value\"] <= estimate[\"bootstrap\"][\"upper\"],\n}))\n",
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"surface-code-threshold-study@1.1.0\", seed=1, distances=[3, 5],\n                     physical_error_rates=[0.004, 0.008, 0.016, 0.03], shots_per_point=3000)\nresult = record.result\nestimate = result[\"threshold_estimate\"]\nprint(json.dumps({\n    \"status\": record.status,\n    \"distances\": result[\"distances\"],\n    \"points\": len(result[\"points\"]),\n    \"threshold_found\": not estimate[\"inconclusive\"],\n    \"interval_brackets_estimate\": estimate[\"bootstrap\"][\"lower\"] <= estimate[\"value\"] <= estimate[\"bootstrap\"][\"upper\"],\n}))\n",
     "expectedOutputSubset": {
       "status": "succeeded",
       "distances": [
@@ -152,12 +165,571 @@
       "threshold_found": true,
       "interval_brackets_estimate": true
     },
-    "verified": null
+    "verified": {
+      "sdkVersion": "0.4.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (python/tests/test_catalog_examples.py run locally on the maintainer's machine: example executed verbatim in a clean virtualenv with only the 1.1.0 extras; not yet executed by CI)",
+      "date": "2026-11-23"
+    }
   },
   "sampleResult": {
-    "summary": "Not generated in the open SDK: running this product needs a Pro entitlement and bundle, which this repository's CI does not have. Maintainer run of the private bundle with the defaults (d = 3, 5, 7; p = 0.003 to 0.013; 5000 shots per point; seed 2026; Stim 1.16.0, PyMatching 2.4.0): threshold estimate p_th = 0.00815 with 95% bootstrap interval [0.00677, 0.00882]; neighbouring-pair crossings 0.00658 (d 3 vs 5) and 0.00972 (d 5 vs 7), pair spread 0.0031; suppression factor at p = 0.005 of 2.05 [1.19, 3.55] for d 3 -> 5 and 1.90 [0.88, 4.08] for d 5 -> 7; finite-size collapse at p_th = 0.00775, nu = 1.0 with reduced chi-square 1.43 over 18 points.",
-    "data": null,
-    "generatedWith": null
+    "summary": "Defaults (d = 3, 5, 7; p = 0.003 to 0.013; 5000 shots per point; seed 2026; Stim 1.16.0, PyMatching 2.4.0): threshold estimate p_th = 0.00815 with 95% bootstrap interval [0.00677, 0.00882]; neighbouring-pair crossings 0.00658 (d 3 vs 5) and 0.00972 (d 5 vs 7), pair spread 0.0031; suppression factor at p = 0.005 of 2.05 [1.19, 3.55] for d 3 -> 5 and 1.90 [0.88, 4.08] for d 5 -> 7; finite-size collapse at p_th = 0.00775, nu = 1.0 with reduced chi-square 1.43 over 18 points. The full result is shown.",
+    "data": {
+      "schema": "ketqat.pro.surface-code-threshold-study/v1",
+      "code": "rotated surface code",
+      "memory_basis": "z",
+      "noise_model": "uniform depolarizing after every Clifford gate (Stim after_clifford_depolarization)",
+      "decoder": "mwpm",
+      "decoder_implementation": "pymatching",
+      "decoder_version": "2.4.0",
+      "stim_generator": "surface_code:rotated_memory_z",
+      "seed": 2026,
+      "seed_derivation": "sha256(global_seed,benchmark_version,code_distance,physical_error_rate)",
+      "distances": [
+        3,
+        5,
+        7
+      ],
+      "rounds": [
+        3,
+        5,
+        7
+      ],
+      "physical_error_rates": [
+        0.003,
+        0.005,
+        0.007,
+        0.009,
+        0.011,
+        0.013
+      ],
+      "shots_per_point": 5000,
+      "points": [
+        {
+          "distance": 3,
+          "physical_error_rate": 0.003,
+          "rounds": 3,
+          "shots": 5000,
+          "logical_failures": 10,
+          "logical_error_rate": 0.002,
+          "confidence_interval": {
+            "lower": 0.001086746861,
+            "upper": 0.003677884276,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 3222308876
+        },
+        {
+          "distance": 3,
+          "physical_error_rate": 0.005,
+          "rounds": 3,
+          "shots": 5000,
+          "logical_failures": 39,
+          "logical_error_rate": 0.0078,
+          "confidence_interval": {
+            "lower": 0.005711256209,
+            "upper": 0.010644469586,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 3214878175
+        },
+        {
+          "distance": 3,
+          "physical_error_rate": 0.007,
+          "rounds": 3,
+          "shots": 5000,
+          "logical_failures": 40,
+          "logical_error_rate": 0.008,
+          "confidence_interval": {
+            "lower": 0.005880681725,
+            "upper": 0.010874736989,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 439746889
+        },
+        {
+          "distance": 3,
+          "physical_error_rate": 0.009,
+          "rounds": 3,
+          "shots": 5000,
+          "logical_failures": 66,
+          "logical_error_rate": 0.0132,
+          "confidence_interval": {
+            "lower": 0.010389448802,
+            "upper": 0.016757985812,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 150105272
+        },
+        {
+          "distance": 3,
+          "physical_error_rate": 0.011,
+          "rounds": 3,
+          "shots": 5000,
+          "logical_failures": 103,
+          "logical_error_rate": 0.0206,
+          "confidence_interval": {
+            "lower": 0.017015274139,
+            "upper": 0.024920798486,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 2886886269
+        },
+        {
+          "distance": 3,
+          "physical_error_rate": 0.013,
+          "rounds": 3,
+          "shots": 5000,
+          "logical_failures": 140,
+          "logical_error_rate": 0.028,
+          "confidence_interval": {
+            "lower": 0.023777044258,
+            "upper": 0.032947666378,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 2482665290
+        },
+        {
+          "distance": 5,
+          "physical_error_rate": 0.003,
+          "rounds": 5,
+          "shots": 5000,
+          "logical_failures": 1,
+          "logical_error_rate": 0.0002,
+          "confidence_interval": {
+            "lower": 3.5305783e-05,
+            "upper": 0.001132089081,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 2084391030
+        },
+        {
+          "distance": 5,
+          "physical_error_rate": 0.005,
+          "rounds": 5,
+          "shots": 5000,
+          "logical_failures": 19,
+          "logical_error_rate": 0.0038,
+          "confidence_interval": {
+            "lower": 0.002434138851,
+            "upper": 0.005927728559,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 1666501817
+        },
+        {
+          "distance": 5,
+          "physical_error_rate": 0.007,
+          "rounds": 5,
+          "shots": 5000,
+          "logical_failures": 47,
+          "logical_error_rate": 0.0094,
+          "confidence_interval": {
+            "lower": 0.007076557216,
+            "upper": 0.012476711933,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 3413347780
+        },
+        {
+          "distance": 5,
+          "physical_error_rate": 0.009,
+          "rounds": 5,
+          "shots": 5000,
+          "logical_failures": 105,
+          "logical_error_rate": 0.021,
+          "confidence_interval": {
+            "lower": 0.017377941133,
+            "upper": 0.025357517331,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 862498523
+        },
+        {
+          "distance": 5,
+          "physical_error_rate": 0.011,
+          "rounds": 5,
+          "shots": 5000,
+          "logical_failures": 155,
+          "logical_error_rate": 0.031,
+          "confidence_interval": {
+            "lower": 0.026544386493,
+            "upper": 0.036175717932,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 2235657595
+        },
+        {
+          "distance": 5,
+          "physical_error_rate": 0.013,
+          "rounds": 5,
+          "shots": 5000,
+          "logical_failures": 257,
+          "logical_error_rate": 0.0514,
+          "confidence_interval": {
+            "lower": 0.045616565428,
+            "upper": 0.057872216757,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 2844606538
+        },
+        {
+          "distance": 7,
+          "physical_error_rate": 0.003,
+          "rounds": 7,
+          "shots": 5000,
+          "logical_failures": 1,
+          "logical_error_rate": 0.0002,
+          "confidence_interval": {
+            "lower": 3.5305783e-05,
+            "upper": 0.001132089081,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 2265769226
+        },
+        {
+          "distance": 7,
+          "physical_error_rate": 0.005,
+          "rounds": 7,
+          "shots": 5000,
+          "logical_failures": 10,
+          "logical_error_rate": 0.002,
+          "confidence_interval": {
+            "lower": 0.001086746861,
+            "upper": 0.003677884276,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 726390742
+        },
+        {
+          "distance": 7,
+          "physical_error_rate": 0.007,
+          "rounds": 7,
+          "shots": 5000,
+          "logical_failures": 36,
+          "logical_error_rate": 0.0072,
+          "confidence_interval": {
+            "lower": 0.005205395997,
+            "upper": 0.00995125104,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 1600719588
+        },
+        {
+          "distance": 7,
+          "physical_error_rate": 0.009,
+          "rounds": 7,
+          "shots": 5000,
+          "logical_failures": 92,
+          "logical_error_rate": 0.0184,
+          "confidence_interval": {
+            "lower": 0.015027733891,
+            "upper": 0.022511716623,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 2064518402
+        },
+        {
+          "distance": 7,
+          "physical_error_rate": 0.011,
+          "rounds": 7,
+          "shots": 5000,
+          "logical_failures": 192,
+          "logical_error_rate": 0.0384,
+          "confidence_interval": {
+            "lower": 0.033418332325,
+            "upper": 0.044090410111,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 2644595489
+        },
+        {
+          "distance": 7,
+          "physical_error_rate": 0.013,
+          "rounds": 7,
+          "shots": 5000,
+          "logical_failures": 304,
+          "logical_error_rate": 0.0608,
+          "confidence_interval": {
+            "lower": 0.054507540668,
+            "upper": 0.06776680872,
+            "level": 0.95,
+            "method": "wilson_score"
+          },
+          "is_upper_bound_only": false,
+          "coordinate_seed": 3615286587
+        }
+      ],
+      "suppression_factors": [
+        {
+          "physical_error_rate": 0.003,
+          "lower_distance": 3,
+          "higher_distance": 5,
+          "lower_failures": 10,
+          "higher_failures": 1,
+          "shots": 5000,
+          "value": 10.0,
+          "lower": 1.280603317093,
+          "upper": 78.088193795229,
+          "method": "delta-method interval on log(Lambda)"
+        },
+        {
+          "physical_error_rate": 0.005,
+          "lower_distance": 3,
+          "higher_distance": 5,
+          "lower_failures": 39,
+          "higher_failures": 19,
+          "shots": 5000,
+          "value": 2.052631578947,
+          "lower": 1.187893672948,
+          "upper": 3.546863237714,
+          "method": "delta-method interval on log(Lambda)"
+        },
+        {
+          "physical_error_rate": 0.007,
+          "lower_distance": 3,
+          "higher_distance": 5,
+          "lower_failures": 40,
+          "higher_failures": 47,
+          "shots": 5000,
+          "value": 0.851063829787,
+          "lower": 0.559299956695,
+          "upper": 1.295028962012,
+          "method": "delta-method interval on log(Lambda)"
+        },
+        {
+          "physical_error_rate": 0.009,
+          "lower_distance": 3,
+          "higher_distance": 5,
+          "lower_failures": 66,
+          "higher_failures": 105,
+          "shots": 5000,
+          "value": 0.628571428571,
+          "lower": 0.46316190771,
+          "upper": 0.853053833313,
+          "method": "delta-method interval on log(Lambda)"
+        },
+        {
+          "physical_error_rate": 0.011,
+          "lower_distance": 3,
+          "higher_distance": 5,
+          "lower_failures": 103,
+          "higher_failures": 155,
+          "shots": 5000,
+          "value": 0.664516129032,
+          "lower": 0.519571695566,
+          "upper": 0.849895576515,
+          "method": "delta-method interval on log(Lambda)"
+        },
+        {
+          "physical_error_rate": 0.013,
+          "lower_distance": 3,
+          "higher_distance": 5,
+          "lower_failures": 140,
+          "higher_failures": 257,
+          "shots": 5000,
+          "value": 0.544747081712,
+          "lower": 0.445059723574,
+          "upper": 0.666763059687,
+          "method": "delta-method interval on log(Lambda)"
+        },
+        {
+          "physical_error_rate": 0.003,
+          "lower_distance": 5,
+          "higher_distance": 7,
+          "lower_failures": 1,
+          "higher_failures": 1,
+          "shots": 5000,
+          "value": 1.0,
+          "lower": 0.062566176771,
+          "upper": 15.983076665641,
+          "method": "delta-method interval on log(Lambda)"
+        },
+        {
+          "physical_error_rate": 0.005,
+          "lower_distance": 5,
+          "higher_distance": 7,
+          "lower_failures": 19,
+          "higher_failures": 10,
+          "shots": 5000,
+          "value": 1.9,
+          "lower": 0.884385147044,
+          "upper": 4.081931963765,
+          "method": "delta-method interval on log(Lambda)"
+        },
+        {
+          "physical_error_rate": 0.007,
+          "lower_distance": 5,
+          "higher_distance": 7,
+          "lower_failures": 47,
+          "higher_failures": 36,
+          "shots": 5000,
+          "value": 1.305555555556,
+          "lower": 0.847304600621,
+          "upper": 2.011644109324,
+          "method": "delta-method interval on log(Lambda)"
+        },
+        {
+          "physical_error_rate": 0.009,
+          "lower_distance": 5,
+          "higher_distance": 7,
+          "lower_failures": 105,
+          "higher_failures": 92,
+          "shots": 5000,
+          "value": 1.141304347826,
+          "lower": 0.865054231966,
+          "upper": 1.505773356436,
+          "method": "delta-method interval on log(Lambda)"
+        },
+        {
+          "physical_error_rate": 0.011,
+          "lower_distance": 5,
+          "higher_distance": 7,
+          "lower_failures": 155,
+          "higher_failures": 192,
+          "shots": 5000,
+          "value": 0.807291666667,
+          "lower": 0.655702758146,
+          "upper": 0.993925718586,
+          "method": "delta-method interval on log(Lambda)"
+        },
+        {
+          "physical_error_rate": 0.013,
+          "lower_distance": 5,
+          "higher_distance": 7,
+          "lower_failures": 257,
+          "higher_failures": 304,
+          "shots": 5000,
+          "value": 0.845394736842,
+          "lower": 0.719396386239,
+          "upper": 0.993461010858,
+          "method": "delta-method interval on log(Lambda)"
+        }
+      ],
+      "threshold_estimate": {
+        "method": "crossing of neighbouring-distance curves interpolated linearly in (log p, log p_L), using points with at least 5 failures at both distances; mean over pairs",
+        "pairs": [
+          {
+            "lower_distance": 3,
+            "higher_distance": 5,
+            "crossing": 0.006581586783,
+            "reason": null,
+            "bootstrap": {
+              "lower": 0.005778445083,
+              "upper": 0.007643964161,
+              "resamples_with_crossing": 199
+            }
+          },
+          {
+            "lower_distance": 5,
+            "higher_distance": 7,
+            "crossing": 0.009716515511,
+            "reason": null,
+            "bootstrap": {
+              "lower": 0.006739514795,
+              "upper": 0.010562644449,
+              "resamples_with_crossing": 200
+            }
+          }
+        ],
+        "bootstrap": {
+          "method": "parametric: failure counts redrawn from Binomial(shots, observed rate) per point",
+          "resamples": 200,
+          "resamples_with_all_crossings": 199,
+          "level": 0.95,
+          "lower": 0.006765548578,
+          "upper": 0.008815958274
+        },
+        "uncertainty_scope": "The bootstrap interval carries the shot noise of every point. It excludes finite-size effects: neighbouring-pair crossings drift with distance, and the spread between pairs is the visible part of that. It also excludes the choice of interpolation.",
+        "inconclusive": false,
+        "value": 0.008149051147,
+        "pair_spread": 0.003134928728
+      },
+      "finite_size_collapse": {
+        "available": true,
+        "ansatz": "log p_L = A + B x + C x^2 with x = (p - p_th) d^(1/nu)",
+        "threshold": 0.00775,
+        "nu": 1.0,
+        "chi_square_reduced": 1.429193433548,
+        "r_squared": 0.913188906666,
+        "points_used": 18,
+        "degrees_of_freedom": 15,
+        "grid": {
+          "p_th_points": 121,
+          "p_th_range": [
+            0.003,
+            0.013
+          ],
+          "nu_range": [
+            0.5,
+            2.5
+          ],
+          "nu_points": 41
+        },
+        "weights": "observed failure counts (1 / Var(log p_hat) for a binomial at low rate)",
+        "note": "A reduced chi-square near 1 means every distance falls on one scaling curve within shot noise. nu is weakly constrained by a few distances; the collapse p_th is a cross-check of the crossing estimate."
+      },
+      "report": "# Surface-code threshold study\n\n- Code: rotated surface code, memory Z, decoder mwpm (pymatching 2.4.0)\n- Noise model: uniform depolarizing after every Clifford gate (Stim after_clifford_depolarization)\n- Distances: [3, 5, 7] with rounds [3, 5, 7]\n- Physical error rates: [0.003, 0.005, 0.007, 0.009, 0.011, 0.013]\n- Shots per point: 5000; seed 2026\n\n## Logical error rate per point\n\n| d | p | failures | p_L | 95% Wilson |\n|---|---|---|---|---|\n| 3 | 0.003 | 10 / 5000 | 0.002 | [0.00109, 0.00368] |\n| 3 | 0.005 | 39 / 5000 | 0.0078 | [0.00571, 0.0106] |\n| 3 | 0.007 | 40 / 5000 | 0.008 | [0.00588, 0.0109] |\n| 3 | 0.009 | 66 / 5000 | 0.0132 | [0.0104, 0.0168] |\n| 3 | 0.011 | 103 / 5000 | 0.0206 | [0.017, 0.0249] |\n| 3 | 0.013 | 140 / 5000 | 0.028 | [0.0238, 0.0329] |\n| 5 | 0.003 | 1 / 5000 | 0.0002 | [3.53e-05, 0.00113] |\n| 5 | 0.005 | 19 / 5000 | 0.0038 | [0.00243, 0.00593] |\n| 5 | 0.007 | 47 / 5000 | 0.0094 | [0.00708, 0.0125] |\n| 5 | 0.009 | 105 / 5000 | 0.021 | [0.0174, 0.0254] |\n| 5 | 0.011 | 155 / 5000 | 0.031 | [0.0265, 0.0362] |\n| 5 | 0.013 | 257 / 5000 | 0.0514 | [0.0456, 0.0579] |\n| 7 | 0.003 | 1 / 5000 | 0.0002 | [3.53e-05, 0.00113] |\n| 7 | 0.005 | 10 / 5000 | 0.002 | [0.00109, 0.00368] |\n| 7 | 0.007 | 36 / 5000 | 0.0072 | [0.00521, 0.00995] |\n| 7 | 0.009 | 92 / 5000 | 0.0184 | [0.015, 0.0225] |\n| 7 | 0.011 | 192 / 5000 | 0.0384 | [0.0334, 0.0441] |\n| 7 | 0.013 | 304 / 5000 | 0.0608 | [0.0545, 0.0678] |\n\n## Suppression factors between successive distances\n\n| p | d -> d' | Lambda = p_L(d) / p_L(d') | 95% interval |\n|---|---|---|---|\n| 0.003 | 3 -> 5 | 10 | [1.28, 78.1] |\n| 0.005 | 3 -> 5 | 2.053 | [1.19, 3.55] |\n| 0.007 | 3 -> 5 | 0.8511 | [0.559, 1.3] |\n| 0.009 | 3 -> 5 | 0.6286 | [0.463, 0.853] |\n| 0.011 | 3 -> 5 | 0.6645 | [0.52, 0.85] |\n| 0.013 | 3 -> 5 | 0.5447 | [0.445, 0.667] |\n| 0.003 | 5 -> 7 | 1 | [0.0626, 16] |\n| 0.005 | 5 -> 7 | 1.9 | [0.884, 4.08] |\n| 0.007 | 5 -> 7 | 1.306 | [0.847, 2.01] |\n| 0.009 | 5 -> 7 | 1.141 | [0.865, 1.51] |\n| 0.011 | 5 -> 7 | 0.8073 | [0.656, 0.994] |\n| 0.013 | 5 -> 7 | 0.8454 | [0.719, 0.993] |\n\n## Threshold estimate\n\n- p_th = 0.008149 (mean of neighbouring-pair crossings; spread between pairs 0.003135)\n- 95% bootstrap interval [0.006766, 0.008816] from 199 of 200 resamples with every pair crossing\n- d=3 vs d=5: crossing 0.006582, bootstrap [0.005778, 0.007644] (199 resamples crossed)\n- d=5 vs d=7: crossing 0.009717, bootstrap [0.00674, 0.01056] (200 resamples crossed)\n- Method: crossing of neighbouring-distance curves interpolated linearly in (log p, log p_L), using points with at least 5 failures at both distances; mean over pairs\n- Uncertainty scope: The bootstrap interval carries the shot noise of every point. It excludes finite-size effects: neighbouring-pair crossings drift with distance, and the spread between pairs is the visible part of that. It also excludes the choice of interpolation.\n\n## Finite-size collapse\n\n- Ansatz: log p_L = A + B x + C x^2 with x = (p - p_th) d^(1/nu)\n- Best collapse at p_th = 0.00775, nu = 1\n- Collapse quality: reduced chi-square 1.43 over 18 points (15 degrees of freedom); R^2 = 0.9132\n- A reduced chi-square near 1 means every distance falls on one scaling curve within shot noise. nu is weakly constrained by a few distances; the collapse p_th is a cross-check of the crossing estimate.\n\n## Caveats\n\n- One noise model (depolarizing after every Clifford gate, no measurement or idle errors); a threshold here is not a hardware prediction.\n- Rates are per memory experiment of the given rounds, not per round.\n- Points with no observed failure enter the tables as upper bounds; points with fewer than 5 failures at either distance are excluded from the crossing search, and points with none from the collapse fit.\n- Bootstrap intervals carry shot noise only; finite-size drift between distance pairs is visible as the pair spread.\n"
+    },
+    "generatedWith": {
+      "productVersion": "1.1.0",
+      "seed": 2026,
+      "parameters": {
+        "distances": [
+          3,
+          5,
+          7
+        ],
+        "physical_error_rates": [
+          0.003,
+          0.005,
+          0.007,
+          0.009,
+          0.011,
+          0.013
+        ],
+        "shots_per_point": 5000,
+        "rounds": null,
+        "decoder": "mwpm"
+      },
+      "sdkVersion": "0.4.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
   },
   "science": {
     "assumptions": [
@@ -176,7 +748,6 @@
       "The bootstrap interval carries shot noise only. Finite-size effects are visible as the spread between distance pairs and are not folded into the interval; three distances constrain the scaling exponent nu weakly.",
       "Points with fewer than 5 failures at either distance are excluded from the crossing search; points with none are excluded from the collapse fit and reported as upper bounds.",
       "Exact counts are reproducible for the same seed with the same Stim and PyMatching versions; other versions may sample or decode differently.",
-      "The implementation is delivered as a Pro bundle and is not open source; its validation tests live in the private repository, not here.",
       "Tested on macOS and Linux only; Windows is untested."
     ]
   },
@@ -280,15 +851,10 @@
         "name": "NumPy",
         "url": "https://github.com/numpy/numpy",
         "license": "BSD-3-Clause"
-      },
-      {
-        "name": "cryptography",
-        "url": "https://github.com/pyca/cryptography",
-        "license": "Apache-2.0 OR BSD-3-Clause"
       }
     ]
   },
-  "license": "LicenseRef-KetQat-Pro",
+  "license": "Apache-2.0",
   "contributors": [
     {
       "name": "dorakingx",
@@ -297,11 +863,38 @@
     }
   ],
   "implementationStatus": "implemented",
-  "validation": [],
-  "pro": {
-    "freeComparison": "The open SDK already samples and decodes a rotated surface-code memory at one distance and rate with a Wilson interval (the free surface-code-memory product), computes a suppression factor between two rates (qec_statistics.suppression_factor) and, for manifest sweeps, estimates a threshold as the median of pairwise curve crossings with the spread between pairs as its only uncertainty (threshold.py). Nothing of that moves behind Pro. Pro adds the study as one catalog run: the whole distance x rate sweep with the same open sampler, suppression factors with intervals at every rate, a neighbouring-pair crossing estimator in log-log space with a parametric bootstrap interval over per-point failure counts, a finite-size scaling collapse with its quality number, and a Markdown report.",
-    "distribution": "authenticated-bundle"
-  },
+  "validation": [
+    {
+      "method": "synthetic-threshold",
+      "description": "Counts drawn from an exact power law p_L = A (p/p_th)^((d+1)/2), whose curves all cross at p_th by construction: the crossing estimator recovers p_th to 0.1% and the bootstrap interval contains it.",
+      "test": "python/tests/test_catalog_threshold_study.py::test_crossing_estimator_recovers_a_known_threshold_from_synthetic_counts"
+    },
+    {
+      "method": "exact-power-law",
+      "description": "Without count rounding the log-log crossing equals the constructed p_th to 1e-12.",
+      "test": "python/tests/test_catalog_threshold_study.py::test_crossing_is_exact_for_an_exact_power_law_without_rounding"
+    },
+    {
+      "method": "synthetic-suppression-and-collapse",
+      "description": "On the same synthetic counts the suppression factor equals p_th/p, is above 1 exactly below p_th, and the finite-size collapse finds p_th within 5e-4.",
+      "test": "python/tests/test_catalog_threshold_study.py::test_suppression_factors_and_collapse_on_synthetic_data"
+    },
+    {
+      "method": "noiseless",
+      "description": "At p = 0 every point has zero failures, is marked an upper bound, and the threshold is reported inconclusive rather than invented.",
+      "test": "python/tests/test_catalog_threshold_study.py::test_no_noise_gives_no_failures_and_an_honest_inconclusive_estimate"
+    },
+    {
+      "method": "sampled-suppression",
+      "description": "A real Stim + PyMatching sweep (d = 3, 5) shows Lambda > 1 at every rate below the estimated crossing and Lambda < 1 above it.",
+      "test": "python/tests/test_catalog_threshold_study.py::test_tiny_real_run_shows_suppression_below_the_estimated_threshold"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the qec extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
   "legacy": [
     {
       "type": "dataset",

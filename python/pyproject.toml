@@ -18,9 +18,11 @@ qec = ["numpy>=1.26", "stim>=1.13", "pymatching>=2.2"]
 algorithms = ["numpy>=1.26"]
 # Quantum-information catalog products (state measures). NumPy only.
 qinfo = ["numpy>=1.26"]
-# KetQat Pro: Ed25519 verification of entitlement tokens and signed bundles. Free catalog
-# products never import it.
-pro = ["cryptography>=42"]
+# Empty compatibility alias. Until 0.4.0 this extra installed `cryptography` for KetQat Pro
+# entitlement and bundle verification. Every catalog product is now free and open source and
+# ships in this package, so there is nothing to verify; the name stays so that existing
+# `ketqat[pro,...]` install lines (and historical 1.0.0 catalog entries) keep working.
+pro = []
 # Qualtran is the reference implementation this project's surface-code model is
 # differentially tested against (scripts/verify-qualtran-parity.py). An extra, not a
 # core dependency: it pulls Cirq, Jupyter and a density-matrix simulator, none of
@@ -49,7 +51,7 @@ benchmarks = ["mqt.bench>=2.2", "qiskit>=1.0", "supermarq>=0.5", "cirq-core>=1.4
 # device.
 ibm = ["qiskit>=1.2", "qiskit-ibm-runtime>=0.30", "qiskit-aer>=0.15"]
 braket = ["amazon-braket-sdk>=1.80"]
-all = ["cryptography>=42", "qualtran>=0.7", "mitiq>=1.0", "qdk>=1.30", "numpy>=1.26", "stim>=1.13", "pymatching>=2.2", "mqt.bench>=2.2", "qiskit>=1.0", "supermarq>=0.5", "cirq-core>=1.4", "qedcbench>=2.0", "pennylane>=0.40", "pennylane-qiskit>=0.40", "pytket>=2.0", "pyqir>=0.10"]
+all = ["qualtran>=0.7", "mitiq>=1.0", "qdk>=1.30", "numpy>=1.26", "stim>=1.13", "pymatching>=2.2", "mqt.bench>=2.2", "qiskit>=1.0", "supermarq>=0.5", "cirq-core>=1.4", "qedcbench>=2.0", "pennylane>=0.40", "pennylane-qiskit>=0.40", "pytket>=2.0", "pyqir>=0.10"]
 
 [project.scripts]
 ketqat = "ketqat_runner.cli:main"

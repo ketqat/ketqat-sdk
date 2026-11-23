@@ -33,12 +33,12 @@ EXPECTED_PRODUCTS = {
     "kq.qec.repetition-code-memory": ("repetition-code", "free"),
     "kq.qinfo.state-measures": ("quantum-state-measures", "free"),
     "kq.qinfo.state-tomography": ("quantum-state-tomography", "free"),
-    "kq.qinfo.channel-analysis": ("quantum-channel-analysis", "pro"),
-    "kq.qec.surface-code-threshold-study": ("surface-code-threshold-study", "pro"),
-    "kq.qinfo.randomized-benchmarking-suite": ("randomized-benchmarking-suite", "pro"),
-    "kq.qinfo.quantum-volume-certification": ("quantum-volume-certification", "pro"),
+    "kq.qinfo.channel-analysis": ("quantum-channel-analysis", "free"),
+    "kq.qec.surface-code-threshold-study": ("surface-code-threshold-study", "free"),
+    "kq.qinfo.randomized-benchmarking-suite": ("randomized-benchmarking-suite", "free"),
+    "kq.qinfo.quantum-volume-certification": ("quantum-volume-certification", "free"),
 }
-#: The five launch products are dated 2026-10-29; the eight Free products added next are 2026-11-01.
+#: The five launch products are dated 2026-10-29; the eleven products added next are 2026-11-01.
 LAUNCH_DATE = "2026-10-29"
 LAUNCH_PRODUCT_IDS = {
     "kq.algorithms.grover-search",
@@ -46,6 +46,13 @@ LAUNCH_PRODUCT_IDS = {
     "kq.qec.surface-code-memory",
     "kq.qinfo.state-measures",
     "kq.qinfo.channel-analysis",
+}
+#: Offered as KetQat Pro at 1.0.0; released as free and open source as 1.1.0 on 2026-11-23.
+RELICENSED_PRODUCT_IDS = {
+    "kq.qinfo.channel-analysis",
+    "kq.qec.surface-code-threshold-study",
+    "kq.qinfo.randomized-benchmarking-suite",
+    "kq.qinfo.quantum-volume-certification",
 }
 
 
@@ -71,9 +78,29 @@ def test_the_catalog_holds_exactly_the_expected_products() -> None:
     found = {p.id: (p.slug, p.tier) for p in load_catalog().products}
     assert found == EXPECTED_PRODUCTS
     for product in load_catalog().products:
-        assert product.current_version["version"] == "1.0.0"
+        first = product.versions[-1]
+        assert first["version"] == "1.0.0"
         expected_date = LAUNCH_DATE if product.id in LAUNCH_PRODUCT_IDS else "2026-11-01"
-        assert product.current_version["date"] == expected_date, product.id
+        assert first["date"] == expected_date, product.id
+        if product.id in RELICENSED_PRODUCT_IDS:
+            assert [v["version"] for v in product.versions] == ["1.1.0", "1.0.0"]
+            assert [v["status"] for v in product.versions] == ["current", "supported"]
+            current = product.current_version
+            assert current["date"] == "2026-11-23" and current["sdkMinVersion"] == "0.4.0"
+            assert "pro" not in current["extras"]
+        else:
+            assert [v["version"] for v in product.versions] == ["1.0.0"]
+
+
+def test_every_product_is_free_and_open_source() -> None:
+    for product in load_catalog().products:
+        d = product.definition
+        assert d["tier"] == "free" and d["license"] == "Apache-2.0" and "pro" not in d, product.id
+        for version in product.versions:
+            if version["status"] != "retired":
+                assert version["version"] in build.implemented_versions(product.id), (product.id, version["version"])
+        assert "ketqat pro" not in d["install"] and "[pro" not in d["install"], product.id
+        assert "Pro bundle" not in json.dumps(d), product.id
 
 
 def test_the_generated_catalog_and_packaged_copy_are_current() -> None:
@@ -115,8 +142,8 @@ def test_build_check_fails_when_a_product_changes(tmp_path: Path) -> None:
             target.write_bytes(path.read_bytes())
     # Validation tests are resolved against the root, so give the copy the test files too.
     (copy / "python/tests").mkdir(parents=True)
-    for name in ("test_catalog_products.py", "test_catalog_examples.py"):
-        (copy / "python/tests" / name).write_bytes((REPO_ROOT / "python/tests" / name).read_bytes())
+    for source in (REPO_ROOT / "python/tests").glob("test_catalog*.py"):
+        (copy / "python/tests" / source.name).write_bytes(source.read_bytes())
 
     assert build.main(["--check", "--root", str(copy)]) == 0
     product = copy / "catalog/products/kq.algorithms.grover-search.json"
@@ -139,12 +166,24 @@ def test_build_rejects_a_verified_product_without_an_executed_example(tmp_path: 
 def test_schema_enforces_tier_rules() -> None:
     schema = json.loads((CATALOG_DIR / "schema/product.schema.json").read_text())
     free = json.loads((CATALOG_DIR / "products/kq.algorithms.grover-search.json").read_text())
-    pro = json.loads((CATALOG_DIR / "products/kq.qinfo.channel-analysis.json").read_text())
+    # The schema still describes a historical Pro definition, so old published bytes validate.
+    pro_block = {"freeComparison": "historical", "distribution": "authenticated-bundle"}
+    historical_pro = {**free, "tier": "pro", "license": "LicenseRef-KetQat-Pro", "pro": pro_block}
+    assert validate_definition(historical_pro, schema) == []
     assert validate_definition({**free, "license": "LicenseRef-KetQat-Pro"}, schema)
-    assert validate_definition({**free, "pro": pro["pro"]}, schema)
-    without_pro = {key: value for key, value in pro.items() if key != "pro"}
+    assert validate_definition({**free, "pro": pro_block}, schema)
+    without_pro = {key: value for key, value in historical_pro.items() if key != "pro"}
     assert validate_definition(without_pro, schema)
     assert validate_definition({**free, "subcategory": "decoding"}, schema)
+
+
+def test_build_refuses_a_pro_tier_definition(tmp_path: Path) -> None:
+    schema = json.loads((CATALOG_DIR / "schema/product.schema.json").read_text())
+    definition = json.loads((CATALOG_DIR / "products/kq.qinfo.channel-analysis.json").read_text())
+    definition.update(tier="pro", license="LicenseRef-KetQat-Pro", pro={"freeComparison": "x", "distribution": "authenticated-bundle"})
+    path = tmp_path / "kq.qinfo.channel-analysis.json"
+    problems = build._validate_product(REPO_ROOT, path, definition, schema)
+    assert any("tier must be free" in problem for problem in problems)
 
 
 def test_every_product_states_its_origin_references_and_license() -> None:
@@ -153,7 +192,7 @@ def test_every_product_states_its_origin_references_and_license() -> None:
         assert "did not invent" in d["origin"]["statement"]
         assert d["references"] and d["contributors"]
         assert d["science"]["limitations"]
-        assert d["license"] == ("Apache-2.0" if d["tier"] == "free" else "LicenseRef-KetQat-Pro")
+        assert d["license"] == "Apache-2.0"
         assert "ketqat-sdk@<commit>#subdirectory=python" in d["install"]
 
 
@@ -162,9 +201,8 @@ def test_every_product_states_its_origin_references_and_license() -> None:
 
 def test_search_and_lookup() -> None:
     assert [p.slug for p in catalog.search("entropy")] == ["quantum-state-measures"]
-    assert {p.slug for p in catalog.search(tier="pro")} == {
-        "quantum-channel-analysis", "surface-code-threshold-study", "randomized-benchmarking-suite", "quantum-volume-certification",
-    }
+    assert catalog.search(tier="pro") == []
+    assert len(catalog.search(tier="free")) == len(EXPECTED_PRODUCTS)
     assert {p.slug for p in catalog.search(category="quantum-algorithms")} == {
         "grover-search",
         "quantum-phase-estimation",
@@ -320,10 +358,13 @@ def test_cli_install_prints_the_pip_command_and_asks(tmp_path) -> None:
 # ------------------------------------------------------------- import boundaries
 
 FORBIDDEN_AFTER_FREE_RUN = (
+    # The Pro entitlement and bundle modules were removed in 0.4.0; listed so they cannot return unnoticed.
     "ketqat_runner.catalog.pro",
     "ketqat_runner.catalog.pro.entitlement",
     "ketqat_runner.catalog.pro.signing",
     "ketqat_runner.catalog.pro.bundle",
+    "ketqat_runner.catalog.pro.client",
+    "ketqat_runner.catalog.pro.runtime",
     "ketqat_runner.catalog.net",
     "ketqat_runner.catalog.report",
     "ketqat_runner.publish",
@@ -349,16 +390,26 @@ FORBIDDEN_AFTER_FREE_RUN = (
         'catalog.run("steane-code", error="IIXIIII", exhaustive=False)',
         'catalog.run("repetition-code", seed=1, shots=100)',
         'catalog.run("quantum-state-tomography", seed=1, shots=20)',
+        'catalog.run("quantum-channel-analysis@1.1.0", seed=1, kraus_file=KRAUS)',
+        'catalog.run("quantum-channel-analysis@1.0.0", seed=1, kraus_file=KRAUS)',
+        'catalog.run("surface-code-threshold-study@1.1.0", seed=1, distances=[3, 5], physical_error_rates=[0.01, 0.02], shots_per_point=50)',
+        'catalog.run("randomized-benchmarking-suite@1.1.0", seed=1, sequence_lengths=[1, 2, 4], sequences_per_length=2, shots=10)',
+        'catalog.run("randomized-benchmarking-suite@1.0.0", seed=1, sequence_lengths=[1, 2, 4], sequences_per_length=2, shots=10)',
+        'catalog.run("quantum-volume-certification@1.1.0", seed=1, widths=[2], circuits_per_width=4, shots=10)',
     ],
 )
-def test_free_runs_import_no_entitlement_or_network_code(call: str, tmp_path) -> None:
-    if "surface-code" in call:
+def test_runs_import_no_entitlement_or_network_code(call: str, tmp_path) -> None:
+    """Every product, including the four that were Pro until 0.4.0, runs without entitlement or network code."""
+    if "surface-code" in call or "randomized-benchmarking" in call:
         pytest.importorskip("stim")
     if "quantum-phase-estimation" not in call:
         pytest.importorskip("numpy")
+    kraus = tmp_path / "kraus.json"
+    kraus.write_text(json.dumps({"kraus": [{"real": [[1, 0], [0, 1]], "imag": [[0, 0], [0, 0]]}]}))
     script = (
         "import json, sys\n"
         "from ketqat_runner import catalog\n"
+        f"KRAUS = {str(kraus)!r}\n"
         f"record = {call}\n"
         f"print(json.dumps([name for name in {list(FORBIDDEN_AFTER_FREE_RUN)!r} if name in sys.modules]))\n"
     )
@@ -378,6 +429,39 @@ def test_the_cli_free_run_path_imports_no_entitlement_or_network_code(tmp_path) 
         "import json, sys\n"
         "from ketqat_runner.cli import main\n"
         "sys.argv = ['ketqat', 'catalog', 'run', 'quantum-phase-estimation', '-p', 'phase=0.5', '--seed', '1']\n"
+        "code = main()\n"
+        f"print(json.dumps([code, [name for name in {list(FORBIDDEN_AFTER_FREE_RUN)!r} if name in sys.modules]]))\n"
+    )
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "KETQAT_HOME": str(tmp_path / "home")},
+        timeout=300,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout.strip().splitlines()[-1]) == [0, []]
+
+
+def test_cli_pro_commands_are_deprecated_no_ops(tmp_path) -> None:
+    """`ketqat pro login|status|install` explain that everything is free, exit 0 and touch nothing."""
+    home = tmp_path / "cli-home"
+    for args in (("pro", "login"), ("pro", "login", "--base-url", "https://example.invalid"), ("pro", "status"),
+                 ("pro", "install", "quantum-channel-analysis")):
+        completed = _cli(*args, env={"KETQAT_HOME": str(home), "KETQAT_API_TOKEN": "kq_not_used"})
+        assert completed.returncode == 0, completed.stderr
+        assert "free and open source" in completed.stdout
+        assert "KetQat Academy Pro is a separate educational subscription" in completed.stdout
+        assert "kq_not_used" not in completed.stdout + completed.stderr
+    assert not home.exists(), "a deprecated pro command must not write anything"
+    assert "ketqat catalog install quantum-channel-analysis" in completed.stdout
+
+
+def test_cli_pro_commands_import_no_network_code(tmp_path) -> None:
+    script = (
+        "import json, sys\n"
+        "from ketqat_runner.cli import main\n"
+        "sys.argv = ['ketqat', 'pro', 'login']\n"
         "code = main()\n"
         f"print(json.dumps([code, [name for name in {list(FORBIDDEN_AFTER_FREE_RUN)!r} if name in sys.modules]]))\n"
     )

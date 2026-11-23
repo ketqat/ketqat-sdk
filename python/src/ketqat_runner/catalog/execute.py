@@ -1,13 +1,8 @@
 """Run a catalog product locally and write its run record.
 
-Free products run entirely from this package: no network, no account, no
-entitlement code. The test suite checks the import graph after a free run to
-hold that.
-
-Pro products load their code from a signed bundle installed by `ketqat pro
-install`. The cached entitlement token is checked once, at the start of the
-run; a run in progress is never interrupted, and existing records are never
-touched.
+Every product runs entirely from this package: no network, no account, no
+entitlement, no telemetry. The test suite checks the import graph after runs
+of every product to hold that.
 """
 
 from __future__ import annotations
@@ -29,7 +24,8 @@ _EXTRA_PACKAGES = {
     "algorithms": ("numpy",),
     "qinfo": ("numpy",),
     "qec": ("numpy", "stim", "pymatching"),
-    "pro": ("cryptography",),
+    # `pro` is an empty compatibility extra since 0.4.0 (historical 1.0.0 entries still list it).
+    "pro": (),
 }
 
 MAX_SEED = 2**63 - 1
@@ -111,18 +107,12 @@ def run(product: str | Product, version: str | None = None, seed: int | None = N
     resolved = resolve_parameters(entry.inputs, params, product_label=label)
     chosen_seed = _check_seed(seed)
 
-    if entry.tier == "pro":
-        # Imported only here: a Free run must never load entitlement or network code.
-        from .pro.runtime import prepare_pro_run
-
-        implementation = prepare_pro_run(entry.id, version_entry["version"])
-    else:
-        if version_entry["version"] not in implemented_versions(entry.id):
-            raise CatalogError(
-                f"This SDK ({SDK_VERSION}) has no implementation of {label}. "
-                "Nothing was run; there is no fallback."
-            )
-        implementation = load_implementation(entry.id)
+    if version_entry["version"] not in implemented_versions(entry.id):
+        raise CatalogError(
+            f"This SDK ({SDK_VERSION}) has no implementation of {label}. "
+            "Nothing was run; there is no fallback."
+        )
+    implementation = load_implementation(entry.id)
 
     validate = getattr(implementation, "validate", None)
     if validate is not None:

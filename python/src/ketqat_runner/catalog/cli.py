@@ -1,8 +1,12 @@
 """`ketqat catalog | runs | report | pro` subcommands.
 
-Network-free commands (`catalog search/show/run` for Free products, `runs`)
-import nothing that can open a connection. `report` and `pro` import the
-network module inside their own branches.
+Network-free commands (`catalog search/show/run`, `runs`, and the deprecated
+`pro` commands) import nothing that can open a connection. `report` imports the
+network module inside its own branch.
+
+Every KetQat SDK product is free and open source. `ketqat pro login|status|install`
+remain only so that existing scripts do not break: they print that nothing needs
+to be installed or unlocked and exit 0, without contacting a server.
 """
 
 from __future__ import annotations
@@ -36,6 +40,7 @@ def add_parsers(subcommands: Any) -> None:
         "--category",
         choices=["quantum-algorithms", "quantum-error-correction", "quantum-information"],
     )
+    # "pro" is still accepted so old scripts do not fail; no product has that tier since 0.4.0.
     search.add_argument("--tier", choices=["free", "pro"])
     search.add_argument("--json", action="store_true", help="Print JSON instead of a table.")
 
@@ -55,8 +60,8 @@ def add_parsers(subcommands: Any) -> None:
         "run",
         help="Run a product locally and write a run record.",
         description=(
-            "Runs on this machine. Free products never contact a server. Pro products need a "
-            "cached entitlement (`ketqat pro login`) and an installed bundle (`ketqat pro install`)."
+            "Runs on this machine and never contacts a server. Every product is free and open "
+            "source; no account, login or entitlement is involved."
         ),
     )
     run.add_argument("product", help="Product ID or slug, optionally pinned as slug@1.0.0.")
@@ -94,20 +99,21 @@ def add_parsers(subcommands: Any) -> None:
 
     pro = subcommands.add_parser(
         "pro",
-        help="KetQat Pro entitlement and signed bundles.",
+        help="Deprecated: every SDK product is free and open source; nothing to log in to or unlock.",
         description=(
-            "Pro commands read the API token from KETQAT_API_TOKEN (KETQAT_TOKEN is also "
-            "accepted). It is never written to disk; only the short-lived entitlement token is "
-            "cached, at $KETQAT_HOME/pro/entitlement.token."
+            "Deprecated since 0.4.0. All KetQat SDK products are free and open source (Apache-2.0) "
+            "and run from this package. These commands only print that and exit 0; they contact "
+            "no server and read or write no files."
         ),
     )
     pro_sub = pro.add_subparsers(dest="pro_command", required=True)
-    login = pro_sub.add_parser("login", help="Fetch and cache a Pro entitlement token.")
-    login.add_argument("--base-url", default=DEFAULT_BASE_URL)
-    pro_sub.add_parser("status", help="Show the cached entitlement (offline).")
-    pro_install = pro_sub.add_parser("install", help="Download, verify and install a Pro product bundle.")
-    pro_install.add_argument("product", help="Product ID or slug, optionally @VERSION.")
-    pro_install.add_argument("--base-url", default=DEFAULT_BASE_URL)
+    # The old arguments are still accepted, and ignored, so existing scripts keep working.
+    login = pro_sub.add_parser("login", help="Deprecated; does nothing.")
+    login.add_argument("--base-url", default=DEFAULT_BASE_URL, help=argparse.SUPPRESS)
+    pro_sub.add_parser("status", help="Deprecated; does nothing.")
+    pro_install = pro_sub.add_parser("install", help="Deprecated; use `ketqat catalog install`.")
+    pro_install.add_argument("product", nargs="?", help="Product ID or slug, optionally @VERSION.")
+    pro_install.add_argument("--base-url", default=DEFAULT_BASE_URL, help=argparse.SUPPRESS)
 
 
 def run(args: argparse.Namespace) -> int:
@@ -134,8 +140,7 @@ def run(args: argparse.Namespace) -> int:
         if isinstance(exc, ProductRunError) and exc.record.path:
             print(f"A failed run record was written to {exc.record.path}.", file=sys.stderr)
             return EXIT_FAILED
-        # A refused Pro run is not a usage error; everything else here is.
-        return EXIT_FAILED if type(exc).__name__ == "ProRunRefused" else EXIT_USAGE
+        return EXIT_USAGE
     return EXIT_USAGE
 
 
@@ -225,8 +230,6 @@ def _describe(product: Any, version_entry: dict[str, Any]) -> str:
     for reference in d["references"]:
         locator = reference.get("doi") and f"doi:{reference['doi']}" or reference.get("url", "")
         lines.append(f"  - {', '.join(reference['authors'])} ({reference['year']}). {reference['title']}. {locator}".rstrip())
-    if d["tier"] == "pro":
-        lines += ["", "Pro:", f"  {d['pro']['freeComparison']}"]
     return "\n".join(lines)
 
 
@@ -259,13 +262,8 @@ def _requirement_for(extras: list[str]) -> tuple[list[str], str]:
 
 
 def _install_extras(product: Any, version_entry: dict[str, Any], *, assume_yes: bool) -> int:
-    extras = list(version_entry["extras"])
-    if product.tier == "pro":
-        print(
-            f"{product.slug} is a Pro product. Its code is installed with: ketqat pro install {product.slug}"
-        )
-        if not extras:
-            return EXIT_OK
+    # `pro` installs nothing since 0.4.0; historical version entries may still list it.
+    extras = [extra for extra in version_entry["extras"] if extra != "pro"]
     if not extras:
         print(f"{product.slug}@{version_entry['version']} needs no extras; it runs with the base install.")
         return EXIT_OK
@@ -392,50 +390,27 @@ def _report(args: argparse.Namespace) -> int:
 
 # -------------------------------------------------------------------------- pro
 
+PRO_RETIRED_MESSAGE = (
+    "All KetQat SDK algorithms and software products are free and open source (Apache-2.0).\n"
+    "Nothing needs to be installed or unlocked: every catalog product ships with this package\n"
+    "and runs locally with no account, login, entitlement, network access or telemetry.\n"
+    "\n"
+    "  ketqat catalog install <slug>   add the optional dependencies a product needs\n"
+    "  ketqat catalog run <slug>       run it\n"
+    "\n"
+    "KetQat Academy Pro is a separate educational subscription on ketqat.com; it is not\n"
+    "required for any SDK functionality.\n"
+    "\n"
+    "`ketqat pro {command}` is deprecated and did nothing: no server was contacted and no file\n"
+    "was read or written. Files an earlier SDK cached under $KETQAT_HOME/pro/ are left as they\n"
+    "are and are no longer used; your run records are unchanged."
+)
+
 
 def _pro(args: argparse.Namespace) -> int:
-    from .pro.entitlement import EntitlementError, load_cached, token_path
-    from .pro.signing import ProDependencyError
-
-    if args.pro_command == "status":
-        try:
-            entitlement = load_cached()
-        except (EntitlementError, ProDependencyError) as exc:
-            print(str(exc), file=sys.stderr)
-            return EXIT_FAILED
-        state = "EXPIRED" if entitlement.is_expired() else "valid"
-        print(f"KetQat Pro entitlement: {state}")
-        print(f"  expires: {entitlement.expires_iso()}")
-        print(f"  key ID:  {entitlement.kid}")
-        print(f"  cached:  {token_path()}")
-        if entitlement.is_expired():
-            print("  Renew with: ketqat pro login")
-            return EXIT_FAILED
-        return EXIT_OK
-
-    from .net import ApiError
-    from .pro.bundle import BundleError
-    from .pro.client import install_bundle, login
-
-    try:
-        if args.pro_command == "login":
-            entitlement, path = login(args.base_url)
-            print(f"KetQat Pro entitlement cached at {path}")
-            print(f"  valid until {entitlement.expires_iso()} (renew with: ketqat pro login)")
-            print("  The API token was not written to disk; it stays in your environment.")
-            return EXIT_OK
-        if args.pro_command == "install":
-            from . import load_catalog
-
-            product, pinned = load_catalog().resolve(args.product)
-            if product.tier != "pro":
-                print(f"{product.slug} is a Free product; it ships with the SDK.", file=sys.stderr)
-                return EXIT_USAGE
-            version = product.version(pinned)["version"]
-            destination = install_bundle(args.base_url, product.id, version)
-            print(f"Installed {product.id}@{version} (signature and every file hash verified) at {destination}")
-            return EXIT_OK
-    except (ApiError, BundleError, EntitlementError, ProDependencyError) as exc:
-        print(str(exc), file=sys.stderr)
-        return EXIT_FAILED
-    return EXIT_USAGE
+    """Deprecated since 0.4.0: explain, exit 0, touch nothing."""
+    print(PRO_RETIRED_MESSAGE.format(command=args.pro_command))
+    product = getattr(args, "product", None)
+    if args.pro_command == "install" and product:
+        print(f"\nFor {product}: ketqat catalog install {product}")
+    return EXIT_OK
