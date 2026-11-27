@@ -6,8 +6,8 @@
   "summary": "From Kraus operators: Choi matrix, CPTP check, Pauli transfer matrix, gate fidelities, unitarity and diamond distance in one report.",
   "category": "quantum-information",
   "subcategory": "channel-analysis",
-  "tier": "pro",
-  "description": "Characterises a quantum channel given by its Kraus operators. It builds the Choi matrix and checks complete positivity and trace preservation, computes the Pauli transfer matrix, the average gate fidelity and entanglement fidelity against a target unitary (identity by default), and the unitarity of the noise. It reports the diamond distance to the target exactly when the error channel is a Pauli channel, and lower and upper bounds otherwise. Everything is written to one JSON result and, optionally, a Markdown report.\n\nFor people characterising gates or noise models on one to three qubits who want the standard channel metrics computed consistently and reported together.\n\nThis is a KetQat Pro product: it runs locally like every catalog product, from a signed bundle installed with `ketqat pro install` under a time-limited entitlement. Its implementation is not part of the open SDK.",
+  "tier": "free",
+  "description": "Characterises a quantum channel given by its Kraus operators. It builds the Choi matrix and checks complete positivity and trace preservation, computes the Pauli transfer matrix, the average gate fidelity and entanglement fidelity against a target unitary (identity by default), and the unitarity of the noise. It reports the diamond distance to the target exactly when the error channel is a Pauli channel, and lower and upper bounds otherwise. Everything is written to one JSON result and, optionally, a Markdown report.\n\nFor people characterising gates or noise models on one to three qubits who want the standard channel metrics computed consistently and reported together.\n\nFree and open source (Apache-2.0); it needs the qinfo extra (NumPy) only.",
   "useCases": [
     "Check that a noise model written as Kraus operators is a valid CPTP channel",
     "Report average gate fidelity, entanglement fidelity and unitarity of an implemented gate against its target",
@@ -105,6 +105,19 @@
   "executionKind": "analysis",
   "versions": [
     {
+      "version": "1.1.0",
+      "date": "2026-11-23",
+      "changes": [
+        "Released as free and open source under Apache-2.0 in SDK 0.4.0. Until then 1.0.0 was distributed separately as proprietary code; it now ships in this package, and no account, login, entitlement or network access is needed.",
+        "Implementation identical to 1.0.0: the same parameters and seed reproduce 1.0.0's resultSha256 (python/tests/test_catalog_version_compat.py checks hashes recorded from the 1.0.0 code as distributed)."
+      ],
+      "sdkMinVersion": "0.4.0",
+      "extras": [
+        "qinfo"
+      ],
+      "status": "current"
+    },
+    {
       "version": "1.0.0",
       "date": "2026-10-29",
       "changes": [
@@ -115,7 +128,7 @@
         "pro",
         "qinfo"
       ],
-      "status": "current"
+      "status": "supported"
     }
   ],
   "environment": {
@@ -126,19 +139,153 @@
     ],
     "resources": "One to three qubits: well under a second on a laptop."
   },
-  "install": "pip install \"ketqat[pro,qinfo] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\" && ketqat pro login && ketqat pro install quantum-channel-analysis@1.0.0",
+  "install": "pip install \"ketqat[qinfo] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
   "example": {
-    "code": "import json\nimport numpy as np\nfrom ketqat_runner import catalog\n\ngamma = 0.1\nkraus = np.array([[[1, 0], [0, np.sqrt(1 - gamma)]], [[0, np.sqrt(gamma)], [0, 0]]], dtype=complex)\nnp.save(\"amplitude_damping.npy\", kraus)\nrecord = catalog.run(\"quantum-channel-analysis@1.0.0\", kraus_file=\"amplitude_damping.npy\")\nprint(json.dumps({\"status\": record.status, \"trace_preserving\": record.result[\"cptp\"][\"trace_preserving\"]}))\n",
+    "code": "import json\nimport numpy as np\nfrom ketqat_runner import catalog\n\ngamma = 0.1\nkraus = np.array([[[1, 0], [0, np.sqrt(1 - gamma)]], [[0, np.sqrt(gamma)], [0, 0]]], dtype=complex)\nnp.save(\"amplitude_damping.npy\", kraus)\nrecord = catalog.run(\"quantum-channel-analysis@1.1.0\", kraus_file=\"amplitude_damping.npy\")\nprint(json.dumps({\"status\": record.status, \"trace_preserving\": record.result[\"cptp\"][\"trace_preserving\"]}))\n",
     "expectedOutputSubset": {
       "status": "succeeded",
       "trace_preserving": true
     },
-    "verified": null
+    "verified": {
+      "sdkVersion": "0.4.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (python/tests/test_catalog_examples.py run locally on the maintainer's machine: example executed verbatim in a clean virtualenv with only the 1.1.0 extras; not yet executed by CI)",
+      "date": "2026-11-23"
+    }
   },
   "sampleResult": {
-    "summary": "Not generated in the open SDK: running this product needs a Pro entitlement and bundle, which this repository's CI does not have.",
-    "data": null,
-    "generatedWith": null
+    "summary": "Amplitude damping with gamma = 0.1 against the identity (the example's channel, Markdown report): completely positive and trace preserving; average gate fidelity 0.96623, entanglement fidelity 0.94934, unitarity 0.87; not a Pauli or unitary channel, so the diamond distance is bounded, 0.12165 <= ||Phi - id||_diamond <= 0.24330. The full result is shown.",
+    "data": {
+      "schema": "ketqat.pro.channel-analysis/v1",
+      "dimensions": {
+        "input": 2,
+        "output": 2
+      },
+      "kraus_operators": 2,
+      "target": "identity",
+      "cptp": {
+        "completely_positive": true,
+        "trace_preserving": true,
+        "min_choi_eigenvalue": -4.674623261579606e-17,
+        "trace_preservation_deviation": 1.1102230246251565e-16,
+        "tolerance": 1e-08
+      },
+      "choi_matrix": {
+        "normalisation": "J / d_in (trace 1 for a trace-preserving channel)",
+        "real": [
+          [
+            0.5,
+            0.0,
+            0.0,
+            0.474341649025
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.05,
+            0.0
+          ],
+          [
+            0.474341649025,
+            0.0,
+            0.0,
+            0.45
+          ]
+        ],
+        "imag": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ]
+      },
+      "pauli_transfer_matrix": {
+        "basis": [
+          "I",
+          "X",
+          "Y",
+          "Z"
+        ],
+        "matrix": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.948683298051,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.948683298051,
+            0.0
+          ],
+          [
+            0.1,
+            0.0,
+            0.0,
+            0.9
+          ]
+        ]
+      },
+      "average_gate_fidelity": 0.966227766017,
+      "entanglement_fidelity": 0.949341649025,
+      "unitarity": 0.87,
+      "diamond_distance": {
+        "kind": "bounds",
+        "method": "choi-trace-norm",
+        "lower": 0.121647776651,
+        "upper": 0.243295553301,
+        "convention": "||Phi1-Phi2||_diamond = max_rho ||((Phi1-Phi2) (x) id)(rho)||_1, range [0, 2] (not halved). Choi bounds use the unnormalized Choi matrix J (Tr J = d_in): ||J1-J2||_1/d_in <= ||.||_diamond <= ||J1-J2||_1."
+      },
+      "notes": [],
+      "seed": 1,
+      "report": "# Quantum channel analysis\n\n- Dimensions: 2 -> 2\n- Kraus operators: 2\n- Completely positive: True (min Choi eigenvalue -4.675e-17)\n- Trace preserving: True (deviation 1.110e-16, tolerance 1.0e-08)\n- Entanglement fidelity: 0.949341649025\n- Average gate fidelity: 0.966227766017\n- Unitarity: 0.870000000000\n- Diamond distance bounds (choi-trace-norm): [0.121647776651, 0.243295553301]\n\nConvention: ||Phi1-Phi2||_diamond = max_rho ||((Phi1-Phi2) (x) id)(rho)||_1, range [0, 2] (not halved). Choi bounds use the unnormalized Choi matrix J (Tr J = d_in): ||J1-J2||_1/d_in <= ||.||_diamond <= ||J1-J2||_1.\n"
+    },
+    "generatedWith": {
+      "productVersion": "1.1.0",
+      "seed": 1,
+      "parameters": {
+        "kraus_file": "amplitude_damping.npy",
+        "target_unitary_file": null,
+        "report_format": "markdown",
+        "tolerance": 1e-08
+      },
+      "sdkVersion": "0.4.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
   },
   "science": {
     "assumptions": [
@@ -153,7 +300,7 @@
       "For non-Pauli error channels only lower and upper bounds on the diamond distance are reported, not the exact value.",
       "Input is the channel itself; estimating a channel from measurement data is not included (the open SDK's process_tomography.py covers single-qubit reconstruction).",
       "Dense matrices: limited to three qubits.",
-      "The implementation is delivered as a Pro bundle and is not open source; its validation tests are not in this public repository."
+      "The cptp block reports the smallest Choi eigenvalue and the trace-preservation deviation unrounded; at round-off level (about 1e-16) they can differ between NumPy and LAPACK builds, so resultSha256 reproduces on the same software stack, not necessarily across platforms."
     ]
   },
   "references": [
@@ -214,15 +361,10 @@
         "name": "NumPy",
         "url": "https://github.com/numpy/numpy",
         "license": "BSD-3-Clause"
-      },
-      {
-        "name": "cryptography",
-        "url": "https://github.com/pyca/cryptography",
-        "license": "Apache-2.0 OR BSD-3-Clause"
       }
     ]
   },
-  "license": "LicenseRef-KetQat-Pro",
+  "license": "Apache-2.0",
   "contributors": [
     {
       "name": "dorakingx",
@@ -230,11 +372,43 @@
       "role": "KetQat maintainer: implementation, validation and catalog entry"
     }
   ],
-  "implementationStatus": "experimental",
-  "validation": [],
-  "pro": {
-    "freeComparison": "The open SDK already converts between process-tomography representations (Pauli transfer matrix and Choi matrix, in process_tomography.py) and computes state measures such as fidelity and trace distance (the free quantum-state-measures product). Pro adds the integrated channel workflow: CPTP checks from Kraus operators, average gate and entanglement fidelity, unitarity, exact diamond distance for Pauli channels with bounds otherwise, and a single JSON/Markdown report.",
-    "distribution": "authenticated-bundle"
-  },
+  "implementationStatus": "implemented",
+  "validation": [
+    {
+      "method": "depolarizing-closed-forms",
+      "description": "One- and two-qubit depolarizing channels: entanglement fidelity 1 - p + p/d^2, average gate fidelity, unitarity (1-p)^2, PTM diag(1, 1-p, 1-p, 1-p) and exact diamond distance 2p(d^2-1)/d^2, all derived by hand.",
+      "test": "python/tests/test_catalog_channel_analysis.py::test_depolarizing_closed_forms"
+    },
+    {
+      "method": "amplitude-damping-closed-forms",
+      "description": "Amplitude damping over gamma in [0, 1]: entanglement fidelity (1+sqrt(1-gamma))^2/4, the closed-form PTM and unitarity, with Choi bounds ordered.",
+      "test": "python/tests/test_catalog_channel_analysis.py::test_amplitude_damping_closed_forms"
+    },
+    {
+      "method": "pauli-channel-diamond",
+      "description": "Pauli channels: recovered error probabilities, exact diamond distance 2(1 - p_I) against the identity and 2(1 - p_X) against X, inside the Choi bounds with the lower bound tight.",
+      "test": "python/tests/test_catalog_channel_analysis.py::test_pauli_channel_exact_diamond_and_probabilities"
+    },
+    {
+      "method": "unitary-channels",
+      "description": "Rotations Rz(theta): entanglement fidelity cos^2(theta/2) and exact diamond distance 2 sin(theta/2) to the identity, zero to itself.",
+      "test": "python/tests/test_catalog_channel_analysis.py::test_unitary_channels"
+    },
+    {
+      "method": "sampled-diamond-bounds",
+      "description": "For amplitude damping, 2000 sampled pure inputs on system and reference never exceed the upper Choi bound, and the maximally entangled input attains the lower bound exactly (an independent computation of (Phi - id) (x) id).",
+      "test": "python/tests/test_catalog_channel_analysis.py::test_choi_bounds_contain_sampled_values_for_non_pauli_channel"
+    },
+    {
+      "method": "catalog-run-closed-forms",
+      "description": "The catalog run from a Kraus file reproduces the depolarizing closed forms and a unit-trace normalised Choi matrix.",
+      "test": "python/tests/test_catalog_channel_analysis.py::test_catalog_run_depolarizing_from_file_matches_closed_forms"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the qinfo extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
   "legacy": []
 }

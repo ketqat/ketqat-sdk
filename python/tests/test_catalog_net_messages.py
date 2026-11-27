@@ -18,9 +18,9 @@ def _raise_http_error(status: int, body: dict):
 
 def test_server_sentence_is_not_followed_by_a_double_period(monkeypatch):
     monkeypatch.setenv("KETQAT_API_TOKEN", "kq_test")
-    monkeypatch.setattr(net.urllib.request, "urlopen", _raise_http_error(403, {"error": "An active KetQat Pro subscription is required."}))
+    monkeypatch.setattr(net.urllib.request, "urlopen", _raise_http_error(403, {"error": "This token cannot send usage reports."}))
     with pytest.raises(net.ApiError) as caught:
-        net.request_json("POST", "http://127.0.0.1:9", "/api/v1/pro/entitlement")
+        net.request_json("POST", "http://127.0.0.1:9", "/api/v1/usage-reports")
     message = str(caught.value)
     assert ".." not in message
-    assert "HTTP 403: An active KetQat Pro subscription is required. The account has no active" in message
+    assert "HTTP 403: This token cannot send usage reports. The token lacks access to this endpoint." in message

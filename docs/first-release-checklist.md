@@ -2,20 +2,21 @@
 
 This checklist is the authorization boundary for the first public `ketqat-sdk` npm release and `ketqat` PyPI release. Completing the engineering workflow does **not** prove registry ownership and does not authorize a publish. Every unchecked item below is a hard stop.
 
-## Verified snapshot (2026-08-15 UTC)
+## Verified snapshot (2026-11-23 UTC)
 
-These read-only checks were re-run against SDK `main` at `da8c5d0bb37c`, at version
-**0.3.0**. Every claim in the
-2026-07-13 snapshot below still holds; this supersedes it rather than replacing it, so a
-reader can see that the state has been re-checked rather than assumed to have persisted.
+These read-only checks were re-run on 2026-11-23 for version **0.4.0** (the version
+files on the open-source-all-products branch). The 2026-08-15 snapshot of the previous
+version and the 2026-07-13 snapshot below it still hold for their versions; this
+supersedes them rather than replacing them, so a reader can see that the state has
+been re-checked rather than assumed to have persisted.
 
 | Check | Verified result | Meaning |
 | --- | --- | --- |
 | `https://registry.npmjs.org/ketqat-sdk` | HTTP 404 | No public npm package. The name is not reserved. |
-| `https://registry.npmjs.org/ketqat-sdk/0.3.0` | HTTP 404 | No public record of this version. While the package itself is 404 this cannot distinguish "version free" from "package absent", so it is not yet a decisive check -- it becomes one after an approved bootstrap makes the package-level endpoint 200. |
+| `https://registry.npmjs.org/ketqat-sdk/0.4.0` | HTTP 404 | No public record of this version. While the package itself is 404 this cannot distinguish "version free" from "package absent", so it is not yet a decisive check -- it becomes one after an approved bootstrap makes the package-level endpoint 200. |
 | `https://pypi.org/pypi/ketqat/json` | HTTP 404 | No public PyPI project. |
-| `https://pypi.org/pypi/ketqat/0.3.0/json` | HTTP 404 | No public record of this version, with the same caveat as the npm row above. |
-| GitHub Environments | Only `copilot` | `npm-release`, `pypi-release` and `github-release` are still absent. |
+| `https://pypi.org/pypi/ketqat/0.4.0/json` | HTTP 404 | No public record of this version, with the same caveat as the npm row above. |
+| GitHub Environments | `aws-production`, `aws-staging`, `copilot` | `npm-release`, `pypi-release` and `github-release` are still absent. |
 | GitHub Actions secrets | 0 | No release credential is stored. |
 | GitHub Actions variables | 0 | `RELEASE_PUBLISHING_ENABLED` is absent, so every publish job is disabled. |
 | Git tags / GitHub Releases | 0 / 0 | No release tag or Release exists. |
@@ -189,15 +190,15 @@ Do not execute these commands while any earlier checkbox is open.
 
 - [ ] Pull the reviewed `main` commit and confirm a clean worktree.
 - [ ] Confirm `package.json`, `python/pyproject.toml`, `ketqat_runner.__version__`, and runner `SDK_VERSION` all equal the intended version.
-- [ ] Recheck the exact version endpoints `https://registry.npmjs.org/ketqat-sdk/0.3.0` and `https://pypi.org/pypi/ketqat/0.3.0/json`; both must return 404, while any package/project-level 200 response must match the authenticated ownership decision.
-- [ ] Run `scripts/release-preflight.sh v0.3.0` and retain the non-sensitive output plus commit SHA.
+- [ ] Recheck the exact version endpoints `https://registry.npmjs.org/ketqat-sdk/0.4.0` and `https://pypi.org/pypi/ketqat/0.4.0/json`; both must return 404, while any package/project-level 200 response must match the authenticated ownership decision.
+- [ ] Run `scripts/release-preflight.sh v0.4.0` and retain the non-sensitive output plus commit SHA.
 - [ ] Review `npm pack --dry-run --json --ignore-scripts`, wheel/sdist verification, and all current CI checks.
 - [ ] Confirm release notes state scientific limitations and do not claim registry success before readback.
 - [ ] Have the release operator create a signed, immutable tag from the reviewed commit and push only that tag:
 
 ```bash
-git tag -s v0.3.0 -m "KetQat SDK 0.3.0"
-git push origin v0.3.0
+git tag -s v0.4.0 -m "KetQat SDK 0.4.0"
+git push origin v0.4.0
 ```
 
 - [ ] Open the resulting **Publish release** workflow. Approve `npm-release` and `pypi-release` only after confirming preflight passed for the expected tag/SHA.

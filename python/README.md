@@ -1,8 +1,11 @@
 # ketqat
 
 Run official [KetQat](https://ketqat.com) catalog products on your own machine:
-quantum algorithms, quantum error correction and quantum information. Free
-products need no account and no payment and send no telemetry. Every product
+quantum algorithms, quantum error correction and quantum information. All
+KetQat SDK algorithms and software products are free and open source
+(Apache-2.0): they need no account, no payment and no login, and send no
+telemetry. KetQat Academy Pro is a separate educational subscription on
+ketqat.com and is not required for any SDK functionality. Every product
 states its origin, upstream open-source projects, references, license and
 contributors; "official" never means KetQat invented the method.
 
@@ -29,7 +32,7 @@ No synthetic fallback is used for QEC experiments.
 - `pip install "ketqat[qec]"` — Stim + PyMatching for QEC decoder/code benchmarks.
 - `pip install "ketqat[algorithms]"` — NumPy for quantum-algorithm benchmarks.
 - `pip install "ketqat[qinfo]"` — NumPy for the quantum-information catalog products.
-- `pip install "ketqat[pro]"` — `cryptography`, for KetQat Pro signature checks. Free products never import it.
+- `pip install "ketqat[pro]"` — installs nothing since 0.4.0; kept so older install lines still work. Every catalog product is free and open source and needs only the extras above.
 - `pip install "ketqat[all]"` — all of the above and the optional research extras.
 
 (Until the first PyPI release, use the `ketqat[...] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python` form.)

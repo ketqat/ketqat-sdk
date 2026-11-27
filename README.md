@@ -6,9 +6,14 @@
 **Official KetQat quantum software, run on your own machine.** KetQat curates a
 catalog of quantum software in three areas: quantum algorithms, quantum error
 correction and quantum information. Find a product on [ketqat.com](https://ketqat.com),
-then install and run it locally with this SDK. Free products need no account and
-no payment, and send no telemetry. No account, QPU or upload is required: your
-parameters, inputs and results stay on your machine.
+then install and run it locally with this SDK.
+
+**All KetQat SDK algorithms and software products are free and open source.**
+Every catalog product is Apache-2.0 code in this repository: no payment, login,
+entitlement or telemetry. No account, QPU or upload is required: your
+parameters, inputs and results stay on your machine. KetQat Academy Pro is a
+separate educational subscription on ketqat.com; it is not required for any SDK
+functionality.
 
 "Officially provided by KetQat" means KetQat selected, implemented or integrated,
 validated and maintains the product. It never means KetQat invented the method.
@@ -17,13 +22,24 @@ references, its license and its contributors.
 
 ## The catalog
 
-| Product | Tier | What it does |
-|---|---|---|
-| `grover-search` | Free | Grover search as a NumPy statevector simulation (2-20 qubits): exact success probability and seeded counts |
-| `quantum-phase-estimation` | Free | Textbook phase estimation, simulated gate by gate: estimate, its probability and the outcome distribution |
-| `surface-code-memory` | Free | Rotated surface-code memory with Stim sampling, PyMatching decoding and a 95% Wilson interval |
-| `quantum-state-measures` | Free | Entropies, purity, fidelity, trace distance, mutual information, concurrence and negativity |
-| `quantum-channel-analysis` | Pro | Choi matrix, CPTP check, Pauli transfer matrix, gate fidelities, unitarity and diamond distance from Kraus operators |
+| Product | What it does |
+|---|---|
+| `grover-search` | Simulate Grover's search on up to 20 qubits and get the exact success probability plus seeded measurement counts. |
+| `quantum-phase-estimation` | Simulate textbook quantum phase estimation for a given eigenphase and read off the estimate, its probability and seeded counts. |
+| `qaoa-maxcut` | Run QAOA on a small graph with an exhaustive angle grid and compare the expected cut with the exact MaxCut optimum. |
+| `vqe-ground-state` | Minimise the energy of a Pauli Hamiltonian with a hardware-efficient ansatz and compare with the exact ground energy. |
+| `quantum-fourier-transform` | Apply the QFT gate sequence to a basis, uniform or random state on up to 16 qubits and compare it with the DFT definition. |
+| `trotter-ising-dynamics` | Evolve a transverse-field Ising chain with a first- or second-order product formula and measure the error against exact dynamics. |
+| `quantum-teleportation` | Teleport a chosen or random qubit state through a Bell pair and verify unit fidelity on every measurement outcome. |
+| `surface-code-memory` | Estimate the logical error rate of a rotated surface-code memory with Stim sampling, PyMatching decoding and a Wilson interval. |
+| `steane-code` | Enumerate every single-qubit Pauli error on the Steane code, verify its syndrome and correction, and show where distance 3 stops. |
+| `repetition-code` | Monte Carlo logical error rate of the n-qubit bit-flip repetition code under i.i.d. bit flips, beside the exact binomial value. |
+| `surface-code-threshold-study` | Distance x error-rate sweep with Stim + PyMatching: Wilson points, suppression factors, bootstrapped threshold crossing, report. |
+| `quantum-state-measures` | Entropies, purity, fidelity, trace distance, mutual information, concurrence and negativity for a preset or your own state. |
+| `quantum-state-tomography` | Reconstruct a known pure state of up to 4 qubits from sampled Pauli measurements by linear inversion, with physicality and fidelity. |
+| `quantum-channel-analysis` | From Kraus operators: Choi matrix, CPTP check, Pauli transfer matrix, gate fidelities, unitarity and diamond distance in one report. |
+| `randomized-benchmarking-suite` | Standard, interleaved and simultaneous Clifford RB in one run: error per Clifford, gate error with Magesan bounds, bootstrap CIs, report. |
+| `quantum-volume-certification` | Quantum volume per Cross et al. 2019: finite-shot heavy outputs, the 2-sigma pass rule, per-width intervals, achieved QV and a report. |
 
 Definitions live in [`catalog/`](catalog/): one JSON file per product, validated
 against [`catalog/schema/product.schema.json`](catalog/schema/product.schema.json),
@@ -61,16 +77,18 @@ sha256 of the result. The same version, parameters and seed reproduce the same
 `resultSha256` on the same software stack. Unknown parameters or versions are
 refused with a non-zero exit; nothing falls back to demo data.
 
-### Free and Pro
+### Free and open source
 
-- **Free** products are open source (Apache-2.0) in this repository. They never
-  contact a server and never load entitlement code.
-- **Pro** products are additional KetQat implementations, delivered as signed
-  bundles under a time-limited entitlement: `ketqat pro login`, `ketqat pro install
-  <product>`, then `ketqat catalog run` as usual, still on your machine. The
-  entitlement is checked when a run starts; an expired one stops new Pro runs and
-  never touches existing records. Bundle code on your machine can be copied or
-  modified: the entitlement gates official distribution and updates, it is not DRM.
+- **Every product is free and open source** (Apache-2.0) in this repository. A
+  run never contacts a server and never loads account, entitlement or network
+  code.
+- **KetQat Pro for software is retired.** Until SDK 0.4.0 (2026-11-23) four
+  products (`quantum-channel-analysis`, `surface-code-threshold-study`,
+  `randomized-benchmarking-suite`, `quantum-volume-certification`) were
+  distributed as signed KetQat Pro bundles. Their code is now here under
+  Apache-2.0 as version 1.1.0, identical to 1.0.0: the same parameters and seed
+  reproduce a 1.0.0 run's `resultSha256`. `ketqat pro login|status|install`
+  remain only as deprecated commands that say so and exit 0.
 - **Usage reports are opt-in.** `ketqat report RUN_ID` prints the exact JSON it
   would send (product, version, status, time, SDK version and a report ID) and
   sends it only after you confirm. Parameters, inputs, results, file paths and
@@ -356,7 +374,7 @@ npm run build
 npm test
 npm run verify:clean-install
 npm run verify:quickstart
-python3.11 -m pip install -e "python[qec,qinfo,pro]" pytest
+python3.11 -m pip install -e "python[qec,qinfo,algorithms]" pytest
 python3.11 -m pytest python/tests
 python -m ketqat_runner.catalog.build --check     # catalog.json and the packaged copy are current
 KETQAT_RUN_SLOW_TESTS=1 python -m pytest -m slow python/tests/test_catalog_examples.py
@@ -395,7 +413,7 @@ Demo data is synthetic and marked with `is_demo: true`. It must not be read as p
 
 ## Security Limitations
 
-The SDK validates research contracts and computes hashes. It does not authenticate users, execute uploaded code, or manage provider credentials. The API token is read from the environment and never written to disk. The only credential-like file it writes is the short-lived, signed KetQat Pro entitlement token (`$KETQAT_HOME/pro/entitlement.token`, mode 0600), and only after `ketqat pro login`. Pro bundles are verified against an Ed25519 signature and per-file sha256 before they are written or run.
+The SDK validates research contracts and computes hashes. It does not authenticate users, execute uploaded code, or manage provider credentials. The API token is read from the environment and never written to disk, and the SDK writes no credential-like file. (SDK versions before 0.4.0 cached a short-lived KetQat Pro entitlement token at `$KETQAT_HOME/pro/entitlement.token` after `ketqat pro login`; 0.4.0 neither reads nor writes it, and leaves any existing file alone.) Every catalog product is code in this package; nothing is downloaded and executed at run time.
 
 ## License
 

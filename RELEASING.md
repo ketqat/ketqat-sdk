@@ -25,7 +25,7 @@ Uses [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC)
 
 1. Bump `version` in both `package.json` and `python/pyproject.toml` to the same value (they must match).
 2. Commit, merge to `main` through the normal PR process.
-3. Tag the merge commit and push the tag: `git tag v0.3.0 && git push origin v0.3.0`.
+3. Tag the merge commit and push the tag: `git tag v0.4.0 && git push origin v0.4.0`.
 4. `.github/workflows/publish.yml` runs both publish jobs. Each job independently verifies the tag matches the corresponding package's version file before publishing, and runs the full test suite first.
 
 If either package's version doesn't match the tag, that job fails before publishing anything.

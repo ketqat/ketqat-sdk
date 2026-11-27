@@ -6,7 +6,7 @@ Guidance for Claude Code working in `ketqat-sdk`. This file supplements [AGENTS.
 
 `ketqat-sdk` is the **public contract layer** for KetQat: typed scientific contracts, Zod validators, generated JSON Schemas, canonical serialization, reproducibility hashing, scientific compatibility rules, a typed REST client, public examples and demo fixtures, and a local Python runner.
 
-Since 2026-10-29 it is also where the **official KetQat catalog** is defined and run: `catalog/` holds one JSON definition per product (schema `ketqat.catalog.product/v1`) and a generated index, and the Python package runs products locally (`ketqat catalog | runs | report | pro`). That is the product headline; Qiskit regression checks remain a supported feature. Reference: [`docs/catalog.md`](docs/catalog.md).
+Since 2026-10-29 it is also where the **official KetQat catalog** is defined and run: `catalog/` holds one JSON definition per product (schema `ketqat.catalog.product/v1`) and a generated index, and the Python package runs products locally (`ketqat catalog | runs | report`). All KetQat SDK algorithms and software products are free and open source (Apache-2.0); since SDK 0.4.0 (2026-11-23) there is no software Pro tier, and `ketqat pro` is a deprecated no-op. That is the product headline; Qiskit regression checks remain a supported feature. Reference: [`docs/catalog.md`](docs/catalog.md).
 
 This is the only public code repository in the organization, and it is the package other people install. Two consequences follow:
 
@@ -28,7 +28,7 @@ npm run verify:package-contents
 npm run verify:clean-install
 npm run verify:quickstart        # post-release clone-free runner flow
 
-python3.11 -m pip install -e "python[qec,qinfo,pro]" pytest
+python3.11 -m pip install -e "python[qec,qinfo,algorithms]" pytest
 python3.11 -m pytest python/tests
 ketqat run examples/qec/surface-code-memory.yaml --output /tmp/ketqat-qec-run.json
 
@@ -52,7 +52,7 @@ CI splits Node and Python jobs, installs the real QEC dependencies, validates np
 - `src/demo/` -- demo fixtures, all marked `is_demo: true`
 - `python/src/ketqat_runner/` -- CLI, runner, hashing, validation, environment capture
 - `catalog/` -- product schema, one definition per product, generated `catalog.json` (also exported by the npm package)
-- `python/src/ketqat_runner/catalog/` -- loader, parameter checks, run records, CLI, Free product adapters (`products/`), the generated packaged copy (`data/`), and Pro entitlement/bundle code (`pro/`, never imported by a Free run)
+- `python/src/ketqat_runner/catalog/` -- loader, parameter checks, run records, CLI, every product's implementation (`products/`, including the four former Pro products as subpackages), and the generated packaged copy (`data/`). The Pro entitlement/bundle code (`pro/`) was removed in 0.4.0
 - `fixtures/reproducibility/` -- cross-language hash parity fixtures
 - `dist/` -- **committed on purpose** so that exact GitHub source-tarball dependencies work for `ketqat-web`. Rebuild and commit it when source changes.
 
@@ -73,6 +73,7 @@ This is the repository's most load-bearing behavior. `src/reproducibility/index.
 - A product's `validation` tests compare against independent analytic values or independent computations, never against a copy of the formula under test.
 - Unknown parameters or versions are refused with a non-zero exit. There is no fallback to demo data.
 - `resultSha256` covers the result only, and results carry no timings, so the same version, parameters and seed reproduce it.
+- Every product is tier `free` and Apache-2.0; the build refuses tier `pro`. The schema still accepts historical Pro definitions. The four former Pro products keep 1.0.0 (`supported`) beside 1.1.0 (`current`), run from the same code; `python/tests/test_catalog_version_compat.py` checks recorded 1.0.0 hashes. Their result `schema` strings (`ketqat.pro.*/v1`) are hashed, so never rename them.
 
 ## Scientific integrity
 
@@ -99,13 +100,13 @@ The CLI's `job` commands and the MCP execution tools **enqueue; they never execu
 
 Both were *partly* true before, which is why nobody noticed: the release workflows pinned SHAs while `ci.yml` floated, so a glance at the repository suggested pinning was done.
 
-Report vulnerabilities through `SECURITY.md`. The SDK holds no long-lived secrets and opens no listener, so the real surface is untrusted-payload parsing, hash canonicalization, validation bypass, and (for Pro) signature and bundle-path verification before code is written or run.
+Report vulnerabilities through `SECURITY.md`. The SDK holds no long-lived secrets and opens no listener, so the real surface is untrusted-payload parsing, hash canonicalization, and validation bypass.
 
 - Do not commit secrets. Never commit a private signing key, including test keys.
-- Do not execute arbitrary uploaded code. Pro bundles execute only after their Ed25519 signature and every file hash verify against a key embedded in the SDK.
+- Do not execute arbitrary uploaded code. Catalog products run only code shipped in this package; nothing is downloaded and executed.
 - Do not store provider credentials.
-- The SDK does not authenticate users. The API token is read from the environment and never written to disk. The only credential-like file the SDK writes is the short-lived signed Pro entitlement token (`$KETQAT_HOME/pro/entitlement.token`, mode 0600). Keep it that way.
-- Free catalog runs never import entitlement or network code (`python/tests/test_catalog.py` checks the module graph). Production public keys are added by the owner only; the test key is honoured only with `KETQAT_ALLOW_TEST_ENTITLEMENT_KEYS=1`.
+- The SDK does not authenticate users. The API token is read from the environment and never written to disk, and the SDK writes no credential-like file. (Before 0.4.0 it cached a short-lived Pro entitlement token at `$KETQAT_HOME/pro/entitlement.token`; 0.4.0 neither reads nor deletes it.) Keep it that way.
+- Catalog runs never import entitlement or network code (`python/tests/test_catalog.py` checks the module graph after runs of every product, and after `ketqat pro`). Never reintroduce a paywall, entitlement or account requirement into the SDK; educational payments (KetQat Academy) live in `ketqat-web`.
 
 ## Boundary
 

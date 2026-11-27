@@ -6,8 +6,8 @@
   "summary": "Standard, interleaved and simultaneous Clifford RB in one run: error per Clifford, gate error with Magesan bounds, bootstrap CIs, report.",
   "category": "quantum-information",
   "subcategory": "benchmarking",
-  "tier": "pro",
-  "description": "Runs Clifford randomized benchmarking on one or two simulated qubits, exactly with Stim, as one workflow: standard RB always, interleaved RB when a gate is named, and simultaneous RB (two independent single-qubit sequences driven together, each compared with the same sequence run alone) when a crosstalk rate is given. Every sequence's survival is kept, the decay S(m) = A lambda^m + 1/d is fitted by weighted nonlinear least squares in survival space with the asymptote fixed, and a non-parametric bootstrap over sequences gives 95% intervals for the decay parameter, the error per Clifford, the interleaved gate error and the addressability error. The interleaved gate may carry its own depolarizing rate, so a gate better or worse than the Cliffords around it can be resolved; its error is reported with the systematic bound of Magesan et al. (2012). Because the noise is a known depolarizing model, the analytic expectation of every quantity is reported beside the fit, and the open SDK's linearized fit is shown for comparison. Everything is written to one JSON result and a Markdown report.\n\nFor people who want the three RB protocols run consistently on one seed with uncertainties they can quote, as a reference for their own analysis code or for teaching.\n\nThis is a KetQat Pro product: it runs locally like every catalog product, from a signed bundle installed with `ketqat pro install` under a time-limited entitlement. Its implementation is not part of the open SDK.",
+  "tier": "free",
+  "description": "Runs Clifford randomized benchmarking on one or two simulated qubits, exactly with Stim, as one workflow: standard RB always, interleaved RB when a gate is named, and simultaneous RB (two independent single-qubit sequences driven together, each compared with the same sequence run alone) when a crosstalk rate is given. Every sequence's survival is kept, the decay S(m) = A lambda^m + 1/d is fitted by weighted nonlinear least squares in survival space with the asymptote fixed, and a non-parametric bootstrap over sequences gives 95% intervals for the decay parameter, the error per Clifford, the interleaved gate error and the addressability error. The interleaved gate may carry its own depolarizing rate, so a gate better or worse than the Cliffords around it can be resolved; its error is reported with the systematic bound of Magesan et al. (2012). Because the noise is a known depolarizing model, the analytic expectation of every quantity is reported beside the fit, and the open SDK's linearized fit is shown for comparison. Everything is written to one JSON result and a Markdown report.\n\nFor people who want the three RB protocols run consistently on one seed with uncertainties they can quote, as a reference for their own analysis code or for teaching.\n\nFree and open source (Apache-2.0); it needs the qec extra (NumPy, Stim) only.",
   "useCases": [
     "Report an error per Clifford with a bootstrap confidence interval and compare it with the analytic value of the noise model",
     "Isolate one gate's error by interleaved RB, with the Magesan systematic bound, including a gate noisier or cleaner than the Cliffords",
@@ -150,6 +150,19 @@
   "executionKind": "simulation",
   "versions": [
     {
+      "version": "1.1.0",
+      "date": "2026-11-23",
+      "changes": [
+        "Released as free and open source under Apache-2.0 in SDK 0.4.0. Until then 1.0.0 was distributed separately as proprietary code; it now ships in this package, and no account, login, entitlement or network access is needed.",
+        "Implementation identical to 1.0.0: the same parameters and seed reproduce 1.0.0's resultSha256 (python/tests/test_catalog_version_compat.py checks hashes recorded from the 1.0.0 code as distributed)."
+      ],
+      "sdkMinVersion": "0.4.0",
+      "extras": [
+        "qec"
+      ],
+      "status": "current"
+    },
+    {
       "version": "1.0.0",
       "date": "2026-11-01",
       "changes": [
@@ -160,7 +173,7 @@
         "pro",
         "qec"
       ],
-      "status": "current"
+      "status": "supported"
     }
   ],
   "environment": {
@@ -171,9 +184,9 @@
     ],
     "resources": "Defaults (one qubit, seven lengths to 64, 20 sequences, 200 shots, standard RB only): about 1.5 s on a 2024 Apple-silicon laptop (maintainer measurement). Adding interleaved and simultaneous RB at the defaults takes about 30 s, dominated by circuit construction; two qubits add a 0.3 s Clifford enumeration. sum(sequence_lengths) x sequences_per_length above 500000 is refused before anything runs."
   },
-  "install": "pip install \"ketqat[pro,qec] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\" && ketqat pro login && ketqat pro install randomized-benchmarking-suite@1.0.0",
+  "install": "pip install \"ketqat[qec] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python\"",
   "example": {
-    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"randomized-benchmarking-suite@1.0.0\", seed=2026, qubits=1, depolarizing_rate=0.005)\nresult = record.result\ninterval = result[\"standard\"][\"bootstrap\"][\"error_per_clifford\"]\nprint(json.dumps({\n    \"status\": record.status,\n    \"qubits\": result[\"qubits\"],\n    \"fit_conclusive\": not result[\"standard\"][\"fit\"][\"inconclusive\"],\n    \"interval_brackets_estimate\": interval[\"lower\"] <= result[\"error_per_clifford\"] <= interval[\"upper\"],\n    \"within_ten_percent_of_analytic\": abs(result[\"error_per_clifford\"] - 2 * 0.005 / 3) < 0.1 * (2 * 0.005 / 3),\n}))\n",
+    "code": "import json\nfrom ketqat_runner import catalog\n\nrecord = catalog.run(\"randomized-benchmarking-suite@1.1.0\", seed=2026, qubits=1, depolarizing_rate=0.005)\nresult = record.result\ninterval = result[\"standard\"][\"bootstrap\"][\"error_per_clifford\"]\nprint(json.dumps({\n    \"status\": record.status,\n    \"qubits\": result[\"qubits\"],\n    \"fit_conclusive\": not result[\"standard\"][\"fit\"][\"inconclusive\"],\n    \"interval_brackets_estimate\": interval[\"lower\"] <= result[\"error_per_clifford\"] <= interval[\"upper\"],\n    \"within_ten_percent_of_analytic\": abs(result[\"error_per_clifford\"] - 2 * 0.005 / 3) < 0.1 * (2 * 0.005 / 3),\n}))\n",
     "expectedOutputSubset": {
       "status": "succeeded",
       "qubits": 1,
@@ -181,12 +194,173 @@
       "interval_brackets_estimate": true,
       "within_ten_percent_of_analytic": true
     },
-    "verified": null
+    "verified": {
+      "sdkVersion": "0.4.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64 Python 3.12.12 (python/tests/test_catalog_examples.py run locally on the maintainer's machine: example executed verbatim in a clean virtualenv with only the 1.1.0 extras; not yet executed by CI)",
+      "date": "2026-11-23"
+    }
   },
   "sampleResult": {
-    "summary": "Not generated in the open SDK: running this product needs a Pro entitlement and bundle, which this repository's CI does not have. Maintainer run of the private bundle (one qubit, p = 0.005, lengths 1 to 64, 20 sequences, 200 shots, seed 2026, Stim 1.16.0): decay parameter 0.99321, error per Clifford 0.003397 with 95% bootstrap interval [0.003221, 0.003579] against the analytic 2p/3 = 0.003333 (0.65 bootstrap sigma away); the open SDK's linearized fit gave 0.003331. With interleaved x at its own rate 0.01 and simultaneous RB at crosstalk 0.01 on the same seed: gate error 0.00703 [0.00644, 0.00749] with systematic bound 0.0104 against the analytic 0.00667, and addressability error 0.005296 against the analytic 0.005298.",
-    "data": null,
-    "generatedWith": null
+    "summary": "One qubit, p = 0.005, lengths 1 to 64, 20 sequences, 200 shots, seed 2026 (Stim 1.16.0), standard RB only: decay parameter 0.99321, error per Clifford 0.003397 with 95% bootstrap interval [0.003221, 0.003579] against the analytic 2p/3 = 0.003333 (0.65 bootstrap sigma away); the linearized fit of randomized_benchmarking gives 0.003331. The full result is shown.",
+    "data": {
+      "schema": "ketqat.pro.randomized-benchmarking-suite/v1",
+      "protocol": "Clifford randomized benchmarking (standard; interleaved and simultaneous when requested)",
+      "qubits": 1,
+      "dimension": 2,
+      "noise_model": "DEPOLARIZE1 (one qubit) or DEPOLARIZE2 (two qubits) at the depolarizing rate after every Clifford; the interleaved gate carries its own rate; simultaneous RB adds DEPOLARIZE2 at the crosstalk rate per step",
+      "depolarizing_rate": 0.005,
+      "sequence_lengths": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ],
+      "sequences_per_length": 20,
+      "shots": 200,
+      "seed": 2026,
+      "sequence_seed_derivation": "sha256(global_seed,sequence_length,sequence_index) (as the open SDK)",
+      "bootstrap_resamples": 200,
+      "decay_parameter": 0.993206504814,
+      "error_per_clifford": 0.003396747593,
+      "standard": {
+        "points": [
+          {
+            "sequence_length": 1,
+            "survival_probability": 0.998,
+            "standard_error": 0.000668856054,
+            "sequences": 20,
+            "shots": 200
+          },
+          {
+            "sequence_length": 2,
+            "survival_probability": 0.9935,
+            "standard_error": 0.00109424331,
+            "sequences": 20,
+            "shots": 200
+          },
+          {
+            "sequence_length": 4,
+            "survival_probability": 0.984,
+            "standard_error": 0.001835325871,
+            "sequences": 20,
+            "shots": 200
+          },
+          {
+            "sequence_length": 8,
+            "survival_probability": 0.9725,
+            "standard_error": 0.002035862678,
+            "sequences": 20,
+            "shots": 200
+          },
+          {
+            "sequence_length": 16,
+            "survival_probability": 0.952,
+            "standard_error": 0.003598245186,
+            "sequences": 20,
+            "shots": 200
+          },
+          {
+            "sequence_length": 32,
+            "survival_probability": 0.90175,
+            "standard_error": 0.003408097942,
+            "sequences": 20,
+            "shots": 200
+          },
+          {
+            "sequence_length": 64,
+            "survival_probability": 0.82625,
+            "standard_error": 0.004769351164,
+            "sequences": 20,
+            "shots": 200
+          }
+        ],
+        "fit": {
+          "inconclusive": false,
+          "decay_parameter": 0.993206504814,
+          "amplitude": 0.500736341161,
+          "asymptote": 0.5,
+          "asymptote_is_fixed": true,
+          "error_per_clifford": 0.003396747593,
+          "chi_square": 6.043869219188,
+          "chi_square_reduced": 1.208773843838,
+          "degrees_of_freedom": 5,
+          "fitted_points": 7,
+          "weighting": "1 / standard_error^2 across sequences",
+          "model": "S(m) = A * lambda^m + 1/d, with 1/d fixed",
+          "method": "weighted least squares in survival space, profile over lambda on a grid with golden-section refinement"
+        },
+        "bootstrap": {
+          "method": "non-parametric over sequences at every length",
+          "resamples": 200,
+          "decay_parameter": {
+            "lower": 0.992842537802,
+            "upper": 0.993557054353,
+            "standard_deviation": 0.000195308931,
+            "resamples": 200,
+            "level": 0.95
+          },
+          "error_per_clifford": {
+            "lower": 0.003221472823,
+            "upper": 0.003578731099,
+            "standard_deviation": 9.7654465e-05,
+            "resamples": 200,
+            "level": 0.95
+          }
+        },
+        "linearized_fit": {
+          "inconclusive": false,
+          "decay_parameter": 0.993338923218,
+          "decay_parameter_standard_error": 0.000227318364,
+          "error_per_clifford": 0.003330538391,
+          "error_per_clifford_standard_error": 0.000113659182,
+          "amplitude": 0.499719308189,
+          "asymptote": 0.5,
+          "asymptote_is_fixed": true,
+          "fitted_points": 7,
+          "excluded_points": 0,
+          "model": "S(m) = A * lambda^m + 1/d, with 1/d fixed",
+          "uncertainty_scope": "statistical only; excludes error from the single-exponential model being wrong, which dominates when gate errors are not gate-independent"
+        },
+        "analytic_expectation": {
+          "decay_parameter": 0.993333333333,
+          "error_per_clifford": 0.003333333333,
+          "deviation_in_bootstrap_sigma": 0.649373884544,
+          "model": "depolarizing: lambda = 1 - p d^2/(d^2-1), r = p d/(d+1); valid only for this simulated noise"
+        }
+      },
+      "interleaved": null,
+      "simultaneous": null,
+      "report": "# Randomized benchmarking suite\n\n- Protocol: Clifford randomized benchmarking (standard; interleaved and simultaneous when requested)\n- Qubits: 1 (d = 2); depolarizing rate 0.005\n- Sequence lengths: [1, 2, 4, 8, 16, 32, 64]; 20 sequences per length; 200 shots; seed 2026\n- Noise model: DEPOLARIZE1 (one qubit) or DEPOLARIZE2 (two qubits) at the depolarizing rate after every Clifford; the interleaved gate carries its own rate; simultaneous RB adds DEPOLARIZE2 at the crosstalk rate per step\n\n## Standard RB\n\n| m | survival | standard error (sequences) |\n|---|---|---|\n| 1 | 0.998 | 0.00066886 |\n| 2 | 0.9935 | 0.0010942 |\n| 4 | 0.984 | 0.0018353 |\n| 8 | 0.9725 | 0.0020359 |\n| 16 | 0.952 | 0.0035982 |\n| 32 | 0.90175 | 0.0034081 |\n| 64 | 0.82625 | 0.0047694 |\n\n- Decay parameter lambda = 0.9932065, 95% bootstrap [0.99284, 0.99356]\n- Error per Clifford r = 0.00339675, 95% bootstrap [0.0032215, 0.0035787]\n- Amplitude A = 0.50074, asymptote 1/d = 0.5 (fixed); reduced chi-square 1.21\n- Expected for this noise model: lambda = 0.9933333, r = 0.00333333 (fit deviates by 0.649 bootstrap sigma)\n- Open SDK linearized fit for comparison: lambda = 0.9933389, r = 0.00333054\n\n## Interleaved RB\n\n- Not requested.\n\n## Simultaneous RB (addressability)\n\n- Not requested.\n\n## Caveats\n\n- Gate-independent depolarizing noise is simulated; the analytic expectations hold for that model only and are not hardware predictions.\n- Bootstrap intervals are statistical (resampling sequences); they exclude error from the single-exponential model being wrong.\n- Interleaved RB bounds the gate error by the systematic bound; when the bound is comparable to the estimate the gate error is bounded, not resolved.\n- An addressability error consistent with zero means the qubits are independent at this noise level, not that crosstalk is impossible.\n"
+    },
+    "generatedWith": {
+      "productVersion": "1.1.0",
+      "seed": 2026,
+      "parameters": {
+        "qubits": 1,
+        "sequence_lengths": [
+          1,
+          2,
+          4,
+          8,
+          16,
+          32,
+          64
+        ],
+        "sequences_per_length": 20,
+        "depolarizing_rate": 0.005,
+        "shots": 200,
+        "interleaved_gate": null,
+        "interleaved_gate_depolarizing_rate": null,
+        "simultaneous_crosstalk_rate": null
+      },
+      "sdkVersion": "0.4.0",
+      "python": "3.12.12",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    }
   },
   "science": {
     "assumptions": [
@@ -204,7 +378,6 @@
       "With gate-independent noise and the same rate for the interleaved gate, every gate reports the same error by construction; the separate gate rate is what makes interleaved RB diagnostic here.",
       "Interleaved RB's systematic bound can be comparable to the estimate; the report then says the gate error is bounded, not resolved.",
       "Sequence lengths above the depolarized floor are needed for a fit; a run whose survivals all sit at 1/d is reported as inconclusive.",
-      "The implementation is delivered as a Pro bundle and is not open source; its validation tests live in the private repository, not here.",
       "Tested on macOS and Linux only; Windows is untested."
     ]
   },
@@ -324,15 +497,10 @@
         "name": "NumPy",
         "url": "https://github.com/numpy/numpy",
         "license": "BSD-3-Clause"
-      },
-      {
-        "name": "cryptography",
-        "url": "https://github.com/pyca/cryptography",
-        "license": "Apache-2.0 OR BSD-3-Clause"
       }
     ]
   },
-  "license": "LicenseRef-KetQat-Pro",
+  "license": "Apache-2.0",
   "contributors": [
     {
       "name": "dorakingx",
@@ -341,10 +509,52 @@
     }
   ],
   "implementationStatus": "implemented",
-  "validation": [],
-  "pro": {
-    "freeComparison": "The open SDK already enumerates the 1- and 2-qubit Clifford groups, builds and samples standard, interleaved and simultaneous RB sequences with Stim, fits the decay by a weighted linearized least squares with a propagated standard error, computes the interleaved gate error with the Magesan systematic bound and the addressability error, and runs standard RB from a manifest (randomized_benchmarking.py, runner.py). Nothing of that moves behind Pro, and this product calls those functions. Pro adds the suite as one catalog run: all three protocols on one seed with every sequence's survival kept, a weighted nonlinear fit in survival space that also handles the noiseless case, bootstrap intervals over sequences for every reported quantity, a separate noise rate for the interleaved gate, cx as an interleaved gate, analytic expectations beside every estimate, and a Markdown report.",
-    "distribution": "authenticated-bundle"
-  },
+  "validation": [
+    {
+      "method": "depolarizing-model",
+      "description": "One and two qubits at several rates: the fitted error per Clifford is within 20% of the analytic p d/(d+1) of the simulated depolarizing noise, and the bootstrap interval is consistent with it.",
+      "test": "python/tests/test_catalog_rb_suite.py::test_error_per_clifford_matches_the_depolarizing_model"
+    },
+    {
+      "method": "noiseless",
+      "description": "Without noise every survival is 1 and the fitted decay parameter is exactly 1.",
+      "test": "python/tests/test_catalog_rb_suite.py::test_no_noise_gives_decay_parameter_exactly_one"
+    },
+    {
+      "method": "exact-decay",
+      "description": "The nonlinear fit recovers lambda in {0.9, 0.99, 0.999} and the amplitude from exact synthetic decays to 1e-9.",
+      "test": "python/tests/test_catalog_rb_suite.py::test_nonlinear_fit_recovers_an_exact_decay"
+    },
+    {
+      "method": "survival-agreement",
+      "description": "Per-length means equal randomized_benchmarking.survival_probability, computed separately for the same seed.",
+      "test": "python/tests/test_catalog_rb_suite.py::test_per_length_means_equal_the_sdk_survival_probability"
+    },
+    {
+      "method": "interleaved-builder",
+      "description": "With equal rates the interleaved builder emits exactly the circuit of randomized_benchmarking.build_interleaved_sequence, and noiseless sequences invert to |0...0>.",
+      "test": "python/tests/test_catalog_rb_suite.py::test_interleaved_builder_matches_the_sdk_builder_at_equal_rates"
+    },
+    {
+      "method": "interleaved-ideal-gate",
+      "description": "A noiseless interleaved gate between noisy Cliffords has an estimated error within its systematic bound of zero.",
+      "test": "python/tests/test_catalog_rb_suite.py::test_interleaved_estimate_of_an_ideal_gate_is_zero_within_its_bound"
+    },
+    {
+      "method": "interleaved-noisy-gate",
+      "description": "A gate with its own depolarizing rate q = 0.03 is estimated within 30% of the analytic 2q/3.",
+      "test": "python/tests/test_catalog_rb_suite.py::test_interleaved_estimate_of_a_noisy_gate_matches_its_own_rate"
+    },
+    {
+      "method": "addressability",
+      "description": "Simultaneous RB: zero addressability error without crosstalk, and within 50% of the analytic lambda_alone 8c/15 with a correlated DEPOLARIZE2(c).",
+      "test": "python/tests/test_catalog_rb_suite.py::test_addressability_is_zero_without_crosstalk_and_positive_with_it"
+    },
+    {
+      "method": "example-execution",
+      "description": "The example code is executed verbatim in a clean virtual environment with only the qec extra installed.",
+      "test": "python/tests/test_catalog_examples.py"
+    }
+  ],
   "legacy": []
 }

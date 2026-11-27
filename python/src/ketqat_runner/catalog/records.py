@@ -3,8 +3,8 @@
 Every catalog run writes `$KETQAT_HOME/runs/<run-id>/record.json`
 (`KETQAT_HOME` defaults to `~/.ketqat`). The record is the user's own file on
 their own machine. Nothing in this module sends it anywhere, and nothing
-deletes it: an expired Pro entitlement stops new Pro runs, never access to old
-records.
+deletes it. Records written by earlier SDK versions, including runs of the
+products that were KetQat Pro until 0.4.0, stay readable and verifiable.
 
 `resultSha256` is the sha256 of the canonical JSON of `result` (sorted keys,
 no whitespace, JavaScript number formatting; see `hashing.canonical_json`).

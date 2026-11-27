@@ -97,7 +97,8 @@ jobs:
   # The official catalog (catalog/). Three things a unit-test run cannot show:
   # that the checked-in index and the packaged Python copy are current, that every
   # product's example code runs verbatim in a clean virtualenv with only that product's
-  # extras, and that the Pro flow verifies against a signing server.
+  # extras, and that the products released as open source in 0.4.0 reproduce their
+  # recorded 1.0.0 results where the stack matches.
   catalog:
     runs-on: ubuntu-latest
     steps:
@@ -112,15 +113,15 @@ jobs:
       - name: Install the runner with the catalog extras
         run: |
           python -m pip install --require-hashes -r requirements-ci-tools.txt
-          python -m pip install -e "python[qec,qinfo,pro]"
+          python -m pip install -e "python[qec,qinfo,algorithms]"
 
       - name: Fail if catalog.json or the packaged copy is stale
         run: python -m ketqat_runner.catalog.build --check
 
-      - name: Catalog, product validation and Pro tests
-        run: python -m pytest python/tests/test_catalog.py python/tests/test_catalog_products.py python/tests/test_catalog_pro.py -q
+      - name: Catalog, product validation and usage-report tests
+        run: python -m pytest python/tests/test_catalog*.py -q
 
-      - name: Run every Free example verbatim in a clean virtualenv
+      - name: Run every product's example verbatim in a clean virtualenv
         env:
           KETQAT_RUN_SLOW_TESTS: "1"
         run: python -m pytest -m slow python/tests/test_catalog_examples.py -v

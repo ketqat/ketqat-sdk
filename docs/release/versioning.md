@@ -1,10 +1,33 @@
-# The next version is 0.3.0, and not 1.0.0
+# The next version is 0.4.0, and not 1.0.0
+
+## 0.4.0 (2026-11-23): every catalog product free and open source
+
+0.3.0 was never published. Before it was, the four KetQat Pro catalog products were released
+here under Apache-2.0 ([ketqat-sdk#306](https://github.com/ketqat/ketqat-sdk/issues/306),
+[ketqat-planning#158](https://github.com/ketqat/ketqat-planning/issues/158)). That changes what
+the package does in ways a reader of a version number should see:
+
+| change | shape |
+|---|---|
+| four products' code added, each with a new catalog version 1.1.0 identical to 1.0.0 | additive |
+| `ketqat pro login`, `status` and `install` no longer contact a server; they print a notice and exit 0 | behaviour change (deprecation) |
+| the Pro entitlement, signing and bundle modules (`ketqat_runner.catalog.pro`) removed | removal of a public module |
+| the `pro` extra installs nothing (was `cryptography`) | behaviour change, name kept |
+| `sdkMinVersion` 0.4.0 on the new catalog versions | the 1.1.0 entries need this package |
+
+No change to hashed payloads, the canonical form, the exclusion set or number formatting;
+`resultSha256` of every catalog run is unchanged for the same version, parameters and seed,
+including the 1.0.0 versions of the four products. Under 0.x a removed module and a new catalog
+contract (`sdkMinVersion` 0.4.0) are a minor bump, so 0.3.0 becomes 0.4.0 rather than 0.3.1.
+The reasoning below for 0.3.0 over 1.0.0 applies unchanged to 0.4.0.
+
+## The reasoning recorded for 0.3.0
 
 Decided for [ketqat-sdk#247](https://github.com/ketqat/ketqat-sdk/issues/247). This records the
 reasoning, because the number on its own does not carry it and the next person choosing a version
 should be able to disagree with the argument rather than guess at it.
 
-## Where we actually are
+### Where we actually are
 
 `ketqat-sdk` is at **0.2.0** and **has never been published**. Both `ketqat-sdk` on npm and
 `ketqat` on PyPI return 404. `ketqat-web` consumes this SDK as a pinned GitHub tarball, so the only
@@ -14,7 +37,7 @@ That single fact settles most of the question. Semantic versioning describes a p
 who already depend on a published artifact. There are none. Nothing in this release can *break* a
 consumer, because no consumer can have installed anything.
 
-## What changed since 0.2.0
+### What changed since 0.2.0
 
 | change | shape |
 |---|---|
@@ -27,7 +50,7 @@ consumer, because no consumer can have installed anything.
 No change to hashed payloads, the exclusion set, the canonical form, or number formatting. Under
 this project's own rule those would be breaking whatever the diff looked like, and none occurred.
 
-## Why 0.3.0
+### Why 0.3.0
 
 **Not `0.2.1`.** A patch says nothing new appeared. Two new client namespaces, a new CLI command
 group and ten MCP tools is not a patch, and labelling it one would make the changelog the only

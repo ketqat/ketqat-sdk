@@ -12,26 +12,36 @@ it. It never means KetQat invented the method. Every definition carries an
 (`origin.upstream`), its `references`, the `license` you receive and the
 `contributors`.
 
+**All KetQat SDK algorithms and software products are free and open source.**
+Every product below is Apache-2.0 code in this repository and runs from the
+installed `ketqat` package with no account, payment, login, entitlement,
+network access or telemetry. KetQat Academy Pro is a separate educational
+subscription on ketqat.com; it is not required for any SDK functionality.
+
 ## Products
 
-| ID | Slug | Tier | Extras |
+| ID | Slug | Current version | Extras |
 |---|---|---|---|
-| `kq.algorithms.grover-search` | `grover-search` | Free | `algorithms` |
-| `kq.algorithms.quantum-phase-estimation` | `quantum-phase-estimation` | Free | none |
-| `kq.algorithms.qaoa-maxcut` | `qaoa-maxcut` | Free | `algorithms` |
-| `kq.algorithms.vqe-ground-state` | `vqe-ground-state` | Free | `algorithms` |
-| `kq.algorithms.quantum-fourier-transform` | `quantum-fourier-transform` | Free | `algorithms` |
-| `kq.algorithms.trotter-ising-dynamics` | `trotter-ising-dynamics` | Free | `algorithms` |
-| `kq.algorithms.quantum-teleportation` | `quantum-teleportation` | Free | `algorithms` |
-| `kq.qec.surface-code-memory` | `surface-code-memory` | Free | `qec` |
-| `kq.qec.steane-code-fault-tolerance` | `steane-code` | Free | `qinfo` (NumPy only) |
-| `kq.qec.repetition-code-memory` | `repetition-code` | Free | `qinfo` (NumPy only) |
-| `kq.qinfo.state-measures` | `quantum-state-measures` | Free | `qinfo` |
-| `kq.qinfo.state-tomography` | `quantum-state-tomography` | Free | `qinfo` |
-| `kq.qinfo.channel-analysis` | `quantum-channel-analysis` | Pro | `pro`, `qinfo` |
-| `kq.qec.surface-code-threshold-study` | `surface-code-threshold-study` | Pro | `pro`, `qec` |
-| `kq.qinfo.randomized-benchmarking-suite` | `randomized-benchmarking-suite` | Pro | `pro`, `qec` |
-| `kq.qinfo.quantum-volume-certification` | `quantum-volume-certification` | Pro | `pro`, `qinfo` |
+| `kq.algorithms.grover-search` | `grover-search` | 1.0.0 | `algorithms` |
+| `kq.algorithms.quantum-phase-estimation` | `quantum-phase-estimation` | 1.0.0 | none |
+| `kq.algorithms.qaoa-maxcut` | `qaoa-maxcut` | 1.0.0 | `algorithms` |
+| `kq.algorithms.vqe-ground-state` | `vqe-ground-state` | 1.0.0 | `algorithms` |
+| `kq.algorithms.quantum-fourier-transform` | `quantum-fourier-transform` | 1.0.0 | `algorithms` |
+| `kq.algorithms.trotter-ising-dynamics` | `trotter-ising-dynamics` | 1.0.0 | `algorithms` |
+| `kq.algorithms.quantum-teleportation` | `quantum-teleportation` | 1.0.0 | `algorithms` |
+| `kq.qec.surface-code-memory` | `surface-code-memory` | 1.0.0 | `qec` |
+| `kq.qec.steane-code-fault-tolerance` | `steane-code` | 1.0.0 | `qinfo` (NumPy only) |
+| `kq.qec.repetition-code-memory` | `repetition-code` | 1.0.0 | `qinfo` (NumPy only) |
+| `kq.qinfo.state-measures` | `quantum-state-measures` | 1.0.0 | `qinfo` |
+| `kq.qinfo.state-tomography` | `quantum-state-tomography` | 1.0.0 | `qinfo` |
+| `kq.qinfo.channel-analysis` | `quantum-channel-analysis` | 1.1.0 (1.0.0 supported) | `qinfo` |
+| `kq.qec.surface-code-threshold-study` | `surface-code-threshold-study` | 1.1.0 (1.0.0 supported) | `qec` |
+| `kq.qinfo.randomized-benchmarking-suite` | `randomized-benchmarking-suite` | 1.1.0 (1.0.0 supported) | `qec` |
+| `kq.qinfo.quantum-volume-certification` | `quantum-volume-certification` | 1.1.0 (1.0.0 supported) | `qinfo` |
+
+The last four were offered as KetQat Pro at 1.0.0. Since SDK 0.4.0
+(2026-11-23) their code is here under Apache-2.0 as 1.1.0; see
+[Former KetQat Pro products](#former-ketqat-pro-products).
 
 `ketqat catalog show <slug>` prints the full definition: inputs with types and
 defaults, the install line, the example, limitations and references.
@@ -64,9 +74,7 @@ without `--yes`.
 | `ketqat catalog run ID_OR_SLUG[@V] [--param k=v ...] [--seed N] [--output DIR] [--json]` | none | run locally, write a run record |
 | `ketqat runs list [--json]` / `ketqat runs show RUN_ID` | none | local run records |
 | `ketqat report RUN_ID [--yes] [--base-url URL]` | yes, API token | opt-in usage report |
-| `ketqat pro login [--base-url URL]` | yes, API token | fetch and cache a Pro entitlement |
-| `ketqat pro status` | none | show the cached entitlement |
-| `ketqat pro install ID_OR_SLUG[@V] [--base-url URL]` | yes, API token | download, verify and install a Pro bundle |
+| `ketqat pro login` / `status` / `install [ID_OR_SLUG]` | none | deprecated since 0.4.0: prints that every product is free and open source and that nothing needs to be installed or unlocked, exits 0, reads and writes nothing |
 
 `--param` values are read as JSON when they parse (`shots=1000`,
 `marked=[3,5]`, `iterations=null`) and as plain strings otherwise
@@ -74,7 +82,7 @@ without `--yes`.
 the record to `DIR/<run-id>.json` in addition to `$KETQAT_HOME`.
 
 Exit codes: `0` success; `1` the run started and failed (a failed record is
-written), a Pro run was refused, or a network call failed; `2` the request was
+written) or a network call failed; `2` the request was
 invalid (unknown product, version or parameter, a wrong type, a constraint
 violated) and nothing ran.
 
@@ -120,8 +128,8 @@ defaulting to `~/.ketqat`:
   "productVersion": "1.0.0",
   "parameters": {"distance": 5, "rounds": null, "...": "every input, defaults filled in"},
   "seed": 7,
-  "sdkVersion": "0.3.0",
-  "environment": {"python": "3.12.12", "platform": "...", "packages": {"ketqat": "0.3.0", "stim": "..."}},
+  "sdkVersion": "0.4.0",
+  "environment": {"python": "3.12.12", "platform": "...", "packages": {"ketqat": "0.4.0", "stim": "..."}},
   "startedAt": "2026-10-29T12:00:00.000Z",
   "finishedAt": "2026-10-29T12:00:01.234Z",
   "status": "succeeded",
@@ -156,7 +164,7 @@ edited. Records are never deleted by the SDK.
   "productVersion": "1.0.0",
   "status": "succeeded",
   "occurredAt": "the record's finishedAt",
-  "sdkVersion": "0.3.0"
+  "sdkVersion": "0.4.0"
 }
 ```
 
@@ -167,82 +175,44 @@ record, sending the same report twice is counted once. The API token comes from
 command-line option. A copy of what was sent is kept beside the record as
 `report.json`.
 
-## KetQat Pro
+## Former KetQat Pro products
 
-Pro products are additional KetQat implementations. They run locally like Free
-products; their code is delivered as a signed bundle.
+Until SDK 0.4.0, four products were offered as KetQat Pro at version 1.0.0:
+`quantum-channel-analysis`, `surface-code-threshold-study`,
+`randomized-benchmarking-suite` and `quantum-volume-certification`. Their code
+was proprietary and delivered as Ed25519-signed bundles under a time-limited
+entitlement (`ketqat pro login`, `ketqat pro install`).
 
-```bash
-pip install "ketqat[pro,qinfo] @ git+https://github.com/ketqat/ketqat-sdk@<commit>#subdirectory=python"
-export KETQAT_API_TOKEN=kq_...
-ketqat pro login
-ketqat pro install quantum-channel-analysis
-ketqat catalog run quantum-channel-analysis --param kraus_file=channel.npy
-```
+On 2026-11-23 the owner relicensed that code to Apache-2.0
+([ketqat-planning#158](https://github.com/ketqat/ketqat-planning/issues/158));
+the license-transition record is in [CHANGELOG.md](../CHANGELOG.md). Since 0.4.0:
 
-What is stored: only the entitlement token, at
-`$KETQAT_HOME/pro/entitlement.token` (mode 0600). The API token stays in your
-environment and is never written to disk by the SDK.
+- The four products are ordinary catalog products with tier `free`, license
+  `Apache-2.0` and a new current version **1.1.0**. Their code lives in
+  `python/src/ketqat_runner/catalog/products/` with the others.
+- **1.1.0 is the 1.0.0 implementation unchanged.** 1.0.0 stays in each
+  definition with status `supported`, and this package runs both from the
+  same code, so the same parameters and seed give the same `resultSha256`.
+  `python/tests/test_catalog_version_compat.py` checks this against hashes
+  recorded from the 1.0.0 code as distributed
+  (`fixtures/catalog/relicensed-products-1.0.0.json`).
+- Results keep their `schema` identifiers (`ketqat.pro.channel-analysis/v1`
+  and so on): they are part of the hashed result, so renaming them would break
+  the promise above. They are names, not a licence or an entitlement.
+- No run needs an account, login, entitlement or network access, and no run
+  imports entitlement or network code (checked after runs of every product).
+- `ketqat pro login|status|install` are deprecated no-ops kept so existing
+  scripts do not fail. They contact no server, read and write no files, and
+  exit 0. The `pro` extra installs nothing and is kept so older install lines
+  still work.
+- The entitlement, signing and bundle code is removed. Files an earlier SDK
+  cached under `$KETQAT_HOME/pro/` are left untouched and unused. Run records,
+  including runs of the 1.0.0 Pro products, stay readable and `ketqat runs show`
+  still verifies their digests.
 
-When it is checked: once, when a Pro run starts. A missing or expired
-entitlement refuses the run with the expiry date and the renewal command
-(`ketqat pro login`). A run that has started is never interrupted, and run
-records and results are never deleted or locked.
-
-What it is not: DRM. Code delivered to your machine can be copied or modified.
-The entitlement gates official distribution and updates.
-
-Free runs never import any of this: a test checks the module graph after every
-Free product runs.
-
-### Formats
-
-These are the exact formats the SDK verifies, so that the server and the SDK
-can be checked against each other.
-
-**Entitlement token** (`POST {base}/api/v1/pro/entitlement`, response
-`{"token": "..."}`): `base64url(payload) "." base64url(signature)`, padding
-optional. The payload is UTF-8 JSON
-`{"v":1,"kid":"...","sub":"<user id>","tier":"pro","iat":<unix s>,"exp":<unix s>}`.
-The Ed25519 signature covers the exact payload bytes that were base64url-encoded.
-The SDK checks the signature, `v == 1`, `tier == "pro"`, `exp > iat`, and at run
-start `exp > now` and `iat` not more than five minutes in the future.
-
-**Bundle** (`GET {base}/api/v1/pro/bundles/{productId}/{version}`):
-
-```json
-{
-  "manifest": {"productId": "...", "version": "1.0.0", "sha256": {"main.py": "<hex>", "...": "..."}, "kid": "..."},
-  "signature": "<base64url Ed25519 signature>",
-  "files": {"main.py": "<base64>", "...": "..."}
-}
-```
-
-The signature covers the manifest's canonical JSON: keys sorted at every level,
-separators `,` and `:` with no whitespace, UTF-8 without escaping non-ASCII.
-`files` must name exactly the manifest's paths; paths are relative, with no
-`..`, empty or dot segments. Every decoded file must match its sha256. Only then
-is anything written, to `$KETQAT_HOME/pro/<productId>/<version>/` (`bundle.json`
-plus `files/`), and the same checks run again before every Pro run.
-
-**Entry point.** `main.py` at the bundle root defines
-`run(params: dict, seed: int) -> dict` (the JSON-serialisable result) and may
-define `validate(params: dict) -> None`. Parameters are checked against the
-catalog definition's `inputs` before either is called. The bundle directory is
-on `sys.path` while `main.py` is imported, so it can import its own modules at
-import time. Bytecode is not written into the verified directory.
-
-### Signing keys
-
-Trusted Ed25519 public keys are embedded in
-`python/src/ketqat_runner/catalog/pro/keys.py`, by `kid`.
-
-- `PRODUCTION_KEYS` is empty until the owner provides the production public key
-  in a reviewed pull request. Until then no production token or bundle verifies.
-- `TEST_KEYS` holds `ketqat-test-2026-10`, used by KetQat's own tests and
-  staging. It is honoured **only** when `KETQAT_ALLOW_TEST_ENTITLEMENT_KEYS=1`
-  is set, so it cannot unlock anything on a normal installation. Its private
-  half is kept outside this repository.
+The catalog schema still accepts `tier: "pro"` with a `pro` block so that
+historical definitions validate; `python -m ketqat_runner.catalog.build`
+refuses it in a current definition.
 
 ## Definitions and the build
 
@@ -258,8 +228,8 @@ its formatting, regenerates `catalog.json` and copies the tree byte for byte to
 `python/src/ketqat_runner/catalog/data/`, the copy the installed package reads.
 Beyond the schema it checks that file names equal IDs, slugs are unique,
 versions are newest first with one current, every named validation test exists,
-every runnable Free version has an implementation in this SDK, and defaults
-satisfy their own constraints.
+every product is tier `free`, every runnable version has an implementation in
+this SDK, and defaults satisfy their own constraints.
 
 `python -m ketqat_runner.catalog.build --check` writes nothing and fails if any
 of that output is stale; CI runs it. `npm run verify:catalog-sync` recomputes
@@ -289,7 +259,7 @@ refuses it without validation entries.
 
 ### Examples
 
-Each Free product's `example.code` is run verbatim by
+Each product's `example.code` is run verbatim by
 `python/tests/test_catalog_examples.py` in a fresh virtualenv with only that
 product's extras installed. The JSON object the example prints last must
 contain `example.expectedOutputSubset`. The test is slow and needs the package
