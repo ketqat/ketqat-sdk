@@ -103,7 +103,7 @@ RUN git init -q . \
 
 # Native Lambda execution uses only opaque dispatch metadata. The parent reads
 # its exact SSM callback key; the CPU child receives no cloud credentials.
-FROM public.ecr.aws/lambda/nodejs:22@sha256:f4f30ba3a882589f91824fc850626b7a13c6649131fc3351c252459eae605d94 AS lambda
+FROM public.ecr.aws/lambda/nodejs:24@sha256:5f161369102f24d3b088ca52e8e83eeee55e701080ee91af858b4cb2f762b6ef AS lambda
 # Refresh AL2023 security packages per release. The produced image stays immutable.
 ARG KETQAT_OS_REFRESH=initial
 RUN dnf upgrade -y --releasever=latest && dnf clean all
